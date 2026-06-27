@@ -1,0 +1,1676 @@
+{
+  "backend-guardian": {
+    "id": "backend-guardian",
+    "name": "后端路由与编排",
+    "match": [
+      "pi-backend",
+      "后端",
+      "Guardian",
+      "路由",
+      "monitor-server",
+      "backend"
+    ],
+    "defaultModel": "opencore-go/glm-5.2",
+    "skills": [
+      "engineering-mode",
+      "output-spec"
+    ],
+    "availableSkills": [
+      "engineering-mode",
+      "output-spec",
+      "stage-flow",
+      "output-engine"
+    ],
+    "collaborationProtocol": "先做最小 Task Understanding，再执行后端修改；输出必须包含影响范围、验证结果、给下游的交付物；发现风险同步进 bugs/context/progress。",
+    "projectConfig": {
+      "preferredPaths": [
+        "monitor-server.js"
+      ],
+      "qualityBar": "后端变更必须说明影响范围、状态流转和验证方式。"
+    },
+    "systemPromptPatch": "你擅长后端路由、调度器、状态机、Express/WebSocket、模型 fallback 和守护进程设计。优先读取 monitor-server.js 和相关 API 代码。",
+    "experience": 18,
+    "successes": 1,
+    "failures": 17,
+    "recentTasks": [
+      {
+        "name": "后端 Guardian 路由检查",
+        "taskId": "t1",
+        "success": false,
+        "timestamp": 1782558642807,
+        "modelUsed": "opencore-go/deepseek-v4-flash",
+        "equippedSkills": [
+          "engineering-mode",
+          "output-spec"
+        ],
+        "skillScope": "subAgentEngineering",
+        "startedAt": 1782558634110,
+        "endedAt": 1782558642805,
+        "durationMs": 8695,
+        "status": "error",
+        "error": "pi exited null"
+      },
+      {
+        "name": "后端 Guardian 路由检查",
+        "taskId": "t1",
+        "success": false,
+        "timestamp": 1782472468097,
+        "modelUsed": "opencore-go/glm-5.2",
+        "equippedSkills": [
+          "engineering-mode",
+          "output-spec"
+        ],
+        "skillScope": "subAgentEngineering",
+        "startedAt": 1782472424221,
+        "endedAt": 1782472468097,
+        "durationMs": 43876,
+        "status": "error",
+        "error": "pi exited null"
+      },
+      {
+        "name": "后端 Guardian 路由检查",
+        "taskId": "t1",
+        "success": false,
+        "timestamp": 1782466247644,
+        "modelUsed": "opencore-go/glm-5.2",
+        "equippedSkills": [
+          "engineering-mode",
+          "output-spec"
+        ],
+        "skillScope": "subAgentEngineering",
+        "startedAt": 1782466233457,
+        "endedAt": 1782466247643,
+        "durationMs": 14186,
+        "status": "error",
+        "error": "pi exited null"
+      },
+      {
+        "name": "后端 Guardian 路由检查",
+        "taskId": "t1",
+        "success": true,
+        "timestamp": 1782458314135,
+        "modelUsed": "opencore-go/glm-5.2",
+        "equippedSkills": [
+          "engineering-mode",
+          "output-spec"
+        ],
+        "skillScope": "subAgentEngineering",
+        "startedAt": 1782458237261,
+        "endedAt": 1782458314133,
+        "durationMs": 76872,
+        "status": "completed",
+        "artifactId": "t1-output",
+        "qualityStatus": "ready",
+        "issues": []
+      },
+      {
+        "name": "后端 Guardian 路由检查",
+        "taskId": "t1",
+        "success": false,
+        "timestamp": 1782444611081,
+        "modelUsed": "opencore-go/glm-5.2",
+        "equippedSkills": [
+          "engineering-mode",
+          "output-spec"
+        ],
+        "skillScope": "subAgentEngineering",
+        "startedAt": 1782444521017,
+        "endedAt": 1782444611080,
+        "durationMs": 90063,
+        "status": "timeout",
+        "error": "pi timeout after 90000ms"
+      },
+      {
+        "name": "后端 Guardian 路由检查",
+        "taskId": "t1",
+        "success": false,
+        "timestamp": 1782444567967,
+        "modelUsed": "opencore-go/glm-5.2",
+        "equippedSkills": [
+          "engineering-mode",
+          "output-spec"
+        ],
+        "skillScope": "subAgentEngineering",
+        "startedAt": 1782444477872,
+        "endedAt": 1782444567967,
+        "durationMs": 90095,
+        "status": "timeout",
+        "error": "pi timeout after 90000ms"
+      },
+      {
+        "name": "后端Guardian自动控制逻辑修改",
+        "taskId": "t1",
+        "success": false,
+        "timestamp": 1782438652008,
+        "modelUsed": "opencore-go/glm-5.2",
+        "equippedSkills": [
+          "engineering-mode",
+          "output-spec"
+        ],
+        "skillScope": "subAgentEngineering",
+        "startedAt": 1782438561970,
+        "endedAt": 1782438652008,
+        "durationMs": 90038,
+        "status": "timeout",
+        "error": "pi timeout after 90000ms"
+      },
+      {
+        "name": "后端 Guardian 路由检查",
+        "taskId": "t1",
+        "success": false,
+        "timestamp": 1782438167371,
+        "modelUsed": "opencore-go/glm-5.2",
+        "equippedSkills": [
+          "engineering-mode",
+          "output-spec"
+        ],
+        "skillScope": "subAgentEngineering",
+        "startedAt": 1782438077333,
+        "endedAt": 1782438167371,
+        "durationMs": 90038,
+        "status": "timeout",
+        "error": "pi timeout after 90000ms"
+      },
+      {
+        "name": "后端 Guardian 路由检查",
+        "taskId": "t1",
+        "success": false,
+        "timestamp": 1782416903079,
+        "modelUsed": "opencore-go/glm-5.2",
+        "equippedSkills": [
+          "engineering-mode",
+          "output-spec"
+        ],
+        "skillScope": "subAgentEngineering",
+        "startedAt": 1782416814885,
+        "endedAt": 1782416903062,
+        "durationMs": 88177,
+        "status": "timeout",
+        "error": "pi timeout after 90000ms"
+      },
+      {
+        "name": "后端 Guardian 路由检查",
+        "taskId": "t1",
+        "success": false,
+        "timestamp": 1782416385460,
+        "modelUsed": "opencore-go/glm-5.2",
+        "equippedSkills": [
+          "engineering-mode",
+          "output-spec"
+        ],
+        "skillScope": "subAgentEngineering",
+        "startedAt": 1782416385420,
+        "endedAt": 1782416385459,
+        "durationMs": 39,
+        "status": "error",
+        "error": "pi exited null"
+      },
+      {
+        "name": "后端 Guardian 路由检查",
+        "taskId": "t1",
+        "success": false,
+        "timestamp": 1782414820265,
+        "modelUsed": "opencore-go/glm-5.2",
+        "equippedSkills": [
+          "engineering-mode",
+          "output-spec"
+        ],
+        "skillScope": "subAgentEngineering",
+        "startedAt": 1782414730214,
+        "endedAt": 1782414820264,
+        "durationMs": 90050,
+        "status": "timeout",
+        "error": "pi timeout after 90000ms"
+      },
+      {
+        "name": "后端 Guardian 路由检查",
+        "taskId": "t1",
+        "success": false,
+        "timestamp": 1782414567247,
+        "modelUsed": "opencore-go/glm-5.2",
+        "equippedSkills": [
+          "engineering-mode",
+          "output-spec"
+        ],
+        "skillScope": "subAgentEngineering",
+        "startedAt": 1782414477196,
+        "endedAt": 1782414567246,
+        "durationMs": 90050,
+        "status": "timeout",
+        "error": "pi timeout after 90000ms"
+      },
+      {
+        "name": "后端 Guardian 路由检查",
+        "taskId": "t1",
+        "success": false,
+        "timestamp": 1782413851872,
+        "modelUsed": "opencore-go/glm-5.2",
+        "equippedSkills": [
+          "engineering-mode",
+          "output-spec"
+        ],
+        "skillScope": "subAgentEngineering",
+        "startedAt": 1782413761822,
+        "endedAt": 1782413851872,
+        "durationMs": 90050,
+        "status": "timeout",
+        "error": "pi timeout after 90000ms"
+      },
+      {
+        "name": "后端 Guardian 路由检查",
+        "taskId": "t1",
+        "success": false,
+        "timestamp": 1782410898330,
+        "modelUsed": "opencore-go/glm-5.2",
+        "equippedSkills": [
+          "engineering-mode",
+          "output-spec"
+        ],
+        "skillScope": "subAgentEngineering",
+        "startedAt": 1782410877075,
+        "endedAt": 1782410898329,
+        "durationMs": 21254,
+        "status": "error",
+        "error": "pi exited null"
+      },
+      {
+        "name": "后端 Guardian 路由检查",
+        "taskId": "t1",
+        "success": false,
+        "timestamp": 1782409560627
+      },
+      {
+        "name": "后端添加停止所有Agent的API",
+        "taskId": "t1",
+        "success": false,
+        "timestamp": 1782409125369
+      },
+      {
+        "name": "检查 agent 技能保存与复用实现状态",
+        "taskId": "t3",
+        "success": false,
+        "timestamp": 1782408481416
+      },
+      {
+        "name": "后端 Guardian 路由检查",
+        "taskId": "t1",
+        "success": false,
+        "timestamp": 1782408474808
+      }
+    ],
+    "runHistory": [
+      {
+        "name": "后端 Guardian 路由检查",
+        "taskId": "t1",
+        "success": false,
+        "timestamp": 1782558642807,
+        "modelUsed": "opencore-go/deepseek-v4-flash",
+        "equippedSkills": [
+          "engineering-mode",
+          "output-spec"
+        ],
+        "skillScope": "subAgentEngineering",
+        "startedAt": 1782558634110,
+        "endedAt": 1782558642805,
+        "durationMs": 8695,
+        "status": "error",
+        "error": "pi exited null"
+      },
+      {
+        "name": "后端 Guardian 路由检查",
+        "taskId": "t1",
+        "success": false,
+        "timestamp": 1782472468097,
+        "modelUsed": "opencore-go/glm-5.2",
+        "equippedSkills": [
+          "engineering-mode",
+          "output-spec"
+        ],
+        "skillScope": "subAgentEngineering",
+        "startedAt": 1782472424221,
+        "endedAt": 1782472468097,
+        "durationMs": 43876,
+        "status": "error",
+        "error": "pi exited null"
+      },
+      {
+        "name": "后端 Guardian 路由检查",
+        "taskId": "t1",
+        "success": false,
+        "timestamp": 1782466247644,
+        "modelUsed": "opencore-go/glm-5.2",
+        "equippedSkills": [
+          "engineering-mode",
+          "output-spec"
+        ],
+        "skillScope": "subAgentEngineering",
+        "startedAt": 1782466233457,
+        "endedAt": 1782466247643,
+        "durationMs": 14186,
+        "status": "error",
+        "error": "pi exited null"
+      },
+      {
+        "name": "后端 Guardian 路由检查",
+        "taskId": "t1",
+        "success": true,
+        "timestamp": 1782458314135,
+        "modelUsed": "opencore-go/glm-5.2",
+        "equippedSkills": [
+          "engineering-mode",
+          "output-spec"
+        ],
+        "skillScope": "subAgentEngineering",
+        "startedAt": 1782458237261,
+        "endedAt": 1782458314133,
+        "durationMs": 76872,
+        "status": "completed",
+        "artifactId": "t1-output",
+        "qualityStatus": "ready",
+        "issues": []
+      },
+      {
+        "name": "后端 Guardian 路由检查",
+        "taskId": "t1",
+        "success": false,
+        "timestamp": 1782444611081,
+        "modelUsed": "opencore-go/glm-5.2",
+        "equippedSkills": [
+          "engineering-mode",
+          "output-spec"
+        ],
+        "skillScope": "subAgentEngineering",
+        "startedAt": 1782444521017,
+        "endedAt": 1782444611080,
+        "durationMs": 90063,
+        "status": "timeout",
+        "error": "pi timeout after 90000ms"
+      },
+      {
+        "name": "后端 Guardian 路由检查",
+        "taskId": "t1",
+        "success": false,
+        "timestamp": 1782444567967,
+        "modelUsed": "opencore-go/glm-5.2",
+        "equippedSkills": [
+          "engineering-mode",
+          "output-spec"
+        ],
+        "skillScope": "subAgentEngineering",
+        "startedAt": 1782444477872,
+        "endedAt": 1782444567967,
+        "durationMs": 90095,
+        "status": "timeout",
+        "error": "pi timeout after 90000ms"
+      },
+      {
+        "name": "后端Guardian自动控制逻辑修改",
+        "taskId": "t1",
+        "success": false,
+        "timestamp": 1782438652008,
+        "modelUsed": "opencore-go/glm-5.2",
+        "equippedSkills": [
+          "engineering-mode",
+          "output-spec"
+        ],
+        "skillScope": "subAgentEngineering",
+        "startedAt": 1782438561970,
+        "endedAt": 1782438652008,
+        "durationMs": 90038,
+        "status": "timeout",
+        "error": "pi timeout after 90000ms"
+      },
+      {
+        "name": "后端 Guardian 路由检查",
+        "taskId": "t1",
+        "success": false,
+        "timestamp": 1782438167371,
+        "modelUsed": "opencore-go/glm-5.2",
+        "equippedSkills": [
+          "engineering-mode",
+          "output-spec"
+        ],
+        "skillScope": "subAgentEngineering",
+        "startedAt": 1782438077333,
+        "endedAt": 1782438167371,
+        "durationMs": 90038,
+        "status": "timeout",
+        "error": "pi timeout after 90000ms"
+      },
+      {
+        "name": "后端 Guardian 路由检查",
+        "taskId": "t1",
+        "success": false,
+        "timestamp": 1782416903079,
+        "modelUsed": "opencore-go/glm-5.2",
+        "equippedSkills": [
+          "engineering-mode",
+          "output-spec"
+        ],
+        "skillScope": "subAgentEngineering",
+        "startedAt": 1782416814885,
+        "endedAt": 1782416903062,
+        "durationMs": 88177,
+        "status": "timeout",
+        "error": "pi timeout after 90000ms"
+      },
+      {
+        "name": "后端 Guardian 路由检查",
+        "taskId": "t1",
+        "success": false,
+        "timestamp": 1782416385460,
+        "modelUsed": "opencore-go/glm-5.2",
+        "equippedSkills": [
+          "engineering-mode",
+          "output-spec"
+        ],
+        "skillScope": "subAgentEngineering",
+        "startedAt": 1782416385420,
+        "endedAt": 1782416385459,
+        "durationMs": 39,
+        "status": "error",
+        "error": "pi exited null"
+      },
+      {
+        "name": "后端 Guardian 路由检查",
+        "taskId": "t1",
+        "success": false,
+        "timestamp": 1782414820265,
+        "modelUsed": "opencore-go/glm-5.2",
+        "equippedSkills": [
+          "engineering-mode",
+          "output-spec"
+        ],
+        "skillScope": "subAgentEngineering",
+        "startedAt": 1782414730214,
+        "endedAt": 1782414820264,
+        "durationMs": 90050,
+        "status": "timeout",
+        "error": "pi timeout after 90000ms"
+      },
+      {
+        "name": "后端 Guardian 路由检查",
+        "taskId": "t1",
+        "success": false,
+        "timestamp": 1782414567247,
+        "modelUsed": "opencore-go/glm-5.2",
+        "equippedSkills": [
+          "engineering-mode",
+          "output-spec"
+        ],
+        "skillScope": "subAgentEngineering",
+        "startedAt": 1782414477196,
+        "endedAt": 1782414567246,
+        "durationMs": 90050,
+        "status": "timeout",
+        "error": "pi timeout after 90000ms"
+      },
+      {
+        "name": "后端 Guardian 路由检查",
+        "taskId": "t1",
+        "success": false,
+        "timestamp": 1782413851872,
+        "modelUsed": "opencore-go/glm-5.2",
+        "equippedSkills": [
+          "engineering-mode",
+          "output-spec"
+        ],
+        "skillScope": "subAgentEngineering",
+        "startedAt": 1782413761822,
+        "endedAt": 1782413851872,
+        "durationMs": 90050,
+        "status": "timeout",
+        "error": "pi timeout after 90000ms"
+      },
+      {
+        "name": "后端 Guardian 路由检查",
+        "taskId": "t1",
+        "success": false,
+        "timestamp": 1782410898330,
+        "modelUsed": "opencore-go/glm-5.2",
+        "equippedSkills": [
+          "engineering-mode",
+          "output-spec"
+        ],
+        "skillScope": "subAgentEngineering",
+        "startedAt": 1782410877075,
+        "endedAt": 1782410898329,
+        "durationMs": 21254,
+        "status": "error",
+        "error": "pi exited null"
+      }
+    ],
+    "modelStats": {
+      "opencore-go/glm-5.2": {
+        "uses": 13,
+        "successes": 1,
+        "failures": 12,
+        "timeouts": 8,
+        "totalDurationMs": 874788,
+        "avgDurationMs": 67291
+      },
+      "opencore-go/deepseek-v4-flash": {
+        "uses": 1,
+        "successes": 0,
+        "failures": 1,
+        "timeouts": 0,
+        "totalDurationMs": 8695,
+        "avgDurationMs": 8695
+      }
+    },
+    "skillStats": {
+      "engineering-mode": {
+        "uses": 14,
+        "successes": 1,
+        "failures": 13
+      },
+      "output-spec": {
+        "uses": 14,
+        "successes": 1,
+        "failures": 13
+      }
+    }
+  },
+  "frontend-monitor": {
+    "id": "frontend-monitor",
+    "name": "前端界面与交互",
+    "match": [
+      "pi-frontend",
+      "前端",
+      "监控",
+      "AppShell",
+      "ChatWindow",
+      "useOrchestrate",
+      "SubAgentList",
+      "frontend"
+    ],
+    "defaultModel": "opencore-go/glm-5.2",
+    "skills": [
+      "engineering-mode",
+      "output-spec",
+      "frontend-design"
+    ],
+    "availableSkills": [
+      "engineering-mode",
+      "output-spec",
+      "frontend-design",
+      "stage-flow",
+      "output-engine"
+    ],
+    "collaborationProtocol": "围绕会话 UI、监控面板、交互一致性执行；修改前先锁定影响文件，修改后必须说明用户侧行为变化、状态同步链路和验证方式。",
+    "projectConfig": {
+      "preferredPaths": [
+        "../pi-frontend/components/AppShell.tsx",
+        "../pi-frontend/hooks/useOrchestrate.ts"
+      ],
+      "qualityBar": "前端修改必须说明用户可见变化、状态同步链路和验证方式。"
+    },
+    "systemPromptPatch": "你擅长 React/Next.js 前端状态管理、会话持久化、监控面板、WebSocket UI 和用户交互一致性。优先读取 AppShell、ChatWindow、useOrchestrate、monitor 组件。",
+    "experience": 26,
+    "successes": 0,
+    "failures": 26,
+    "recentTasks": [
+      {
+        "name": "前端监控链路检查",
+        "taskId": "t2",
+        "success": false,
+        "timestamp": 1782558642835,
+        "modelUsed": "opencore-go/deepseek-v4-flash",
+        "equippedSkills": [
+          "engineering-mode",
+          "output-spec",
+          "frontend-design"
+        ],
+        "skillScope": "subAgentEngineering",
+        "startedAt": 1782558634118,
+        "endedAt": 1782558642834,
+        "durationMs": 8716,
+        "status": "error",
+        "error": "pi exited null"
+      },
+      {
+        "name": "前端监控链路检查",
+        "taskId": "t2",
+        "success": false,
+        "timestamp": 1782538683946,
+        "modelUsed": "opencore-go/glm-5.2",
+        "equippedSkills": [
+          "engineering-mode",
+          "output-spec"
+        ],
+        "skillScope": "subAgentEngineering",
+        "startedAt": 1782538629065,
+        "endedAt": 1782538683946,
+        "durationMs": 54881,
+        "status": "error",
+        "error": "pi exited null"
+      },
+      {
+        "name": "前端监控链路检查",
+        "taskId": "t2",
+        "success": false,
+        "timestamp": 1782482079881,
+        "modelUsed": "opencore-go/glm-5.2",
+        "equippedSkills": [
+          "engineering-mode",
+          "output-spec"
+        ],
+        "skillScope": "subAgentEngineering",
+        "startedAt": 1782482070961,
+        "endedAt": 1782482079881,
+        "durationMs": 8920,
+        "status": "error",
+        "error": "pi exited null"
+      },
+      {
+        "name": "前端监控链路检查",
+        "taskId": "t2",
+        "success": false,
+        "timestamp": 1782472438116,
+        "modelUsed": "opencore-go/glm-5.2",
+        "equippedSkills": [
+          "engineering-mode",
+          "output-spec"
+        ],
+        "skillScope": "subAgentEngineering",
+        "startedAt": 1782472424257,
+        "endedAt": 1782472438116,
+        "durationMs": 13859,
+        "status": "error",
+        "error": "pi exited null"
+      },
+      {
+        "name": "前端监控链路检查",
+        "taskId": "t2",
+        "success": false,
+        "timestamp": 1782466247640,
+        "modelUsed": "opencore-go/glm-5.2",
+        "equippedSkills": [
+          "engineering-mode",
+          "output-spec"
+        ],
+        "skillScope": "subAgentEngineering",
+        "startedAt": 1782466233494,
+        "endedAt": 1782466247640,
+        "durationMs": 14146,
+        "status": "error",
+        "error": "pi exited null"
+      },
+      {
+        "name": "前端监控链路检查",
+        "taskId": "t2",
+        "success": false,
+        "timestamp": 1782459425951,
+        "modelUsed": "opencore-go/glm-5.2",
+        "equippedSkills": [
+          "engineering-mode",
+          "output-spec"
+        ],
+        "skillScope": "subAgentEngineering",
+        "startedAt": 1782459363770,
+        "endedAt": 1782459425949,
+        "durationMs": 62179,
+        "status": "error",
+        "error": "pi exited null"
+      },
+      {
+        "name": "前端监控链路检查",
+        "taskId": "t2",
+        "success": false,
+        "timestamp": 1782459412337,
+        "modelUsed": "opencore-go/glm-5.2",
+        "equippedSkills": [
+          "engineering-mode",
+          "output-spec"
+        ],
+        "skillScope": "subAgentEngineering",
+        "startedAt": 1782459322314,
+        "endedAt": 1782459412336,
+        "durationMs": 90022,
+        "status": "timeout",
+        "error": "pi timeout after 90000ms"
+      },
+      {
+        "name": "前端监控链路检查",
+        "taskId": "t2",
+        "success": false,
+        "timestamp": 1782459369460,
+        "modelUsed": "opencore-go/glm-5.2",
+        "equippedSkills": [
+          "engineering-mode",
+          "output-spec"
+        ],
+        "skillScope": "subAgentEngineering",
+        "startedAt": 1782459279427,
+        "endedAt": 1782459369459,
+        "durationMs": 90032,
+        "status": "timeout",
+        "error": "pi timeout after 90000ms"
+      },
+      {
+        "name": "前端监控链路检查",
+        "taskId": "t2",
+        "success": false,
+        "timestamp": 1782458968032,
+        "modelUsed": "opencore-go/glm-5.2",
+        "equippedSkills": [
+          "engineering-mode",
+          "output-spec"
+        ],
+        "skillScope": "subAgentEngineering",
+        "startedAt": 1782458878001,
+        "endedAt": 1782458968031,
+        "durationMs": 90030,
+        "status": "timeout",
+        "error": "pi timeout after 90000ms"
+      },
+      {
+        "name": "前端监控链路检查",
+        "taskId": "t2",
+        "success": false,
+        "timestamp": 1782458590814,
+        "modelUsed": "opencore-go/glm-5.2",
+        "equippedSkills": [
+          "engineering-mode",
+          "output-spec"
+        ],
+        "skillScope": "subAgentEngineering",
+        "startedAt": 1782458500794,
+        "endedAt": 1782458590814,
+        "durationMs": 90020,
+        "status": "timeout",
+        "error": "pi timeout after 90000ms"
+      },
+      {
+        "name": "前端监控链路检查",
+        "taskId": "t2",
+        "success": false,
+        "timestamp": 1782458327322,
+        "modelUsed": "opencore-go/glm-5.2",
+        "equippedSkills": [
+          "engineering-mode",
+          "output-spec"
+        ],
+        "skillScope": "subAgentEngineering",
+        "startedAt": 1782458237274,
+        "endedAt": 1782458327321,
+        "durationMs": 90047,
+        "status": "timeout",
+        "error": "pi timeout after 90000ms"
+      },
+      {
+        "name": "前端监控链路检查",
+        "taskId": "t2",
+        "success": false,
+        "timestamp": 1782444611097,
+        "modelUsed": "opencore-go/glm-5.2",
+        "equippedSkills": [
+          "engineering-mode",
+          "output-spec"
+        ],
+        "skillScope": "subAgentEngineering",
+        "startedAt": 1782444521042,
+        "endedAt": 1782444611097,
+        "durationMs": 90055,
+        "status": "timeout",
+        "error": "pi timeout after 90000ms"
+      },
+      {
+        "name": "前端监控链路检查",
+        "taskId": "t2",
+        "success": false,
+        "timestamp": 1782444567951,
+        "modelUsed": "opencore-go/glm-5.2",
+        "equippedSkills": [
+          "engineering-mode",
+          "output-spec"
+        ],
+        "skillScope": "subAgentEngineering",
+        "startedAt": 1782444477892,
+        "endedAt": 1782444567950,
+        "durationMs": 90058,
+        "status": "timeout",
+        "error": "pi timeout after 90000ms"
+      },
+      {
+        "name": "前端用户关闭事件标记",
+        "taskId": "t2",
+        "success": false,
+        "timestamp": 1782438652014,
+        "modelUsed": "opencore-go/glm-5.2",
+        "equippedSkills": [
+          "engineering-mode",
+          "output-spec",
+          "frontend-design"
+        ],
+        "skillScope": "subAgentEngineering",
+        "startedAt": 1782438561978,
+        "endedAt": 1782438652013,
+        "durationMs": 90035,
+        "status": "timeout",
+        "error": "pi timeout after 90000ms"
+      },
+      {
+        "name": "前端监控链路检查",
+        "taskId": "t2",
+        "success": false,
+        "timestamp": 1782438167380,
+        "modelUsed": "opencore-go/glm-5.2",
+        "equippedSkills": [
+          "engineering-mode",
+          "output-spec"
+        ],
+        "skillScope": "subAgentEngineering",
+        "startedAt": 1782438077339,
+        "endedAt": 1782438167380,
+        "durationMs": 90041,
+        "status": "timeout",
+        "error": "pi timeout after 90000ms"
+      },
+      {
+        "name": "调研并设计 Agent DAG 点击加载对话的交互方案",
+        "taskId": "t1",
+        "success": false,
+        "timestamp": 1782436763979,
+        "modelUsed": "opencore-go/glm-5.2",
+        "equippedSkills": [
+          "engineering-mode",
+          "output-spec",
+          "frontend-design",
+          "output-engine"
+        ],
+        "skillScope": "subAgentEngineering",
+        "startedAt": 1782436673949,
+        "endedAt": 1782436763977,
+        "durationMs": 90028,
+        "status": "timeout",
+        "error": "pi timeout after 90000ms"
+      },
+      {
+        "name": "前端监控链路检查",
+        "taskId": "t2",
+        "success": false,
+        "timestamp": 1782416903087,
+        "modelUsed": "opencore-go/glm-5.2",
+        "equippedSkills": [
+          "engineering-mode",
+          "output-spec"
+        ],
+        "skillScope": "subAgentEngineering",
+        "startedAt": 1782416814906,
+        "endedAt": 1782416903087,
+        "durationMs": 88181,
+        "status": "timeout",
+        "error": "pi timeout after 90000ms"
+      },
+      {
+        "name": "前端监控链路检查",
+        "taskId": "t2",
+        "success": false,
+        "timestamp": 1782416385455,
+        "modelUsed": "opencore-go/glm-5.2",
+        "equippedSkills": [
+          "engineering-mode",
+          "output-spec"
+        ],
+        "skillScope": "subAgentEngineering",
+        "startedAt": 1782416385434,
+        "endedAt": 1782416385454,
+        "durationMs": 20,
+        "status": "error",
+        "error": "pi exited null"
+      },
+      {
+        "name": "前端监控链路检查",
+        "taskId": "t2",
+        "success": false,
+        "timestamp": 1782414820275,
+        "modelUsed": "opencore-go/glm-5.2",
+        "equippedSkills": [
+          "engineering-mode",
+          "output-spec"
+        ],
+        "skillScope": "subAgentEngineering",
+        "startedAt": 1782414730243,
+        "endedAt": 1782414820274,
+        "durationMs": 90031,
+        "status": "timeout",
+        "error": "pi timeout after 90000ms"
+      },
+      {
+        "name": "前端监控链路检查",
+        "taskId": "t2",
+        "success": false,
+        "timestamp": 1782414567243,
+        "modelUsed": "opencore-go/glm-5.2",
+        "equippedSkills": [
+          "engineering-mode",
+          "output-spec"
+        ],
+        "skillScope": "subAgentEngineering",
+        "startedAt": 1782414477200,
+        "endedAt": 1782414567242,
+        "durationMs": 90042,
+        "status": "timeout",
+        "error": "pi timeout after 90000ms"
+      }
+    ],
+    "runHistory": [
+      {
+        "name": "前端监控链路检查",
+        "taskId": "t2",
+        "success": false,
+        "timestamp": 1782558642835,
+        "modelUsed": "opencore-go/deepseek-v4-flash",
+        "equippedSkills": [
+          "engineering-mode",
+          "output-spec",
+          "frontend-design"
+        ],
+        "skillScope": "subAgentEngineering",
+        "startedAt": 1782558634118,
+        "endedAt": 1782558642834,
+        "durationMs": 8716,
+        "status": "error",
+        "error": "pi exited null"
+      },
+      {
+        "name": "前端监控链路检查",
+        "taskId": "t2",
+        "success": false,
+        "timestamp": 1782538683946,
+        "modelUsed": "opencore-go/glm-5.2",
+        "equippedSkills": [
+          "engineering-mode",
+          "output-spec"
+        ],
+        "skillScope": "subAgentEngineering",
+        "startedAt": 1782538629065,
+        "endedAt": 1782538683946,
+        "durationMs": 54881,
+        "status": "error",
+        "error": "pi exited null"
+      },
+      {
+        "name": "前端监控链路检查",
+        "taskId": "t2",
+        "success": false,
+        "timestamp": 1782482079881,
+        "modelUsed": "opencore-go/glm-5.2",
+        "equippedSkills": [
+          "engineering-mode",
+          "output-spec"
+        ],
+        "skillScope": "subAgentEngineering",
+        "startedAt": 1782482070961,
+        "endedAt": 1782482079881,
+        "durationMs": 8920,
+        "status": "error",
+        "error": "pi exited null"
+      },
+      {
+        "name": "前端监控链路检查",
+        "taskId": "t2",
+        "success": false,
+        "timestamp": 1782472438116,
+        "modelUsed": "opencore-go/glm-5.2",
+        "equippedSkills": [
+          "engineering-mode",
+          "output-spec"
+        ],
+        "skillScope": "subAgentEngineering",
+        "startedAt": 1782472424257,
+        "endedAt": 1782472438116,
+        "durationMs": 13859,
+        "status": "error",
+        "error": "pi exited null"
+      },
+      {
+        "name": "前端监控链路检查",
+        "taskId": "t2",
+        "success": false,
+        "timestamp": 1782466247640,
+        "modelUsed": "opencore-go/glm-5.2",
+        "equippedSkills": [
+          "engineering-mode",
+          "output-spec"
+        ],
+        "skillScope": "subAgentEngineering",
+        "startedAt": 1782466233494,
+        "endedAt": 1782466247640,
+        "durationMs": 14146,
+        "status": "error",
+        "error": "pi exited null"
+      },
+      {
+        "name": "前端监控链路检查",
+        "taskId": "t2",
+        "success": false,
+        "timestamp": 1782459425951,
+        "modelUsed": "opencore-go/glm-5.2",
+        "equippedSkills": [
+          "engineering-mode",
+          "output-spec"
+        ],
+        "skillScope": "subAgentEngineering",
+        "startedAt": 1782459363770,
+        "endedAt": 1782459425949,
+        "durationMs": 62179,
+        "status": "error",
+        "error": "pi exited null"
+      },
+      {
+        "name": "前端监控链路检查",
+        "taskId": "t2",
+        "success": false,
+        "timestamp": 1782459412337,
+        "modelUsed": "opencore-go/glm-5.2",
+        "equippedSkills": [
+          "engineering-mode",
+          "output-spec"
+        ],
+        "skillScope": "subAgentEngineering",
+        "startedAt": 1782459322314,
+        "endedAt": 1782459412336,
+        "durationMs": 90022,
+        "status": "timeout",
+        "error": "pi timeout after 90000ms"
+      },
+      {
+        "name": "前端监控链路检查",
+        "taskId": "t2",
+        "success": false,
+        "timestamp": 1782459369460,
+        "modelUsed": "opencore-go/glm-5.2",
+        "equippedSkills": [
+          "engineering-mode",
+          "output-spec"
+        ],
+        "skillScope": "subAgentEngineering",
+        "startedAt": 1782459279427,
+        "endedAt": 1782459369459,
+        "durationMs": 90032,
+        "status": "timeout",
+        "error": "pi timeout after 90000ms"
+      },
+      {
+        "name": "前端监控链路检查",
+        "taskId": "t2",
+        "success": false,
+        "timestamp": 1782458968032,
+        "modelUsed": "opencore-go/glm-5.2",
+        "equippedSkills": [
+          "engineering-mode",
+          "output-spec"
+        ],
+        "skillScope": "subAgentEngineering",
+        "startedAt": 1782458878001,
+        "endedAt": 1782458968031,
+        "durationMs": 90030,
+        "status": "timeout",
+        "error": "pi timeout after 90000ms"
+      },
+      {
+        "name": "前端监控链路检查",
+        "taskId": "t2",
+        "success": false,
+        "timestamp": 1782458590814,
+        "modelUsed": "opencore-go/glm-5.2",
+        "equippedSkills": [
+          "engineering-mode",
+          "output-spec"
+        ],
+        "skillScope": "subAgentEngineering",
+        "startedAt": 1782458500794,
+        "endedAt": 1782458590814,
+        "durationMs": 90020,
+        "status": "timeout",
+        "error": "pi timeout after 90000ms"
+      },
+      {
+        "name": "前端监控链路检查",
+        "taskId": "t2",
+        "success": false,
+        "timestamp": 1782458327322,
+        "modelUsed": "opencore-go/glm-5.2",
+        "equippedSkills": [
+          "engineering-mode",
+          "output-spec"
+        ],
+        "skillScope": "subAgentEngineering",
+        "startedAt": 1782458237274,
+        "endedAt": 1782458327321,
+        "durationMs": 90047,
+        "status": "timeout",
+        "error": "pi timeout after 90000ms"
+      },
+      {
+        "name": "前端监控链路检查",
+        "taskId": "t2",
+        "success": false,
+        "timestamp": 1782444611097,
+        "modelUsed": "opencore-go/glm-5.2",
+        "equippedSkills": [
+          "engineering-mode",
+          "output-spec"
+        ],
+        "skillScope": "subAgentEngineering",
+        "startedAt": 1782444521042,
+        "endedAt": 1782444611097,
+        "durationMs": 90055,
+        "status": "timeout",
+        "error": "pi timeout after 90000ms"
+      },
+      {
+        "name": "前端监控链路检查",
+        "taskId": "t2",
+        "success": false,
+        "timestamp": 1782444567951,
+        "modelUsed": "opencore-go/glm-5.2",
+        "equippedSkills": [
+          "engineering-mode",
+          "output-spec"
+        ],
+        "skillScope": "subAgentEngineering",
+        "startedAt": 1782444477892,
+        "endedAt": 1782444567950,
+        "durationMs": 90058,
+        "status": "timeout",
+        "error": "pi timeout after 90000ms"
+      },
+      {
+        "name": "前端用户关闭事件标记",
+        "taskId": "t2",
+        "success": false,
+        "timestamp": 1782438652014,
+        "modelUsed": "opencore-go/glm-5.2",
+        "equippedSkills": [
+          "engineering-mode",
+          "output-spec",
+          "frontend-design"
+        ],
+        "skillScope": "subAgentEngineering",
+        "startedAt": 1782438561978,
+        "endedAt": 1782438652013,
+        "durationMs": 90035,
+        "status": "timeout",
+        "error": "pi timeout after 90000ms"
+      },
+      {
+        "name": "前端监控链路检查",
+        "taskId": "t2",
+        "success": false,
+        "timestamp": 1782438167380,
+        "modelUsed": "opencore-go/glm-5.2",
+        "equippedSkills": [
+          "engineering-mode",
+          "output-spec"
+        ],
+        "skillScope": "subAgentEngineering",
+        "startedAt": 1782438077339,
+        "endedAt": 1782438167380,
+        "durationMs": 90041,
+        "status": "timeout",
+        "error": "pi timeout after 90000ms"
+      },
+      {
+        "name": "调研并设计 Agent DAG 点击加载对话的交互方案",
+        "taskId": "t1",
+        "success": false,
+        "timestamp": 1782436763979,
+        "modelUsed": "opencore-go/glm-5.2",
+        "equippedSkills": [
+          "engineering-mode",
+          "output-spec",
+          "frontend-design",
+          "output-engine"
+        ],
+        "skillScope": "subAgentEngineering",
+        "startedAt": 1782436673949,
+        "endedAt": 1782436763977,
+        "durationMs": 90028,
+        "status": "timeout",
+        "error": "pi timeout after 90000ms"
+      },
+      {
+        "name": "前端监控链路检查",
+        "taskId": "t2",
+        "success": false,
+        "timestamp": 1782416903087,
+        "modelUsed": "opencore-go/glm-5.2",
+        "equippedSkills": [
+          "engineering-mode",
+          "output-spec"
+        ],
+        "skillScope": "subAgentEngineering",
+        "startedAt": 1782416814906,
+        "endedAt": 1782416903087,
+        "durationMs": 88181,
+        "status": "timeout",
+        "error": "pi timeout after 90000ms"
+      },
+      {
+        "name": "前端监控链路检查",
+        "taskId": "t2",
+        "success": false,
+        "timestamp": 1782416385455,
+        "modelUsed": "opencore-go/glm-5.2",
+        "equippedSkills": [
+          "engineering-mode",
+          "output-spec"
+        ],
+        "skillScope": "subAgentEngineering",
+        "startedAt": 1782416385434,
+        "endedAt": 1782416385454,
+        "durationMs": 20,
+        "status": "error",
+        "error": "pi exited null"
+      },
+      {
+        "name": "前端监控链路检查",
+        "taskId": "t2",
+        "success": false,
+        "timestamp": 1782414820275,
+        "modelUsed": "opencore-go/glm-5.2",
+        "equippedSkills": [
+          "engineering-mode",
+          "output-spec"
+        ],
+        "skillScope": "subAgentEngineering",
+        "startedAt": 1782414730243,
+        "endedAt": 1782414820274,
+        "durationMs": 90031,
+        "status": "timeout",
+        "error": "pi timeout after 90000ms"
+      },
+      {
+        "name": "前端监控链路检查",
+        "taskId": "t2",
+        "success": false,
+        "timestamp": 1782414567243,
+        "modelUsed": "opencore-go/glm-5.2",
+        "equippedSkills": [
+          "engineering-mode",
+          "output-spec"
+        ],
+        "skillScope": "subAgentEngineering",
+        "startedAt": 1782414477200,
+        "endedAt": 1782414567242,
+        "durationMs": 90042,
+        "status": "timeout",
+        "error": "pi timeout after 90000ms"
+      },
+      {
+        "name": "前端监控链路检查",
+        "taskId": "t2",
+        "success": false,
+        "timestamp": 1782413851867,
+        "modelUsed": "opencore-go/glm-5.2",
+        "equippedSkills": [
+          "engineering-mode",
+          "output-spec"
+        ],
+        "skillScope": "subAgentEngineering",
+        "startedAt": 1782413761827,
+        "endedAt": 1782413851865,
+        "durationMs": 90038,
+        "status": "timeout",
+        "error": "pi timeout after 90000ms"
+      }
+    ],
+    "modelStats": {
+      "opencore-go/glm-5.2": {
+        "uses": 20,
+        "successes": 0,
+        "failures": 20,
+        "timeouts": 14,
+        "totalDurationMs": 1412665,
+        "avgDurationMs": 70633
+      },
+      "opencore-go/deepseek-v4-flash": {
+        "uses": 1,
+        "successes": 0,
+        "failures": 1,
+        "timeouts": 0,
+        "totalDurationMs": 8716,
+        "avgDurationMs": 8716
+      }
+    },
+    "skillStats": {
+      "engineering-mode": {
+        "uses": 21,
+        "successes": 0,
+        "failures": 21
+      },
+      "output-spec": {
+        "uses": 21,
+        "successes": 0,
+        "failures": 21
+      },
+      "frontend-design": {
+        "uses": 3,
+        "successes": 0,
+        "failures": 3
+      },
+      "output-engine": {
+        "uses": 1,
+        "successes": 0,
+        "failures": 1
+      }
+    }
+  },
+  "artifact-flow": {
+    "id": "artifact-flow",
+    "name": "协作流与交付物",
+    "match": [
+      "物料",
+      "artifact",
+      "registry",
+      "交付物",
+      "流转",
+      "协作",
+      "handoff"
+    ],
+    "defaultModel": "opencore-go/glm-5.2",
+    "skills": [
+      "output-spec",
+      "output-engine"
+    ],
+    "availableSkills": [
+      "stage-manager",
+      "stage-flow",
+      "output-engine",
+      "output-spec"
+    ],
+    "collaborationProtocol": "专注 producer/consumer/status/issues/version；必须把上下游关系、缺口、可复用交付物说清楚，不能只给模糊摘要。",
+    "projectConfig": {
+      "preferredPaths": [
+        "<WORKSPACE>/<sessionId>/artifacts",
+        "monitor-server.js"
+      ],
+      "qualityBar": "交付物必须清楚标出 producer/consumer/status/issues。"
+    },
+    "systemPromptPatch": "你擅长多 Agent 物料协议、artifact registry、上下游交付、质量门、修订循环和任务状态流转。输出必须关注 producer/consumer/status/issues。",
+    "experience": 1,
+    "successes": 0,
+    "failures": 1,
+    "recentTasks": [
+      {
+        "name": "检查 artifact flow（物料流转）实现状态",
+        "taskId": "t1",
+        "success": false,
+        "timestamp": 1782408481427
+      }
+    ]
+  },
+  "artifact-reviewer": {
+    "id": "artifact-reviewer",
+    "name": "交付审阅",
+    "match": [
+      "review",
+      "审稿",
+      "usable",
+      "可用性",
+      "artifact review",
+      "质量门",
+      "验收"
+    ],
+    "defaultModel": "opencore-go/deepseek-v4-flash",
+    "skills": [
+      "output-spec",
+      "output-engine"
+    ],
+    "availableSkills": [
+      "stage-manager",
+      "output-spec",
+      "output-engine",
+      "artifact-storage"
+    ],
+    "collaborationProtocol": "只负责为 Lead 生成审稿备忘，不直接替 Lead 做最终 accept/reject。必须按 usable 标准指出可用、不可用、缺口和建议。",
+    "projectConfig": {
+      "preferredPaths": [
+        "/tmp/pi-multi-agent/<sessionId>/artifacts"
+      ],
+      "qualityBar": "审稿输出必须明确 usable 判断依据、关键缺口、建议动作。"
+    },
+    "systemPromptPatch": "你是 Lead 的审稿助手。你的职责是替 Lead 先做一轮 artifact 可用性梳理，输出审稿备忘，而不是越权做最终裁决。",
+    "experience": 0,
+    "successes": 0,
+    "failures": 0,
+    "recentTasks": []
+  },
+  "session-memory": {
+    "id": "session-memory",
+    "name": "会话记忆与项目上下文",
+    "match": [
+      "memory",
+      "context.md",
+      "progress.md",
+      "bugs.md",
+      "记忆",
+      "阶段状态",
+      "上下文"
+    ],
+    "defaultModel": "opencore-go/deepseek-v4-flash",
+    "skills": [
+      "output-spec"
+    ],
+    "availableSkills": [
+      "stage-flow",
+      "stage-manager",
+      "output-spec",
+      "output-engine"
+    ],
+    "collaborationProtocol": "专注长期状态维护；任何输出都要落到 context/progress/bugs 三份记忆文件，保证下一轮 Agent 可直接接力。",
+    "projectConfig": {
+      "preferredPaths": [
+        "agent_memory/context.md",
+        "agent_memory/progress.md",
+        "agent_memory/bugs.md"
+      ],
+      "qualityBar": "记忆更新必须能支撑下一轮 Agent 直接接手。"
+    },
+    "systemPromptPatch": "你擅长 session/context/progress/bugs 维护、阶段状态归档、长期上下文压缩与恢复。优先关注 agent_memory 与 flowState 的一致性。",
+    "experience": 0,
+    "successes": 0,
+    "failures": 0,
+    "recentTasks": []
+  },
+  "debug-teacher": {
+    "id": "debug-teacher",
+    "name": "调试与纠偏",
+    "match": [
+      "debug",
+      "调教",
+      "修复",
+      "bugfix",
+      "不可用",
+      "复盘",
+      "teaching"
+    ],
+    "defaultModel": "opencore-go/deepseek-v4-pro",
+    "skills": [
+      "engineering-mode",
+      "output-spec"
+    ],
+    "availableSkills": [
+      "engineering-mode",
+      "output-spec",
+      "output-engine",
+      "stage-flow"
+    ],
+    "collaborationProtocol": "当原子 Agent 结果不可用时，按 Lead 的可用标准执行一次强模型修复；必须返回修改内容、修改原因、原子 Agent 以后应该避免什么。",
+    "projectConfig": {
+      "preferredPaths": [
+        "monitor-server.js",
+        "../pi-frontend/components/AppShell.tsx"
+      ],
+      "qualityBar": "修复结果必须说明改了什么、为什么这样改、以后如何避免。"
+    },
+    "systemPromptPatch": "你不是普通执行 Agent，而是强模型纠偏器。目标是修复明确 bug、给出修改原因，并沉淀成可复用的 teaching note。若执行代码修改，默认只允许增改，不允许自由删减；必须先列出保留代码块，若必须删除则先声明删除理由，并尽量用 diff/最小替换块表达修改。",
+    "experience": 0,
+    "successes": 0,
+    "failures": 0,
+    "recentTasks": []
+  },
+  "agent-coach": {
+    "id": "agent-coach",
+    "name": "强模型示范助手",
+    "match": [
+      "coach",
+      "调教",
+      "compare",
+      "差异",
+      "不满意",
+      "继续优化",
+      "teaching"
+    ],
+    "defaultModel": "opencore-go/deepseek-v4-pro",
+    "skills": [
+      "output-engine",
+      "output-spec"
+    ],
+    "availableSkills": [
+      "engineering-mode",
+      "output-engine",
+      "output-spec",
+      "stage-flow"
+    ],
+    "collaborationProtocol": "只在 Lead 判定值得进入调教链路后进入。先由最强模型示范理想方案，再帮助 Lead 分析原子 Agent 失败原因与修正要求，最终把经验教回原始子 Agent。",
+    "projectConfig": {
+      "preferredPaths": [
+        "/tmp/pi-multi-agent/<sessionId>/artifacts"
+      ],
+      "qualityBar": "必须明确指出差别、改动原因、回灌经验。"
+    },
+    "systemPromptPatch": "你是 Lead 调教链路中的强模型示范助手。不要包办整个调教流程；你的职责是先示范理想方案、分析原子 Agent 失误原因，并给出可回灌的 teaching note。",
+    "experience": 0,
+    "successes": 0,
+    "failures": 0,
+    "recentTasks": []
+  },
+  "memory-curator": {
+    "id": "memory-curator",
+    "name": "记忆整理与摘要",
+    "match": [
+      "memory",
+      "curator",
+      "context",
+      "progress",
+      "bugs",
+      "沉淀",
+      "总结"
+    ],
+    "defaultModel": "opencore-go/deepseek-v4-flash",
+    "skills": [
+      "output-spec"
+    ],
+    "availableSkills": [
+      "output-spec",
+      "output-engine",
+      "stage-flow",
+      "stage-manager"
+    ],
+    "collaborationProtocol": "负责把本轮已确认结论、阶段推进、bug 和经验整理成给 memory 系统消费的摘要，不替代 Lead 做最终结论。",
+    "projectConfig": {
+      "preferredPaths": [
+        "agent_memory/context.md",
+        "agent_memory/progress.md",
+        "agent_memory/bugs.md"
+      ],
+      "qualityBar": "摘要必须可直接写回 context/progress/bugs。"
+    },
+    "systemPromptPatch": "你是记忆整理助手。职责是把本轮确认过的信息沉淀成可复用 memory 摘要。",
+    "experience": 0,
+    "successes": 0,
+    "failures": 0,
+    "recentTasks": []
+  },
+  "general-executor": {
+    "id": "general-executor",
+    "name": "通用执行",
+    "match": [],
+    "defaultModel": "opencore-go/deepseek-v4-flash",
+    "skills": [
+      "output-engine",
+      "output-spec"
+    ],
+    "availableSkills": [
+      "output-engine",
+      "output-spec"
+    ],
+    "collaborationProtocol": "任务不明确时先收敛边界；执行后必须给出可交接结果、风险和下一步建议。",
+    "projectConfig": {
+      "preferredPaths": [],
+      "qualityBar": "至少给出可交接结果、风险和下一步建议。"
+    },
+    "systemPromptPatch": "你是通用执行 Agent。任务不明确时先给出最小可执行结果，并标注缺失信息。",
+    "experience": 1,
+    "successes": 1,
+    "failures": 0,
+    "recentTasks": [
+      {
+        "name": "读取 MULTI_AGENT_SYSTEM.md",
+        "taskId": "t1",
+        "success": true,
+        "timestamp": 1782487055752,
+        "modelUsed": "opencore-go/deepseek-v4-flash",
+        "equippedSkills": [
+          "engineering-mode",
+          "output-spec"
+        ],
+        "skillScope": "subAgentEngineering",
+        "startedAt": 1782487041120,
+        "endedAt": 1782487055751,
+        "durationMs": 14631,
+        "status": "completed",
+        "artifactId": "t1-output",
+        "qualityStatus": "ready",
+        "issues": []
+      }
+    ],
+    "runHistory": [
+      {
+        "name": "读取 MULTI_AGENT_SYSTEM.md",
+        "taskId": "t1",
+        "success": true,
+        "timestamp": 1782487055752,
+        "modelUsed": "opencore-go/deepseek-v4-flash",
+        "equippedSkills": [
+          "engineering-mode",
+          "output-spec"
+        ],
+        "skillScope": "subAgentEngineering",
+        "startedAt": 1782487041120,
+        "endedAt": 1782487055751,
+        "durationMs": 14631,
+        "status": "completed",
+        "artifactId": "t1-output",
+        "qualityStatus": "ready",
+        "issues": []
+      }
+    ],
+    "modelStats": {
+      "opencore-go/deepseek-v4-flash": {
+        "uses": 1,
+        "successes": 1,
+        "failures": 0,
+        "timeouts": 0,
+        "totalDurationMs": 14631,
+        "avgDurationMs": 14631
+      }
+    },
+    "skillStats": {
+      "engineering-mode": {
+        "uses": 1,
+        "successes": 1,
+        "failures": 0
+      },
+      "output-spec": {
+        "uses": 1,
+        "successes": 1,
+        "failures": 0
+      }
+    }
+  }
+}

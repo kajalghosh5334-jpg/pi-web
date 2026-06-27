@@ -1,0 +1,18 @@
+# macOS
+.DS_Store
+
+# Dependencies (handled by sub-.gitignore too)
+node_modules/
+
+# Build artifacts
+.next/
+dist/
+*.tsbuildinfo
+
+# Env files
+.env*
+
+# Editor
+.vscode/
+.idea/
+.zed/

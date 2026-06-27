@@ -1,0 +1,28 @@
+{
+  "restart-check": {
+    "id": "restart-check",
+    "name": "Restart Check",
+    "description": "",
+    "leadProfileId": "lead-agent",
+    "reviewPolicy": "lead_plus_reviewer",
+    "sourceSessionId": "",
+    "cwd": "",
+    "projectId": "",
+    "createdAt": 1782551161490,
+    "updatedAt": 1782551161490,
+    "tasks": []
+  },
+  "workflow-ui-check": {
+    "id": "workflow-ui-check",
+    "name": "Workflow UI Check",
+    "description": "",
+    "leadProfileId": "lead-agent",
+    "reviewPolicy": "lead_plus_reviewer",
+    "sourceSessionId": "",
+    "cwd": "",
+    "projectId": "",
+    "createdAt": 1782552432124,
+    "updatedAt": 1782552432124,
+    "tasks": []
+  }
+}
