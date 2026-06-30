@@ -567,15 +567,17 @@ function buildPendingCapabilityProfile(providerName: string, model: ModelEntry, 
   };
 }
 
-function collectWeakModelsNeedingProbe(draft: ModelsJson, previous?: ModelsJson): string[] {
+function collectModelsNeedingProbe(draft: ModelsJson, previous?: ModelsJson): string[] {
   const keys = new Set<string>();
   for (const [providerName, provider] of Object.entries(draft.providers ?? {})) {
     for (const model of provider.models ?? []) {
-      if (!model.id.trim() || model.role !== "weak") continue;
+      if (!model.id.trim()) continue;
       const key = modelKey(providerName, model.id);
       const profile = draft.modelSetup?.capabilityProfiles?.[key];
       const previousProfile = previous?.modelSetup?.capabilityProfiles?.[key];
-      if (!previousProfile || !profile || profile.testSuiteVersion !== CAPABILITY_TEST_SUITE_VERSION || profile.status === "untested") {
+      const previousEntry = previous ? findModelInConfig(previous, key) : null;
+      const modelChanged = Boolean(previousEntry && modelProbeFingerprint(model, provider) !== modelProbeFingerprint(previousEntry.model, previousEntry.provider));
+      if (!previousProfile || !profile || profile.testSuiteVersion !== CAPABILITY_TEST_SUITE_VERSION || profile.status === "untested" || modelChanged) {
         keys.add(key);
       }
     }
@@ -583,12 +585,27 @@ function collectWeakModelsNeedingProbe(draft: ModelsJson, previous?: ModelsJson)
   return [...keys];
 }
 
-function findModelInConfig(draft: ModelsJson, key: string): { providerName: string; model: ModelEntry } | null {
+function findModelInConfig(draft: ModelsJson, key: string): { providerName: string; provider: ProviderEntry; model: ModelEntry } | null {
   for (const [providerName, provider] of Object.entries(draft.providers ?? {})) {
     const model = (provider.models ?? []).find((item) => modelKey(providerName, item.id) === key);
-    if (model) return { providerName, model };
+    if (model) return { providerName, provider, model };
   }
   return null;
+}
+
+function modelProbeFingerprint(model: ModelEntry, provider?: ProviderEntry): string {
+  return JSON.stringify({
+    providerApi: provider?.api ?? "",
+    providerBaseUrl: provider?.baseUrl ?? "",
+    modelApi: model.api ?? "",
+    role: model.role ?? "",
+    capabilities: [...(model.capabilities ?? [])].sort(),
+    profileHints: [...(model.profileHints ?? [])].sort(),
+    reasoning: Boolean(model.reasoning),
+    input: [...(model.input ?? [])].sort(),
+    output: [...(model.output ?? [])].sort(),
+    compat: model.compat ?? null,
+  });
 }
 
 function scrubClientSecrets(draft: ModelsJson): ModelsJson {
@@ -2111,6 +2128,254 @@ function SetupGuidePanel({
   );
 }
 
+type OnboardingState =
+  | { phase: "idle" }
+  | { phase: "saving"; message: string }
+  | { phase: "error"; message: string }
+  | { phase: "success"; message: string };
+
+function InitialApiSetup({
+  onComplete,
+}: {
+  onComplete: (config: ModelsJson, providerName: string, modelIndex: number) => void;
+}) {
+  const [providerName, setProviderName] = useState("openrouter");
+  const [baseUrl, setBaseUrl] = useState("https://openrouter.ai/api/v1");
+  const [apiKey, setApiKey] = useState("");
+  const [api, setApi] = useState<typeof API_OPTIONS[number]>("openai-completions");
+  const [state, setState] = useState<OnboardingState>({ phase: "idle" });
+
+  const canStart = providerName.trim().length > 0 && baseUrl.trim().length > 0 && apiKey.trim().length > 0 && state.phase !== "saving";
+
+  const handlePreset = (preset: typeof AGGREGATOR_PRESETS[number]) => {
+    setProviderName(preset.id);
+    setBaseUrl(preset.baseUrl);
+    setApi(preset.api as typeof API_OPTIONS[number]);
+  };
+
+  const handleStart = useCallback(async () => {
+    if (!canStart) return;
+    setState({ phase: "saving", message: "Fetching model catalog..." });
+    try {
+      const provider: ProviderEntry = {
+        baseUrl: baseUrl.trim(),
+        api,
+        apiKey: apiKey.trim(),
+      };
+      const catalogRes = await fetch("/api/models-config/catalog", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ baseUrl: provider.baseUrl, apiKey: provider.apiKey }),
+      });
+      const catalog = await catalogRes.json() as { ok?: boolean; models?: CatalogModel[]; error?: string };
+      if (!catalogRes.ok || !catalog.ok) {
+        throw new Error(catalog.error ?? `HTTP ${catalogRes.status}`);
+      }
+      const models = (catalog.models ?? [])
+        .filter((model) => model.id.trim())
+        .slice(0, 12)
+        .map((model, index): ModelEntry => ({
+          id: model.id,
+          name: model.name && model.name !== model.id ? model.name : undefined,
+          contextWindow: model.contextWindow,
+          role: index === 0 ? "strong" : "weak",
+        }));
+      if (!models.length) throw new Error("No models were returned from this endpoint.");
+
+      const nextProvider = { ...provider, models };
+      const nextConfig: ModelsJson = {
+        providers: { [providerName.trim()]: nextProvider },
+        modelSetup: {
+          guideModel: modelKey(providerName.trim(), models[0].id),
+          testSuiteVersion: CAPABILITY_TEST_SUITE_VERSION,
+          capabilityProfiles: Object.fromEntries(models.map((model) => [
+            modelKey(providerName.trim(), model.id),
+            buildPendingCapabilityProfile(providerName.trim(), model, modelKey(providerName.trim(), models[0].id)),
+          ])),
+        },
+      };
+
+      setState({ phase: "saving", message: "Saving configuration..." });
+      const saveRes = await fetch("/api/models-config", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(nextConfig),
+      });
+      const saved = await saveRes.json() as { success?: boolean; error?: string };
+      if (!saveRes.ok || saved.error) throw new Error(saved.error ?? `HTTP ${saveRes.status}`);
+
+      setState({ phase: "success", message: `Imported ${models.length} models. Opening role setup...` });
+      onComplete(nextConfig, providerName.trim(), 0);
+    } catch (error) {
+      setState({ phase: "error", message: error instanceof Error ? error.message : String(error) });
+    }
+  }, [api, apiKey, baseUrl, canStart, onComplete, providerName]);
+
+  return (
+    <div style={{ height: "100%", display: "grid", alignContent: "center", justifyItems: "center", padding: 28 }}>
+      <div style={{ width: "min(620px, 100%)", display: "grid", gap: 18 }}>
+        <div>
+          <SectionTitle>Model API setup</SectionTitle>
+          <div style={{ marginTop: 6, fontSize: 18, fontWeight: 750, color: "var(--text)" }}>Connect an API endpoint</div>
+          <div style={{ marginTop: 6, fontSize: 12, color: "var(--text-muted)", lineHeight: 1.55 }}>
+            Add the request address and key once. The catalog will be imported, the first model becomes the guide, and capability tests start in the background.
+          </div>
+        </div>
+
+        <div style={{ display: "flex", gap: 7, flexWrap: "wrap" }}>
+          {AGGREGATOR_PRESETS.slice(0, 4).map((preset) => (
+            <button
+              key={preset.id}
+              type="button"
+              onClick={() => handlePreset(preset)}
+              style={{
+                height: 28,
+                padding: "0 9px",
+                border: `1px solid ${providerName === preset.id ? "var(--accent)" : "var(--border)"}`,
+                borderRadius: 6,
+                background: providerName === preset.id ? "color-mix(in srgb, var(--accent) 12%, var(--bg-panel))" : "var(--bg-panel)",
+                color: providerName === preset.id ? "var(--text)" : "var(--text-muted)",
+                cursor: "pointer",
+                fontSize: 11,
+              }}
+            >
+              {preset.name}
+            </button>
+          ))}
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+          <Field label="Provider name">
+            <TextInput value={providerName} onChange={setProviderName} placeholder="openrouter" mono />
+          </Field>
+          <Field label="Request URL">
+            <TextInput value={baseUrl} onChange={setBaseUrl} placeholder="https://api.example.com/v1" mono />
+          </Field>
+        </div>
+        <Field label="API key">
+          <SecretTextInput value={apiKey} onChange={setApiKey} placeholder="sk-..." mono />
+        </Field>
+        <Field label="API format">
+          <ApiFormatPicker value={api} onChange={(value) => setApi((value || "openai-completions") as typeof API_OPTIONS[number])} />
+        </Field>
+
+        {state.phase === "error" ? (
+          <div style={{ fontSize: 12, color: "#f87171", lineHeight: 1.5 }}>{state.message}</div>
+        ) : state.phase === "saving" || state.phase === "success" ? (
+          <div style={{ fontSize: 12, color: state.phase === "success" ? "#16a34a" : "var(--text-muted)", lineHeight: 1.5 }}>{state.message}</div>
+        ) : null}
+
+        <div style={{ display: "flex", justifyContent: "flex-end" }}>
+          <button
+            type="button"
+            onClick={handleStart}
+            disabled={!canStart}
+            style={{
+              height: 34,
+              padding: "0 14px",
+              border: "none",
+              borderRadius: 6,
+              background: canStart ? "var(--accent)" : "var(--bg-panel)",
+              color: canStart ? "#fff" : "var(--text-dim)",
+              cursor: canStart ? "pointer" : "not-allowed",
+              fontSize: 13,
+              fontWeight: 700,
+            }}
+          >
+            {state.phase === "saving" ? "Connecting..." : "Connect and import models"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ModelRoleSetupPanel({
+  items,
+  guideLabel,
+  onSelectModel,
+  onSetGuide,
+  onUpdateModel,
+  onOpenCapabilitySummary,
+}: {
+  items: Array<{ providerName: string; index: number; model: ModelEntry; profile?: CapabilityProfile; isProbing: boolean }>;
+  guideLabel: string | null;
+  onSelectModel: (providerName: string, index: number) => void;
+  onSetGuide: (providerName: string, index: number) => void;
+  onUpdateModel: (providerName: string, index: number, model: ModelEntry) => void;
+  onOpenCapabilitySummary: () => void;
+}) {
+  const configuredItems = items.filter((item) => item.model.id.trim());
+  if (!configuredItems.length) return null;
+
+  return (
+    <div style={{ marginBottom: 16, border: "1px solid var(--border)", borderRadius: 8, background: "color-mix(in srgb, var(--bg-panel) 80%, transparent)", overflow: "hidden" }}>
+      <div style={{ padding: "10px 12px", borderBottom: "1px solid var(--border)", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
+        <div style={{ minWidth: 0 }}>
+          <div style={{ fontSize: 12, fontWeight: 750, color: "var(--text)" }}>Role and capability setup</div>
+          <div title={guideLabel || undefined} style={{ marginTop: 2, fontSize: 11, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            {guideLabel ? `Guide: ${guideLabel}` : "Pick one strong guide, then mark worker models and boundaries."}
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={onOpenCapabilitySummary}
+          style={{ height: 28, padding: "0 9px", border: "1px solid var(--border)", borderRadius: 6, background: "var(--bg)", color: "var(--text-muted)", cursor: "pointer", fontSize: 12, flexShrink: 0 }}
+        >
+          Test overview
+        </button>
+      </div>
+      <div style={{ display: "grid" }}>
+        {configuredItems.slice(0, 8).map((item) => {
+          const key = modelKey(item.providerName, item.model.id);
+          const isGuide = guideLabel === key;
+          const tested = isProfileTested(item.profile);
+          const testing = item.isProbing || item.profile?.status === "testing";
+          const statusText = testing ? "testing" : tested ? "tested" : "pending";
+          const setModel = (patch: Partial<ModelEntry>) => onUpdateModel(item.providerName, item.index, { ...item.model, ...patch });
+          return (
+            <div key={key} style={{ display: "grid", gridTemplateColumns: "minmax(180px, 1fr) minmax(150px, 0.9fr) minmax(220px, 1.2fr) 72px", gap: 10, alignItems: "center", padding: "9px 12px", borderBottom: "1px solid var(--border)" }}>
+              <button
+                type="button"
+                onClick={() => onSelectModel(item.providerName, item.index)}
+                title={key}
+                style={{ border: "none", background: "transparent", color: "var(--text)", cursor: "pointer", fontSize: 12, fontFamily: "var(--font-mono)", textAlign: "left", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+              >
+                {key}
+              </button>
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                <TogglePill label="Weak" active={item.model.role === "weak"} onClick={() => setModel({ role: item.model.role === "weak" ? undefined : "weak" })} />
+                <TogglePill label="Strong" active={item.model.role === "strong"} onClick={() => {
+                  setModel({ role: item.model.role === "strong" && !isGuide ? undefined : "strong" });
+                  if (!isGuide) onSetGuide(item.providerName, item.index);
+                }} />
+              </div>
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                {MODEL_CAPABILITIES.slice(0, 5).map((capability) => (
+                  <TogglePill
+                    key={capability.id}
+                    label={capability.label}
+                    active={(item.model.capabilities ?? []).includes(capability.id)}
+                    onClick={() => setModel({ capabilities: toggleString(item.model.capabilities, capability.id) })}
+                  />
+                ))}
+              </div>
+              <span style={{ justifySelf: "end", fontSize: 10, color: testing ? "#f59e0b" : tested ? "#16a34a" : "var(--text-dim)", border: "1px solid var(--border)", borderRadius: 5, padding: "2px 6px" }}>
+                {statusText}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+      {configuredItems.length > 8 ? (
+        <div style={{ padding: "8px 12px", fontSize: 11, color: "var(--text-dim)" }}>
+          Showing 8 of {configuredItems.length}. Use the model tree for the full list.
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 function CapabilitySummaryView({
   items,
   onSelectModel,
@@ -2512,7 +2777,7 @@ export function ModelsConfig({ onClose }: { onClose: () => void }) {
 
     for (const { providerName, model } of entries) {
       const key = modelKey(providerName, model.id);
-      if (model.role === "weak" && !capabilityProfiles[key]) {
+      if (!capabilityProfiles[key]) {
         capabilityProfiles[key] = buildPendingCapabilityProfile(providerName, model, guideModel);
       }
     }
@@ -2529,8 +2794,8 @@ export function ModelsConfig({ onClose }: { onClose: () => void }) {
     };
   }, []);
 
-  const triggerCapabilityProbe = useCallback(async (key: string, dimensions?: string[]) => {
-    const runningConfig = normalizeForSave(config);
+  const triggerCapabilityProbe = useCallback(async (key: string, dimensions?: string[], sourceConfig = config) => {
+    const runningConfig = normalizeForSave(sourceConfig);
     const found = findModelInConfig(runningConfig, key);
     if (!found || !found.model.id.trim()) return;
 
@@ -2630,7 +2895,7 @@ export function ModelsConfig({ onClose }: { onClose: () => void }) {
     setSavedOk(false);
     try {
       const nextConfig = normalizeForSave(config);
-      const weakProbeKeys = collectWeakModelsNeedingProbe(nextConfig, config);
+      const weakProbeKeys = collectModelsNeedingProbe(nextConfig, config);
       setConfig(nextConfig);
       const res = await fetch("/api/models-config", {
         method: "PUT",
@@ -2645,9 +2910,11 @@ export function ModelsConfig({ onClose }: { onClose: () => void }) {
         setSavedSnapshot(JSON.stringify(clientConfig));
         setSavedOk(true);
         setTimeout(() => setSavedOk(false), 2000);
-        for (const key of weakProbeKeys) {
-          void triggerCapabilityProbe(key);
-        }
+        void (async () => {
+          for (const key of weakProbeKeys) {
+            await triggerCapabilityProbe(key);
+          }
+        })();
       }
     } catch (e) {
       setSaveError(String(e));
@@ -2688,6 +2955,21 @@ export function ModelsConfig({ onClose }: { onClose: () => void }) {
   const setupIncomplete = !guideLabel || weakCount === 0 || strongCount === 0 || testedWeakCount < weakCount || inconclusiveWeakCount > 0;
   const activeOAuth = oauthProviders.filter((p) => p.loggedIn);
   const activeApiKey = apiKeyProviders.filter((p) => p.configured);
+  const showInitialSetup = !loading && validModelCount === 0;
+  const handleInitialSetupComplete = (nextConfig: ModelsJson, providerName: string, modelIndex: number) => {
+    setConfig(nextConfig);
+    setSavedSnapshot(JSON.stringify(nextConfig));
+    setSavedOk(true);
+    setGuideMode("assisted");
+    setGuideDrawerOpen(false);
+    setSelection({ type: "model", providerName, index: modelIndex });
+    setTimeout(() => setSavedOk(false), 2000);
+    void (async () => {
+      for (const model of nextConfig.providers?.[providerName]?.models ?? []) {
+        if (model.id.trim()) await triggerCapabilityProbe(modelKey(providerName, model.id), undefined, nextConfig);
+      }
+    })();
+  };
   const selectFirstProvider = () => {
     const first = providers[0]?.[0];
     if (first) setSelection({ type: "provider", name: first });
@@ -2848,6 +3130,10 @@ export function ModelsConfig({ onClose }: { onClose: () => void }) {
           </div>
         </div>
 
+        {showInitialSetup ? (
+          <InitialApiSetup onComplete={handleInitialSetupComplete} />
+        ) : (
+        <>
         {/* Body */}
         <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
 
@@ -3011,19 +3297,30 @@ export function ModelsConfig({ onClose }: { onClose: () => void }) {
               {loading ? null : (
                 <>
                   {setupIncomplete && (
-                    <SetupGuidePanel
-                      providerCount={providers.length}
-                      modelCount={validModelCount}
-                      weakCount={weakCount}
-                      strongCount={strongCount}
-                      guideLabel={guideLabel}
-                      testedCount={testedWeakCount}
-                      inconclusiveCount={inconclusiveWeakCount}
-                      onAddProvider={() => setPickerOpen(true)}
-                      onSelectFirstProvider={selectFirstProvider}
-                      onSelectFirstModel={selectFirstModel}
-                      onOpenCapabilitySummary={() => setSelection({ type: "capabilities" })}
-                    />
+                    validModelCount > 0 ? (
+                      <ModelRoleSetupPanel
+                        items={modelInventory.map((item) => ({ ...item, isProbing: Boolean(item.key && probeBusyByKey[item.key]) }))}
+                        guideLabel={guideLabel}
+                        onSelectModel={(providerName, index) => setSelection({ type: "model", providerName, index })}
+                        onSetGuide={setGuideModel}
+                        onUpdateModel={updateModel}
+                        onOpenCapabilitySummary={() => setSelection({ type: "capabilities" })}
+                      />
+                    ) : (
+                      <SetupGuidePanel
+                        providerCount={providers.length}
+                        modelCount={validModelCount}
+                        weakCount={weakCount}
+                        strongCount={strongCount}
+                        guideLabel={guideLabel}
+                        testedCount={testedWeakCount}
+                        inconclusiveCount={inconclusiveWeakCount}
+                        onAddProvider={() => setPickerOpen(true)}
+                        onSelectFirstProvider={selectFirstProvider}
+                        onSelectFirstModel={selectFirstModel}
+                        onOpenCapabilitySummary={() => setSelection({ type: "capabilities" })}
+                      />
+                    )
                   )}
                   {detailContent ?? (
                     <div style={{ height: "100%", display: "grid", alignContent: "center", justifyItems: "center", gap: 10, color: "var(--text-dim)", fontSize: 13, textAlign: "center" }}>
@@ -3087,6 +3384,8 @@ export function ModelsConfig({ onClose }: { onClose: () => void }) {
             <span>{savedOk ? "Saved" : saving ? "Saving…" : "Save"}</span>
           </button>
         </div>
+        </>
+        )}
       </div>
     </div>
     {pickerOpen && (
