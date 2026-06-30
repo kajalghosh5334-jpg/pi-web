@@ -316,9 +316,9 @@
   "self-media-content-pipeline": {
     "id": "self-media-content-pipeline",
     "name": "自媒体内容生产流水线",
-    "description": "从账号定位/选题策略到素材搜集、初稿生成、主编审稿的可复用内容生产 workflow。",
-    "leadProfileId": "strong-task-architect",
-    "reviewPolicy": "lead_plus_reviewer",
+    "description": "从内容策略、素材边界、脚本文案草稿到主编验收的可复用自媒体文案与脚本生成 workflow；最终必须给用户可直接发布/拍摄的成稿。",
+    "leadProfileId": "content-editor-reviewer",
+    "reviewPolicy": "lead_only",
     "sourceSessionId": "",
     "cwd": "/Users/yipengfei/Desktop/pi-fork",
     "projectId": "",
@@ -329,15 +329,19 @@
         "id": "sm-strategy",
         "name": "账号定位与选题策略",
         "profileId": "content-strategy-director",
-        "model": "opencode-go/deepseek-v4-pro",
-        "prompt": "基于本次目标，定义目标受众、平台语境、核心观点、选题角度、不可做清单和验证指标。",
+        "model": "opencode-go/deepseek-v4-flash",
+        "noTools": true,
+        "definitionOfDone": "输出一份不超过 900 字的内容策略卡，供素材与脚本节点消费；不得直接展开成长脚本。",
+        "prompt": "你只负责内容策略卡，不写完整脚本。基于本次目标，用固定字段输出：target_audience、platform_assumption、content_length、core_thesis、angle_options(2-3 个)、evidence_boundary、do_not_do、success_metrics。若用户未提供平台，默认短视频 90-150 秒并标注为假设。禁止编造真实案例、融资金额、转化率、成本数字或来源；没有来源时写 source_status=not_provided。",
         "deps": [],
         "acceptanceCriteria": [
           "包含目标受众",
           "包含平台语境",
           "包含核心观点和选题角度",
           "包含不可做清单",
-          "包含验证指标"
+          "包含验证指标",
+          "明确 evidence_boundary/source_status",
+          "不输出完整长脚本或编造事实"
         ]
       },
       {
@@ -345,7 +349,9 @@
         "name": "素材与竞品搜集",
         "profileId": "content-researcher",
         "model": "opencode-go/deepseek-v4-flash",
-        "prompt": "按策略搜集素材、竞品样本、标题样本、评论区痛点和可用事实；只整理资料，不下最终选题结论。",
+        "noTools": true,
+        "definitionOfDone": "输出一份来源边界清楚的素材包；没有外部来源时只提炼通用行业认知和待补源问题，不得假装已搜索。",
+        "prompt": "按上游策略整理可用于写作的素材包。固定字段：source_status(provided/fetched/not_provided)、usable_claims、audience_pains、title_patterns、script_angles、uncertain_or_needs_source、forbidden_claims。当前 noTools=true 时不得声称已经抓取、搜索或看过竞品/评论；不得发明具体公司案例、数据、链接、引用。只做资料边界和可用观点整理，不做最终成稿。",
         "deps": [
           "sm-strategy"
         ],
@@ -354,7 +360,9 @@
           "包含可用事实",
           "包含用户痛点",
           "包含标题样本",
-          "包含不确定点"
+          "包含不确定点",
+          "区分已提供素材、通用推断和待补源内容",
+          "无来源时不编造竞品/评论/案例"
         ]
       },
       {
@@ -362,7 +370,9 @@
         "name": "内容初稿与平台改写",
         "profileId": "content-draft-producer",
         "model": "opencode-go/deepseek-v4-flash",
-        "prompt": "基于策略和素材生成标题备选、开头钩子、正文结构、正文初稿、CTA 和多平台改写版本。",
+        "noTools": true,
+        "definitionOfDone": "生成可编辑的短视频文案与脚本草稿，必须能被主编节点直接审稿和定稿。",
+        "prompt": "基于上游策略和素材包生成脚本文案草稿，不新增未证实事实。固定字段输出：标题备选(5 个)、3秒钩子(2 个)、核心结构、完整口播脚本(90-150 秒)、分镜/画面建议、字幕精简版、CTA、平台改写建议、待审风险。若需要案例或数字但上游没有来源，用占位符或删去，不得编造。正文必须是可直接编辑的脚本，不要只输出交接包。",
         "deps": [
           "sm-strategy",
           "sm-research"
@@ -371,16 +381,22 @@
           "包含标题备选",
           "包含开头钩子",
           "包含正文结构",
+          "包含完整口播脚本",
+          "包含分镜/画面建议",
+          "包含字幕精简版",
           "包含 CTA",
-          "包含待审风险"
+          "包含待审风险",
+          "不新增上游未支持的事实"
         ]
       },
       {
         "id": "sm-editor",
         "name": "主编审稿与发布稿",
         "profileId": "content-editor-reviewer",
-        "model": "opencode-go/deepseek-v4-pro",
-        "prompt": "审查初稿的事实依据、品牌一致性、表达风险和平台适配；输出发布裁决、修改后的定稿和返工项。",
+        "model": "opencode-go/deepseek-v4-flash",
+        "noTools": true,
+        "definitionOfDone": "输出主编验收后的最终可交付物；用户不打开任何上游 artifact 也能直接拿去发布或拍摄。",
+        "prompt": "你是本 workflow 的最终主编验收节点。审查上游是否满足用户真实意图：文案与脚本生成。必须输出：publish_decision(pass/rework/block)、事实/来源风险检查、表达风险检查、最终标题推荐、最终口播脚本、分镜/画面建议、字幕版精简文案、CTA、发布前人工确认项、返工建议。若上游只有交接包、正文为空、编造来源/数据/案例、缺少完整脚本或缺少字幕/分镜，必须 publish_decision=rework 或 block，并明确返工给哪个节点。最终正文必须自包含，不要只总结路径或引用 artifact。",
         "deps": [
           "sm-draft"
         ],
@@ -389,7 +405,13 @@
           "包含事实风险检查",
           "包含表达风险检查",
           "包含修改后的发布稿",
-          "包含返工建议"
+          "包含完整口播脚本",
+          "包含分镜/画面建议",
+          "包含字幕版精简文案",
+          "包含 CTA",
+          "包含返工建议",
+          "最终物料可直接发布或拍摄",
+          "检测空正文、只有交接包和编造来源"
         ]
       }
     ],
