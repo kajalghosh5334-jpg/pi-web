@@ -320,13 +320,6 @@ export async function startRpcSession(
       inner.setActiveToolsByName(withExtensionTools(inner, toolNames));
     }
 
-    // When all tools are disabled, clear the system prompt entirely.
-    // pi's buildSystemPrompt always produces a non-empty prompt even with no tools;
-    // the only way to truly clear it is to call agent.setSystemPrompt directly.
-    if (toolNames?.length === 0) {
-      inner.agent.state.systemPrompt = "";
-    }
-
     const wrapper = new AgentSessionWrapper(inner);
     wrapper.start();
 

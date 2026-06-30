@@ -96,6 +96,18 @@ function workflowTemplateLabel(templateType: string | undefined): string {
   return templateType ? WORKFLOW_TEMPLATE_LABELS[templateType] || templateType : "Workflow";
 }
 
+function isSameLocalDate(a: Date, b: Date): boolean {
+  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+}
+
+function workflowWasDebuggedToday(workflow: WorkflowDefinition): boolean {
+  if (workflow.status === "template" || workflow.status === "legacy") return false;
+  if (workflow.debugStatus !== "polished" || !workflow.debuggedAt) return false;
+  const debuggedAt = new Date(workflow.debuggedAt);
+  if (Number.isNaN(debuggedAt.getTime())) return false;
+  return isSameLocalDate(debuggedAt, new Date());
+}
+
 function sortWorkflowDomains(domains: string[]) {
   return domains.sort((a, b) => {
     const ia = WORKFLOW_DOMAIN_ORDER.indexOf(a);
@@ -294,10 +306,7 @@ export function SessionSidebar({
   }, []);
 
   const handleNewSession = useCallback(() => {
-    const tempId = typeof crypto.randomUUID === "function"
-      ? crypto.randomUUID()
-      : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
-    onNewSession?.(tempId, effectiveCwd ?? null);
+    onNewSession?.("", effectiveCwd ?? null);
   }, [onNewSession, effectiveCwd]);
 
   const createWorkflow = useCallback(async (payload: {
@@ -372,7 +381,7 @@ export function SessionSidebar({
 
   const workflowGroups = useMemo(() => {
     const groups = new Map<string, WorkflowDefinition[]>();
-    for (const workflow of workflows) {
+    for (const workflow of workflows.filter(workflowWasDebuggedToday)) {
       const status = workflow.status || "active";
       if (status === "template") continue;
       const domain = status === "legacy" ? "legacy" : workflowDomain(workflow);
@@ -391,6 +400,8 @@ export function SessionSidebar({
       }),
     }));
   }, [workflows]);
+
+  const visibleWorkflowCount = useMemo(() => workflows.filter(workflowWasDebuggedToday).length, [workflows]);
 
   const workflowDomains = useMemo(() => {
     const domains = new Set<string>();
@@ -549,7 +560,7 @@ export function SessionSidebar({
               sublabel="Choose a template and category"
               onClick={() => setWorkflowCreateOpen(true)}
             />
-            {workflows.length === 0 ? <EmptyState label="No workflows yet. Create one to start building." /> : null}
+            {visibleWorkflowCount === 0 ? <EmptyState label="今天还没有调试通过的 workflow。" /> : null}
             {workflowGroups.map((group) => (
               <WorkflowGroup
                 key={group.domain}
@@ -775,7 +786,21 @@ function WorkflowListItem({ workflow, active, busy, onSelect, onDelete }: { work
     >
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10 }}>
         <div style={{ minWidth: 0 }}>
-          <div style={{ fontSize: 12, fontWeight: 800, color: "var(--text)", marginBottom: 4 }}>{workflow.name}</div>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0, marginBottom: 4 }}>
+            <div style={{ fontSize: 12, fontWeight: 800, color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{workflow.name}</div>
+            <span
+              aria-label="今天已调试通过"
+              title="今天已调试通过"
+              style={{
+                flex: "0 0 auto",
+                width: 8,
+                height: 8,
+                borderRadius: 999,
+                background: "var(--status-success)",
+                boxShadow: "0 0 0 3px color-mix(in srgb, var(--status-success) 16%, transparent)",
+              }}
+            />
+          </div>
           <div style={{ fontSize: 11, color: "var(--text-muted)" }}>
             {workflow.tasks?.length || 0} tasks · {workflow.reviewPolicy || "lead_plus_reviewer"}
           </div>

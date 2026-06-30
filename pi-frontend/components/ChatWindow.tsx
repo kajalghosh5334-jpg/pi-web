@@ -438,7 +438,7 @@ const ChatWindow = memo(function ChatWindow({ session, newSessionCwd, onAgentEnd
       ) : (
       <>
       <div className="relative flex flex-1 overflow-hidden" style={{ minHeight: 0 }}>
-        <div ref={scrollContainerRef} className="flex-1 overflow-y-auto pt-2 [scrollbar-width:none] codex-scroll-column">
+        <div ref={scrollContainerRef} className="flex-1 overflow-y-auto [scrollbar-width:none] codex-scroll-column">
           <div style={{ width: "100%", padding: "0 28px 0 24px" }}>
             {session && (
               <div className="chat-session-hover-info" style={{ marginBottom: 12, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "0 4px" }}>
@@ -541,7 +541,7 @@ const ChatWindow = memo(function ChatWindow({ session, newSessionCwd, onAgentEnd
                 </div>
               </div>
             )}
-            <div ref={messagesEndRef} />
+            <div ref={messagesEndRef} style={{ height: agentRunning ? "min(45vh, 380px)" : 0 }} />
           </div>
         </div>
         <ChatMinimap

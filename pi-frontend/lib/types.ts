@@ -228,6 +228,9 @@ export interface WorkflowDefinition {
   name: string;
   description?: string;
   status?: "active" | "template" | "legacy";
+  debugStatus?: "polished" | "needs_debug" | "unverified";
+  debuggedAt?: number;
+  debugSource?: string;
   domain?: string;
   category?: string;
   templateType?: string;

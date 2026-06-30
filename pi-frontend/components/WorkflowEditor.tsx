@@ -756,6 +756,22 @@ function WorkflowInspector({
           <option value="lead_only">lead_only</option>
         </select>
       </Field>
+      <Field label="完善状态">
+        <select
+          value={draft.debugStatus || "unverified"}
+          onChange={(event) => {
+            const debugStatus = event.target.value as WorkflowDefinition["debugStatus"];
+            updateDraft(debugStatus === "polished"
+              ? { debugStatus, debuggedAt: Date.now(), debugSource: "workflow-inspector" }
+              : { debugStatus, debuggedAt: undefined, debugSource: undefined });
+          }}
+          style={inputStyle}
+        >
+          <option value="polished">完善</option>
+          <option value="needs_debug">待完善</option>
+          <option value="unverified">未验证</option>
+        </select>
+      </Field>
       <Field label="Working Directory">
         <input value={draft.cwd || ""} onChange={(event) => updateDraft({ cwd: event.target.value })} style={{ ...inputStyle, fontFamily: "var(--font-mono)" }} />
       </Field>

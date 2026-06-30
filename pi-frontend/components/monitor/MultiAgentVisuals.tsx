@@ -33,7 +33,7 @@ export function StageFlowView({ flowState }: { flowState?: FlowState | null }) {
     return (
       <section style={boxStyle}>
         <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text-muted)", marginBottom: 8 }}>Flow Stage</div>
-        <div style={emptyStyle}>No Multi-Agent flow started yet.</div>
+        <div style={emptyStyle}>No workflow flow started yet.</div>
       </section>
     );
   }

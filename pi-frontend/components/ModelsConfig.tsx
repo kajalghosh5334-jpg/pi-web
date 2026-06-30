@@ -186,7 +186,6 @@ type Selection =
   | { type: "apikey"; providerId: string }
   | { type: "capabilities" };
 
-type TreeFilter = "all" | "weak" | "strong" | "image";
 type GuideMode = "manual" | "assisted";
 
 interface LedgerEvent {
@@ -468,6 +467,39 @@ function TogglePill({ label, active, onClick }: { label: string; active: boolean
   );
 }
 
+function GuideAiToggle({ enabled, onToggle, title }: { enabled: boolean; onToggle: () => void; title?: string }) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-pressed={enabled}
+      title={title}
+      style={{
+        height: 28,
+        padding: "0 10px 0 5px",
+        border: `1px solid ${enabled ? "#0a84ff" : "var(--border)"}`,
+        borderRadius: 999,
+        background: enabled ? "#0a84ff" : "var(--bg-panel)",
+        color: enabled ? "#fff" : "var(--text-muted)",
+        cursor: "pointer",
+        fontSize: 12,
+        fontWeight: 750,
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 7,
+        boxShadow: enabled ? "0 8px 18px rgba(10,132,255,0.16)" : "none",
+        transition: "background 0.16s ease, color 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease",
+        whiteSpace: "nowrap",
+      }}
+    >
+      <span style={{ position: "relative", width: 26, height: 18, borderRadius: 999, background: enabled ? "rgba(255,255,255,0.22)" : "var(--border)", display: "inline-block", flexShrink: 0 }}>
+        <span style={{ position: "absolute", top: 3, left: enabled ? 11 : 3, width: 12, height: 12, borderRadius: 999, background: enabled ? "#fff" : "var(--bg)", transition: "left 0.16s ease, background 0.16s ease" }} />
+      </span>
+      <span>Guide AI</span>
+    </button>
+  );
+}
+
 function toggleString(values: string[] | undefined, value: string): string[] | undefined {
   const set = new Set(values ?? []);
   if (set.has(value)) set.delete(value);
@@ -520,16 +552,12 @@ function profileHasOnlyNonCapableResults(profile?: CapabilityProfile): boolean {
   return dimensions.length > 0 && dimensions.every((dimension) => dimension.result !== "capable" && dimension.result !== "pending");
 }
 
-function profileHasInconclusive(profile?: CapabilityProfile): boolean {
-  return Boolean(profile && Object.values(profile.dimensions ?? {}).some((dimension) => dimension.result === "inconclusive"));
-}
-
 function isProfileTested(profile?: CapabilityProfile): boolean {
   return Boolean(profile && profile.status !== "untested" && profile.status !== "testing" && profile.status !== "pending_judgement");
 }
 
 function capabilityTooltip(profile?: CapabilityProfile): string {
-  if (!profile) return "No capability test has run yet.";
+  if (!profile) return "Guide AI has not generated a capability profile yet.";
   const summary = CAPABILITY_DIMENSIONS
     .map((dimension) => {
       const item = profile.dimensions?.[dimension.id];
@@ -540,13 +568,6 @@ function capabilityTooltip(profile?: CapabilityProfile): string {
   return summary || profile.summary || profile.status;
 }
 
-function modelMatchesFilter(model: ModelEntry, profile: CapabilityProfile | undefined, filter: TreeFilter): boolean {
-  if (filter === "all") return true;
-  if (filter === "weak") return model.role === "weak";
-  if (filter === "strong") return model.role === "strong";
-  return profile?.dimensions?.["image-generation"]?.result === "capable";
-}
-
 function buildPendingCapabilityProfile(providerName: string, model: ModelEntry, guideModel?: string): CapabilityProfile {
   const key = modelKey(providerName, model.id);
   return {
@@ -555,13 +576,13 @@ function buildPendingCapabilityProfile(providerName: string, model: ModelEntry, 
     testSuiteVersion: CAPABILITY_TEST_SUITE_VERSION,
     updatedAt: new Date().toISOString(),
     summary: guideModel
-      ? "已创建 capability_probe，等待标准题库执行和向导判定。"
-      : "测试任务可先执行；当前缺少向导强模型，完成后会停在待判定状态。",
+      ? "Guide AI 正在整理模型资料并生成能力画像。"
+      : "缺少 strong guide 模型，暂时只能记录待判定画像。",
     suggestedRoles: [],
     dimensions: Object.fromEntries(CAPABILITY_DIMENSIONS.map((dimension) => [dimension.id, {
       result: "pending",
       confidence: "low",
-      notes: "等待 capability_probe 标准题库结果。",
+      notes: "等待 Guide AI profile 生成结果。",
       tests: [{ id: `${dimension.id}-probe-1`, status: "pending" }],
     } satisfies CapabilityDimension])),
   };
@@ -730,7 +751,7 @@ function ProviderDetail({ name, provider, onChange, onRename, onDelete, onAddMod
         <div>
           <div style={{ fontSize: 12, fontWeight: 750, color: "var(--text)", marginBottom: 4 }}>Next steps</div>
           <div style={{ fontSize: 11, color: "var(--text-muted)", lineHeight: 1.55 }}>
-            API format changes are applied to this draft immediately. Save the config, then add or select a model to run a connection test.
+            API format changes are applied to this draft immediately. Save the config, then add or select a model to check the connection.
           </div>
         </div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
@@ -849,7 +870,7 @@ function ProviderDetail({ name, provider, onChange, onRename, onDelete, onAddMod
                   key={`${model.id || "new-model"}-${index}`}
                   type="button"
                   onClick={() => onSelectModel(index)}
-                  title="Open model details and test this model"
+                  title="Open model details and configure tags"
                   style={{
                     maxWidth: 220,
                     height: 26,
@@ -1219,59 +1240,6 @@ function ModelDetail({
         />
       </Field>
 
-      <div>
-        <SectionTitle>Workflow routing</SectionTitle>
-        <div style={{ marginTop: 8, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-          <div>
-            <div style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 6 }}>Model tier</div>
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-              <TogglePill label="Weak worker" active={model.role === "weak"} onClick={() => set("role", model.role === "weak" ? undefined : "weak")} />
-              <TogglePill label="Strong planner" active={model.role === "strong"} onClick={() => set("role", model.role === "strong" ? undefined : "strong")} />
-            </div>
-          </div>
-          <div>
-            <div style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 6 }}>Profile hints</div>
-            <div style={{ display: "flex", gap: 7, flexWrap: "wrap" }}>
-              {PROFILE_HINTS.map((hint) => (
-                <TogglePill
-                  key={hint.id}
-                  label={hint.label}
-                  active={(model.profileHints ?? []).includes(hint.id)}
-                  onClick={() => set("profileHints", toggleString(model.profileHints, hint.id))}
-                />
-              ))}
-            </div>
-          </div>
-        </div>
-        <Field label="Custom profile hints">
-          <TextInput value={(model.profileHints ?? []).filter((hint) => !PROFILE_HINTS.some((preset) => preset.id === hint)).join(", ")} onChange={(v) => {
-            const presets = (model.profileHints ?? []).filter((hint) => PROFILE_HINTS.some((preset) => preset.id === hint));
-            set("profileHints", Array.from(new Set([...presets, ...(splitTags(v) ?? [])])).length ? Array.from(new Set([...presets, ...(splitTags(v) ?? [])])) : undefined);
-          }} placeholder="debug-teacher, product-writer" />
-        </Field>
-        <div style={{ marginTop: 10 }}>
-          <div style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 6 }}>Capabilities</div>
-          <div style={{ display: "flex", gap: 7, flexWrap: "wrap" }}>
-            {MODEL_CAPABILITIES.map((capability) => (
-              <TogglePill
-                key={capability.id}
-                label={capability.label}
-                active={(model.capabilities ?? []).includes(capability.id)}
-                onClick={() => set("capabilities", toggleString(model.capabilities, capability.id))}
-              />
-            ))}
-          </div>
-        </div>
-        <Field label="Routing notes for Lead Agent">
-          <textarea
-            value={model.routingNotes ?? ""}
-            onChange={(e) => set("routingNotes", e.target.value || undefined)}
-            placeholder="Examples: cheap classifier; reliable code reviewer; use for image generation; avoid for repository edits..."
-            style={{ ...inputStyle, minHeight: 62, resize: "vertical", lineHeight: 1.45 }}
-          />
-        </Field>
-      </div>
-
       <div style={{ display: "flex", gap: 20, flexWrap: "wrap" }}>
         <Check label="Reasoning / thinking" checked={model.reasoning ?? false} onChange={(v) => set("reasoning", v || undefined)} />
         <Check label="Image input" checked={model.input?.includes("image") ?? false}
@@ -1341,7 +1309,7 @@ function ModelDetail({
 
       <div>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
-          <SectionTitle>Capabilities</SectionTitle>
+          <SectionTitle>Role and capability</SectionTitle>
           <button
             onClick={onRunProbe}
             disabled={!model.id.trim() || isProbing}
@@ -1356,8 +1324,64 @@ function ModelDetail({
               fontSize: 11,
             }}
           >
-            {isProbing ? "Testing..." : capabilityProfile ? "Re-test" : "Test"}
+            {isProbing ? "Generating..." : capabilityProfile ? "Refresh profile" : "Generate profile"}
           </button>
+        </div>
+        <div style={{ display: "grid", gap: 12, marginBottom: 12, padding: 12, border: "1px solid var(--border)", borderRadius: 7, background: "color-mix(in srgb, var(--bg-panel) 74%, transparent)" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+            <div>
+              <div style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 6 }}>Model tier</div>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                <TogglePill label="Weak worker" active={model.role === "weak"} onClick={() => set("role", model.role === "weak" ? undefined : "weak")} />
+                <TogglePill label="Strong guide" active={model.role === "strong"} onClick={() => {
+                  set("role", model.role === "strong" ? undefined : "strong");
+                  if (model.role !== "strong" && model.id.trim()) onSetGuide();
+                }} />
+              </div>
+            </div>
+            <div>
+              <div style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 6 }}>Profile hints</div>
+              <div style={{ display: "flex", gap: 7, flexWrap: "wrap" }}>
+                {PROFILE_HINTS.map((hint) => (
+                  <TogglePill
+                    key={hint.id}
+                    label={hint.label}
+                    active={(model.profileHints ?? []).includes(hint.id)}
+                    onClick={() => set("profileHints", toggleString(model.profileHints, hint.id))}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+          <Field label="Custom profile hints">
+            <TextInput value={(model.profileHints ?? []).filter((hint) => !PROFILE_HINTS.some((preset) => preset.id === hint)).join(", ")} onChange={(v) => {
+              const presets = (model.profileHints ?? []).filter((hint) => PROFILE_HINTS.some((preset) => preset.id === hint));
+              const custom = splitTags(v) ?? [];
+              const next = Array.from(new Set([...presets, ...custom]));
+              set("profileHints", next.length ? next : undefined);
+            }} placeholder="debug-teacher, product-writer" />
+          </Field>
+          <div>
+            <div style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 6 }}>Capability tags</div>
+            <div style={{ display: "flex", gap: 7, flexWrap: "wrap" }}>
+              {MODEL_CAPABILITIES.map((capability) => (
+                <TogglePill
+                  key={capability.id}
+                  label={capability.label}
+                  active={(model.capabilities ?? []).includes(capability.id)}
+                  onClick={() => set("capabilities", toggleString(model.capabilities, capability.id))}
+                />
+              ))}
+            </div>
+          </div>
+          <Field label="Workflow routing notes">
+            <textarea
+              value={model.routingNotes ?? ""}
+              onChange={(e) => set("routingNotes", e.target.value || undefined)}
+              placeholder="Examples: cheap classifier; reliable code reviewer; use for image generation; avoid for repository edits..."
+              style={{ ...inputStyle, minHeight: 62, resize: "vertical", lineHeight: 1.45 }}
+            />
+          </Field>
         </div>
         <div style={{ border: "1px solid var(--border)", borderRadius: 7, overflow: "hidden", background: "var(--bg-panel)" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, padding: "9px 10px", borderBottom: "1px solid var(--border)" }}>
@@ -1367,10 +1391,10 @@ function ModelDetail({
               </div>
               <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 2, display: "flex", gap: 10, flexWrap: "wrap" }}>
                 <span>Role: {model.role || "unset"}</span>
-                <span>Last tested: {capabilityProfile?.updatedAt ? new Date(capabilityProfile.updatedAt).toLocaleDateString() : "-"}</span>
+                <span>Profile: {capabilityProfile?.updatedAt ? new Date(capabilityProfile.updatedAt).toLocaleDateString() : "not generated"}</span>
               </div>
             </div>
-            <span title={capabilityProfile?.testSuiteVersion !== CAPABILITY_TEST_SUITE_VERSION ? "题库已更新，可重新测试。" : "Current test suite"} style={{ fontSize: 10, color: capabilityProfile?.testSuiteVersion !== CAPABILITY_TEST_SUITE_VERSION ? "#f59e0b" : "var(--text-dim)", fontFamily: "var(--font-mono)", flexShrink: 0 }}>
+            <span title={capabilityProfile?.testSuiteVersion !== CAPABILITY_TEST_SUITE_VERSION ? "Profile schema changed; refresh with Guide AI." : "Current profile schema"} style={{ fontSize: 10, color: capabilityProfile?.testSuiteVersion !== CAPABILITY_TEST_SUITE_VERSION ? "#f59e0b" : "var(--text-dim)", fontFamily: "var(--font-mono)", flexShrink: 0 }}>
               {capabilityProfile?.testSuiteVersion || CAPABILITY_TEST_SUITE_VERSION}{capabilityProfile?.testSuiteVersion && capabilityProfile.testSuiteVersion !== CAPABILITY_TEST_SUITE_VERSION ? " ⓘ" : ""}
             </span>
           </div>
@@ -1379,13 +1403,12 @@ function ModelDetail({
               const item = capabilityProfile?.dimensions?.[dimension.id];
               const result = item?.result ?? "pending";
               const runningCount = item?.tests?.filter((test) => test.status === "running").length ?? 0;
-              const totalCount = item?.tests?.length ?? 0;
               return (
                 <div key={dimension.id} style={{ display: "contents" }}>
                   <div style={{ padding: "8px 10px", borderBottom: "1px solid var(--border)", fontSize: 12, color: "var(--text)" }}>{dimension.label}</div>
                   <div style={{ padding: "8px 10px", borderBottom: "1px solid var(--border)", fontSize: 11, color: "var(--text-muted)", whiteSpace: "nowrap" }}>
                     <span style={{ fontSize: 14, marginRight: 6, color: result === "capable" ? "#16a34a" : result === "inconclusive" ? "#f59e0b" : "var(--text-dim)" }}>{resultGlyph(result)}</span>
-                    {isProbing && (result === "pending" || runningCount > 0) ? `Running (${runningCount || 1}/${totalCount || 1} questions)` : resultLabel(result)}
+                    {isProbing && (result === "pending" || runningCount > 0) ? "Guide AI generating" : resultLabel(result)}
                   </div>
                   <div style={{ padding: "8px 10px", borderBottom: "1px solid var(--border)", fontSize: 11, color: "var(--text-dim)", lineHeight: 1.45 }}>
                     {result === "inconclusive" ? (
@@ -1395,7 +1418,7 @@ function ModelDetail({
                         disabled={isProbing}
                         style={{ height: 24, padding: "0 8px", border: "1px solid var(--border)", borderRadius: 5, background: "var(--bg)", color: isProbing ? "var(--text-dim)" : "var(--text-muted)", cursor: isProbing ? "not-allowed" : "pointer", fontSize: 11 }}
                       >
-                        Retry this dimension
+                        Refresh this profile
                       </button>
                     ) : item?.confidence ? (
                       `confidence: ${item.confidence}`
@@ -1420,7 +1443,7 @@ function ModelDetail({
           {capabilityProfile ? (
             <details style={{ borderTop: "1px solid var(--border)", padding: "8px 10px" }}>
               <summary style={{ cursor: "pointer", fontSize: 11, color: "var(--text-muted)" }}>
-                View test details ({Object.values(capabilityProfile.dimensions ?? {}).flatMap((dimension) => dimension.tests ?? []).length} questions)
+                View profile evidence ({Object.values(capabilityProfile.dimensions ?? {}).flatMap((dimension) => dimension.tests ?? []).length} items)
               </summary>
               <div style={{ display: "grid", gap: 8, marginTop: 8 }}>
                 {Object.entries(capabilityProfile.dimensions ?? {}).flatMap(([dimension, item]) => (item.tests ?? []).map((test) => (
@@ -1439,7 +1462,7 @@ function ModelDetail({
           ) : null}
           {ledgerEvents.length ? (
             <div style={{ borderTop: "1px solid var(--border)", padding: "9px 10px", display: "grid", gap: 5 }}>
-              <div style={{ fontSize: 10, color: "var(--text-dim)", textTransform: "uppercase", letterSpacing: "0.06em" }}>Latest ledger</div>
+              <div style={{ fontSize: 10, color: "var(--text-dim)", textTransform: "uppercase", letterSpacing: "0.06em" }}>Latest profile activity</div>
               {ledgerEvents.slice(-5).reverse().map((event, index) => (
                 <div key={event.id ?? `${event.isoTime}-${index}`} style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0, fontSize: 11, color: "var(--text-muted)" }}>
                   <span style={{ width: 7, height: 7, borderRadius: 999, background: event.status === "failed" ? "#ef4444" : event.status === "running" ? "#f59e0b" : "#16a34a", flexShrink: 0 }} />
@@ -2043,87 +2066,173 @@ function AddProviderPicker({
   );
 }
 
-function SetupGuidePanel({
+function GuideAiConfigPanel({
+  enabled,
+  guideLabel,
   providerCount,
   modelCount,
   weakCount,
   strongCount,
-  guideLabel,
-  testedCount,
-  inconclusiveCount,
+  profiledCount,
+  isGenerating,
+  onToggle,
   onAddProvider,
-  onSelectFirstProvider,
   onSelectFirstModel,
-  onOpenCapabilitySummary,
+  onGenerateProfiles,
 }: {
+  enabled: boolean;
+  guideLabel: string | null;
   providerCount: number;
   modelCount: number;
   weakCount: number;
   strongCount: number;
-  guideLabel: string | null;
-  testedCount: number;
-  inconclusiveCount: number;
+  profiledCount: number;
+  isGenerating: boolean;
+  onToggle: () => void;
   onAddProvider: () => void;
-  onSelectFirstProvider: () => void;
   onSelectFirstModel: () => void;
-  onOpenCapabilitySummary: () => void;
+  onGenerateProfiles: (message?: string) => void;
 }) {
-  const capabilityDetail = weakCount === 0
-    ? "no models yet"
-    : inconclusiveCount > 0 && testedCount === weakCount
-      ? `${testedCount} of ${weakCount} tested · ${inconclusiveCount} inconclusive`
-      : `${testedCount} of ${weakCount} tested`;
-  const steps = [
-    { label: "Provider", done: providerCount > 0, detail: providerCount ? `${providerCount} configured` : "missing" },
-    { label: "Model", done: modelCount > 0, detail: modelCount ? `${modelCount} configured` : "missing" },
-    { label: "Guide", done: Boolean(guideLabel) && strongCount > 0, detail: strongCount > 0 ? (guideLabel || "manual") : "no strong model" },
-    { label: "Weak", done: weakCount > 0, detail: `${weakCount} workers` },
+  const [message, setMessage] = useState("");
+  const [messages, setMessages] = useState<Array<{ role: "guide" | "user"; text: string }>>([
     {
-      label: "Capability test",
-      done: weakCount > 0 && testedCount === weakCount && inconclusiveCount === 0,
-      detail: capabilityDetail,
-      onClick: onOpenCapabilitySummary,
+      role: "guide",
+      text: "把 API URL、模型列表页面、官方文档或配置说明贴给我。我会整理 provider、strong/weak 模型、能力标签和 workflow routing 建议。",
     },
-  ];
-  const primary = providerCount === 0
-    ? { label: "Add provider", onClick: onAddProvider }
-    : modelCount === 0
-      ? { label: "Open provider", onClick: onSelectFirstProvider }
-      : { label: "Open model", onClick: onSelectFirstModel };
+  ]);
+  const canGenerate = enabled && modelCount > 0 && !isGenerating;
+
+  const submit = () => {
+    const text = message.trim();
+    if (!text && !canGenerate) return;
+    if (text) {
+      setMessages((prev) => [
+        ...prev,
+        { role: "user", text },
+        { role: "guide", text: "收到。我会结合当前 API 内的模型资料生成 strong/weak、capability tags 和 workflow 角色建议。" },
+      ]);
+      setMessage("");
+    }
+    if (canGenerate) onGenerateProfiles(text || undefined);
+  };
 
   return (
-    <div style={{ marginBottom: 16, border: "1px solid var(--border)", borderRadius: 8, background: "color-mix(in srgb, var(--bg-panel) 80%, transparent)", padding: 12, display: "grid", gap: 10 }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+    <div style={{ marginBottom: 16, border: "1px solid var(--border)", borderRadius: 8, background: "color-mix(in srgb, var(--bg-panel) 82%, transparent)", overflow: "hidden" }}>
+      <div style={{ padding: "10px 12px", borderBottom: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
         <div style={{ minWidth: 0 }}>
-          <div style={{ fontSize: 12, fontWeight: 750, color: "var(--text)" }}>Setup assistant</div>
-          <div style={{ marginTop: 2, fontSize: 11, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-            {guideLabel ? `Guide model: ${guideLabel}` : "Choose a strong guide model before workflow routing."}
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ width: 8, height: 8, borderRadius: 999, background: enabled ? "#0a84ff" : "var(--border)", boxShadow: enabled ? "0 0 0 4px rgba(10,132,255,0.12)" : "none" }} />
+            <div style={{ fontSize: 12, fontWeight: 750, color: "var(--text)" }}>Guide AI configuration</div>
+          </div>
+          <div title={guideLabel || undefined} style={{ marginTop: 3, fontSize: 11, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            {guideLabel ? `Guide model: ${guideLabel}` : "Select a model and mark it Strong to let Guide AI complete profiles."}
           </div>
         </div>
-        <button
-          type="button"
-          onClick={primary.onClick}
-          style={{ height: 28, padding: "0 10px", border: "1px solid var(--border)", borderRadius: 6, background: "var(--bg)", color: "var(--text)", cursor: "pointer", fontSize: 12, flexShrink: 0 }}
-        >
-          {primary.label}
-        </button>
+        <GuideAiToggle enabled={enabled} onToggle={onToggle} title={guideLabel || "Guide AI configuration"} />
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))", gap: 8 }}>
-        {steps.map((step) => (
-          <button
-            key={step.label}
-            type="button"
-            onClick={"onClick" in step ? step.onClick : undefined}
-            style={{ minHeight: 48, border: "1px solid var(--border)", borderRadius: 7, background: "var(--bg)", padding: "7px 8px", display: "grid", alignContent: "center", gap: 3, textAlign: "left", cursor: "onClick" in step ? "pointer" : "default" }}
-          >
-            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <span style={{ width: 7, height: 7, borderRadius: 999, background: step.done ? "#16a34a" : weakCount === 0 && step.label === "Capability test" ? "var(--border)" : "#f59e0b", flexShrink: 0 }} />
-              <span style={{ fontSize: 11, fontWeight: 700, color: "var(--text)" }}>{step.label}</span>
+      {enabled ? (
+        <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) 210px", gap: 12, padding: 12 }}>
+          <div style={{ display: "grid", gap: 8, minWidth: 0 }}>
+            <div style={{ maxHeight: 132, overflowY: "auto", display: "grid", gap: 7, paddingRight: 2 }}>
+              {messages.slice(-5).map((item, index) => (
+                <div
+                  key={`${item.role}-${index}-${item.text}`}
+                  style={{
+                    justifySelf: item.role === "user" ? "end" : "start",
+                    maxWidth: "86%",
+                    padding: "7px 9px",
+                    border: "1px solid var(--border)",
+                    borderRadius: 7,
+                    background: item.role === "user" ? "color-mix(in srgb, var(--accent) 10%, var(--bg))" : "var(--bg)",
+                    color: item.role === "user" ? "var(--text)" : "var(--text-muted)",
+                    fontSize: 12,
+                    lineHeight: 1.45,
+                  }}
+                >
+                  {item.text}
+                </div>
+              ))}
             </div>
-            <div title={step.detail} style={{ fontSize: 10, color: "var(--text-dim)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{step.detail}</div>
-          </button>
-        ))}
-      </div>
+            <div style={{ display: "flex", gap: 8 }}>
+              <textarea
+                value={message}
+                onChange={(event) => setMessage(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) submit();
+                }}
+                placeholder="Paste API docs, model list URLs, provider notes, or routing preferences..."
+                style={{ ...inputStyle, minHeight: 54, resize: "vertical", lineHeight: 1.45, flex: 1 }}
+              />
+              <button
+                type="button"
+                onClick={submit}
+                disabled={!canGenerate && !message.trim()}
+                style={{
+                  width: 104,
+                  border: "none",
+                  borderRadius: 6,
+                  background: canGenerate || message.trim() ? "var(--accent)" : "var(--bg-panel)",
+                  color: canGenerate || message.trim() ? "#fff" : "var(--text-dim)",
+                  cursor: canGenerate || message.trim() ? "pointer" : "not-allowed",
+                  fontSize: 12,
+                  fontWeight: 700,
+                }}
+              >
+                {isGenerating ? "Generating..." : "Send"}
+              </button>
+            </div>
+          </div>
+          <div style={{ display: "grid", gap: 8, alignContent: "start" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 7 }}>
+              {([
+                ["API", providerCount],
+                ["Models", modelCount],
+                ["Strong", strongCount],
+                ["Weak", weakCount],
+              ] as const).map(([label, count]) => (
+                <button
+                  key={label}
+                  type="button"
+                  onClick={label === "API" && providerCount === 0 ? onAddProvider : label === "Models" ? onSelectFirstModel : undefined}
+                  style={{
+                    minHeight: 42,
+                    border: "1px solid var(--border)",
+                    borderRadius: 7,
+                    background: "var(--bg)",
+                    color: "var(--text)",
+                    cursor: label === "API" && providerCount === 0 ? "pointer" : label === "Models" ? "pointer" : "default",
+                    textAlign: "left",
+                    padding: "6px 8px",
+                  }}
+                >
+                  <span style={{ display: "block", fontSize: 10, color: "var(--text-dim)" }}>{label}</span>
+                  <span style={{ display: "block", marginTop: 3, fontSize: 13, fontWeight: 750 }}>{count}</span>
+                </button>
+              ))}
+            </div>
+            <button
+              type="button"
+              onClick={() => onGenerateProfiles(message.trim() || undefined)}
+              disabled={!canGenerate}
+              style={{
+                height: 30,
+                border: "1px solid var(--border)",
+                borderRadius: 6,
+                background: canGenerate ? "var(--bg)" : "var(--bg-panel)",
+                color: canGenerate ? "var(--text)" : "var(--text-dim)",
+                cursor: canGenerate ? "pointer" : "not-allowed",
+                fontSize: 12,
+                fontWeight: 650,
+              }}
+            >
+              Generate model tags
+            </button>
+            <div style={{ fontSize: 11, color: "var(--text-dim)", lineHeight: 1.45 }}>
+              {profiledCount}/{modelCount || 0} profiles ready
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -2218,7 +2327,7 @@ function InitialApiSetup({
           <SectionTitle>Model API setup</SectionTitle>
           <div style={{ marginTop: 6, fontSize: 18, fontWeight: 750, color: "var(--text)" }}>Connect an API endpoint</div>
           <div style={{ marginTop: 6, fontSize: 12, color: "var(--text-muted)", lineHeight: 1.55 }}>
-            Add the request address and key once. The catalog will be imported, the first model becomes the guide, and capability tests start in the background.
+            Add the request address and key once. The catalog will be imported, the first model becomes the guide, and Guide AI starts building model profiles.
           </div>
         </div>
 
@@ -2312,7 +2421,7 @@ function ModelRoleSetupPanel({
     <div style={{ marginBottom: 16, border: "1px solid var(--border)", borderRadius: 8, background: "color-mix(in srgb, var(--bg-panel) 80%, transparent)", overflow: "hidden" }}>
       <div style={{ padding: "10px 12px", borderBottom: "1px solid var(--border)", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
         <div style={{ minWidth: 0 }}>
-          <div style={{ fontSize: 12, fontWeight: 750, color: "var(--text)" }}>Role and capability setup</div>
+          <div style={{ fontSize: 12, fontWeight: 750, color: "var(--text)" }}>Role and capability</div>
           <div title={guideLabel || undefined} style={{ marginTop: 2, fontSize: 11, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
             {guideLabel ? `Guide: ${guideLabel}` : "Pick one strong guide, then mark worker models and boundaries."}
           </div>
@@ -2322,7 +2431,7 @@ function ModelRoleSetupPanel({
           onClick={onOpenCapabilitySummary}
           style={{ height: 28, padding: "0 9px", border: "1px solid var(--border)", borderRadius: 6, background: "var(--bg)", color: "var(--text-muted)", cursor: "pointer", fontSize: 12, flexShrink: 0 }}
         >
-          Test overview
+          Profile overview
         </button>
       </div>
       <div style={{ display: "grid" }}>
@@ -2331,7 +2440,7 @@ function ModelRoleSetupPanel({
           const isGuide = guideLabel === key;
           const tested = isProfileTested(item.profile);
           const testing = item.isProbing || item.profile?.status === "testing";
-          const statusText = testing ? "testing" : tested ? "tested" : "pending";
+          const statusText = testing ? "generating" : tested ? "profiled" : "pending";
           const setModel = (patch: Partial<ModelEntry>) => onUpdateModel(item.providerName, item.index, { ...item.model, ...patch });
           return (
             <div key={key} style={{ display: "grid", gridTemplateColumns: "minmax(180px, 1fr) minmax(150px, 0.9fr) minmax(220px, 1.2fr) 72px", gap: 10, alignItems: "center", padding: "9px 12px", borderBottom: "1px solid var(--border)" }}>
@@ -2391,9 +2500,9 @@ function CapabilitySummaryView({
     <div style={{ display: "grid", gap: 12 }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
         <div>
-          <SectionTitle>Capability test overview</SectionTitle>
+          <SectionTitle>Guide AI profile overview</SectionTitle>
           <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 3 }}>
-            Compare weak models by tested capability profile.
+            Compare weak models by generated capability profile.
           </div>
         </div>
       </div>
@@ -2431,98 +2540,11 @@ function CapabilitySummaryView({
               onClick={() => onRunProbe(item.providerName, item.index)}
               style={{ height: 26, border: "1px solid var(--border)", borderRadius: 5, background: "var(--bg)", color: item.isProbing ? "var(--text-dim)" : "var(--text-muted)", cursor: item.isProbing ? "not-allowed" : "pointer", fontSize: 11 }}
             >
-              {item.isProbing ? "Testing" : item.profile ? "Re-test" : "Test"}
+              {item.isProbing ? "Generating" : item.profile ? "Refresh" : "Generate"}
             </button>
           </div>
         )) : (
           <div style={{ padding: 18, textAlign: "center", fontSize: 12, color: "var(--text-dim)" }}>No weak models yet.</div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function SetupGuideDrawer({
-  guideMode,
-  guideLabel,
-  strongCount,
-  providers,
-  onClose,
-  onAddProviderDraft,
-}: {
-  guideMode: GuideMode;
-  guideLabel: string | null;
-  strongCount: number;
-  providers: string[];
-  onClose: () => void;
-  onAddProviderDraft: (providerName: string, modelId: string) => void;
-}) {
-  const [providerName, setProviderName] = useState(providers[0] ?? "openrouter");
-  const [modelId, setModelId] = useState("");
-  const [failures, setFailures] = useState(0);
-  const canConfirm = providerName.trim().length > 0 && modelId.trim().length > 0;
-  const blocked = guideMode !== "assisted" || strongCount === 0;
-
-  return (
-    <div style={{ width: 320, borderLeft: "1px solid var(--border)", background: "var(--bg-panel)", display: "flex", flexDirection: "column", flexShrink: 0 }}>
-      <div style={{ height: 48, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 12px", borderBottom: "1px solid var(--border)" }}>
-        <div>
-          <div style={{ fontSize: 13, fontWeight: 750, color: "var(--text)" }}>Setup guide</div>
-          <div style={{ fontSize: 10, color: "var(--text-dim)", marginTop: 1 }}>{guideLabel || "manual"}</div>
-        </div>
-        <button type="button" onClick={onClose} style={{ border: "none", background: "transparent", color: "var(--text-muted)", cursor: "pointer", fontSize: 18 }}>×</button>
-      </div>
-      <div style={{ flex: 1, overflowY: "auto", padding: 12, display: "grid", alignContent: "start", gap: 10 }}>
-        {blocked ? (
-          <div style={{ border: "1px solid var(--border)", borderRadius: 8, background: "var(--bg)", padding: 10, fontSize: 12, color: "var(--text-muted)", lineHeight: 1.55 }}>
-            需要先有一个 strong 模型才能使用向导。你仍然可以在左侧树和右侧表单里手动配置。
-          </div>
-        ) : (
-          <>
-            <div style={{ border: "1px solid var(--border)", borderRadius: 8, background: "var(--bg)", padding: 10, fontSize: 12, color: "var(--text-muted)", lineHeight: 1.55 }}>
-              这个模型是接到哪个 Provider 下面？填好 Provider 和模型 ID 后，我会生成确认卡片；确认前不会写入配置。
-            </div>
-            <Field label="Provider">
-              <TextInput value={providerName} onChange={setProviderName} placeholder="openrouter" mono />
-            </Field>
-            <Field label="Model ID">
-              <TextInput value={modelId} onChange={setModelId} placeholder="deepseek/deepseek-coder" mono />
-            </Field>
-            <div style={{ border: "1px solid var(--border)", borderRadius: 8, background: "var(--bg)", padding: 10, display: "grid", gap: 7 }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text)" }}>Confirm card</div>
-              <div style={{ fontSize: 11, color: "var(--text-muted)", display: "grid", gap: 3 }}>
-                <span>Provider: <code style={{ fontFamily: "var(--font-mono)" }}>{providerName || "-"}</code></span>
-                <span>Model: <code style={{ fontFamily: "var(--font-mono)" }}>{modelId || "-"}</code></span>
-                <span>Role: weak</span>
-              </div>
-              <div style={{ display: "flex", gap: 8 }}>
-                <button
-                  type="button"
-                  disabled={!canConfirm}
-                  onClick={() => {
-                    onAddProviderDraft(providerName.trim(), modelId.trim());
-                    setModelId("");
-                    setFailures(0);
-                  }}
-                  style={{ height: 28, padding: "0 10px", border: "none", borderRadius: 6, background: canConfirm ? "var(--accent)" : "var(--bg-panel)", color: canConfirm ? "#fff" : "var(--text-dim)", cursor: canConfirm ? "pointer" : "not-allowed", fontSize: 12, fontWeight: 650 }}
-                >
-                  Confirm
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setFailures((value) => value + 1)}
-                  style={{ height: 28, padding: "0 10px", border: "1px solid var(--border)", borderRadius: 6, background: "var(--bg)", color: "var(--text-muted)", cursor: "pointer", fontSize: 12 }}
-                >
-                  Edit
-                </button>
-              </div>
-            </div>
-            {failures >= 2 ? (
-              <button type="button" onClick={onClose} style={{ height: 30, border: "1px solid var(--border)", borderRadius: 6, background: "var(--bg)", color: "var(--text)", cursor: "pointer", fontSize: 12 }}>
-                切换到表单填写
-              </button>
-            ) : null}
-          </>
         )}
       </div>
     </div>
@@ -2544,9 +2566,7 @@ export function ModelsConfig({ onClose }: { onClose: () => void }) {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [probeBusyByKey, setProbeBusyByKey] = useState<Record<string, boolean>>({});
   const [ledgerEventsByModel, setLedgerEventsByModel] = useState<Record<string, LedgerEvent[]>>({});
-  const [treeFilter, setTreeFilter] = useState<TreeFilter>("all");
-  const [guideMode, setGuideMode] = useState<GuideMode>("manual");
-  const [guideDrawerOpen, setGuideDrawerOpen] = useState(false);
+  const [guideMode, setGuideMode] = useState<GuideMode>("assisted");
 
   const loadOAuthProviders = useCallback(() => {
     fetch("/api/auth/providers")
@@ -2685,22 +2705,6 @@ export function ModelsConfig({ onClose }: { onClose: () => void }) {
     });
   }, []);
 
-  const addAssistantModelDraft = useCallback((providerName: string, modelId: string) => {
-    setConfig((prev) => {
-      const provider = prev.providers?.[providerName] ?? { api: "openai-completions" };
-      const existingIndex = (provider.models ?? []).findIndex((model) => model.id === modelId);
-      if (existingIndex >= 0) return prev;
-      const models = [...(provider.models ?? []), { id: modelId, role: "weak" as const }];
-      return { ...prev, providers: { ...(prev.providers ?? {}), [providerName]: { ...provider, models } } };
-    });
-    setConfig((prev) => {
-      const idx = (prev.providers?.[providerName]?.models ?? []).findIndex((model) => model.id === modelId);
-      if (idx >= 0) setSelection({ type: "model", providerName, index: idx });
-      return prev;
-    });
-    setGuideDrawerOpen(false);
-  }, []);
-
   const updateModel = useCallback((providerName: string, index: number, m: ModelEntry) => {
     setConfig((prev) => {
       const provider = prev.providers?.[providerName] ?? {};
@@ -2807,7 +2811,7 @@ export function ModelsConfig({ onClose }: { onClose: () => void }) {
       const profile = {
         ...buildPendingCapabilityProfile(latest.providerName, latest.model, prev.modelSetup?.guideModel),
         status: "testing" as const,
-        summary: "标准题库正在执行，完成后会写入能力画像和 Ledger。",
+        summary: "Guide AI 正在生成能力画像，完成后会写入 Profile Ledger。",
       };
       return {
         ...prev,
@@ -2932,27 +2936,8 @@ export function ModelsConfig({ onClose }: { onClose: () => void }) {
   const validModelCount = modelInventory.filter(({ model }) => model.id.trim()).length;
   const weakCount = modelInventory.filter(({ model }) => model.role === "weak" && model.id.trim()).length;
   const strongCount = modelInventory.filter(({ model }) => model.role === "strong" && model.id.trim()).length;
-  const imageCount = modelInventory.filter(({ profile }) => profile?.dimensions?.["image-generation"]?.result === "capable").length;
-  const testedWeakCount = modelInventory.filter(({ model, profile }) => model.role === "weak" && model.id.trim() && isProfileTested(profile)).length;
-  const inconclusiveWeakCount = modelInventory.filter(({ model, profile }) => model.role === "weak" && model.id.trim() && profileHasInconclusive(profile)).length;
-  const duplicateModelKeys = new Set<string>();
-  const seenModelKeys = new Set<string>();
-  let duplicateTarget: { providerName: string; index: number } | null = null;
-  for (const { providerName, model } of modelInventory) {
-    if (!model.id.trim()) continue;
-    const key = modelKey(providerName, model.id);
-    if (seenModelKeys.has(key)) {
-      duplicateModelKeys.add(key);
-      if (!duplicateTarget) {
-        const index = config.providers?.[providerName]?.models?.findIndex((item) => item.id === model.id) ?? -1;
-        duplicateTarget = index >= 0 ? { providerName, index } : null;
-      }
-    }
-    seenModelKeys.add(key);
-  }
-  const statusLabel = duplicateModelKeys.size ? "conflict" : dirty ? "unsaved" : savedOk ? "saved" : "clean";
+  const profiledCount = modelInventory.filter(({ model, profile }) => model.id.trim() && isProfileTested(profile)).length;
   const guideLabel = config.modelSetup?.guideModel ?? null;
-  const setupIncomplete = !guideLabel || weakCount === 0 || strongCount === 0 || testedWeakCount < weakCount || inconclusiveWeakCount > 0;
   const activeOAuth = oauthProviders.filter((p) => p.loggedIn);
   const activeApiKey = apiKeyProviders.filter((p) => p.configured);
   const showInitialSetup = !loading && validModelCount === 0;
@@ -2961,7 +2946,6 @@ export function ModelsConfig({ onClose }: { onClose: () => void }) {
     setSavedSnapshot(JSON.stringify(nextConfig));
     setSavedOk(true);
     setGuideMode("assisted");
-    setGuideDrawerOpen(false);
     setSelection({ type: "model", providerName, index: modelIndex });
     setTimeout(() => setSavedOk(false), 2000);
     void (async () => {
@@ -2984,6 +2968,15 @@ export function ModelsConfig({ onClose }: { onClose: () => void }) {
     }
     selectFirstProvider();
   };
+  const generateAllProfiles = useCallback((message?: string) => {
+    if (message?.trim()) setSaveError(null);
+    const targets = modelInventory.filter((item) => item.model.id.trim());
+    void (async () => {
+      for (const item of targets) {
+        await runCapabilityProbe(item.providerName, item.index);
+      }
+    })();
+  }, [modelInventory, runCapabilityProbe]);
   const selectionTitle = (() => {
     if (!selection) return "Nothing selected";
     if (selection.type === "provider") return `Provider · ${selection.name}`;
@@ -2995,7 +2988,7 @@ export function ModelsConfig({ onClose }: { onClose: () => void }) {
       const provider = apiKeyProviders.find((item) => item.id === selection.providerId);
       return `API Key · ${provider?.displayName || selection.providerId}`;
     }
-    if (selection.type === "capabilities") return "Capability tests";
+    if (selection.type === "capabilities") return "Guide AI profiles";
     const provider = oauthProviders.find((item) => item.id === selection.providerId);
     return `OAuth · ${provider?.name || selection.providerId}`;
   })();
@@ -3079,49 +3072,11 @@ export function ModelsConfig({ onClose }: { onClose: () => void }) {
               <code style={{ fontSize: 11, color: "var(--text-muted)", fontFamily: "var(--font-mono)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>~/.pi/agent/models.json</code>
             </div>
             <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-              {([
-                ["weak", weakCount],
-                ["strong", strongCount],
-                ["image", imageCount],
-              ] as const).map(([filter, count]) => (
-                <button
-                  key={filter}
-                  type="button"
-                  onClick={() => setTreeFilter((prev) => prev === filter ? "all" : filter)}
-                  style={{ fontSize: 10, color: count ? "#16a34a" : filter === "strong" ? "#f59e0b" : "var(--text-dim)", border: `1px solid ${treeFilter === filter ? "var(--accent)" : filter === "strong" && !count ? "#f59e0b" : "var(--border)"}`, borderRadius: 5, padding: "2px 6px", background: treeFilter === filter ? "color-mix(in srgb, var(--accent) 10%, var(--bg-panel))" : "transparent", cursor: "pointer" }}
-                >
-                  {filter} {count}
-                </button>
-              ))}
-              <button
-                type="button"
-                onClick={() => {
-                  if (duplicateTarget) {
-                    setSelection({ type: "model", providerName: duplicateTarget.providerName, index: duplicateTarget.index });
-                  }
-                }}
-                style={{ fontSize: 10, color: statusLabel === "conflict" ? "#ef4444" : statusLabel === "unsaved" ? "#f59e0b" : savedOk ? "#16a34a" : "var(--text-dim)", border: `1px solid ${statusLabel === "conflict" ? "#ef4444" : "var(--border)"}`, borderRadius: 5, padding: "2px 6px", background: "transparent", cursor: statusLabel === "conflict" ? "pointer" : "default" }}
-              >
-                {statusLabel}
-              </button>
-              <select
-                value={guideMode}
-                onChange={(event) => {
-                  const next = event.target.value as GuideMode;
-                  setGuideMode(next);
-                  setGuideDrawerOpen(next === "assisted");
-                }}
+              <GuideAiToggle
+                enabled={guideMode === "assisted"}
+                onToggle={() => setGuideMode((mode) => mode === "assisted" ? "manual" : "assisted")}
                 title={guideLabel || "No guide model"}
-                style={{ maxWidth: 152, height: 22, fontSize: 10, color: guideLabel ? "#0a84ff" : "var(--text-dim)", border: "1px solid var(--border)", borderRadius: 5, padding: "0 5px", background: "var(--bg)", outline: "none" }}
-              >
-                <option value="manual">guide: manual</option>
-                <option value="assisted">guide: assisted</option>
-              </select>
-              {guideMode === "assisted" && (
-                <button type="button" onClick={() => setGuideDrawerOpen((open) => !open)} title="Open setup guide" style={{ width: 22, height: 22, border: "1px solid var(--border)", borderRadius: 5, background: "var(--bg)", color: "var(--text-dim)", cursor: "pointer", fontSize: 11 }}>
-                  ◆
-                </button>
-              )}
+              />
             </div>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
@@ -3211,7 +3166,6 @@ export function ModelsConfig({ onClose }: { onClose: () => void }) {
                       const isModelSelected = selection?.type === "model" && selection.providerName === pName && selection.index === i;
                       const key = m.id ? modelKey(pName, m.id) : "";
                       const profile = key ? config.modelSetup?.capabilityProfiles?.[key] : undefined;
-                      const matchesFilter = modelMatchesFilter(m, profile, treeFilter);
                       const testing = Boolean(key && probeBusyByKey[key]) || profile?.status === "testing";
                       const dotColor = !profile
                         ? "transparent"
@@ -3226,7 +3180,7 @@ export function ModelsConfig({ onClose }: { onClose: () => void }) {
                         <div
                           key={i}
                           onClick={() => setSelection({ type: "model", providerName: pName, index: i })}
-                          style={{ display: "flex", alignItems: "center", gap: 6, padding: "5px 8px 5px 26px", borderRadius: 5, cursor: "pointer", background: isModelSelected ? "var(--bg-selected)" : "none", opacity: matchesFilter ? 1 : 0.38 }}
+                          style={{ display: "flex", alignItems: "center", gap: 6, padding: "5px 8px 5px 26px", borderRadius: 5, cursor: "pointer", background: isModelSelected ? "var(--bg-selected)" : "none" }}
                           onMouseEnter={(e) => { if (!isModelSelected) e.currentTarget.style.background = "var(--bg-hover)"; }}
                           onMouseLeave={(e) => { if (!isModelSelected) e.currentTarget.style.background = "none"; }}
                         >
@@ -3296,36 +3250,24 @@ export function ModelsConfig({ onClose }: { onClose: () => void }) {
             <div style={{ flex: 1, overflowY: "auto", padding: 20, minWidth: 0 }}>
               {loading ? null : (
                 <>
-                  {setupIncomplete && (
-                    validModelCount > 0 ? (
-                      <ModelRoleSetupPanel
-                        items={modelInventory.map((item) => ({ ...item, isProbing: Boolean(item.key && probeBusyByKey[item.key]) }))}
-                        guideLabel={guideLabel}
-                        onSelectModel={(providerName, index) => setSelection({ type: "model", providerName, index })}
-                        onSetGuide={setGuideModel}
-                        onUpdateModel={updateModel}
-                        onOpenCapabilitySummary={() => setSelection({ type: "capabilities" })}
-                      />
-                    ) : (
-                      <SetupGuidePanel
-                        providerCount={providers.length}
-                        modelCount={validModelCount}
-                        weakCount={weakCount}
-                        strongCount={strongCount}
-                        guideLabel={guideLabel}
-                        testedCount={testedWeakCount}
-                        inconclusiveCount={inconclusiveWeakCount}
-                        onAddProvider={() => setPickerOpen(true)}
-                        onSelectFirstProvider={selectFirstProvider}
-                        onSelectFirstModel={selectFirstModel}
-                        onOpenCapabilitySummary={() => setSelection({ type: "capabilities" })}
-                      />
-                    )
-                  )}
+                  <GuideAiConfigPanel
+                    enabled={guideMode === "assisted"}
+                    guideLabel={guideLabel}
+                    providerCount={providers.length}
+                    modelCount={validModelCount}
+                    weakCount={weakCount}
+                    strongCount={strongCount}
+                    profiledCount={profiledCount}
+                    isGenerating={Object.keys(probeBusyByKey).length > 0 || saving}
+                    onToggle={() => setGuideMode((mode) => mode === "assisted" ? "manual" : "assisted")}
+                    onAddProvider={() => setPickerOpen(true)}
+                    onSelectFirstModel={selectFirstModel}
+                    onGenerateProfiles={generateAllProfiles}
+                  />
                   {detailContent ?? (
                     <div style={{ height: "100%", display: "grid", alignContent: "center", justifyItems: "center", gap: 10, color: "var(--text-dim)", fontSize: 13, textAlign: "center" }}>
                       <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)" }}>Select a provider or model</div>
-                      <div style={{ maxWidth: 360, lineHeight: 1.6 }}>Choose an existing provider on the left, or add a provider and then add at least one model to test.</div>
+                      <div style={{ maxWidth: 360, lineHeight: 1.6 }}>Choose an existing provider on the left, or add a provider and then select a model to configure tags.</div>
                       <button
                         type="button"
                         onClick={() => setPickerOpen(true)}
@@ -3335,19 +3277,21 @@ export function ModelsConfig({ onClose }: { onClose: () => void }) {
                       </button>
                     </div>
                   )}
+                  {validModelCount > 0 && (
+                    <div style={{ marginTop: 16 }}>
+                      <ModelRoleSetupPanel
+                        items={modelInventory.map((item) => ({ ...item, isProbing: Boolean(item.key && probeBusyByKey[item.key]) }))}
+                        guideLabel={guideLabel}
+                        onSelectModel={(providerName, index) => setSelection({ type: "model", providerName, index })}
+                        onSetGuide={setGuideModel}
+                        onUpdateModel={updateModel}
+                        onOpenCapabilitySummary={() => setSelection({ type: "capabilities" })}
+                      />
+                    </div>
+                  )}
                 </>
               )}
             </div>
-            {guideDrawerOpen && (
-              <SetupGuideDrawer
-                guideMode={guideMode}
-                guideLabel={guideLabel}
-                strongCount={strongCount}
-                providers={providers.map(([name]) => name)}
-                onClose={() => setGuideDrawerOpen(false)}
-                onAddProviderDraft={addAssistantModelDraft}
-              />
-            )}
           </div>
         </div>
 

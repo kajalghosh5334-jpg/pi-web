@@ -59,13 +59,13 @@ export function SubAgentList({ tasks = [], artifacts = [], phase = "idle", onSwi
 
   if (phase === "idle") return (
     <div style={{ fontSize: 12, color: "var(--text-muted)", padding: "8px 0" }}>
-      发送消息后，Multi-Agent 状态将显示在这里
+      发送消息后，Workflow 状态将显示在这里
     </div>
   );
 
   if (phase === "guardian") return (
     <div style={{ fontSize: 12, color: "#f59e0b", padding: "8px 0" }}>
-      🧠 Guardian 分析任务中...
+      Workflow 正在分析任务...
     </div>
   );
 

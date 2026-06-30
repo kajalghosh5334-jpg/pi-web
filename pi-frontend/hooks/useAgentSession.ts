@@ -31,7 +31,7 @@ interface CompactCommandResult {
   estimatedTokensAfter?: number;
 }
 
-type LoadSessionMode = "full" | "light";
+type LoadSessionMode = "full" | "light" | "tree";
 
 export type AgentPhase =
   | { kind: "waiting_model" }
@@ -116,7 +116,7 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
   const [modelThinkingLevelMaps, setModelThinkingLevelMaps] = useState<Record<string, Record<string, string | null>>>({});
   const [newSessionModel, setNewSessionModel] = useState<SelectedModel | null>(null);
   const [newSessionDefaultModel, setNewSessionDefaultModel] = useState<SelectedModel | null>(null);
-  const [toolPreset, setToolPreset] = useState<"none" | "default" | "full">("default");
+  const [toolPreset, setToolPreset] = useState<"none" | "default" | "full">("none");
   const [thinkingLevel, setThinkingLevel] = useState<ThinkingLevelOption>("auto");
   const [retryInfo, setRetryInfo] = useState<{ attempt: number; maxAttempts: number; errorMessage?: string } | null>(null);
   const [contextUsage, setContextUsage] = useState<{ percent: number | null; contextWindow: number; tokens: number | null } | null>(null);
@@ -176,6 +176,7 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
       const params = new URLSearchParams();
       if (includeState) params.set("includeState", "1");
       if (mode === "light") params.set("light", "1");
+      if (mode === "tree") params.set("treeOnly", "1");
       const query = params.toString();
       const url = `/api/sessions/${encodeURIComponent(sid)}${query ? `?${query}` : ""}`;
       const res = await fetch(url);
@@ -189,19 +190,26 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
         return null;
       }
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const d = await res.json() as SessionData & { agentState?: { running: boolean; state?: { isStreaming?: boolean; isCompacting?: boolean; contextUsage?: { percent: number | null; contextWindow: number; tokens: number | null } | null; systemPrompt?: string; thinkingLevel?: string } } };
+      const d = await res.json() as Partial<SessionData> & { sessionId: string; filePath: string; tree: SessionTreeNode[]; leafId: string | null; context?: SessionData["context"]; agentState?: { running: boolean; state?: { isStreaming?: boolean; isCompacting?: boolean; contextUsage?: { percent: number | null; contextWindow: number; tokens: number | null } | null; systemPrompt?: string; thinkingLevel?: string } } };
       if (sessionIdRef.current !== sid || sessionLoadTokenRef.current !== token) return null;
       if (mode === "light" && fullSessionLoadTokenRef.current === token) return d.agentState ?? null;
+      if (mode === "tree") {
+        setData((prev) => prev ? { ...prev, tree: d.tree ?? [], leafId: d.leafId ?? null } : prev);
+        setActiveLeafId(d.leafId ?? null);
+        return d.agentState ?? null;
+      }
+      if (!d.context) return d.agentState ?? null;
+      const context = d.context;
       if (mode === "full") fullSessionLoadTokenRef.current = token;
-      setData(d);
-      setActiveLeafId(d.leafId);
-      setMessages((prev) => mergeOptimisticMessages(prev, d.context.messages));
-      setEntryIds(d.context.entryIds ?? []);
+      setData({ ...d, context } as SessionData);
+      setActiveLeafId(d.leafId ?? null);
+      setMessages((prev) => mergeOptimisticMessages(prev, context.messages));
+      setEntryIds(context.entryIds ?? []);
       setCurrentModelOverride(null);
       setError(null);
       // If no live agent state, fall back to thinking level from session file
-      if (!d.agentState?.state?.thinkingLevel && d.context.thinkingLevel && d.context.thinkingLevel !== "off") {
-        setThinkingLevel(d.context.thinkingLevel as ThinkingLevelOption);
+      if (!d.agentState?.state?.thinkingLevel && context.thinkingLevel && context.thinkingLevel !== "off") {
+        setThinkingLevel(context.thinkingLevel as ThinkingLevelOption);
       }
       return d.agentState ?? null;
     } catch (e) {
@@ -239,30 +247,46 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
     }
   }, [setToolPresetState]);
 
-  const connectEvents = useCallback((sid: string) => {
+  const connectEvents = useCallback((sid: string): Promise<void> => {
     if (eventSourceRef.current) {
       eventSourceRef.current.close();
       eventSourceRef.current = null;
     }
     const es = new EventSource(`/api/agent/${encodeURIComponent(sid)}/events`);
     eventSourceRef.current = es;
-    es.onmessage = (e) => {
-      try {
-        const event = JSON.parse(e.data) as AgentEvent;
-        handleAgentEventRef.current?.(event);
-      } catch {
-        // ignore
-      }
-    };
-    es.onerror = () => {
-      if (eventSourceRef.current === es && agentRunningRef.current) {
-        es.close();
-        eventSourceRef.current = null;
-        setTimeout(() => {
-          if (agentRunningRef.current) connectEvents(sid);
-        }, 1000);
-      }
-    };
+    return new Promise((resolve) => {
+      let settled = false;
+      const settle = () => {
+        if (settled) return;
+        settled = true;
+        resolve();
+      };
+      const fallback = setTimeout(settle, 1200);
+
+      es.onmessage = (e) => {
+        try {
+          const event = JSON.parse(e.data) as AgentEvent;
+          if (event.type === "connected") {
+            clearTimeout(fallback);
+            settle();
+          }
+          handleAgentEventRef.current?.(event);
+        } catch {
+          // ignore
+        }
+      };
+      es.onerror = () => {
+        clearTimeout(fallback);
+        settle();
+        if (eventSourceRef.current === es && agentRunningRef.current) {
+          es.close();
+          eventSourceRef.current = null;
+          setTimeout(() => {
+            if (agentRunningRef.current) void connectEvents(sid);
+          }, 1000);
+        }
+      };
+    });
   }, []);
 
   useEffect(() => {
@@ -426,24 +450,33 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
         if (selectedModel) setPendingModel(selectedModel);
         const { PRESET_NONE, PRESET_DEFAULT, PRESET_FULL } = await import("@/components/ToolPanel");
         const toolNames = toolPreset === "none" ? PRESET_NONE : toolPreset === "default" ? PRESET_DEFAULT : PRESET_FULL;
-        const res = await fetch("/api/agent/new", {
+        const createRes = await fetch("/api/sessions/create-empty", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             cwd: newSessionCwd,
-            type: "prompt",
-            message,
-            toolNames,
-            ...(piImages?.length ? { images: piImages } : {}),
-            ...(selectedModel ? { provider: selectedModel.provider, modelId: selectedModel.modelId } : {}),
-            ...(thinkingLevel !== "auto" ? { thinkingLevel } : {}),
+            name: message.trim().slice(0, 80) || "New Session",
           }),
         });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const result = await res.json() as { sessionId: string };
-        const realId = result.sessionId;
+        if (!createRes.ok) throw new Error(`HTTP ${createRes.status}`);
+        const created = await createRes.json() as { sessionId?: string; error?: string };
+        if (!created.sessionId) throw new Error(created.error || "Failed to create session");
+        const realId = created.sessionId;
         sessionIdRef.current = realId;
-        connectEvents(realId);
+        await connectEvents(realId);
+
+        if (selectedModel) {
+          await sendAgentCommand(realId, { type: "set_model", provider: selectedModel.provider, modelId: selectedModel.modelId });
+        }
+        if (thinkingLevel !== "auto") {
+          await sendAgentCommand(realId, { type: "set_thinking_level", level: thinkingLevel });
+        }
+        await sendAgentCommand(realId, { type: "set_tools", toolNames });
+        await sendAgentCommand(realId, {
+          type: "prompt",
+          message,
+          ...(piImages?.length ? { images: piImages } : {}),
+        });
         onSessionCreated?.({
           id: realId,
           path: "",
@@ -630,7 +663,7 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
     if (!container || !el) return;
     const elAbsTop = el.getBoundingClientRect().top - container.getBoundingClientRect().top + container.scrollTop;
     ignoreProgrammaticScrollUntilRef.current = Date.now() + PROGRAMMATIC_SCROLL_IGNORE_MS;
-    container.scrollTo({ top: elAbsTop - 16, behavior: "smooth" });
+    container.scrollTo({ top: Math.max(0, elAbsTop), behavior: "smooth" });
   }, []);
 
   const markUserScrollIntent = useCallback((event: Event) => {
@@ -690,8 +723,8 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
       void loadSession(session.id, false, false, "light", loadToken);
       fullSessionRefreshTimerRef.current = setTimeout(() => {
         fullSessionRefreshTimerRef.current = null;
-        void loadSession(session.id, false, false, "full", loadToken);
-      }, 120);
+        void loadSession(session.id, false, false, "tree", loadToken);
+      }, 800);
 
       // Load live agent state in the background so the chat UI doesn't block on get_state.
       void fetch(`/api/agent/${encodeURIComponent(session.id)}`)

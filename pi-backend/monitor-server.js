@@ -704,6 +704,18 @@ function createWorkflowFromSession(sessionId, options = {}) {
   return workflow;
 }
 
+function normalizeWorkflowDebugMetadata(workflow) {
+  const normalized = { ...workflow };
+  if (normalized.debugStatus === "polished") {
+    normalized.debuggedAt = Number(normalized.debuggedAt) || Date.now();
+    normalized.debugSource = cleanInlineText(normalized.debugSource || "manual", 160);
+  } else {
+    delete normalized.debuggedAt;
+    delete normalized.debugSource;
+  }
+  return normalized;
+}
+
 function escapePipe(text) {
   return cleanInlineText(text, 240).replace(/\|/g, "\\|");
 }
@@ -1638,6 +1650,7 @@ function getTrainState(sessionId) {
     cancelRequested: false,
     activeTaskId: "",
     activeTrainTaskId: "",
+    userFeedbackHistory: [],
     lastError: "",
     savedProfileId: "",
     updatedAt: Date.now(),
@@ -1824,6 +1837,7 @@ function summarizeTrainState(state) {
     rounds: (state.rounds || []).map(summarizeTrainRound),
     activeTaskId: state.activeTaskId || "",
     activeTrainTaskId: state.activeTrainTaskId || "",
+    latestUserFeedback: (state.userFeedbackHistory || []).at(-1)?.text || "",
     lastError: state.lastError || "",
     savedProfileId: state.savedProfileId || "",
     updatedAt: state.updatedAt || Date.now(),
@@ -1914,7 +1928,7 @@ ${baseOutput || "无"}`,
   });
 }
 
-async function runTrainEvaluator(sessionId, task, round, challengerOutput, baseOutputBefore, shadowPrompt) {
+async function runTrainEvaluator(sessionId, task, round, challengerOutput, baseOutputBefore, shadowPrompt, userFeedback = "") {
   const raw = await runPi({
     model: TRAIN_EVALUATOR_MODEL,
     cwd: join(WORKSPACE, sessionId, `train-evaluator-${round}`),
@@ -1948,6 +1962,9 @@ JSON schema：
 任务：
 ${task.prompt || task.name || ""}
 
+用户本轮评价/修改意见：
+${userFeedback || "无"}
+
 当前影子 prompt：
 ${shadowPrompt || "无"}
 
@@ -1967,7 +1984,7 @@ ${baseOutputBefore || "无"}`,
   };
 }
 
-async function runBaseModelWithShadow(sessionId, task, suggestion, shadowPrompt, round) {
+async function runBaseModelWithShadow(sessionId, task, suggestion, shadowPrompt, round, userFeedback = "") {
   const trainTaskId = `train-base-${round}`;
   const patchPrompt = `==== Train Shadow Prompt（仅本次训练有效，不写入正式 Profile）====
 ${shadowPrompt || "无"}
@@ -1978,6 +1995,9 @@ ${shadowPrompt || "无"}
 原因：${suggestion.rationale}
 规则：
 ${suggestion.after || "无"}
+
+==== 用户本轮评价/修改意见 ====
+${userFeedback || "无"}
 
 请基于以上影子规则重跑原任务，输出完整结果。不要输出内部交接包、Memory Diff、artifact 路径、伪代码式状态机，除非原任务明确要求。`;
   return await runPi({
@@ -2045,6 +2065,10 @@ async function runTrainRound(sessionId, options = {}) {
   const task = getTrainingTargetTask(session, options.taskId || state.activeTaskId);
   if (!task) throw new Error("no task available for training");
   const round = state.currentRound + 1;
+  const userFeedback = cleanInlineText(options.userFeedback || "", 2000);
+  const userFeedbackHistory = userFeedback
+    ? [...(state.userFeedbackHistory || []), { round, text: userFeedback, timestamp: Date.now() }]
+    : (state.userFeedbackHistory || []);
   const baseOutputBefore = getLatestTrainBaseOutput(state) || task.output || session.finalOutput || session.output || "";
   const basePromptSnapshot = state.basePromptSnapshot || task.prompt || session.input || "";
   state = publishTrainState(sessionId, {
@@ -2053,6 +2077,7 @@ async function runTrainRound(sessionId, options = {}) {
     activeTaskId: task.id,
     activeTrainTaskId: "",
     basePromptSnapshot,
+    userFeedbackHistory,
     cancelRequested: false,
     lastError: "",
   });
@@ -2096,7 +2121,7 @@ async function runTrainRound(sessionId, options = {}) {
 
     state = publishTrainState(sessionId, { phase: "EVALUATING" });
     const shadowBefore = buildShadowPrompt(basePromptSnapshot, state.appliedPatches || []);
-    const evaluation = await runTrainEvaluator(sessionId, task, round, challengerOutput, baseOutputBefore, shadowBefore);
+    const evaluation = await runTrainEvaluator(sessionId, task, round, challengerOutput, baseOutputBefore, shadowBefore, userFeedback);
     if (getTrainState(sessionId).cancelRequested) {
       const discardedRound = { round, status: "discarded", discardedAt: Date.now(), phase: "EVALUATING" };
       const current = getTrainState(sessionId);
@@ -2112,7 +2137,7 @@ async function runTrainRound(sessionId, options = {}) {
 
     const trainTaskId = `train-base-${round}`;
     state = publishTrainState(sessionId, { phase: "BASE_MODEL_RERUNNING", activeTrainTaskId: trainTaskId });
-    const baseOutputAfter = await runBaseModelWithShadow(sessionId, task, evaluation.suggestion, shadowPrompt, round);
+    const baseOutputAfter = await runBaseModelWithShadow(sessionId, task, evaluation.suggestion, shadowPrompt, round, userFeedback);
     if (getTrainState(sessionId).cancelRequested) {
       const discardedRound = { round, status: "discarded", discardedAt: Date.now(), phase: "BASE_MODEL_RERUNNING" };
       const current = getTrainState(sessionId);
@@ -2150,6 +2175,7 @@ async function runTrainRound(sessionId, options = {}) {
       alignment,
       base_output_before: baseOutputBefore,
       base_output_after: baseOutputAfter,
+      user_feedback: userFeedback,
       timestamp: Date.now(),
     });
     const roundRecord = {
@@ -2167,6 +2193,7 @@ async function runTrainRound(sessionId, options = {}) {
       challengerChars: challengerOutput.length,
       baseBeforeChars: baseOutputBefore.length,
       baseAfterChars: baseOutputAfter.length,
+      user_feedback: userFeedback,
       timestamp: Date.now(),
     };
     const current = getTrainState(sessionId);
@@ -2247,6 +2274,7 @@ function saveTrainProfile(sessionId, body = {}) {
     source_session_id: sessionId,
     base_prompt_snapshot: state.basePromptSnapshot || "",
     applied_patches: state.appliedPatches || [],
+    user_feedback_history: state.userFeedbackHistory || [],
     final_prompt: finalPrompt,
     rounds_count: doneRounds.length,
     average_alignment_score: averageAlignmentScore,
@@ -4902,7 +4930,7 @@ app.post("/api/train/:sessionId/start", (req, res) => {
     if (!task) return res.status(400).json({ error: "no task available for training", training: summarizeTrainState(state) });
     publishTrainState(req.params.sessionId, { status: "running", phase: state.challengerOutput ? "EVALUATING" : "DISPATCH_CHALLENGER" });
     res.json({ ok: true, sessionId: req.params.sessionId, restoredForTrain: Boolean(session.restoredForTrain), training: summarizeTrainState(getTrainState(req.params.sessionId)) });
-    runTrainRound(req.params.sessionId, { taskId: req.body?.taskId, fromStartEndpoint: true }).catch((error) => {
+    runTrainRound(req.params.sessionId, { taskId: req.body?.taskId, userFeedback: req.body?.userFeedback, fromStartEndpoint: true }).catch((error) => {
       console.error("[train] failed:", error.message);
     });
   } catch (error) {
@@ -5086,11 +5114,12 @@ app.post("/api/workflows", (req, res) => {
   const body = req.body || {};
   const name = cleanInlineText(body.name || "New Workflow", 80);
   const id = makeUniqueProfileId(slugProfileId(name), workflows);
-  const workflow = {
+  const workflow = normalizeWorkflowDebugMetadata({
     id,
     name,
     description: cleanInlineText(body.description, 400),
     status: cleanInlineText(body.status || "active", 40),
+    debugStatus: cleanInlineText(body.debugStatus || "unverified", 40),
     domain: cleanInlineText(body.domain || body.category || "", 80),
     category: cleanInlineText(body.category || body.domain || "", 80),
     templateType: cleanInlineText(body.templateType || "", 80),
@@ -5102,7 +5131,7 @@ app.post("/api/workflows", (req, res) => {
     createdAt: Date.now(),
     updatedAt: Date.now(),
     tasks: Array.isArray(body.tasks) ? body.tasks : [],
-  };
+  });
   workflows[id] = workflow;
   saveWorkflows(workflows);
   res.json({ ok: true, workflow });
@@ -5124,12 +5153,12 @@ app.patch("/api/workflows/:workflowId", (req, res) => {
   const workflows = loadWorkflows();
   const workflow = workflows[req.params.workflowId];
   if (!workflow) return res.status(404).json({ error: "workflow not found" });
-  workflows[req.params.workflowId] = {
+  workflows[req.params.workflowId] = normalizeWorkflowDebugMetadata({
     ...workflow,
     ...req.body,
     id: workflow.id,
     updatedAt: Date.now(),
-  };
+  });
   saveWorkflows(workflows);
   res.json({ ok: true, workflow: workflows[req.params.workflowId] });
 });

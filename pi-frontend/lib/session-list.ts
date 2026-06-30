@@ -8,6 +8,8 @@ const SESSION_LIST_TTL_MS = 30_000;
 const SESSION_PREVIEW_MAX_CHARS = 180;
 const SESSION_LIST_SCAN_LINE_LIMIT = 200;
 const SESSION_INDEX_VERSION = 1;
+const SESSION_LIST_READ_CONCURRENCY = 12;
+const SESSION_LIST_MAX_FILES = 160;
 
 interface IndexedSessionInfo extends SessionInfo {
   parentSessionPath?: string;
@@ -96,10 +98,11 @@ async function listAllSessionsFast(): Promise<IndexedSessionInfo[]> {
   const agentDir = await getAgentDir();
   const sessionsDir = `${agentDir}/sessions`;
   const files = await discoverSessionFiles(sessionsDir);
+  const recentFiles = await pickRecentSessionFiles(files, SESSION_LIST_MAX_FILES);
   const index = await readSessionIndex(getSessionIndexPath(agentDir));
   const nextIndex: SessionIndex = { version: SESSION_INDEX_VERSION, files: {} };
 
-  const sessions = (await Promise.all(files.map(async (filePath) => {
+  const sessions = (await mapWithConcurrency(recentFiles, SESSION_LIST_READ_CONCURRENCY, async (filePath) => {
     const fileStats = await stat(filePath).catch(() => null);
     if (!fileStats) return null;
     const indexed = index.files[filePath];
@@ -117,7 +120,7 @@ async function listAllSessionsFast(): Promise<IndexedSessionInfo[]> {
       };
     }
     return session;
-  }))).filter((session): session is IndexedSessionInfo => Boolean(session));
+  })).filter((session): session is IndexedSessionInfo => Boolean(session));
 
   sessions.sort((a, b) => b.modified.localeCompare(a.modified));
   void writeSessionIndex(getSessionIndexPath(agentDir), nextIndex);
@@ -129,6 +132,7 @@ async function discoverSessionFiles(sessionsDir: string): Promise<string[]> {
   const files: string[] = [];
   await Promise.all(entries.map(async (entry) => {
     if (!entry.isDirectory()) return;
+    if (entry.name.startsWith("_")) return;
     const dir = join(sessionsDir, entry.name);
     const names = await readdir(dir).catch(() => []);
     for (const name of names) {
@@ -136,6 +140,39 @@ async function discoverSessionFiles(sessionsDir: string): Promise<string[]> {
     }
   }));
   return files;
+}
+
+async function pickRecentSessionFiles(files: string[], maxFiles: number): Promise<string[]> {
+  if (files.length <= maxFiles) return files;
+  const withStats = await mapWithConcurrency(files, SESSION_LIST_READ_CONCURRENCY, async (filePath) => {
+    const fileStats = await stat(filePath).catch(() => null);
+    return fileStats ? { filePath, mtimeMs: fileStats.mtimeMs } : null;
+  });
+
+  return withStats
+    .filter((item): item is { filePath: string; mtimeMs: number } => Boolean(item))
+    .sort((a, b) => b.mtimeMs - a.mtimeMs)
+    .slice(0, maxFiles)
+    .map((item) => item.filePath);
+}
+
+async function mapWithConcurrency<T, R>(
+  items: T[],
+  concurrency: number,
+  fn: (item: T) => Promise<R>,
+): Promise<R[]> {
+  const results = new Array<R>(items.length);
+  let nextIndex = 0;
+  const workerCount = Math.min(concurrency, items.length);
+
+  await Promise.all(Array.from({ length: workerCount }, async () => {
+    while (nextIndex < items.length) {
+      const current = nextIndex++;
+      results[current] = await fn(items[current]);
+    }
+  }));
+
+  return results;
 }
 
 async function readSessionIndex(indexPath: string): Promise<SessionIndex> {

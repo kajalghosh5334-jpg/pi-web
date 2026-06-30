@@ -132,11 +132,14 @@ export interface TrainingState {
   maxRounds: number;
   hasChallengerOutput?: boolean;
   challengerOutputRef?: string;
+  challengerPreview?: string;
+  challengerChars?: number;
   appliedPatches?: TrainSuggestion[];
   rounds: TrainRound[];
   activeTaskId?: string;
   lastError?: string;
   savedProfileId?: string;
+  latestUserFeedback?: string;
   updatedAt?: number;
 }
 
@@ -621,10 +624,10 @@ export function useOrchestrate() {
     return data;
   }, [state.sessionId]);
 
-  const startTrain = useCallback(async (options: { taskId?: string; sessionId?: string } = {}) => {
+  const startTrain = useCallback(async (options: { taskId?: string; sessionId?: string; userFeedback?: string } = {}) => {
     const sessionId = options.sessionId || state.sessionId;
     if (!sessionId) return { ok: false, error: "sessionId required" };
-    const body = { taskId: options.taskId };
+    const body = { taskId: options.taskId, userFeedback: options.userFeedback };
     const data = await fetchJsonWithTimeout(`/api/train/${encodeURIComponent(sessionId)}/start`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },

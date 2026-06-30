@@ -4,6 +4,9 @@
 
 If the task touches the current multi-agent collaboration system, read `../MULTI_AGENT_SYSTEM.md` first.
 
+## Workflow Debug Metadata
+
+When marking a workflow as polished, always set `debugStatus: "polished"` and `debuggedAt` together. Use `debuggedAt` as a millisecond timestamp for the actual debug completion or marking time, and set `debugSource` to the evidence path or action source. See `docs/workflow-debugging-playbook.md#4-debug-metadata-rules`.
 
 ## Conversational Style
 

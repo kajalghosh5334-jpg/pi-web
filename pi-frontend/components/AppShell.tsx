@@ -10,13 +10,14 @@ import { useOrchestrate, type TrainRound } from "@/hooks/useOrchestrate";
 import type { AgentMessage, SessionInfo, SessionTreeNode, WorkflowDefinition } from "@/lib/types";
 import type { ChatInputHandle, AttachedImage } from "./ChatInput";
 
-type MainView = "chat" | "workflow";
+type MainView = "chat" | "workflow" | "train";
 
 interface TrainRoundDetail {
   challengerOutput?: string;
   challenger_output?: string;
   base_output_before?: string;
   base_output_after?: string;
+  user_feedback?: string;
   suggestion?: TrainRound["suggestion"];
   alignment?: TrainRound["alignment"];
   summary?: string;
@@ -368,6 +369,7 @@ export function AppShell() {
   const [trainRoundDetails, setTrainRoundDetails] = useState<Record<number, TrainRoundDetailState>>({});
   const [trainNotice, setTrainNotice] = useState<string | null>(null);
   const [trainBusy, setTrainBusy] = useState(false);
+  const [trainFeedback, setTrainFeedback] = useState("");
   const trainRoundDetailsRef = useRef<Record<number, TrainRoundDetailState>>({});
   const persistedMultiAgentOutputRef = useRef<string | null>(null);
   const activeMultiAgentSessionRef = useRef<string | null>(null);
@@ -427,8 +429,12 @@ export function AppShell() {
       }
       const hasRunningTasks = orchestrateState.tasks.some((task) => ["queued", "running", "waiting_for_dependency", "waiting_confirmation"].includes(task.status));
       setMultiAgentSwitchNotice(hasRunningTasks
-        ? `多Agent已${next ? "开启" : "关闭"}，将在下一条消息生效；当前任务组会继续跑完。`
-        : `多Agent已${next ? "开启" : "关闭"}，下一条消息生效。`);
+        ? `Workflow 已${next ? "开启" : "关闭"}，将在下一条消息生效；当前任务组会继续跑完。`
+        : `Workflow 已${next ? "开启" : "关闭"}，下一条消息生效。`);
+      if (next) {
+        setRightPanelOpen(true);
+        setMainView("chat");
+      }
       return next;
     });
   }, [multiAgentModeKey, guardianSuppressionKey, orchestrateState.tasks]);
@@ -461,7 +467,7 @@ export function AppShell() {
     const res = await fetch("/api/sessions/create-empty", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ cwd, name: firstMessage.slice(0, 80) || "Multi-Agent Session" }),
+      body: JSON.stringify({ cwd, name: firstMessage.slice(0, 80) || "Workflow Session" }),
     });
     if (!res.ok) return null;
     const data = await res.json() as { sessionId?: string; filePath?: string };
@@ -471,7 +477,7 @@ export function AppShell() {
       id: data.sessionId,
       path: data.filePath || "",
       cwd,
-      name: firstMessage.slice(0, 80) || "Multi-Agent Session",
+      name: firstMessage.slice(0, 80) || "Workflow Session",
       created: new Date().toISOString(),
       modified: new Date().toISOString(),
       messageCount: 0,
@@ -516,14 +522,6 @@ export function AppShell() {
     return /不满意|不太满意|继续调教|调教|改得不对|结果不对|这部分不对|不符合|再优化|重新优化|修正这个结果|teach|coach|not satisfied/i.test(message);
   }, []);
 
-  const shouldPreRouteToMultiAgent = useCallback((message: string) => {
-    const text = String(message || "").trim();
-    if (!text) return false;
-    if (text.length <= 32 && !text.includes("\n")) return false;
-    if (text.length >= 140 || text.includes("\n")) return true;
-    return /multi-agent|workflow|dag|lead|sub-?agent|profile|前端|后端|全栈|跨文件|改代码|改这个项目|修这个项目|monitor-server|AppShell|useOrchestrate|session|路由|监控面板|协作图|任务拆分|代码库|仓库|项目里|这个项目/i.test(text);
-  }, []);
-
   const getMultiAgentAssistantText = useCallback(() => {
     return orchestrateState.mainOutput || "";
   }, [orchestrateState.mainOutput]);
@@ -533,6 +531,7 @@ export function AppShell() {
     const now = Date.now();
     const userMsg: AgentMessage = { role: "user", content: message, timestamp: now };
     persistedMultiAgentOutputRef.current = null;
+    setRightPanelOpen(true);
 
     const sessionId = await ensureMultiAgentSession(message);
     activeMultiAgentSessionRef.current = sessionId;
@@ -551,12 +550,12 @@ export function AppShell() {
   }, [runOrchestrate, appendMessageToSession, ensureMultiAgentSession, buildContextualMultiAgentInput, selectedSession?.cwd, newSessionCwd, activeCwd]);
 
   const runMultiAgentInBackground = useCallback(async (message: string) => {
-    // 如果普通主模型还在创建新会话，先不抢建另一个 Multi-Agent session，避免一条消息分裂成两个会话。
+    // 如果普通主模型还在创建新会话，先不抢建另一个 Workflow session，避免一条消息分裂成两个会话。
     if (!selectedSession?.id) return;
     const sessionId = selectedSession.id;
     activeMultiAgentSessionRef.current = sessionId;
 
-    // 不向主对话插入 Multi-Agent 提示文字；状态只显示在右侧监控面板。
+    // 不向主对话插入 Workflow 提示文字；状态只显示在右侧监控面板。
     setMultiAgentMessages([]);
 
     const orchestrateInput = await buildContextualMultiAgentInput(message, sessionId);
@@ -573,54 +572,25 @@ export function AppShell() {
       return;
     }
 
-    // 用户明确不满意时：直接触发 agent-coach 调教闭环，不等待 Guardian 重新规划。
+    // Workflow 开关关闭时，普通聊天路径不再调用 Guardian 或后台编排。
+    if (!multiAgentMode) {
+      void defaultSend(message, images);
+      return;
+    }
+
+    // 用户明确不满意时：在 Workflow 开启状态下直接触发 agent-coach 调教闭环。
     if (selectedSession?.id && isCoachingIntent(message)) {
       setMultiAgentMode(true);
       localStorage.setItem(`pi.multiAgentMode.session:${selectedSession.id}`, "1");
+      setRightPanelOpen(true);
       void runMultiAgentInBackground(message);
       return;
     }
 
-    const looksComplex = shouldPreRouteToMultiAgent(message);
-    const multiAgentBusy = ["guardian", "running", "waiting_confirmation", "synthesizing"].includes(orchestrateState.phase);
-
-    // Multi-Agent 开关打开时，只让复杂消息或当前协作中的消息继续走 Lead。
-    if (multiAgentMode && (looksComplex || multiAgentBusy)) {
-      await handleMultiAgentSend(message);
-      return;
-    }
-
-    // 当前会话里用户主动关闭过 Multi-Agent，表示用户接管控制权；Guardian 不再自动开关。
-    if (guardianAutoMultiAgentSuppressed) {
-      void defaultSend(message, images);
-      return;
-    }
-
-    // 普通短消息直接走主对话，避免每句话都等 Guardian。
-    if (!looksComplex) {
-      void defaultSend(message, images);
-      return;
-    }
-
-    // 命中复杂任务特征时：先做超轻量 owner 判定。复杂任务直接由 Lead 接管，避免同轮双线程深答。
-    const res = await fetch("/api/guardian/decide", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ input: message, sessionId: selectedSession?.id }),
-    }).catch(() => null);
-    const decision = res ? await res.json().catch(() => null) : null;
-
-    if (decision?.shouldUseMultiAgent) {
-      setMultiAgentMode(true);
-      const key = selectedSession?.id ? `session:${selectedSession.id}` : null;
-      if (key) localStorage.setItem(`pi.multiAgentMode.${key}`, "1");
-      await handleMultiAgentSend(message);
-      return;
-    }
-
-    // Guardian 没接管时，回到主对话。
-    void defaultSend(message, images);
-  }, [multiAgentMode, guardianAutoMultiAgentSuppressed, runMultiAgentInBackground, selectedSession?.id, newSessionCwd, activeCwd, isCoachingIntent, handleMultiAgentSend, shouldPreRouteToMultiAgent, orchestrateState.phase]);
+    // Workflow 开关打开时，用户的下一条任务总是进入编排层：
+    // Guardian 会根据任务选择已有 Workflow、模板或 Profile 组合，并把协作状态展示在输入框上方。
+    await handleMultiAgentSend(message);
+  }, [multiAgentMode, runMultiAgentInBackground, selectedSession?.id, newSessionCwd, activeCwd, isCoachingIntent, handleMultiAgentSend]);
 
   const pickDraftCwd = useCallback(async () => {
     const res = await fetch("/api/cwd/pick", { method: "POST" }).catch(() => null);
@@ -886,23 +856,32 @@ export function AppShell() {
     trainRoundDetailsRef.current = {};
     setTrainRoundDetails({});
     if (!selectedSession?.id) return;
-    void refreshTrain({ sessionId: selectedSession.id })
+    const sessionId = selectedSession.id;
+    let cancelled = false;
+    const timer = setTimeout(() => {
+      void refreshTrain({ sessionId })
       .then((result) => {
+        if (cancelled) return;
         const restored = result as { restoredForTrain?: boolean; error?: string };
         if (restored?.restoredForTrain) {
-          setTrainNotice("已从历史 Session 恢复最近一组用户问题和最终回答，可用于 Train；这不是完整 Multi-Agent 运行态恢复。");
+          setTrainNotice("已从历史 Session 恢复最近一组用户问题和最终回答，可用于 Train；这不是完整 Workflow 运行态恢复。");
         }
       })
       .catch(() => {});
+    }, 1200);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
   }, [refreshTrain, selectedSession?.id]);
 
   const trainErrorText = useCallback((error: unknown) => {
     const message = error instanceof Error ? error.message : String(error || "Train request failed");
     if (message.includes("session not found")) {
-      return "Train 需要当前会话仍在后端活动状态；请先在该 Session 里发起一次 Multi-Agent/Workflow 运行，再开始训练。";
+      return "Train 需要当前会话仍在后端活动状态；请先在该 Session 里发起一次 Workflow 运行，再开始训练。";
     }
     if (message.includes("no task available for training")) {
-      return "当前 Session 还没有可训练的 Agent 任务；请先完成一次 Multi-Agent/Workflow 任务。";
+      return "当前 Session 还没有可训练的 Agent 任务；请先完成一次 Workflow 任务。";
     }
     if (message.includes("timed out")) {
       return "Train 后端请求超时；当前训练服务没有在 15 秒内返回，请稍后重试或重启 monitor server。";
@@ -913,7 +892,15 @@ export function AppShell() {
     return message;
   }, []);
 
-  const handleTrainClick = useCallback(async () => {
+  const handleOpenTrainView = useCallback(() => {
+    setMainView("train");
+    setSelectedWorkflow(null);
+    setRightPanelOpen(false);
+    setActiveTopPanel(null);
+    setTrainNotice(null);
+  }, []);
+
+  const handleTrainClick = useCallback(async (userFeedback?: string) => {
     if (trainBusy) return;
     const training = orchestrateState.training;
     const sessionId = activeTrainSessionId;
@@ -933,12 +920,23 @@ export function AppShell() {
         if (result?.error || result?.ok === false) setTrainNotice(trainErrorText(result.error));
         return;
       }
-      const result = await startTrain({ taskId: focusedAgentTaskId || undefined, sessionId }) as { ok?: boolean; error?: string };
+      const result = await startTrain({ taskId: focusedAgentTaskId || undefined, sessionId, userFeedback }) as { ok?: boolean; error?: string };
       if (result?.error || result?.ok === false) setTrainNotice(trainErrorText(result.error));
     } finally {
       setTrainBusy(false);
     }
   }, [activeTrainSessionId, cancelTrain, focusedAgentTaskId, orchestrateState.training, startTrain, trainBusy, trainErrorText]);
+
+  const handleSubmitTrainFeedback = useCallback(async () => {
+    const feedback = trainFeedback.trim();
+    const currentRound = orchestrateState.training?.currentRound ?? 0;
+    if (!feedback && currentRound > 0) {
+      setTrainNotice("请先填写你对当前模型差距或修改方向的评价。");
+      return;
+    }
+    await handleTrainClick(feedback || undefined);
+    setTrainFeedback("");
+  }, [handleTrainClick, orchestrateState.training?.currentRound, trainFeedback]);
 
   const openTrainSave = useCallback(() => {
     setTrainSaveName(`${selectedSession?.name || selectedSession?.id || "Trained"} Profile`);
@@ -1010,21 +1008,24 @@ export function AppShell() {
   // Show chat area if a session is selected, or if we have a cwd to start a new session in
   const effectiveNewSessionCwd = newSessionCwd ?? (selectedSession === null && !selectedWorkflow && draftChatOpen ? activeCwd : null);
   const showWorkflow = selectedWorkflow !== null;
-  const showChat = !showWorkflow && (selectedSession !== null || draftChatOpen || effectiveNewSessionCwd !== null);
+  const showTrain = mainView === "train" && selectedSession !== null;
+  const showChat = !showWorkflow && !showTrain && (selectedSession !== null || draftChatOpen || effectiveNewSessionCwd !== null);
 
   useEffect(() => {
     // Clear only when navigating to a different saved session. If we just created
-    // a session for the current Multi-Agent turn, keep the optimistic messages visible
+    // a session for the current Workflow turn, keep the optimistic messages visible
     // until the persisted session reload catches up.
     if (selectedSession?.id && selectedSession.id !== activeMultiAgentSessionRef.current) {
       setMultiAgentMessages([]);
     }
   }, [selectedSession?.id, effectiveNewSessionCwd]);
   // While restoring initial session from URL, don't show the placeholder
-  const showPlaceholder = initialSessionRestored && !showChat && !showWorkflow;
+  const showPlaceholder = initialSessionRestored && !showChat && !showWorkflow && !showTrain;
 
   const activeFileTab = fileTabs.find((t) => t.id === activeFileTabId) ?? null;
-  const workspaceMode: "workflow" | "chat" | "file" | "agent" | "empty" = showWorkflow
+  const workspaceMode: "workflow" | "train" | "chat" | "file" | "agent" | "empty" = showTrain
+    ? "train"
+    : showWorkflow
     ? "workflow"
     : activeFileTab?.filePath
     ? "file"
@@ -1231,10 +1232,10 @@ export function AppShell() {
           <div style={{ minWidth: 0, flex: 1, display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
             <span style={{ display: "inline-flex", alignItems: "center", gap: 7, fontSize: 12, fontWeight: 800, letterSpacing: "0.01em" }}>
               <span style={{ width: 7, height: 7, borderRadius: 999, background: multiAgentMode ? "#0a84ff" : "var(--border)", boxShadow: multiAgentMode ? "0 0 0 4px rgba(10,132,255,0.12)" : "none" }} />
-              多Agent
+              Workflow
             </span>
             <span style={{ fontSize: 11, color: "var(--text-muted)" }}>
-              {multiAgentMode ? (latestProgress?.text || `阶段：${collaborationSummary.stage}`) : "关闭，下一条复杂消息走单Agent"}
+              {multiAgentMode ? (latestProgress?.text || `阶段：${collaborationSummary.stage}`) : "关闭，下一条复杂消息走普通聊天"}
             </span>
             {activeTaskCount > 0 && <span style={{ fontSize: 10, color: "#0a84ff", padding: "2px 7px", borderRadius: 999, background: "rgba(10,132,255,0.10)" }}>任务组运行中</span>}
             {guardianAutoMultiAgentSuppressed && <span style={{ fontSize: 10, color: "#f59e0b", padding: "2px 6px", borderRadius: 999, background: "rgba(245,158,11,0.10)" }}>用户接管</span>}
@@ -1276,7 +1277,7 @@ export function AppShell() {
               boxShadow: multiAgentMode ? "0 8px 18px rgba(10,132,255,0.18)" : "none",
               transition: "background 0.16s ease, color 0.16s ease, box-shadow 0.16s ease",
             }}
-            title={multiAgentMode ? "关闭 Multi-Agent" : "开启 Multi-Agent"}
+            title={multiAgentMode ? "关闭 Workflow" : "开启 Workflow"}
           >
             <span style={{ position: "relative", width: 22, height: 20, borderRadius: 999, background: multiAgentMode ? "rgba(255,255,255,0.22)" : "var(--border)", display: "inline-block" }}>
               <span style={{ position: "absolute", top: 3, left: multiAgentMode ? 10 : 3, width: 14, height: 14, borderRadius: 999, background: multiAgentMode ? "white" : "var(--bg)", transition: "left 0.16s ease" }} />
@@ -1330,6 +1331,162 @@ export function AppShell() {
   const trainAtLimit = trainCurrentRound >= trainMaxRounds && !trainRunning;
   const trainDisabled = trainAtLimit || trainBusy;
   const trainCanSave = Boolean(orchestrateState.training) && trainCurrentRound >= 1 && !trainRunning;
+  const trainRounds = orchestrateState.training?.rounds?.filter((round) => round.status !== "discarded") || [];
+  const latestTrainRound = trainRounds[trainRounds.length - 1] || null;
+  const latestTrainDetail = latestTrainRound && trainRoundDetails[latestTrainRound.round]?.status === "loaded"
+    ? (trainRoundDetails[latestTrainRound.round] as { status: "loaded"; detail: TrainRoundDetail }).detail
+    : null;
+  const latestChallengerText = latestTrainDetail?.challengerOutput || latestTrainDetail?.challenger_output || latestTrainRound?.challengerPreview || orchestrateState.training?.challengerPreview || "";
+  const latestCurrentBefore = latestTrainDetail?.base_output_before || latestTrainRound?.baseBeforePreview || "";
+  const latestCurrentAfter = latestTrainDetail?.base_output_after || latestTrainRound?.baseAfterPreview || "";
+  const trainBody = showTrain ? (
+    <div className="codex-scroll-column" style={{ height: "100%", overflowY: "auto", padding: "18px 22px 24px" }}>
+      <div style={{ maxWidth: 1180, margin: "0 auto", display: "grid", gap: 14 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+          <div>
+            <div style={{ fontSize: 22, fontWeight: 860, color: "var(--text)", letterSpacing: "-0.03em" }}>Train</div>
+            <div style={{ marginTop: 5, fontSize: 12, color: "var(--text-muted)", lineHeight: 1.7 }}>
+              当前模型和最强模型并排产出；你评价差距后，当前模型按本轮经验重答，满意后保存为 Profile 与 Skill 经验。
+            </div>
+          </div>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+            <span className="codex-pill" style={{ fontSize: 11 }}>第 {trainCurrentRound}/{trainMaxRounds} 轮</span>
+            {orchestrateState.training?.savedProfileId ? (
+              <span className="codex-pill" style={{ fontSize: 11, color: "#22c55e" }}>Saved: {orchestrateState.training.savedProfileId}</span>
+            ) : null}
+            <button
+              type="button"
+              onClick={() => setMainView("chat")}
+              style={{ border: "1px solid var(--border)", background: "var(--bg)", color: "var(--text-muted)", borderRadius: 10, height: 32, padding: "0 10px", cursor: "pointer", fontSize: 12, fontWeight: 750 }}
+            >
+              Back
+            </button>
+          </div>
+        </div>
+
+        {trainNotice ? (
+          <div style={{ border: "1px solid rgba(245,158,11,0.28)", background: "rgba(245,158,11,0.08)", color: "#b45309", borderRadius: 14, padding: "10px 12px", fontSize: 12, lineHeight: 1.6 }}>
+            {trainNotice}
+          </div>
+        ) : null}
+
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: 12 }}>
+          <TrainComparePanel
+            title="当前模型成果"
+            subtitle={latestCurrentAfter ? "按训练补丁重答" : "原始输出 / 等待重答"}
+            text={latestCurrentAfter || latestCurrentBefore || "点击开始后，当前模型会按本轮训练规则重新给出完整作答。"}
+            tone="base"
+          />
+          <TrainComparePanel
+            title="最强模型成果"
+            subtitle={orchestrateState.training?.hasChallengerOutput ? "高端 challenger 参照" : "等待 challenger"}
+            text={latestChallengerText || "点击开始后，最强模型会先给出参照答案，用于对齐当前模型。"}
+            tone="challenger"
+          />
+        </div>
+
+        <div className="codex-card" style={{ borderRadius: 18, padding: "14px 16px", display: "grid", gap: 12 }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 850, color: "var(--text)" }}>评价差距或输入修改意见</div>
+              <div style={{ marginTop: 4, fontSize: 11, color: "var(--text-muted)" }}>
+                {trainCurrentRound === 0 ? "第一轮可直接开始；之后请写出差距，系统会把意见加入下一轮重答。" : "写下当前模型还差什么，下一轮会带着你的意见重新训练。"}
+              </div>
+            </div>
+            {latestTrainRound?.alignment ? (
+              <span className="codex-pill" style={{ fontSize: 11, color: latestTrainRound.alignment.score >= 80 ? "#22c55e" : "#f59e0b" }}>
+                对齐 {latestTrainRound.alignment.score}/100
+              </span>
+            ) : null}
+          </div>
+          <textarea
+            value={trainFeedback}
+            onChange={(event) => setTrainFeedback(event.target.value)}
+            placeholder={trainCurrentRound === 0 ? "可选：补充你希望本轮训练特别关注的质量标准。" : "例如：当前模型缺少边界条件分析，语气不够像最终交付，步骤三需要更具体。"}
+            disabled={trainRunning || trainBusy || trainAtLimit}
+            style={{
+              width: "100%",
+              minHeight: 92,
+              borderRadius: 14,
+              border: "1px solid var(--shell-edge)",
+              background: "var(--bg)",
+              color: "var(--text)",
+              padding: "12px 13px",
+              resize: "vertical",
+              outline: "none",
+              lineHeight: 1.6,
+              fontSize: 13,
+            }}
+          />
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "space-between", alignItems: "center" }}>
+            <div style={{ fontSize: 11, color: "var(--text-muted)" }}>
+              {trainRunning ? `训练中：${trainStatusText(orchestrateState.training?.phase)}` : trainAtLimit ? "已达到最大轮次，可保存或返回。" : "满意后点击 Save 固化为可复用 Profile。"}
+            </div>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              <button
+                type="button"
+                onClick={() => void handleSubmitTrainFeedback()}
+                disabled={trainDisabled}
+                style={{ border: "1px solid var(--text)", background: trainDisabled ? "var(--bg-secondary)" : "var(--text)", color: trainDisabled ? "var(--text-dim)" : "var(--bg)", borderRadius: 12, padding: "9px 13px", fontSize: 12, fontWeight: 850, cursor: trainDisabled ? "not-allowed" : "pointer" }}
+              >
+                {trainRunning ? trainStatusText(orchestrateState.training?.phase) : trainCurrentRound === 0 ? "Start" : "重新作答"}
+              </button>
+              <button
+                type="button"
+                onClick={openTrainSave}
+                disabled={!trainCanSave}
+                style={{ border: "1px solid var(--shell-edge)", background: "var(--bg)", color: trainCanSave ? "var(--text)" : "var(--text-dim)", borderRadius: 12, padding: "9px 13px", fontSize: 12, fontWeight: 850, cursor: trainCanSave ? "pointer" : "not-allowed" }}
+              >
+                Save
+              </button>
+            </div>
+          </div>
+          {trainSaveOpen ? (
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center", borderTop: "1px solid var(--shell-edge)", paddingTop: 12 }}>
+              <input
+                value={trainSaveName}
+                onChange={(event) => setTrainSaveName(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") void handleSaveTrain();
+                  if (event.key === "Escape") setTrainSaveOpen(false);
+                }}
+                placeholder="Profile name"
+                style={{ height: 34, minWidth: 260, flex: "1 1 260px", borderRadius: 10, border: "1px solid var(--border)", background: "var(--bg)", color: "var(--text)", padding: "0 10px", fontSize: 12 }}
+              />
+              <button type="button" onClick={() => void handleSaveTrain()} disabled={trainSaveBusy || !trainSaveName.trim()} style={{ border: "1px solid var(--border)", background: "var(--bg-secondary)", color: "var(--text)", borderRadius: 10, height: 34, padding: "0 11px", cursor: trainSaveBusy ? "default" : "pointer", fontSize: 12 }}>
+                {trainSaveBusy ? "Saving..." : "Save Profile"}
+              </button>
+              <button type="button" onClick={() => setTrainSaveOpen(false)} disabled={trainSaveBusy} style={{ border: "1px solid var(--border)", background: "transparent", color: "var(--text-muted)", borderRadius: 10, height: 34, padding: "0 11px", cursor: "pointer", fontSize: 12 }}>
+                Cancel
+              </button>
+            </div>
+          ) : null}
+        </div>
+
+        {trainRounds.length ? (
+          <div style={{ display: "grid", gap: 10 }}>
+            {trainRounds.map((round, index) => {
+              const latest = index === trainRounds.length - 1;
+              const open = openTrainRounds[round.round] ?? latest;
+              return (
+                <TrainRoundCard
+                  key={`${round.round}-${round.timestamp || index}`}
+                  sessionId={activeTrainSessionId}
+                  round={round}
+                  open={open}
+                  detailState={trainRoundDetails[round.round]}
+                  onToggle={(nextOpen) => {
+                    setOpenTrainRounds((prev) => ({ ...prev, [round.round]: nextOpen }));
+                    if (nextOpen) loadTrainRoundDetail(round.round);
+                  }}
+                />
+              );
+            })}
+          </div>
+        ) : null}
+      </div>
+    </div>
+  ) : null;
 
   const sidebarContent = (
     <>
@@ -1346,7 +1503,7 @@ export function AppShell() {
         onInitialRestoreDone={handleInitialRestoreDone}
         refreshKey={refreshKey}
         onSessionDeleted={handleSessionDeleted}
-        selectedCwd={selectedSession?.cwd ?? newSessionCwd ?? null}
+        selectedCwd={selectedSession?.cwd ?? newSessionCwd ?? activeCwd ?? null}
         onCwdChange={handleCwdChange}
         selectedWorkflowId={selectedWorkflow?.id ?? null}
         onSelectWorkflow={handleSelectWorkflow}
@@ -1488,9 +1645,9 @@ export function AppShell() {
           {mainView === "chat" && showChat && selectedSession?.id && (
             <div className="codex-top-reveal codex-top-actions codex-segmented" style={{ marginLeft: "auto" }}>
               <button
-                onClick={() => void handleTrainClick()}
-                disabled={trainDisabled}
-                title="Train current task against a high-end challenger"
+                onClick={handleOpenTrainView}
+                disabled={trainBusy}
+                title="Open Train"
                 style={{
                   display: "flex",
                   alignItems: "center",
@@ -1499,8 +1656,8 @@ export function AppShell() {
                   padding: "0 12px",
                   border: "none",
                   color: "var(--text-muted)",
-                  cursor: trainDisabled ? "not-allowed" : "pointer",
-                  opacity: trainDisabled ? 0.45 : 1,
+                  cursor: trainBusy ? "not-allowed" : "pointer",
+                  opacity: trainBusy ? 0.45 : 1,
                   flexShrink: 0,
                   fontSize: 11,
                   whiteSpace: "nowrap",
@@ -1851,6 +2008,8 @@ export function AppShell() {
               onPromoteTaskSkills={promoteTaskSkills}
               onRenameProfile={handleRenameProfile}
             />
+          ) : showTrain ? (
+            trainBody
           ) : mainView === "workflow" ? (
             workflowBody
           ) : showChat ? (
@@ -1896,7 +2055,7 @@ export function AppShell() {
                     <div>
                       <div style={{ fontSize: 22, fontWeight: 800, color: "var(--text)", letterSpacing: "-0.03em", marginBottom: 6 }}>Start a Codex-style workspace</div>
                       <div style={{ fontSize: 13, color: "var(--text-muted)", lineHeight: 1.7 }}>
-                        Pick a project, open a session, and keep chat, files, workflows, and multi-agent state in one surface.
+                        Pick a project, open a session, and keep chat, files, and workflow state in one surface.
                       </div>
                     </div>
                   </div>
@@ -1913,7 +2072,7 @@ export function AppShell() {
                     </div>
                     <div className="codex-card" style={{ borderRadius: 20, padding: "16px 16px 14px" }}>
                       <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text-dim)", marginBottom: 6 }}>3. Collaborate</div>
-                      <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)", marginBottom: 4 }}>Run chat or multi-agent</div>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)", marginBottom: 4 }}>Run chat or workflow</div>
                       <div style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.7 }}>Stay in one transcript while the orchestration strip exposes progress, retries, and escalation state.</div>
                     </div>
                   </div>
@@ -1954,7 +2113,9 @@ function TrainRoundCard({
   const suggestion = detail?.suggestion || round.suggestion;
   const alignment = detail?.alignment || round.alignment;
   const challengerText = detail?.challengerOutput || detail?.challenger_output || round.challengerPreview || "";
+  const beforeText = detail?.base_output_before || round.baseBeforePreview || "";
   const afterText = detail?.base_output_after || round.baseAfterPreview || "";
+  const userFeedback = detail?.user_feedback || (round as TrainRound & { user_feedback?: string }).user_feedback || "";
   const suggestionText = suggestion
     ? `${suggestion.target_file}#${suggestion.target_section}\n${suggestion.change_type}: ${suggestion.after || ""}\n\n${suggestion.rationale || ""}`
     : "";
@@ -1992,12 +2153,59 @@ function TrainRoundCard({
               <span style={{ color: "var(--text-dim)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{alignment.reason || alignment.remaining_gap || "已完成对齐评估"}</span>
             </div>
           ) : null}
-          <TrainSection title="高端模型输出" text={challengerText} />
-          <TrainSection title="改进意见" text={suggestionText} />
-          <TrainSection title="当前模型新输出" text={afterText} />
+          <TrainSection title="用户本轮评价" text={userFeedback} />
+          <TrainSection title="当前模型原成果" text={beforeText} />
+          <TrainSection title="最强模型成果" text={challengerText} />
+          <TrainSection title="改进补丁" text={suggestionText} />
+          <TrainSection title="当前模型重答" text={afterText} />
         </div>
       ) : null}
     </details>
+  );
+}
+
+function TrainComparePanel({
+  title,
+  subtitle,
+  text,
+  tone,
+}: {
+  title: string;
+  subtitle: string;
+  text: string;
+  tone: "base" | "challenger";
+}) {
+  const accent = tone === "challenger" ? "#8b5cf6" : "var(--accent)";
+  return (
+    <section className="codex-card" style={{ borderRadius: 18, padding: "14px 16px", minHeight: 360, display: "flex", flexDirection: "column", gap: 10 }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+        <div>
+          <div style={{ fontSize: 13, fontWeight: 850, color: "var(--text)" }}>{title}</div>
+          <div style={{ marginTop: 3, fontSize: 11, color: "var(--text-muted)" }}>{subtitle}</div>
+        </div>
+        <span style={{ width: 9, height: 9, borderRadius: 999, background: accent, boxShadow: `0 0 0 4px ${tone === "challenger" ? "rgba(139,92,246,0.12)" : "color-mix(in srgb, var(--accent) 14%, transparent)"}` }} />
+      </div>
+      <div
+        className="codex-scroll-column"
+        style={{
+          flex: 1,
+          minHeight: 280,
+          maxHeight: "52vh",
+          overflow: "auto",
+          whiteSpace: "pre-wrap",
+          fontFamily: "var(--font-mono)",
+          lineHeight: 1.62,
+          padding: "12px 13px",
+          borderRadius: 12,
+          border: "1px solid var(--shell-edge)",
+          background: "color-mix(in srgb, var(--bg-panel) 72%, transparent)",
+          color: "var(--text-muted)",
+          fontSize: 12,
+        }}
+      >
+        {text}
+      </div>
+    </section>
   );
 }
 

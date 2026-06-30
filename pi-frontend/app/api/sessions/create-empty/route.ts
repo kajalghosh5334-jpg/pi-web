@@ -17,10 +17,10 @@ export async function POST(req: Request) {
 
     const sm = SessionManager.create(cwd);
     // Force file creation so the session can be listed/resolved before an agent process exists.
-    sm.appendSessionInfo((name || "Multi-Agent Session").slice(0, 80));
+    sm.appendSessionInfo((name || "Workflow Session").slice(0, 80));
     const filePath = sm.getSessionFile();
     // SessionManager intentionally delays writing user-only sessions until an assistant
-    // exists. For Multi-Agent we need the session to exist immediately so later append
+    // exists. Empty sessions need to exist immediately so later append
     // calls can resolve/open it, so flush the header/session_info entries now.
     if (filePath && !existsSync(filePath)) {
       mkdirSync(dirname(filePath), { recursive: true });
