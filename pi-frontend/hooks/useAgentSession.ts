@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef, useEffect, useReducer } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import type { AgentMessage, SessionInfo, SessionTreeNode } from "@/lib/types";
 import { normalizeToolCalls } from "@/lib/normalize";
 import { sendAgentCommand } from "@/lib/agent-client";
@@ -19,40 +19,19 @@ export interface SessionData {
   };
 }
 
-interface StreamingState {
-  isStreaming: boolean;
-  streamingMessage: Partial<AgentMessage> | null;
-}
-
-type StreamAction =
-  | { type: "start" }
-  | { type: "update"; message: Partial<AgentMessage> }
-  | { type: "end" }
-  | { type: "reset" };
-
-function streamReducer(state: StreamingState, action: StreamAction): StreamingState {
-  switch (action.type) {
-    case "start":
-      return { isStreaming: true, streamingMessage: null };
-    case "update":
-      return { isStreaming: true, streamingMessage: action.message };
-    case "end":
-    case "reset":
-      return { isStreaming: false, streamingMessage: null };
-    default:
-      return state;
-  }
-}
-
 interface AgentEvent {
   type: string;
   [key: string]: unknown;
 }
 
+type OptimisticAgentMessage = AgentMessage & { _optimistic?: boolean };
+
 interface CompactCommandResult {
   tokensBefore?: number;
   estimatedTokensAfter?: number;
 }
+
+type LoadSessionMode = "full" | "light";
 
 export type AgentPhase =
   | { kind: "waiting_model" }
@@ -127,7 +106,9 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
   const [activeLeafId, setActiveLeafId] = useState<string | null>(null);
   const [messages, setMessages] = useState<AgentMessage[]>([]);
   const [entryIds, setEntryIds] = useState<string[]>([]);
-  const [streamState, dispatch] = useReducer(streamReducer, { isStreaming: false, streamingMessage: null });
+  const [isStreaming, setIsStreaming] = useState(false);
+  const [currentStreamingMessageId, setCurrentStreamingMessageId] = useState<string | null>(null);
+  const streamingIdCounter = useRef(0);
   const [agentRunning, setAgentRunning] = useState(false);
   const [modelNames, setModelNames] = useState<Record<string, string>>({});
   const [modelList, setModelList] = useState<ModelEntry[]>([]);
@@ -147,9 +128,13 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
   const [compactError, setCompactError] = useState<string | null>(null);
   const [compactResult, setCompactResult] = useState<CompactResultInfo | null>(null);
   const [agentPhase, setAgentPhase] = useState<AgentPhase>(null);
+  const [finalOutputStarted, setFinalOutputStarted] = useState(false);
 
   const eventSourceRef = useRef<EventSource | null>(null);
   const sessionIdRef = useRef<string | null>(session?.id ?? null);
+  const sessionLoadTokenRef = useRef(0);
+  const fullSessionLoadTokenRef = useRef(-1);
+  const fullSessionRefreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const agentRunningRef = useRef(false);
   const handleAgentEventRef = useRef<((event: AgentEvent) => void) | null>(null);
   const initialScrollDoneRef = useRef(false);
@@ -183,12 +168,14 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
     return total > 0 ? { tokens, cost } : null;
   })();
 
-  const loadSession = useCallback(async (sid: string, showLoading = false, includeState = false) => {
+  const loadSession = useCallback(async (sid: string, showLoading = false, includeState = false, mode: LoadSessionMode = "full", token = sessionLoadTokenRef.current) => {
     try {
       if (showLoading) setLoading(true);
-      const url = includeState
-        ? `/api/sessions/${encodeURIComponent(sid)}?includeState`
-        : `/api/sessions/${encodeURIComponent(sid)}`;
+      const params = new URLSearchParams();
+      if (includeState) params.set("includeState", "1");
+      if (mode === "light") params.set("light", "1");
+      const query = params.toString();
+      const url = `/api/sessions/${encodeURIComponent(sid)}${query ? `?${query}` : ""}`;
       const res = await fetch(url);
       if (res.status === 404) {
         if (showLoading) {
@@ -201,9 +188,12 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
       }
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const d = await res.json() as SessionData & { agentState?: { running: boolean; state?: { isStreaming?: boolean; isCompacting?: boolean; contextUsage?: { percent: number | null; contextWindow: number; tokens: number | null } | null; systemPrompt?: string; thinkingLevel?: string } } };
+      if (sessionIdRef.current !== sid || sessionLoadTokenRef.current !== token) return null;
+      if (mode === "light" && fullSessionLoadTokenRef.current === token) return d.agentState ?? null;
+      if (mode === "full") fullSessionLoadTokenRef.current = token;
       setData(d);
       setActiveLeafId(d.leafId);
-      setMessages(d.context.messages);
+      setMessages((prev) => mergeOptimisticMessages(prev, d.context.messages));
       setEntryIds(d.context.entryIds ?? []);
       setCurrentModelOverride(null);
       setError(null);
@@ -216,7 +206,7 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
       setError(String(e));
       return null;
     } finally {
-      if (showLoading) setLoading(false);
+      if (showLoading && sessionIdRef.current === sid && sessionLoadTokenRef.current === token) setLoading(false);
     }
   }, []);
 
@@ -283,14 +273,20 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
         agentRunningRef.current = true;
         setAgentRunning(true);
         setAgentPhase({ kind: "waiting_model" });
-        dispatch({ type: "start" });
+        setIsStreaming(true);
+        setFinalOutputStarted(false);
+        break;
+      case "final_output_started":
+        setFinalOutputStarted(true);
         break;
       case "agent_end":
         agentRunningRef.current = false;
         setAgentRunning(false);
         setAgentPhase(null);
         setRetryInfo(null);
-        dispatch({ type: "end" });
+        setCurrentStreamingMessageId(null);
+        setIsStreaming(false);
+        setFinalOutputStarted(true);
         if (sessionIdRef.current) {
           loadSession(sessionIdRef.current);
           fetch(`/api/agent/${encodeURIComponent(sessionIdRef.current)}`)
@@ -303,24 +299,31 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
         }
         onAgentEnd?.();
         break;
-      case "message_start":
-      case "message_update": {
-        const msg = event.message as Partial<AgentMessage> | undefined;
-        if (msg?.role === "user") {
-          break;
-        }
-        if (msg) {
-          dispatch({ type: "update", message: normalizeToolCalls(msg as AgentMessage) });
+      case "message_start": {
+        const startMsg = event.message as Partial<AgentMessage> | undefined;
+        if (startMsg?.role === "user") break;
+        if (startMsg) {
+          const id = String(++streamingIdCounter.current);
+          setCurrentStreamingMessageId(id);
+          setMessages((prev) => [...prev, { ...normalizeToolCalls(startMsg as AgentMessage), role: "assistant", _streamId: id } as unknown as AgentMessage]);
         }
         setAgentPhase(null);
         break;
       }
+      case "message_update": {
+        const updMsg = event.message as Partial<AgentMessage> | undefined;
+        if (updMsg?.role === "user" || !updMsg) break;
+        const normalized = normalizeToolCalls(updMsg as AgentMessage);
+        setMessages((prev) => {
+          if (prev.length === 0) return [{ ...normalized, role: "assistant", _streamId: String(++streamingIdCounter.current) } as unknown as AgentMessage];
+          const last = { ...prev[prev.length - 1] };
+          return [...prev.slice(0, -1), { ...last, ...normalized, content: normalized.content?.length ? normalized.content : last.content } as AgentMessage];
+        });
+        setAgentPhase(null);
+        break;
+      }
       case "message_end": {
-        const completed = event.message as AgentMessage | undefined;
-        if (completed && completed.role !== "user") {
-          setMessages((prev) => [...prev, normalizeToolCalls(completed)]);
-        }
-        dispatch({ type: "reset" });
+        setCurrentStreamingMessageId(null);
         setAgentPhase({ kind: "waiting_model" });
         break;
       }
@@ -376,18 +379,18 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
     if (agentRunning) return;
 
     const imageBlocks = images?.map((img) => ({ type: "image" as const, source: { type: "base64" as const, media_type: img.mimeType, data: img.data } }));
-    const userMsg: AgentMessage = {
+    const userMsg: OptimisticAgentMessage = {
       role: "user",
       content: imageBlocks?.length
         ? [...(message.trim() ? [{ type: "text" as const, text: message }] : []), ...imageBlocks]
         : message,
       timestamp: Date.now(),
+      _optimistic: true,
     };
     setMessages((prev) => [...prev, userMsg]);
     agentRunningRef.current = true;
     setAgentRunning(true);
     setAgentPhase({ kind: "waiting_model" });
-    dispatch({ type: "start" });
     pendingScrollToUserRef.current = true;
     completionScrollAllowedRef.current = true;
 
@@ -440,7 +443,6 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
       agentRunningRef.current = false;
       setAgentRunning(false);
       setAgentPhase(null);
-      dispatch({ type: "end" });
     }
   }, [isNew, newSessionCwd, newSessionModel, toolPreset, thinkingLevel, session, agentRunning, connectEvents, onSessionCreated]);
 
@@ -626,7 +628,6 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
   useEffect(() => {
     eventSourceRef.current?.close();
     eventSourceRef.current = null;
-    dispatch({ type: "reset" });
     setAgentRunning(false);
     setAgentPhase(null);
     setRetryInfo(null);
@@ -643,14 +644,25 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
     completionScrollAllowedRef.current = true;
 
     if (session) {
+      const loadToken = sessionLoadTokenRef.current + 1;
+      sessionLoadTokenRef.current = loadToken;
+      fullSessionLoadTokenRef.current = -1;
+      if (fullSessionRefreshTimerRef.current) {
+        clearTimeout(fullSessionRefreshTimerRef.current);
+        fullSessionRefreshTimerRef.current = null;
+      }
       sessionIdRef.current = session.id;
       setData(null);
       setActiveLeafId(null);
-      setMessages([]);
+      setMessages((prev) => prev.filter((msg) => (msg as OptimisticAgentMessage)._optimistic));
       setEntryIds([]);
       setLoading(false);
       setError(null);
-      void loadSession(session.id, false, false);
+      void loadSession(session.id, false, false, "light", loadToken);
+      fullSessionRefreshTimerRef.current = setTimeout(() => {
+        fullSessionRefreshTimerRef.current = null;
+        void loadSession(session.id, false, false, "full", loadToken);
+      }, 120);
 
       // Load live agent state in the background so the chat UI doesn't block on get_state.
       void fetch(`/api/agent/${encodeURIComponent(session.id)}`)
@@ -674,6 +686,12 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
         })
         .catch(() => {});
     } else {
+      sessionLoadTokenRef.current += 1;
+      fullSessionLoadTokenRef.current = -1;
+      if (fullSessionRefreshTimerRef.current) {
+        clearTimeout(fullSessionRefreshTimerRef.current);
+        fullSessionRefreshTimerRef.current = null;
+      }
       sessionIdRef.current = null;
       setData(null);
       setActiveLeafId(null);
@@ -683,6 +701,10 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
       setError(null);
     }
     return () => {
+      if (fullSessionRefreshTimerRef.current) {
+        clearTimeout(fullSessionRefreshTimerRef.current);
+        fullSessionRefreshTimerRef.current = null;
+      }
       eventSourceRef.current?.close();
       eventSourceRef.current = null;
     };
@@ -795,12 +817,13 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
 
   return {
     // State
-    data, loading, error, activeLeafId, messages, entryIds, streamState,
+    data, loading, error, activeLeafId, messages, entryIds, isStreaming, currentStreamingMessageId,
     agentRunning, modelNames, modelList, modelThinkingLevels, modelThinkingLevelMaps, newSessionModel, toolPreset, thinkingLevel,
     retryInfo, contextUsage, systemPrompt, forkingEntryId,
     isCompacting, compactError, compactResult, currentModel, displayModel, sessionStats,
     isAutoModelSelection: isNew && newSessionModel === null,
     agentPhase,
+    finalOutputStarted,
     isNew,
     // Refs
     sessionIdRef, eventSourceRef, messagesEndRef, scrollContainerRef,
@@ -809,8 +832,39 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
     handleSend, handleAbort, handleFork, handleNavigate, handleModelChange,
     handleCompact, handleSteer, handleFollowUp, handleAbortCompaction,
     handleToolPresetChange, handleThinkingLevelChange, loadTools, setActiveLeafId, setData, setMessages,
-    dispatch, setAgentRunning, setForkingEntryId,
+    setAgentRunning, setForkingEntryId,
     // Subscriptions
     handleAgentEventRef,
   };
+}
+
+function mergeOptimisticMessages(
+  previousMessages: AgentMessage[],
+  persistedMessages: AgentMessage[],
+): AgentMessage[] {
+  const optimistic = previousMessages.filter((message) => (message as OptimisticAgentMessage)._optimistic);
+  if (optimistic.length === 0) return persistedMessages;
+
+  const persistedKeys = new Set(persistedMessages.map(getOptimisticMatchKey).filter(Boolean) as string[]);
+  const unresolved = optimistic.filter((message) => {
+    const key = getOptimisticMatchKey(message);
+    return key ? !persistedKeys.has(key) : true;
+  }).map((message) => {
+    const next = { ...(message as OptimisticAgentMessage) };
+    delete next._optimistic;
+    return next as AgentMessage;
+  });
+
+  return unresolved.length > 0 ? [...unresolved, ...persistedMessages] : persistedMessages;
+}
+
+function getOptimisticMatchKey(message: AgentMessage): string | null {
+  if (message.role !== "user") return null;
+  if (typeof message.content === "string") return `user:text:${message.content.trim()}`;
+  const text = message.content
+    .filter((block): block is { type: "text"; text: string } => block.type === "text")
+    .map((block) => block.text.trim())
+    .join("\n");
+  const imageCount = message.content.filter((block) => block.type === "image").length;
+  return `user:rich:${text}|images:${imageCount}`;
 }

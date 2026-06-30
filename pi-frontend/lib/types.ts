@@ -203,14 +203,34 @@ export interface WorkflowTaskDefinition {
   id?: string;
   name?: string;
   profileId?: string;
+  model?: string;
+  modelSource?: string;
+  modelReason?: string;
   skills?: string[];
   deps?: string[];
+  prompt?: string;
+  definitionOfDone?: string;
+  acceptanceCriteria?: string[];
+  budget?: {
+    maxRetries?: number;
+    timeoutMs?: number;
+    tokenBudget?: number;
+  };
+  retryPolicy?: string;
+  layout?: {
+    x?: number;
+    y?: number;
+  };
 }
 
 export interface WorkflowDefinition {
   id: string;
   name: string;
   description?: string;
+  status?: "active" | "template" | "legacy";
+  domain?: string;
+  category?: string;
+  templateType?: string;
   cwd?: string;
   leadProfileId?: string;
   reviewPolicy?: "lead_only" | "lead_plus_reviewer";

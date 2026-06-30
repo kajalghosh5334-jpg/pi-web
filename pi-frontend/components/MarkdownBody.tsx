@@ -270,16 +270,13 @@ function CodeBlock({ code, lang, headerAction }: { code: string; lang: string; h
         position: "relative",
         marginTop: 4,
         marginBottom: 4,
-        borderRadius: 6,
+        borderRadius: 12,
         overflow: "hidden",
-        border: "1px solid var(--border)",
       }}
     >
       <div
         style={{
           padding: "3px 10px",
-          background: "var(--bg-panel)",
-          borderBottom: "1px solid var(--border)",
           fontSize: 11,
           color: "var(--text-dim)",
           display: "flex",
@@ -314,8 +311,8 @@ function CodeBlock({ code, lang, headerAction }: { code: string; lang: string; h
           padding: "10px 12px",
           fontSize: 12.5,
           lineHeight: 1.6,
-          borderRadius: 0,
-          background: "var(--bg)",
+          borderRadius: 12,
+          background: "transparent",
         }}
         codeTagProps={{ style: { fontFamily: "var(--font-mono)" } }}
       >

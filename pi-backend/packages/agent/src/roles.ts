@@ -41,7 +41,7 @@ export const AGENT_CONFIGS: Record<AgentRole, AgentConfig> = {
 		canExecuteFiles: false,
 		canReviewResult: false,
 		responsibility: "关键10%：规划、约束锁定、高风险判断",
-		preferredModels: ["opencore-go/glm-5.2", "opencore-go/deepseek-v4-pro"],
+		preferredModels: ["opencode-go/glm-5.2", "opencode-go/deepseek-v4-pro"],
 	},
 	executor: {
 		name: "executor",
@@ -50,7 +50,7 @@ export const AGENT_CONFIGS: Record<AgentRole, AgentConfig> = {
 		canExecuteFiles: true,
 		canReviewResult: false,
 		responsibility: "常规90%：实施执行，必须服从 execution_brief",
-		preferredModels: ["opencore-go/kimi-k2.7-code", "opencore-go/glm-5.2"],
+		preferredModels: ["opencode-go/kimi-k2.7-code", "opencode-go/glm-5.2"],
 	},
 	reviewer: {
 		name: "reviewer",
@@ -59,7 +59,7 @@ export const AGENT_CONFIGS: Record<AgentRole, AgentConfig> = {
 		canExecuteFiles: false,
 		canReviewResult: true,
 		responsibility: "关键10%：终审、风险把关、返工分流",
-		preferredModels: ["opencore-go/deepseek-v4-pro", "opencore-go/glm-5.2"],
+		preferredModels: ["opencode-go/deepseek-v4-pro", "opencode-go/glm-5.2"],
 	},
 	guardian: {
 		name: "guardian",
@@ -68,7 +68,7 @@ export const AGENT_CONFIGS: Record<AgentRole, AgentConfig> = {
 		canExecuteFiles: false,
 		canReviewResult: false,
 		responsibility: "常驻监控：检测模型失败、超时、异常，触发切换",
-		preferredModels: ["opencore-go/deepseek-v4-flash"],
+		preferredModels: ["opencode-go/deepseek-v4-flash"],
 	},
 };
 

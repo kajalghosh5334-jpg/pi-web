@@ -42,41 +42,41 @@ export class ModelOrchestrator {
 	private initDefaultModels() {
 		// Critical tier — 关键10%的规划、审查
 		this.register({
-			id: "opencore-go/deepseek-v4-pro",
+			id: "opencode-go/deepseek-v4-pro",
 			provider: "opencode-go",
 			role: "critical",
 			priority: 1,
-			fallbacks: ["opencore-go/glm-5.2", "openai/gpt-4"],
+			fallbacks: ["opencode-go/glm-5.2", "openai/gpt-4"],
 		});
 
 		this.register({
-			id: "opencore-go/glm-5.2",
+			id: "opencode-go/glm-5.2",
 			provider: "opencode-go",
 			role: "critical",
 			priority: 2,
-			fallbacks: ["opencore-go/deepseek-v4-pro"],
+			fallbacks: ["opencode-go/deepseek-v4-pro"],
 		});
 
 		// Routine tier — 常规90%的执行、写作
 		this.register({
-			id: "opencore-go/kimi-k2.7-code",
+			id: "opencode-go/kimi-k2.7-code",
 			provider: "opencode-go",
 			role: "routine",
 			priority: 1,
-			fallbacks: ["opencore-go/glm-5.2", "opencore-go/minimax-m3"],
+			fallbacks: ["opencode-go/glm-5.2", "opencode-go/minimax-m3"],
 		});
 
 		this.register({
-			id: "opencore-go/minimax-m3",
+			id: "opencode-go/minimax-m3",
 			provider: "opencode-go",
 			role: "routine",
 			priority: 2,
-			fallbacks: ["opencore-go/kimi-k2.7-code"],
+			fallbacks: ["opencode-go/kimi-k2.7-code"],
 		});
 
 		// Guardian — 安全员，常驻监控
 		this.guardianModel = {
-			id: "opencore-go/deepseek-v4-flash",
+			id: "opencode-go/deepseek-v4-flash",
 			provider: "opencode-go",
 			role: "guardian",
 			priority: 1,
@@ -92,7 +92,7 @@ export class ModelOrchestrator {
 		const role = this.getRequiredRole(task);
 		const primary = this.selectPrimaryModel(role);
 		const fallback = this.selectFallbacks(primary);
-		const guardian = task.requiresGuardian ? this.guardianModel : undefined;
+		const guardian = task.requiresGuardian ? (this.guardianModel ?? undefined) : undefined;
 
 		return { primary, guardian, fallback };
 	}

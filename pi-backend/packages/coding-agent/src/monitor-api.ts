@@ -6,6 +6,11 @@ import { Guardian } from "@earendil-works/pi-ai/guardian";
 import { orchestrator } from "@earendil-works/pi-ai/orchestrator";
 import type { Request, Response } from "express";
 
+interface MonitorWebSocket {
+	send(data: string): void;
+	on(event: "close", handler: () => void): void;
+}
+
 let guardian: Guardian | null = null;
 let handoff: AgentHandoff | null = null;
 
@@ -35,22 +40,22 @@ export async function getMonitorStatus(req: Request, res: Response) {
 		agentStatus: {
 			planner: {
 				status: agentContext?.activeAgent === "planner" ? "working" : "idle",
-				model: "opencore-go/glm-5.2",
+				model: "opencode-go/glm-5.2",
 			},
 			executor: {
 				status: agentContext?.activeAgent === "executor" ? "working" : "idle",
-				model: "opencore-go/kimi-k2.7-code",
+				model: "opencode-go/kimi-k2.7-code",
 			},
 			reviewer: {
 				status: agentContext?.activeAgent === "reviewer" ? "working" : "idle",
-				model: "opencore-go/deepseek-v4-pro",
+				model: "opencode-go/deepseek-v4-pro",
 			},
 		},
 
 		// Guardian 状态
 		guardianStatus: {
 			status: guardianState?.status || "idle",
-			model: "opencore-go/deepseek-v4-flash",
+			model: "opencode-go/deepseek-v4-flash",
 			interventionCount: guardianState?.interventionCount || 0,
 		},
 
@@ -133,7 +138,7 @@ export async function getHealthCheck(req: Request, res: Response) {
 	res.json(systemHealth);
 }
 
-export function websocketMonitor(ws: WebSocket) {
+export function websocketMonitor(ws: MonitorWebSocket) {
 	const interval = setInterval(() => {
 		const agentContext = handoff?.getContext();
 		const guardianState = guardian?.getState();
@@ -146,20 +151,20 @@ export function websocketMonitor(ws: WebSocket) {
 				agentStatus: {
 					planner: {
 						status: agentContext?.activeAgent === "planner" ? "working" : "idle",
-						model: "opencore-go/glm-5.2",
+						model: "opencode-go/glm-5.2",
 					},
 					executor: {
 						status: agentContext?.activeAgent === "executor" ? "working" : "idle",
-						model: "opencore-go/kimi-k2.7-code",
+						model: "opencode-go/kimi-k2.7-code",
 					},
 					reviewer: {
 						status: agentContext?.activeAgent === "reviewer" ? "working" : "idle",
-						model: "opencore-go/deepseek-v4-pro",
+						model: "opencode-go/deepseek-v4-pro",
 					},
 				},
 				guardianStatus: {
 					status: guardianState?.status || "idle",
-					model: "opencore-go/deepseek-v4-flash",
+					model: "opencode-go/deepseek-v4-flash",
 					interventionCount: guardianState?.interventionCount || 0,
 				},
 				observerHealth: {

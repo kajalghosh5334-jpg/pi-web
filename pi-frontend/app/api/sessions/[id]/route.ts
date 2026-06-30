@@ -6,6 +6,8 @@ import {
   resolveSessionPath,
   invalidateSessionPathCache,
   buildSessionContext,
+  buildRecentSessionContext,
+  invalidateSessionListCache,
 } from "@/lib/session-reader";
 import { getRpcSession } from "@/lib/rpc-manager";
 
@@ -120,15 +122,37 @@ export async function GET(
       return NextResponse.json({ error: "Session not found" }, { status: 404 });
     }
 
+    const url = new URL(req.url);
+    if (url.searchParams.has("light")) {
+      const recent = await buildRecentSessionContext(filePath);
+      return NextResponse.json({
+        sessionId: id,
+        filePath,
+        info: null,
+        leafId: recent.leafId,
+        tree: [],
+        context: {
+          messages: recent.messages,
+          entryIds: recent.entryIds,
+          thinkingLevel: recent.thinkingLevel,
+          model: recent.model,
+        },
+        partial: true,
+      });
+    }
+
     const sm = SessionManager.open(filePath);
     const entries = sm.getEntries() as never;
     const leafId = sm.getLeafId();
+    const context = url.searchParams.has("treeOnly")
+      ? null
+      : buildSessionContext(entries, leafId);
     const tree = projectTreeForResponse(sm.getTree());
-    const context = buildSessionContext(entries, leafId);
 
     const header = sm.getHeader();
     let modified = header?.timestamp ?? new Date().toISOString();
     try { modified = statSync(filePath).mtime.toISOString(); } catch { /* use header timestamp */ }
+    const firstUserMessage = context?.messages.find((m) => m.role === "user");
     const info = header ? {
       path: filePath,
       id: header.id,
@@ -136,17 +160,16 @@ export async function GET(
       name: sm.getSessionName(),
       created: header.timestamp,
       modified,
-      messageCount: context.messages.length,
-      firstMessage: context.messages.find((m) => m.role === "user")
+      messageCount: context?.messages.length ?? 0,
+      firstMessage: firstUserMessage
         ? (() => {
-            const msg = context.messages.find((m) => m.role === "user")!;
+            const msg = firstUserMessage;
             const c = (msg as { content: unknown }).content;
             return typeof c === "string" ? c : (Array.isArray(c) ? (c.find((b: { type: string }) => b.type === "text") as { text: string } | undefined)?.text ?? "" : "") || "(no messages)";
           })()
         : "(no messages)",
     } : null;
 
-    const url = new URL(req.url);
     let agentState: { running: boolean; state?: unknown } | undefined;
     if (url.searchParams.has("includeState")) {
       const rpc = getRpcSession(id);
@@ -164,7 +187,7 @@ export async function GET(
       info,
       leafId,
       tree,
-      context,
+      ...(context ? { context } : {}),
       ...(agentState !== undefined ? { agentState } : {}),
     });
   } catch (error) {
@@ -189,6 +212,7 @@ export async function PATCH(
     }
     const sm = SessionManager.open(filePath);
     sm.appendSessionInfo(name.trim());
+    invalidateSessionListCache();
     return NextResponse.json({ ok: true });
   } catch (error) {
     return NextResponse.json({ error: String(error) }, { status: 500 });
@@ -239,6 +263,7 @@ export async function DELETE(
     getRpcSession(id)?.destroy();
     unlinkSync(filePath);
     invalidateSessionPathCache(id);
+    invalidateSessionListCache();
     return NextResponse.json({ ok: true });
   } catch (error) {
     return NextResponse.json({ error: String(error) }, { status: 500 });

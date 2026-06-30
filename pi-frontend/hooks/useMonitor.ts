@@ -101,12 +101,12 @@ export function useMonitor() {
 		},
 		guardianStatus: {
 			status: "idle",
-			model: "opencore-go/deepseek-v4-flash",
+			model: "opencode-go/deepseek-v4-flash",
 			interventionCount: 0,
 		},
 		observerHealth: {
 			isAlive: true,
-			currentModel: "opencore-go/deepseek-v4-flash",
+			currentModel: "opencode-go/deepseek-v4-flash",
 			lastObservation: 0,
 			failureCount: 0,
 			uptime: 0,

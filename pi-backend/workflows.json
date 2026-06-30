@@ -4,13 +4,16 @@
     "name": "Restart Check",
     "description": "",
     "leadProfileId": "lead-agent",
-    "reviewPolicy": "lead_plus_reviewer",
+    "reviewPolicy": "lead_only",
     "sourceSessionId": "",
     "cwd": "",
     "projectId": "",
     "createdAt": 1782551161490,
     "updatedAt": 1782551161490,
-    "tasks": []
+    "tasks": [],
+    "status": "legacy",
+    "domain": "internal",
+    "templateType": "manual-check"
   },
   "workflow-ui-check": {
     "id": "workflow-ui-check",
@@ -23,6 +26,2455 @@
     "projectId": "",
     "createdAt": 1782552432124,
     "updatedAt": 1782552432124,
-    "tasks": []
+    "tasks": [],
+    "status": "legacy",
+    "domain": "internal",
+    "templateType": "manual-check"
+  },
+  "smoke-workflow-e2e": {
+    "id": "smoke-workflow-e2e",
+    "name": "Smoke Workflow E2E",
+    "description": "",
+    "leadProfileId": "lead-agent",
+    "reviewPolicy": "lead_plus_reviewer",
+    "sourceSessionId": "",
+    "cwd": "/Users/yipengfei/Desktop/pi-fork",
+    "projectId": "",
+    "createdAt": 1782760187913,
+    "updatedAt": 1782760188119,
+    "tasks": [
+      {
+        "id": "wf-a",
+        "name": "Profile A",
+        "profileId": "general-executor",
+        "prompt": "先分析需求",
+        "deps": []
+      },
+      {
+        "id": "wf-b",
+        "name": "Profile B",
+        "profileId": "artifact-flow",
+        "prompt": "再合成结果",
+        "deps": [
+          "wf-a"
+        ]
+      }
+    ],
+    "status": "legacy",
+    "domain": "internal",
+    "templateType": "smoke-test"
+  },
+  "smoke-workflow-e2e-2": {
+    "id": "smoke-workflow-e2e-2",
+    "name": "Smoke Workflow E2E 2",
+    "description": "",
+    "leadProfileId": "lead-agent",
+    "reviewPolicy": "lead_plus_reviewer",
+    "sourceSessionId": "",
+    "cwd": "/Users/yipengfei/Desktop/pi-fork",
+    "projectId": "",
+    "createdAt": 1782760329649,
+    "updatedAt": 1782760329765,
+    "tasks": [
+      {
+        "id": "wf-a",
+        "name": "Profile A",
+        "profileId": "general-executor",
+        "prompt": "先分析需求",
+        "deps": []
+      },
+      {
+        "id": "wf-b",
+        "name": "Profile B",
+        "profileId": "artifact-flow",
+        "prompt": "再合成结果",
+        "deps": [
+          "wf-a"
+        ]
+      }
+    ],
+    "status": "legacy",
+    "domain": "internal",
+    "templateType": "smoke-test"
+  },
+  "smoke-workflow-e2e-3": {
+    "id": "smoke-workflow-e2e-3",
+    "name": "Smoke Workflow E2E 3",
+    "description": "",
+    "leadProfileId": "lead-agent",
+    "reviewPolicy": "lead_plus_reviewer",
+    "sourceSessionId": "",
+    "cwd": "/Users/yipengfei/Desktop/pi-fork",
+    "projectId": "",
+    "createdAt": 1782760495176,
+    "updatedAt": 1782760495296,
+    "tasks": [
+      {
+        "id": "wf-a",
+        "name": "Profile A",
+        "profileId": "general-executor",
+        "prompt": "先分析需求",
+        "deps": []
+      },
+      {
+        "id": "wf-b",
+        "name": "Profile B",
+        "profileId": "artifact-flow",
+        "prompt": "再合成结果",
+        "deps": [
+          "wf-a"
+        ]
+      }
+    ],
+    "status": "legacy",
+    "domain": "internal",
+    "templateType": "smoke-test"
+  },
+  "smoke-workflow-1782761344971": {
+    "id": "smoke-workflow-1782761344971",
+    "name": "Smoke Workflow 1782761344971",
+    "description": "用多个 profile 完成一次项目检查",
+    "leadProfileId": "lead-agent",
+    "reviewPolicy": "lead_plus_reviewer",
+    "sourceSessionId": "",
+    "cwd": "/Users/yipengfei/Desktop/pi-fork",
+    "projectId": "",
+    "createdAt": 1782761344976,
+    "updatedAt": 1782761344986,
+    "tasks": [
+      {
+        "id": "wf-front",
+        "name": "前端检查",
+        "profileId": "frontend-specialist",
+        "prompt": "检查前端入口和 UI 状态，输出可交付结论。",
+        "deps": []
+      },
+      {
+        "id": "wf-back",
+        "name": "后端检查",
+        "profileId": "backend-specialist",
+        "prompt": "检查后端编排 API，输出可交付结论。",
+        "deps": []
+      },
+      {
+        "id": "wf-final",
+        "name": "合成结论",
+        "profileId": "artifact-flow",
+        "prompt": "汇总前两步输出，生成最终交付。",
+        "deps": [
+          "wf-front",
+          "wf-back"
+        ]
+      }
+    ],
+    "status": "legacy",
+    "domain": "internal",
+    "templateType": "smoke-test"
+  },
+  "smoke-workflow-1782761400725": {
+    "id": "smoke-workflow-1782761400725",
+    "name": "Smoke Workflow 1782761400725",
+    "description": "用多个 profile 完成一次项目检查",
+    "leadProfileId": "lead-agent",
+    "reviewPolicy": "lead_plus_reviewer",
+    "sourceSessionId": "",
+    "cwd": "/Users/yipengfei/Desktop/pi-fork",
+    "projectId": "",
+    "createdAt": 1782761400729,
+    "updatedAt": 1782761400734,
+    "tasks": [
+      {
+        "id": "wf-front",
+        "name": "前端检查",
+        "profileId": "frontend-monitor",
+        "prompt": "检查前端入口和 UI 状态，输出可交付结论。",
+        "deps": []
+      },
+      {
+        "id": "wf-back",
+        "name": "后端检查",
+        "profileId": "backend-guardian",
+        "prompt": "检查后端编排 API，输出可交付结论。",
+        "deps": []
+      },
+      {
+        "id": "wf-final",
+        "name": "合成结论",
+        "profileId": "artifact-flow",
+        "prompt": "汇总前两步输出，生成最终交付。",
+        "deps": [
+          "wf-front",
+          "wf-back"
+        ]
+      }
+    ],
+    "status": "legacy",
+    "domain": "internal",
+    "templateType": "smoke-test"
+  },
+  "smoke-workflow-1782761431560": {
+    "id": "smoke-workflow-1782761431560",
+    "name": "Smoke Workflow 1782761431560",
+    "description": "用多个 profile 完成一次项目检查",
+    "leadProfileId": "lead-agent",
+    "reviewPolicy": "lead_plus_reviewer",
+    "sourceSessionId": "",
+    "cwd": "/Users/yipengfei/Desktop/pi-fork",
+    "projectId": "",
+    "createdAt": 1782761431565,
+    "updatedAt": 1782761431578,
+    "tasks": [
+      {
+        "id": "wf-front",
+        "name": "前端检查",
+        "profileId": "frontend-monitor",
+        "prompt": "检查前端入口和 UI 状态，输出可交付结论。",
+        "deps": []
+      },
+      {
+        "id": "wf-back",
+        "name": "后端检查",
+        "profileId": "backend-guardian",
+        "prompt": "检查后端编排 API，输出可交付结论。",
+        "deps": []
+      },
+      {
+        "id": "wf-final",
+        "name": "合成结论",
+        "profileId": "artifact-flow",
+        "prompt": "汇总前两步输出，生成最终交付。",
+        "deps": [
+          "wf-front",
+          "wf-back"
+        ]
+      }
+    ],
+    "status": "legacy",
+    "domain": "internal",
+    "templateType": "smoke-test"
+  },
+  "eval-weak-to-strong-2026-06-29t21-09-41-525z": {
+    "id": "eval-weak-to-strong-2026-06-29t21-09-41-525z",
+    "name": "Eval Weak-to-Strong 2026-06-29T21-09-41-525Z",
+    "description": "用多个 Profile 复用弱模型+强模型审查流程完成一次产品方案任务",
+    "leadProfileId": "lead-agent",
+    "reviewPolicy": "lead_only",
+    "sourceSessionId": "",
+    "cwd": "/Users/yipengfei/Desktop/pi-fork/pi-backend",
+    "projectId": "",
+    "createdAt": 1782769862178,
+    "updatedAt": 1782769862178,
+    "tasks": [
+      {
+        "id": "wf-user",
+        "name": "用户与场景 Profile",
+        "profileId": "general-executor",
+        "model": "opencode-go/deepseek-v4-flash",
+        "prompt": "定义目标用户、任务场景和成功/失败边界。",
+        "deps": [],
+        "acceptanceCriteria": [
+          "覆盖目标用户",
+          "覆盖场景",
+          "给下游交接包"
+        ]
+      },
+      {
+        "id": "wf-loop",
+        "name": "闭环机制 Profile",
+        "profileId": "artifact-flow",
+        "model": "opencode-go/deepseek-v4-flash",
+        "prompt": "设计 MultiAgent、Workflow、Train/Coach 三个闭环如何协作。",
+        "deps": [
+          "wf-user"
+        ],
+        "acceptanceCriteria": [
+          "覆盖三套机制",
+          "说明输入输出",
+          "给下游交接包"
+        ]
+      },
+      {
+        "id": "wf-metrics",
+        "name": "指标与评测 Profile",
+        "profileId": "artifact-reviewer",
+        "model": "opencode-go/deepseek-v4-flash",
+        "prompt": "提出量化指标、真实评测方法、失败模式和修复策略。",
+        "deps": [
+          "wf-loop"
+        ],
+        "acceptanceCriteria": [
+          "至少 6 个指标",
+          "真实评测方法",
+          "失败修复"
+        ]
+      }
+    ],
+    "status": "legacy",
+    "domain": "evaluation",
+    "templateType": "eval-run"
+  },
+  "self-media-content-pipeline": {
+    "id": "self-media-content-pipeline",
+    "name": "自媒体内容生产流水线",
+    "description": "从账号定位/选题策略到素材搜集、初稿生成、主编审稿的可复用内容生产 workflow。",
+    "leadProfileId": "strong-task-architect",
+    "reviewPolicy": "lead_plus_reviewer",
+    "sourceSessionId": "",
+    "cwd": "/Users/yipengfei/Desktop/pi-fork",
+    "projectId": "",
+    "createdAt": 1782860000000,
+    "updatedAt": 1782860000000,
+    "tasks": [
+      {
+        "id": "sm-strategy",
+        "name": "账号定位与选题策略",
+        "profileId": "content-strategy-director",
+        "model": "opencode-go/deepseek-v4-pro",
+        "prompt": "基于本次目标，定义目标受众、平台语境、核心观点、选题角度、不可做清单和验证指标。",
+        "deps": [],
+        "acceptanceCriteria": [
+          "包含目标受众",
+          "包含平台语境",
+          "包含核心观点和选题角度",
+          "包含不可做清单",
+          "包含验证指标"
+        ]
+      },
+      {
+        "id": "sm-research",
+        "name": "素材与竞品搜集",
+        "profileId": "content-researcher",
+        "model": "opencode-go/deepseek-v4-flash",
+        "prompt": "按策略搜集素材、竞品样本、标题样本、评论区痛点和可用事实；只整理资料，不下最终选题结论。",
+        "deps": [
+          "sm-strategy"
+        ],
+        "acceptanceCriteria": [
+          "包含素材来源",
+          "包含可用事实",
+          "包含用户痛点",
+          "包含标题样本",
+          "包含不确定点"
+        ]
+      },
+      {
+        "id": "sm-draft",
+        "name": "内容初稿与平台改写",
+        "profileId": "content-draft-producer",
+        "model": "opencode-go/deepseek-v4-flash",
+        "prompt": "基于策略和素材生成标题备选、开头钩子、正文结构、正文初稿、CTA 和多平台改写版本。",
+        "deps": [
+          "sm-strategy",
+          "sm-research"
+        ],
+        "acceptanceCriteria": [
+          "包含标题备选",
+          "包含开头钩子",
+          "包含正文结构",
+          "包含 CTA",
+          "包含待审风险"
+        ]
+      },
+      {
+        "id": "sm-editor",
+        "name": "主编审稿与发布稿",
+        "profileId": "content-editor-reviewer",
+        "model": "opencode-go/deepseek-v4-pro",
+        "prompt": "审查初稿的事实依据、品牌一致性、表达风险和平台适配；输出发布裁决、修改后的定稿和返工项。",
+        "deps": [
+          "sm-draft"
+        ],
+        "acceptanceCriteria": [
+          "包含发布裁决",
+          "包含事实风险检查",
+          "包含表达风险检查",
+          "包含修改后的发布稿",
+          "包含返工建议"
+        ]
+      }
+    ],
+    "status": "active",
+    "domain": "self-media",
+    "templateType": "generate-variants"
+  },
+  "ecommerce-listing-optimization": {
+    "id": "ecommerce-listing-optimization",
+    "name": "电商商品页优化流水线",
+    "description": "从商品事实和竞品资料出发，生成可验证卖点、商品页文案、FAQ、A/B 测试变体，并由强模型做风险审查。",
+    "leadProfileId": "strong-task-architect",
+    "reviewPolicy": "lead_plus_reviewer",
+    "sourceSessionId": "",
+    "cwd": "/Users/yipengfei/Desktop/pi-fork",
+    "projectId": "",
+    "createdAt": 1782860000000,
+    "updatedAt": 1782860000000,
+    "tasks": [
+      {
+        "id": "ec-research",
+        "name": "商品事实与竞品资料整理",
+        "profileId": "weak-research-extractor",
+        "model": "opencode-go/deepseek-v4-flash",
+        "prompt": "整理商品参数、用户评价、竞品卖点、价格/售后信息和不确定事实；禁止编造功效。",
+        "deps": [],
+        "acceptanceCriteria": [
+          "包含商品参数",
+          "包含用户评价摘录",
+          "包含竞品卖点",
+          "包含不确定事实",
+          "区分已证实和未证实信息"
+        ]
+      },
+      {
+        "id": "ec-copy",
+        "name": "商品页文案与 A/B 变体",
+        "profileId": "ecommerce-listing-optimizer",
+        "model": "opencode-go/deepseek-v4-flash",
+        "prompt": "生成商品标题、核心卖点、详情页模块、FAQ、异议处理和 A/B 测试变体。",
+        "deps": [
+          "ec-research"
+        ],
+        "acceptanceCriteria": [
+          "包含商品标题",
+          "包含核心卖点",
+          "包含详情页模块",
+          "包含 FAQ",
+          "包含 A/B 测试变体"
+        ]
+      },
+      {
+        "id": "ec-review",
+        "name": "宣传风险与上线条件审查",
+        "profileId": "strong-quality-reviewer",
+        "model": "opencode-go/deepseek-v4-pro",
+        "prompt": "审查功效宣称、平台违禁词、价格/售后承诺和事实支撑；输出可上线版本、需删除内容和测试建议。",
+        "deps": [
+          "ec-copy"
+        ],
+        "acceptanceCriteria": [
+          "包含上线结论",
+          "包含风险宣传语",
+          "包含需删除内容",
+          "包含可上线版本",
+          "包含测试建议"
+        ]
+      }
+    ],
+    "status": "active",
+    "domain": "ecommerce",
+    "templateType": "generate-variants"
+  },
+  "support-kb-response-pipeline": {
+    "id": "support-kb-response-pipeline",
+    "name": "客服知识库与回复流水线",
+    "description": "将用户问题/工单整理为知识库条目、标准回复、升级条件和缺失知识清单。",
+    "leadProfileId": "strong-task-architect",
+    "reviewPolicy": "lead_plus_reviewer",
+    "sourceSessionId": "",
+    "cwd": "/Users/yipengfei/Desktop/pi-fork",
+    "projectId": "",
+    "createdAt": 1782860000000,
+    "updatedAt": 1782860000000,
+    "tasks": [
+      {
+        "id": "cs-extract",
+        "name": "问题分类与知识抽取",
+        "profileId": "support-kb-responder",
+        "model": "opencode-go/deepseek-v4-flash",
+        "prompt": "分类用户问题，匹配知识库依据，提取 SOP 步骤，标记缺失知识和升级条件。",
+        "deps": [],
+        "acceptanceCriteria": [
+          "包含问题分类",
+          "包含适用知识",
+          "包含 SOP 步骤",
+          "包含缺失知识",
+          "包含升级条件"
+        ]
+      },
+      {
+        "id": "cs-response",
+        "name": "标准回复与 FAQ 生成",
+        "profileId": "weak-structured-operator",
+        "model": "opencode-go/deepseek-v4-flash",
+        "prompt": "按知识库依据生成标准回复、FAQ 条目、用户可执行步骤和不能承诺的内容。",
+        "deps": [
+          "cs-extract"
+        ],
+        "acceptanceCriteria": [
+          "包含标准回复",
+          "包含 FAQ 条目",
+          "包含用户步骤",
+          "包含不能承诺的内容",
+          "符合统一格式"
+        ]
+      },
+      {
+        "id": "cs-review",
+        "name": "高风险回复审查",
+        "profileId": "strong-quality-reviewer",
+        "model": "opencode-go/deepseek-v4-pro",
+        "prompt": "审查退款、赔偿、法务承诺、情绪安抚和升级处理风险；输出可用回复和返工建议。",
+        "deps": [
+          "cs-response"
+        ],
+        "acceptanceCriteria": [
+          "包含风险审查",
+          "包含可用回复",
+          "包含禁止承诺",
+          "包含升级建议",
+          "包含返工建议"
+        ]
+      }
+    ],
+    "status": "active",
+    "domain": "customer-support",
+    "templateType": "classify-route"
+  },
+  "industry-research-brief": {
+    "id": "industry-research-brief",
+    "name": "行业调研报告流水线",
+    "description": "弱模型收集事实和结构化资料，强模型完成趋势判断、机会风险、反证路径和最终研究备忘录。",
+    "leadProfileId": "strong-task-architect",
+    "reviewPolicy": "lead_plus_reviewer",
+    "sourceSessionId": "",
+    "cwd": "/Users/yipengfei/Desktop/pi-fork",
+    "projectId": "",
+    "createdAt": 1782860000000,
+    "updatedAt": 1782860000000,
+    "tasks": [
+      {
+        "id": "ir-research",
+        "name": "资料搜集与来源包",
+        "profileId": "weak-research-extractor",
+        "model": "opencode-go/deepseek-v4-flash",
+        "prompt": "搜集行业资料、竞品信息、数据点、来源时间和互相矛盾的信息；只整理事实，不做最终判断。",
+        "deps": [],
+        "acceptanceCriteria": [
+          "包含资料来源",
+          "包含关键数据点",
+          "包含竞品信息",
+          "包含矛盾信息",
+          "包含不确定点"
+        ]
+      },
+      {
+        "id": "ir-structure",
+        "name": "结构化资料表",
+        "profileId": "weak-structured-operator",
+        "model": "opencode-go/deepseek-v4-flash",
+        "prompt": "把资料整理为市场规模、玩家、用户、渠道、趋势、风险六类结构化信息。",
+        "deps": [
+          "ir-research"
+        ],
+        "acceptanceCriteria": [
+          "包含市场规模",
+          "包含主要玩家",
+          "包含用户与渠道",
+          "包含趋势",
+          "包含风险"
+        ]
+      },
+      {
+        "id": "ir-analysis",
+        "name": "判断、机会与反证路径",
+        "profileId": "research-report-analyst",
+        "model": "opencode-go/deepseek-v4-pro",
+        "prompt": "基于资料区分事实、推断、假设和建议；输出趋势判断、机会、风险、置信度和反证条件。",
+        "deps": [
+          "ir-structure"
+        ],
+        "acceptanceCriteria": [
+          "区分事实和推断",
+          "包含趋势判断",
+          "包含机会与风险",
+          "包含置信度",
+          "包含反证条件"
+        ]
+      },
+      {
+        "id": "ir-final",
+        "name": "最终研究备忘录审查",
+        "profileId": "strong-quality-reviewer",
+        "model": "opencode-go/deepseek-v4-pro",
+        "prompt": "审查研究备忘录的一致性、证据充分性和可行动性；输出最终版和下一步验证计划。",
+        "deps": [
+          "ir-analysis"
+        ],
+        "acceptanceCriteria": [
+          "包含最终备忘录",
+          "包含一致性审查",
+          "包含证据缺口",
+          "包含行动建议",
+          "包含下一步验证计划"
+        ]
+      }
+    ],
+    "status": "active",
+    "domain": "research",
+    "templateType": "fetch-summarize"
+  },
+  "template-fetch-summarize": {
+    "id": "template-fetch-summarize",
+    "name": "模板：抓取-摘要类",
+    "description": "适用于热点监控、行业简报、竞品变化、访谈速记：定时拉取数据 -> 结构化提取 -> 分级摘要 -> 强模型审查。",
+    "leadProfileId": "strong-task-architect",
+    "reviewPolicy": "lead_plus_reviewer",
+    "sourceSessionId": "",
+    "cwd": "/Users/yipengfei/Desktop/pi-fork",
+    "projectId": "",
+    "createdAt": 1782860100000,
+    "updatedAt": 1782860100000,
+    "tasks": [
+      {
+        "id": "fs-fetch",
+        "name": "数据抓取与来源记录",
+        "profileId": "weak-research-extractor",
+        "model": "opencode-go/deepseek-v4-flash",
+        "prompt": "根据输入关键词、对象列表或时间窗口整理候选来源、事件、发布时间、原文位置和不确定点。",
+        "deps": [],
+        "acceptanceCriteria": [
+          "包含来源列表",
+          "包含时间窗口",
+          "包含原文位置",
+          "包含不确定点"
+        ]
+      },
+      {
+        "id": "fs-extract",
+        "name": "结构化提取",
+        "profileId": "weak-structured-operator",
+        "model": "opencode-go/deepseek-v4-flash",
+        "prompt": "把抓取结果整理为固定字段：事件、主体、影响、证据、来源、置信度。",
+        "deps": [
+          "fs-fetch"
+        ],
+        "acceptanceCriteria": [
+          "包含事件字段",
+          "包含影响字段",
+          "包含证据字段",
+          "包含置信度"
+        ]
+      },
+      {
+        "id": "fs-judge",
+        "name": "影响判断与摘要",
+        "profileId": "research-report-analyst",
+        "model": "opencode-go/deepseek-v4-pro",
+        "prompt": "基于结构化资料区分事实、推断和假设，输出摘要、影响判断、风险和下一步验证。",
+        "deps": [
+          "fs-extract"
+        ],
+        "acceptanceCriteria": [
+          "区分事实和推断",
+          "包含影响判断",
+          "包含风险",
+          "包含验证建议"
+        ]
+      }
+    ],
+    "status": "template",
+    "domain": "generic",
+    "templateType": "fetch-summarize"
+  },
+  "template-generate-variants": {
+    "id": "template-generate-variants",
+    "name": "模板：生成-多版本类",
+    "description": "适用于脚本、标题封面、商品 listing、大促文案：单输入 -> 多风格/多平台变体 -> 风险审查。",
+    "leadProfileId": "strong-task-architect",
+    "reviewPolicy": "lead_plus_reviewer",
+    "sourceSessionId": "",
+    "cwd": "/Users/yipengfei/Desktop/pi-fork",
+    "projectId": "",
+    "createdAt": 1782860100000,
+    "updatedAt": 1782860100000,
+    "tasks": [
+      {
+        "id": "gv-brief",
+        "name": "生成策略与约束",
+        "profileId": "strong-task-architect",
+        "model": "opencode-go/deepseek-v4-pro",
+        "prompt": "定义目标受众、风格维度、平台约束、禁止表达、评价指标和变体数量。",
+        "deps": [],
+        "acceptanceCriteria": [
+          "包含目标受众",
+          "包含风格维度",
+          "包含平台约束",
+          "包含禁止表达"
+        ]
+      },
+      {
+        "id": "gv-generate",
+        "name": "批量变体生成",
+        "profileId": "content-draft-producer",
+        "model": "opencode-go/deepseek-v4-flash",
+        "prompt": "按上游策略生成多版本内容，每个版本标注风格、适用平台、核心钩子和可替换素材位。",
+        "deps": [
+          "gv-brief"
+        ],
+        "acceptanceCriteria": [
+          "包含多版本输出",
+          "每版包含风格标签",
+          "每版包含适用平台",
+          "每版包含核心钩子"
+        ]
+      },
+      {
+        "id": "gv-review",
+        "name": "变体质量与风险审查",
+        "profileId": "strong-quality-reviewer",
+        "model": "opencode-go/deepseek-v4-pro",
+        "prompt": "审查多版本内容的事实支撑、表达风险、差异度和可测试性，给出推荐排序。",
+        "deps": [
+          "gv-generate"
+        ],
+        "acceptanceCriteria": [
+          "包含风险审查",
+          "包含差异度判断",
+          "包含推荐排序",
+          "包含测试建议"
+        ]
+      }
+    ],
+    "status": "template",
+    "domain": "generic",
+    "templateType": "generate-variants"
+  },
+  "template-classify-route": {
+    "id": "template-classify-route",
+    "name": "模板：分类-路由类",
+    "description": "适用于评论、售后工单、客服工单、投诉分流：输入分类打标 -> 置信度判断 -> 路由到自动处理/人工审核/风控。",
+    "leadProfileId": "strong-task-architect",
+    "reviewPolicy": "lead_plus_reviewer",
+    "sourceSessionId": "",
+    "cwd": "/Users/yipengfei/Desktop/pi-fork",
+    "projectId": "",
+    "createdAt": 1782860100000,
+    "updatedAt": 1782860100000,
+    "tasks": [
+      {
+        "id": "cr-ingest",
+        "name": "输入标准化",
+        "profileId": "weak-structured-operator",
+        "model": "opencode-go/deepseek-v4-flash",
+        "prompt": "把输入列表标准化为 item_id、user_id、content、timestamp、source、context 字段。",
+        "deps": [],
+        "acceptanceCriteria": [
+          "包含 item_id",
+          "包含 content",
+          "包含 timestamp",
+          "包含 source"
+        ]
+      },
+      {
+        "id": "cr-classify",
+        "name": "分类打标与置信度",
+        "profileId": "classification-router",
+        "model": "opencode-go/deepseek-v4-flash",
+        "prompt": "对每条输入进行多标签分类，输出 label、confidence、emotion、route、manual_review_required 和 reason。",
+        "deps": [
+          "cr-ingest"
+        ],
+        "acceptanceCriteria": [
+          "包含标签",
+          "包含 confidence",
+          "包含 emotion",
+          "包含 route",
+          "包含 manual_review_required"
+        ]
+      },
+      {
+        "id": "cr-response",
+        "name": "低风险自动处理草稿",
+        "profileId": "support-kb-responder",
+        "model": "opencode-go/deepseek-v4-flash",
+        "prompt": "只为允许自动处理或草稿处理的分支生成回复/处理建议；高风险分支只输出人工审核说明。",
+        "deps": [
+          "cr-classify"
+        ],
+        "acceptanceCriteria": [
+          "包含处理建议",
+          "区分自动处理和人工审核",
+          "包含高风险说明",
+          "包含日志字段"
+        ]
+      },
+      {
+        "id": "cr-review",
+        "name": "路由策略审查",
+        "profileId": "strong-quality-reviewer",
+        "model": "opencode-go/deepseek-v4-pro",
+        "prompt": "抽查分类边界、高风险分支、低置信度样本和自动处理策略，输出是否可执行。",
+        "deps": [
+          "cr-response"
+        ],
+        "acceptanceCriteria": [
+          "包含可执行结论",
+          "包含边界样本",
+          "包含高风险检查",
+          "包含返工建议"
+        ]
+      }
+    ],
+    "status": "template",
+    "domain": "generic",
+    "templateType": "classify-route"
+  },
+  "template-monitor-alert": {
+    "id": "template-monitor-alert",
+    "name": "模板：监控-告警类",
+    "description": "适用于舆情、库存、定价、情绪升级：持续监听 -> 触发判断 -> 分级响应 -> 强模型/人工升级。",
+    "leadProfileId": "strong-task-architect",
+    "reviewPolicy": "lead_plus_reviewer",
+    "sourceSessionId": "",
+    "cwd": "/Users/yipengfei/Desktop/pi-fork",
+    "projectId": "",
+    "createdAt": 1782860100000,
+    "updatedAt": 1782860100000,
+    "tasks": [
+      {
+        "id": "ma-observe",
+        "name": "事件窗口整理",
+        "profileId": "weak-research-extractor",
+        "model": "opencode-go/deepseek-v4-flash",
+        "prompt": "整理监控窗口内的事件、指标、基线、阈值、来源和异常样本。",
+        "deps": [],
+        "acceptanceCriteria": [
+          "包含事件",
+          "包含指标",
+          "包含基线",
+          "包含阈值"
+        ]
+      },
+      {
+        "id": "ma-alert",
+        "name": "触发判断与分级",
+        "profileId": "monitor-alert-operator",
+        "model": "opencode-go/deepseek-v4-flash",
+        "prompt": "判断是否触发告警，输出 severity、trigger_reason、evidence、recommended_action 和 escalation_required。",
+        "deps": [
+          "ma-observe"
+        ],
+        "acceptanceCriteria": [
+          "包含 severity",
+          "包含触发原因",
+          "包含证据",
+          "包含升级判断"
+        ]
+      },
+      {
+        "id": "ma-review",
+        "name": "重度告警审查",
+        "profileId": "strong-quality-reviewer",
+        "model": "opencode-go/deepseek-v4-pro",
+        "prompt": "审查中重度告警的证据充分性、误报风险和响应建议，输出最终响应级别。",
+        "deps": [
+          "ma-alert"
+        ],
+        "acceptanceCriteria": [
+          "包含最终响应级别",
+          "包含误报风险",
+          "包含响应建议",
+          "包含人工升级条件"
+        ]
+      }
+    ],
+    "status": "template",
+    "domain": "generic",
+    "templateType": "monitor-alert"
+  },
+  "template-extract-writeback": {
+    "id": "template-extract-writeback",
+    "name": "模板：结构化提取回写类",
+    "description": "适用于通话纪要、转人工前信息收集、CRM 回填：非结构化输入 -> 字段抽取 -> 校验 -> 写回 payload -> 跟进任务。",
+    "leadProfileId": "strong-task-architect",
+    "reviewPolicy": "lead_plus_reviewer",
+    "sourceSessionId": "",
+    "cwd": "/Users/yipengfei/Desktop/pi-fork",
+    "projectId": "",
+    "createdAt": 1782860100000,
+    "updatedAt": 1782860100000,
+    "tasks": [
+      {
+        "id": "ew-ingest",
+        "name": "非结构化输入整理",
+        "profileId": "weak-structured-operator",
+        "model": "opencode-go/deepseek-v4-flash",
+        "prompt": "整理输入文本、元数据、说话人、时间戳和可疑转写错误，保留原文锚点。",
+        "deps": [],
+        "acceptanceCriteria": [
+          "包含输入文本",
+          "包含元数据",
+          "包含时间戳",
+          "包含原文锚点"
+        ]
+      },
+      {
+        "id": "ew-extract",
+        "name": "字段抽取与校验",
+        "profileId": "structured-writeback-operator",
+        "model": "opencode-go/deepseek-v4-flash",
+        "prompt": "抽取目标 schema 字段，检查必填、枚举、日期和数值范围，输出 validation_errors。",
+        "deps": [
+          "ew-ingest"
+        ],
+        "acceptanceCriteria": [
+          "包含 schema JSON",
+          "包含 validation_errors",
+          "包含 source_spans",
+          "包含 idempotency_key"
+        ]
+      },
+      {
+        "id": "ew-payload",
+        "name": "写回 payload 与失败分支",
+        "profileId": "structured-writeback-operator",
+        "model": "opencode-go/deepseek-v4-flash",
+        "prompt": "生成写回 payload、字段映射、幂等键、重试策略和转人工条件；不直接执行外部写入。",
+        "deps": [
+          "ew-extract"
+        ],
+        "acceptanceCriteria": [
+          "包含 write_payload",
+          "包含字段映射",
+          "包含重试策略",
+          "包含转人工条件"
+        ]
+      },
+      {
+        "id": "ew-review",
+        "name": "回写风险审查",
+        "profileId": "strong-quality-reviewer",
+        "model": "opencode-go/deepseek-v4-pro",
+        "prompt": "审查字段污染风险、必填缺失、覆盖风险和幂等性，输出是否允许写回。",
+        "deps": [
+          "ew-payload"
+        ],
+        "acceptanceCriteria": [
+          "包含写回裁决",
+          "包含字段风险",
+          "包含覆盖风险",
+          "包含人工补充项"
+        ]
+      }
+    ],
+    "status": "template",
+    "domain": "generic",
+    "templateType": "extract-writeback"
+  },
+  "self-media-comment-reply-routing": {
+    "id": "self-media-comment-reply-routing",
+    "name": "自媒体评论区自动分级回复",
+    "description": "对应任务A：抓取新增评论 -> 分类打标 -> 路由分支 -> 生成回复草稿 -> 执行记录。",
+    "leadProfileId": "strong-task-architect",
+    "reviewPolicy": "lead_only",
+    "sourceSessionId": "",
+    "cwd": "/Users/yipengfei/Desktop/pi-fork",
+    "projectId": "",
+    "createdAt": 1782860200000,
+    "updatedAt": 1782860200000,
+    "tasks": [
+      {
+        "id": "comment-ingest",
+        "name": "新增评论标准化",
+        "profileId": "weak-structured-operator",
+        "model": "opencode-go/deepseek-v4-flash",
+        "prompt": "输入账号ID、平台和时间窗口，整理新增评论字段：comment_id、user_id、content、parent_comment、timestamp。",
+        "deps": [],
+        "acceptanceCriteria": [
+          "包含 comment_id",
+          "包含 user_id",
+          "包含 content",
+          "包含 timestamp"
+        ]
+      },
+      {
+        "id": "comment-classify",
+        "name": "评论分类与路由",
+        "profileId": "classification-router",
+        "model": "opencode-go/deepseek-v4-flash",
+        "prompt": "分类标签可多选：好评、提问、质疑投诉、广告引流、黑粉攻击、潜在客户；输出 confidence、emotion、route 和人工审核原因。",
+        "deps": [
+          "comment-ingest"
+        ],
+        "acceptanceCriteria": [
+          "包含分类标签",
+          "包含 confidence",
+          "包含 emotion",
+          "包含 route",
+          "包含人工审核原因"
+        ]
+      },
+      {
+        "id": "comment-draft",
+        "name": "回复草稿生成",
+        "profileId": "content-draft-producer",
+        "model": "opencode-go/deepseek-v4-flash",
+        "prompt": "根据评论、标签、账号人设和历史相似回复生成 reply_draft；仅好评/提问可 auto_send=true，质疑投诉必须人工审核。",
+        "deps": [
+          "comment-classify"
+        ],
+        "acceptanceCriteria": [
+          "包含 reply_draft",
+          "包含 auto_send",
+          "体现账号人设",
+          "高风险分支不自动发送"
+        ]
+      },
+      {
+        "id": "comment-log-review",
+        "name": "执行记录与风险审查",
+        "profileId": "content-editor-reviewer",
+        "model": "opencode-go/deepseek-v4-flash",
+        "noTools": true,
+        "prompt": "只做轻量合规门禁，不重新生成回复。基于上游结果输出不超过 900 字：1) auto_send 放行清单；2) manual_review 队列及原因；3) report/risk_list；4) log schema 字段；5) 人设一致性检查；6) 最终 gate_result(pass/fail)。规则：广告/黑粉/投诉/交易意向/数据安全风险必须 auto_send=false。",
+        "deps": [
+          "comment-draft"
+        ],
+        "acceptanceCriteria": [
+          "包含自动发送审查",
+          "包含人工审核队列",
+          "包含风控列表",
+          "包含 log 字段",
+          "包含人设一致性检查"
+        ]
+      }
+    ],
+    "status": "active",
+    "domain": "self-media",
+    "templateType": "classify-route"
+  },
+  "sales-call-crm-writeback": {
+    "id": "sales-call-crm-writeback",
+    "name": "通话纪要整理与 CRM 回填",
+    "description": "对应任务B：通话转写 -> 销售语义分析 -> 字段校验 -> CRM payload -> 跟进任务草稿。",
+    "leadProfileId": "strong-task-architect",
+    "reviewPolicy": "lead_only",
+    "sourceSessionId": "",
+    "cwd": "/Users/yipengfei/Desktop/pi-fork",
+    "projectId": "",
+    "createdAt": 1782860200000,
+    "updatedAt": 1782860200000,
+    "tasks": [
+      {
+        "id": "call-transcript",
+        "name": "通话转写整理",
+        "profileId": "weak-structured-operator",
+        "model": "opencode-go/deepseek-v4-flash",
+        "prompt": "整理通话元数据、说话人分离 transcript、timestamp、疑似 ASR 错误和产品名/术语不确定点。",
+        "deps": [],
+        "acceptanceCriteria": [
+          "包含通话元数据",
+          "包含 speaker transcript",
+          "包含 timestamp",
+          "包含疑似 ASR 错误"
+        ]
+      },
+      {
+        "id": "call-analysis",
+        "name": "意向度与异议分析",
+        "profileId": "sales-call-analyst",
+        "model": "opencode-go/deepseek-v4-flash",
+        "noTools": true,
+        "prompt": "只做结构化销售语义抽取，不写长分析。输出不超过 900 字，字段固定：intent_level(1-5)、intent_evidence_quote、products、needs、objections[{type,quote}]、customer_info、next_action、commitment_time、decision_maker、manual_confirm_items。缺字段写 null/[]，不得补造。",
+        "deps": [
+          "call-transcript"
+        ],
+        "acceptanceCriteria": [
+          "包含意向度和依据",
+          "包含产品/需求点",
+          "包含异议点",
+          "包含下一步动作",
+          "包含承诺时间"
+        ]
+      },
+      {
+        "id": "call-validate-payload",
+        "name": "CRM 字段校验与 payload",
+        "profileId": "structured-writeback-operator",
+        "model": "opencode-go/deepseek-v4-flash",
+        "prompt": "校验上游字段并生成可写回 CRM 的短 JSON。字段固定：validation_result(pass/fail)、required_checks、date_checks、intent_range_check、write_payload(按用户给的 CRM 字段映射)、idempotency_key(call_id+customer_id+call_time)、retry_policy、manual_confirm_items。不要改写业务结论。",
+        "deps": [
+          "call-analysis"
+        ],
+        "acceptanceCriteria": [
+          "包含必填校验",
+          "包含日期格式校验",
+          "包含意向度范围校验",
+          "包含 write_payload",
+          "包含 idempotency_key"
+        ]
+      },
+      {
+        "id": "call-followup",
+        "name": "跟进任务与话术草稿",
+        "profileId": "sales-call-analyst",
+        "model": "opencode-go/deepseek-v4-flash",
+        "noTools": true,
+        "prompt": "只基于 CRM payload 和上游异议点生成跟进交付物，不超过 700 字。输出字段固定：followup_at、crm_task_draft、call_script_draft、sms_or_wechat_draft、attachments_to_send、manual_confirm_items。必须包含报价、安全白皮书、API 对接清单和下周三 15:00 跟进。",
+        "deps": [
+          "call-validate-payload"
+        ],
+        "acceptanceCriteria": [
+          "包含跟进时间",
+          "包含 CRM 任务草稿",
+          "包含话术草稿",
+          "包含人工确认项"
+        ]
+      }
+    ],
+    "status": "active",
+    "domain": "sales",
+    "templateType": "extract-writeback"
+  },
+  "self-media-topic-mining": {
+    "id": "self-media-topic-mining",
+    "name": "自媒体选题挖掘",
+    "description": "输入垂直领域关键词，输出近 7 天热点、评论区高频问题、10 个选题和预测互动理由。",
+    "leadProfileId": "strong-task-architect",
+    "reviewPolicy": "lead_plus_reviewer",
+    "sourceSessionId": "",
+    "cwd": "/Users/yipengfei/Desktop/pi-fork",
+    "projectId": "",
+    "createdAt": 1782860300000,
+    "updatedAt": 1782860300000,
+    "status": "active",
+    "domain": "self-media",
+    "templateType": "fetch-summarize",
+    "tasks": [
+      {
+        "id": "topic-sources",
+        "name": "热点与评论来源整理",
+        "profileId": "content-researcher",
+        "model": "opencode-go/deepseek-v4-flash",
+        "prompt": "抓取/整理近 7 天热点、竞品内容、评论区高频问题和来源链接；只做事实整理。",
+        "deps": [],
+        "acceptanceCriteria": [
+          "包含热点来源",
+          "包含评论区问题",
+          "包含时间窗口",
+          "包含不确定点"
+        ]
+      },
+      {
+        "id": "topic-cluster",
+        "name": "痛点聚类与选题池",
+        "profileId": "weak-structured-operator",
+        "model": "opencode-go/deepseek-v4-flash",
+        "prompt": "把素材聚类为用户痛点、争议点、需求场景和候选选题池。",
+        "deps": [
+          "topic-sources"
+        ],
+        "acceptanceCriteria": [
+          "包含痛点聚类",
+          "包含争议点",
+          "包含候选选题",
+          "包含证据"
+        ]
+      },
+      {
+        "id": "topic-rank",
+        "name": "选题排序与预测理由",
+        "profileId": "content-strategy-director",
+        "model": "opencode-go/deepseek-v4-pro",
+        "prompt": "筛选 10 个选题，给出预测完播率/互动率理由、平台适配和验证指标。",
+        "deps": [
+          "topic-cluster"
+        ],
+        "acceptanceCriteria": [
+          "输出 10 个选题",
+          "包含完播率/互动率理由",
+          "包含平台适配",
+          "包含验证指标"
+        ]
+      }
+    ]
+  },
+  "self-media-ai-track-topic-research": {
+    "id": "self-media-ai-track-topic-research",
+    "name": "自媒体 AI 赛道选题与调研",
+    "description": "输入 AI 赛道方向，输出可直接用于自媒体创作的趋势调研、选题池、优先级和成稿结构。",
+    "leadProfileId": "strong-task-architect",
+    "reviewPolicy": "lead_only",
+    "sourceSessionId": "",
+    "cwd": "/Users/yipengfei/Desktop/pi-fork",
+    "projectId": "",
+    "createdAt": 1782860600000,
+    "updatedAt": 1782860600000,
+    "status": "active",
+    "domain": "self-media",
+    "templateType": "fetch-summarize",
+    "tasks": [
+      {
+        "id": "ai-topic-source-pack",
+        "name": "AI 赛道信号与来源包",
+        "profileId": "content-researcher",
+        "model": "opencode-go/deepseek-v4-flash",
+        "noTools": true,
+        "prompt": "只基于用户输入中的资料、链接、事实线索和明确给出的背景做素材整理；不得编造最新新闻。若缺少实时来源，标记 source_status=missing/unverified，并用“待验证行业假设”承接后续分析，不要空输出。交接包之前必须有完整正文。输出不超过 900 字，字段固定：source_status、source_signals、trend_facts、enterprise_adoption、agent_workflow、cost_governance、capital_funding、talent_change、source_gaps。",
+        "deps": [],
+        "acceptanceCriteria": [
+          "包含 AI 赛道趋势信号",
+          "包含企业落地/Agent/成本/资本/人才至少四类信息",
+          "包含 source_status 或 source_gaps",
+          "不得编造未给出的来源"
+        ],
+        "budget": {
+          "timeoutMs": 120000,
+          "progressTimeoutMs": 120000,
+          "firstOutputTimeoutMs": 30000,
+          "maxOutputChars": 6000
+        }
+      },
+      {
+        "id": "ai-topic-insight-map",
+        "name": "核心判断与选题机会图",
+        "profileId": "weak-structured-operator",
+        "model": "opencode-go/deepseek-v4-flash",
+        "noTools": true,
+        "prompt": "把上游来源包整理成自媒体可用的判断图，不新增事实；来源缺失时把判断标为待验证假设。交接包之前必须有完整正文。输出不超过 900 字，字段固定：one_sentence_judgement、core_findings[5]、audience_pain_points、content_angles、risk_notes、must_cover_keywords。必须以当前日期 2026-06-30 为时间背景，覆盖并优先表达：AI 赛道从模型能力竞赛进入企业落地、Agent 工作流、成本治理、人才结构重组阶段；5 条核心结论必须分别覆盖采用率高但规模化难、企业从试点进生产但价值兑现慢、Agent 是 2026 主线、AI 成本治理成为爆点、资本仍在涌入 AI。",
+        "deps": [
+          "ai-topic-source-pack"
+        ],
+        "acceptanceCriteria": [
+          "包含一句话判断",
+          "包含 5 条核心调研结论",
+          "包含受众痛点",
+          "包含风险和关键词"
+        ],
+        "budget": {
+          "timeoutMs": 120000,
+          "progressTimeoutMs": 120000,
+          "firstOutputTimeoutMs": 30000,
+          "maxOutputChars": 6000
+        }
+      },
+      {
+        "id": "ai-topic-candidates",
+        "name": "选题池与优先级",
+        "profileId": "content-strategy-director",
+        "model": "opencode-go/deepseek-v4-flash",
+        "noTools": true,
+        "prompt": "基于上游判断图生成自媒体选题与排序，不写长文。交接包之前必须有完整正文。输出不超过 1200 字，字段固定：topics[10]{title,angle,audience,click_logic,why_now}、top3_recommendations、platform_fit、verification_metrics。必须包含这些方向并尽量使用这些标题：AI Agent 为什么在 2026 年突然“真能干活”了？、企业用了 AI 为什么还没省到钱？、AI 账单正在失控：Token 成本会成为下一个云成本吗？、2026 年 AI 创业还有机会吗？机会不在模型，而在工作流、AI 赛道的下半场：谁掌握工作流，谁掌握价值、为什么越来越多企业不想只绑定一个大模型？、AI 人才需求变了：会写 prompt 不够，会拆任务才值钱、AI 产品经理的新能力：不是设计页面，而是设计任务系统、AI 应用为什么容易做成 Demo，难做成生意？、AI Agent 会先替代谁？不是岗位，而是“没人愿意开始的任务”。Top3 必须优先推荐：AI 账单失控、AI Agent 真的开始落地、AI 创业机会从模型转向工作流。",
+        "deps": [
+          "ai-topic-insight-map"
+        ],
+        "acceptanceCriteria": [
+          "输出 10 个选题",
+          "包含 Top3 推荐",
+          "包含点击/互动逻辑",
+          "包含平台适配和验证指标"
+        ],
+        "budget": {
+          "timeoutMs": 120000,
+          "progressTimeoutMs": 120000,
+          "firstOutputTimeoutMs": 30000,
+          "maxOutputChars": 8000
+        }
+      },
+      {
+        "id": "ai-topic-final-brief",
+        "name": "调研稿与成稿方向",
+        "profileId": "content-strategy-director",
+        "model": "opencode-go/deepseek-v4-flash",
+        "noTools": true,
+        "prompt": "合成最终交付稿，目标是复现一份可直接给用户看的 AI 赛道选题与调研结果。交接包之前必须有完整正文。输出不超过 1800 字，必须包含：一句话判断、5 条核心调研结论、10 个可做选题、建议优先做的 3 个选题、推荐成稿标题、5 点成稿结构、风险/待补源说明。内容锚点必须贴近参考答案：一句话判断为 AI 赛道从“模型能力竞赛”进入“企业落地、Agent 工作流、成本治理、人才结构重组”阶段；推荐成稿标题优先使用《AI 赛道变了：2026 年真正的机会，不是更强模型，而是更会干活的工作流》；5 点成稿结构必须覆盖：过去关注模型参数和榜单、企业关心生产/控成本/改流程、Agent 价值是拆步骤执行、Agent 带来 token 成本/错误传递/权限风险/评估困难、AI 下半场机会在 workflow/profile/评估/行业数据/人工审核闭环。不得输出泛泛建议。",
+        "deps": [
+          "ai-topic-candidates"
+        ],
+        "acceptanceCriteria": [
+          "包含一句话判断",
+          "包含核心调研结论",
+          "包含 10 个选题和 Top3",
+          "包含推荐成稿方向",
+          "包含风险/待补源说明"
+        ],
+        "budget": {
+          "timeoutMs": 120000,
+          "progressTimeoutMs": 120000,
+          "firstOutputTimeoutMs": 30000,
+          "maxOutputChars": 10000
+        }
+      }
+    ]
+  },
+  "self-media-title-cover-ab": {
+    "id": "self-media-title-cover-ab",
+    "name": "自媒体标题封面 A/B 生成",
+    "description": "输入正文内容，生成标题+封面文案组合，并标注点击逻辑。",
+    "leadProfileId": "strong-task-architect",
+    "reviewPolicy": "lead_plus_reviewer",
+    "sourceSessionId": "",
+    "cwd": "/Users/yipengfei/Desktop/pi-fork",
+    "projectId": "",
+    "createdAt": 1782860300000,
+    "updatedAt": 1782860300000,
+    "status": "active",
+    "domain": "self-media",
+    "templateType": "generate-variants",
+    "tasks": [
+      {
+        "id": "tc-brief",
+        "name": "内容卖点与风险边界",
+        "profileId": "content-strategy-director",
+        "model": "opencode-go/deepseek-v4-pro",
+        "prompt": "提炼正文核心卖点、受众、平台语境、禁止夸张点和标题封面测试目标。",
+        "deps": [],
+        "acceptanceCriteria": [
+          "包含核心卖点",
+          "包含受众",
+          "包含平台语境",
+          "包含禁止夸张点"
+        ]
+      },
+      {
+        "id": "tc-generate",
+        "name": "标题封面组合生成",
+        "profileId": "content-draft-producer",
+        "model": "opencode-go/deepseek-v4-flash",
+        "prompt": "生成 5 组标题+封面文案组合，标注悬念/数字/反差/利益点等套路标签。",
+        "deps": [
+          "tc-brief"
+        ],
+        "acceptanceCriteria": [
+          "包含 5 组组合",
+          "包含套路标签",
+          "包含封面文案",
+          "包含预期点击逻辑"
+        ]
+      },
+      {
+        "id": "tc-review",
+        "name": "点击诱导与品牌审查",
+        "profileId": "content-editor-reviewer",
+        "model": "opencode-go/deepseek-v4-pro",
+        "prompt": "审查标题党、误导、敏感表达和品牌一致性，输出推荐排序和可发布版本。",
+        "deps": [
+          "tc-generate"
+        ],
+        "acceptanceCriteria": [
+          "包含风险审查",
+          "包含推荐排序",
+          "包含可发布版本",
+          "包含返工建议"
+        ]
+      }
+    ]
+  },
+  "self-media-data-review-weekly": {
+    "id": "self-media-data-review-weekly",
+    "name": "自媒体数据复盘周报",
+    "description": "输入播放/完播/转粉等近期数据，输出异常归因和下期选题建议。",
+    "leadProfileId": "strong-task-architect",
+    "reviewPolicy": "lead_plus_reviewer",
+    "sourceSessionId": "",
+    "cwd": "/Users/yipengfei/Desktop/pi-fork",
+    "projectId": "",
+    "createdAt": 1782860300000,
+    "updatedAt": 1782860300000,
+    "status": "active",
+    "domain": "self-media",
+    "templateType": "fetch-summarize",
+    "tasks": [
+      {
+        "id": "dr-normalize",
+        "name": "发布数据标准化",
+        "profileId": "weak-structured-operator",
+        "model": "opencode-go/deepseek-v4-flash",
+        "prompt": "整理播放、完播、互动、转粉、发布时间、选题标签和渠道字段。",
+        "deps": [],
+        "acceptanceCriteria": [
+          "包含播放数据",
+          "包含完播数据",
+          "包含互动数据",
+          "包含选题标签"
+        ]
+      },
+      {
+        "id": "dr-alert",
+        "name": "异常波动识别",
+        "profileId": "monitor-alert-operator",
+        "model": "opencode-go/deepseek-v4-flash",
+        "prompt": "识别异常上涨/下跌，输出 severity、trigger_reason、evidence 和可能影响因素。",
+        "deps": [
+          "dr-normalize"
+        ],
+        "acceptanceCriteria": [
+          "包含异常项",
+          "包含严重程度",
+          "包含证据",
+          "包含触发原因"
+        ]
+      },
+      {
+        "id": "dr-insight",
+        "name": "复盘结论与选题建议",
+        "profileId": "content-strategy-director",
+        "model": "opencode-go/deepseek-v4-pro",
+        "prompt": "归因异常波动，输出周报摘要、内容模式结论和下期选题建议。",
+        "deps": [
+          "dr-alert"
+        ],
+        "acceptanceCriteria": [
+          "包含周报摘要",
+          "包含异常归因",
+          "包含内容模式",
+          "包含下期选题"
+        ]
+      }
+    ]
+  },
+  "industry-source-monitoring-daily": {
+    "id": "industry-source-monitoring-daily",
+    "name": "行业信息源每日监控简报",
+    "description": "输入行业关键词，每日输出新闻/财报/政策/竞品动态的事件-影响-来源简报。",
+    "leadProfileId": "strong-task-architect",
+    "reviewPolicy": "lead_only",
+    "sourceSessionId": "",
+    "cwd": "/Users/yipengfei/Desktop/pi-fork",
+    "projectId": "",
+    "createdAt": 1782860300000,
+    "updatedAt": 1782860300000,
+    "status": "active",
+    "domain": "research",
+    "templateType": "fetch-summarize",
+    "tasks": [
+      {
+        "id": "is-fetch",
+        "name": "信息源抓取整理",
+        "profileId": "weak-research-extractor",
+        "model": "opencode-go/deepseek-v4-flash",
+        "prompt": "仅基于用户输入中提供的来源链接、原文摘录、API/抓取结果或本次实际可读取到的资料做事实抽取；不要凭记忆补造新闻、融资数字或媒体来源。若没有可验证来源，输出 source_status=missing、缺失字段清单和建议用户补充的来源类型。若有来源，最多抽取 8 条高价值事件，字段固定为：event_id、category(新闻/财报/政策/竞品)、event_date、source_title、source_url_or_locator、fact_excerpt、source_status(verified/unverified/missing)、uncertainty。",
+        "deps": [],
+        "acceptanceCriteria": [
+          "包含新闻",
+          "包含财报/政策",
+          "包含竞品动态",
+          "包含来源",
+          "不编造未验证事件"
+        ]
+      },
+      {
+        "id": "is-structure",
+        "name": "事件-影响-来源表",
+        "profileId": "weak-structured-operator",
+        "model": "opencode-go/deepseek-v4-flash",
+        "prompt": "把上游资料压缩为最多 8 行事件表，只保留有来源定位或明确标记 unverified/missing 的条目。输出字段固定为：事件、事实依据、影响判断、信息源、source_status、confidence、待复核点。不要扩写成长报告，不要新增上游没有的事实。",
+        "deps": [
+          "is-fetch"
+        ],
+        "acceptanceCriteria": [
+          "包含事件",
+          "包含影响",
+          "包含信息源",
+          "包含置信度",
+          "输出不超过 8 行"
+        ]
+      },
+      {
+        "id": "is-brief",
+        "name": "简报判断与优先级",
+        "profileId": "research-report-analyst",
+        "model": "opencode-go/deepseek-v4-pro",
+        "prompt": "只基于上游最多 8 行事件表做简报判断，不重新罗列全部资料。输出不超过 900 字，结构固定为：1) P0/P1/P2 优先级表；2) 关键潜在影响；3) 下一步跟踪点；4) 事实/判断/假设分区；5) 不可验证或需要人工补源的条目。若上游 source_status 不是 verified，不得给高置信结论。",
+        "deps": [
+          "is-structure"
+        ],
+        "acceptanceCriteria": [
+          "包含优先级",
+          "包含潜在影响",
+          "包含跟踪点",
+          "区分事实和判断",
+          "不可验证来源不下高置信结论"
+        ]
+      }
+    ]
+  },
+  "industry-competitor-diff-tracking": {
+    "id": "industry-competitor-diff-tracking",
+    "name": "竞品定点变化追踪",
+    "description": "输入竞品名单，追踪官网/社媒/招聘/定价变化，输出 diff 提醒。",
+    "leadProfileId": "strong-task-architect",
+    "reviewPolicy": "lead_plus_reviewer",
+    "sourceSessionId": "",
+    "cwd": "/Users/yipengfei/Desktop/pi-fork",
+    "projectId": "",
+    "createdAt": 1782860300000,
+    "updatedAt": 1782860300000,
+    "status": "active",
+    "domain": "research",
+    "templateType": "monitor-alert",
+    "tasks": [
+      {
+        "id": "cd-snapshot",
+        "name": "竞品页面快照整理",
+        "profileId": "weak-research-extractor",
+        "model": "opencode-go/deepseek-v4-flash",
+        "prompt": "整理官网、小红书、招聘页、定价页的新旧快照和来源位置。",
+        "deps": [],
+        "acceptanceCriteria": [
+          "包含页面来源",
+          "包含新旧快照",
+          "包含时间",
+          "包含位置"
+        ]
+      },
+      {
+        "id": "cd-diff",
+        "name": "变化 diff 提取",
+        "profileId": "weak-structured-operator",
+        "model": "opencode-go/deepseek-v4-flash",
+        "prompt": "提取新产品、新岗位、定价调整、文案变化和证据片段。",
+        "deps": [
+          "cd-snapshot"
+        ],
+        "acceptanceCriteria": [
+          "包含新产品变化",
+          "包含岗位变化",
+          "包含定价变化",
+          "包含证据"
+        ]
+      },
+      {
+        "id": "cd-alert",
+        "name": "变化重要性分级",
+        "profileId": "monitor-alert-operator",
+        "model": "opencode-go/deepseek-v4-flash",
+        "prompt": "按影响分级输出轻度/中度/重度提醒和升级建议。",
+        "deps": [
+          "cd-diff"
+        ],
+        "acceptanceCriteria": [
+          "包含 severity",
+          "包含原因",
+          "包含建议动作",
+          "包含升级条件"
+        ]
+      },
+      {
+        "id": "cd-impact",
+        "name": "竞品影响判断",
+        "profileId": "research-report-analyst",
+        "model": "opencode-go/deepseek-v4-pro",
+        "prompt": "基于 diff 与告警分级判断竞品变化的业务影响、置信度、反证条件和下一步跟踪动作。",
+        "deps": [
+          "cd-alert"
+        ],
+        "acceptanceCriteria": [
+          "包含业务影响",
+          "包含置信度",
+          "包含反证条件",
+          "包含下一步跟踪动作"
+        ]
+      }
+    ]
+  },
+  "industry-interview-summary": {
+    "id": "industry-interview-summary",
+    "name": "专家/用户访谈速记整理",
+    "description": "输入访谈转写，输出结构化摘要、关键引述和待验证假设。",
+    "leadProfileId": "strong-task-architect",
+    "reviewPolicy": "lead_plus_reviewer",
+    "sourceSessionId": "",
+    "cwd": "/Users/yipengfei/Desktop/pi-fork",
+    "projectId": "",
+    "createdAt": 1782860300000,
+    "updatedAt": 1782860300000,
+    "status": "active",
+    "domain": "research",
+    "templateType": "extract-writeback",
+    "tasks": [
+      {
+        "id": "iv-clean",
+        "name": "访谈转写清理",
+        "profileId": "weak-structured-operator",
+        "model": "opencode-go/deepseek-v4-flash",
+        "prompt": "整理说话人、时间戳、主题段落和疑似转写错误。",
+        "deps": [],
+        "acceptanceCriteria": [
+          "包含说话人",
+          "包含时间戳",
+          "包含主题段落",
+          "包含疑似错误"
+        ]
+      },
+      {
+        "id": "iv-extract",
+        "name": "访谈洞察抽取",
+        "profileId": "structured-writeback-operator",
+        "model": "opencode-go/deepseek-v4-flash",
+      "prompt": "按 schema 字段抽取关键观点、原文引述、需求/痛点、反例和待验证假设；保留 source_spans，输出 validation_errors、write_payload 草案和人工复核标记。",
+        "deps": [
+          "iv-clean"
+        ],
+        "acceptanceCriteria": [
+          "包含关键观点",
+          "包含原文引述",
+          "包含痛点",
+        "包含待验证假设",
+        "包含字段校验结果",
+        "包含回写 payload",
+        "包含人工复核标记"
+        ]
+      },
+      {
+        "id": "iv-synthesis",
+        "name": "研究假设与验证路径",
+        "profileId": "research-report-analyst",
+        "model": "opencode-go/deepseek-v4-pro",
+      "prompt": "合成访谈摘要，区分事实、观点、假设和下一步验证；审查字段校验、回写 payload 和原文锚点，不确定项必须转人工复核。",
+        "deps": [
+          "iv-extract"
+        ],
+        "acceptanceCriteria": [
+          "区分事实和观点",
+          "包含假设",
+          "包含验证路径",
+        "包含证据缺口",
+        "包含人工复核清单"
+        ]
+      }
+    ]
+  },
+  "industry-sentiment-risk-alert": {
+    "id": "industry-sentiment-risk-alert",
+    "name": "行业/品牌舆情风险预警",
+    "description": "输入品牌或行业名称，监控负面舆情突增并触发分级告警。",
+    "leadProfileId": "strong-task-architect",
+    "reviewPolicy": "lead_plus_reviewer",
+    "sourceSessionId": "",
+    "cwd": "/Users/yipengfei/Desktop/pi-fork",
+    "projectId": "",
+    "createdAt": 1782860300000,
+    "updatedAt": 1782860300000,
+    "status": "active",
+    "domain": "research",
+    "templateType": "monitor-alert",
+    "tasks": [
+      {
+        "id": "sr-collect",
+        "name": "舆情事件采集",
+        "profileId": "weak-research-extractor",
+        "model": "opencode-go/deepseek-v4-flash",
+        "prompt": "整理负面内容、平台、传播量、时间窗口、原始链接和代表性评论。",
+        "deps": [],
+        "acceptanceCriteria": [
+          "包含负面内容",
+          "包含平台",
+          "包含传播量",
+          "包含代表性评论"
+        ]
+      },
+      {
+        "id": "sr-grade",
+        "name": "舆情分级告警",
+        "profileId": "monitor-alert-operator",
+        "model": "opencode-go/deepseek-v4-flash",
+        "prompt": "判断轻度记录/中度日报/重度即时推送，输出触发原因和证据。",
+        "deps": [
+          "sr-collect"
+        ],
+        "acceptanceCriteria": [
+          "包含分级",
+          "包含触发原因",
+          "包含证据",
+          "包含建议动作"
+        ]
+      },
+      {
+        "id": "sr-review",
+        "name": "重度风险复核",
+        "profileId": "strong-quality-reviewer",
+        "model": "opencode-go/deepseek-v4-pro",
+        "prompt": "复核重度舆情的误报风险、品牌影响和对外响应建议。",
+        "deps": [
+          "sr-grade"
+        ],
+        "acceptanceCriteria": [
+          "包含误报风险",
+          "包含品牌影响",
+          "包含响应建议",
+          "包含升级条件"
+        ]
+      }
+    ]
+  },
+  "ecommerce-review-mining": {
+    "id": "ecommerce-review-mining",
+    "name": "客户评价与问大家分析",
+    "description": "输入评论数据，输出痛点/好评聚类、产品优化建议和营销话术弹药库。",
+    "leadProfileId": "strong-task-architect",
+    "reviewPolicy": "lead_plus_reviewer",
+    "sourceSessionId": "",
+    "cwd": "/Users/yipengfei/Desktop/pi-fork",
+    "projectId": "",
+    "createdAt": 1782860300000,
+    "updatedAt": 1782860300000,
+    "status": "active",
+    "domain": "ecommerce",
+    "templateType": "fetch-summarize",
+    "tasks": [
+      {
+        "id": "rm-clean",
+        "name": "评价数据清洗",
+        "profileId": "weak-structured-operator",
+        "model": "opencode-go/deepseek-v4-flash",
+        "prompt": "整理评价、问大家、评分、SKU、时间和购买场景字段。",
+        "deps": [],
+        "acceptanceCriteria": [
+          "包含评价",
+          "包含问大家",
+          "包含 SKU",
+          "包含购买场景"
+        ]
+      },
+      {
+        "id": "rm-cluster",
+        "name": "痛点与好评点聚类",
+        "profileId": "weak-structured-operator",
+        "model": "opencode-go/deepseek-v4-flash",
+        "prompt": "聚类高频痛点、好评点、异议和典型原文。",
+        "deps": [
+          "rm-clean"
+        ],
+        "acceptanceCriteria": [
+          "包含痛点聚类",
+          "包含好评点",
+          "包含异议",
+          "包含典型原文"
+        ]
+      },
+      {
+        "id": "rm-action",
+        "name": "产品与营销建议",
+        "profileId": "ecommerce-listing-optimizer",
+        "model": "opencode-go/deepseek-v4-flash",
+        "prompt": "输出产品优化建议、详情页可用话术、FAQ 和营销弹药库。",
+        "deps": [
+          "rm-cluster"
+        ],
+        "acceptanceCriteria": [
+          "包含产品建议",
+          "包含营销话术",
+          "包含 FAQ",
+          "区分事实和推测"
+        ]
+      },
+      {
+        "id": "rm-review",
+        "name": "产品建议与营销话术审查",
+        "profileId": "strong-quality-reviewer",
+        "model": "opencode-go/deepseek-v4-pro",
+        "prompt": "审查产品优化建议和营销话术是否有足够评价证据、是否夸大承诺，并输出可用弹药库与需人工确认项。",
+        "deps": [
+          "rm-action"
+        ],
+        "acceptanceCriteria": [
+          "包含证据充分性审查",
+          "包含夸大承诺风险",
+          "包含可用弹药库",
+          "包含人工确认项"
+        ]
+      }
+    ]
+  },
+  "ecommerce-inventory-pricing-alert": {
+    "id": "ecommerce-inventory-pricing-alert",
+    "name": "库存与定价异常预警",
+    "description": "输入库存与竞品价格数据，输出补货提醒和动态调价建议。",
+    "leadProfileId": "strong-task-architect",
+    "reviewPolicy": "lead_plus_reviewer",
+    "sourceSessionId": "",
+    "cwd": "/Users/yipengfei/Desktop/pi-fork",
+    "projectId": "",
+    "createdAt": 1782860300000,
+    "updatedAt": 1782860300000,
+    "status": "active",
+    "domain": "ecommerce",
+    "templateType": "monitor-alert",
+    "tasks": [
+      {
+        "id": "ip-normalize",
+        "name": "库存价格数据整理",
+        "profileId": "weak-structured-operator",
+        "model": "opencode-go/deepseek-v4-flash",
+        "prompt": "整理实时库存、销量、补货周期、竞品价格、毛利约束和历史价格。",
+        "deps": [],
+        "acceptanceCriteria": [
+          "包含库存",
+          "包含销量",
+          "包含竞品价格",
+          "包含毛利约束"
+        ]
+      },
+      {
+        "id": "ip-alert",
+        "name": "异常与补货触发",
+        "profileId": "monitor-alert-operator",
+        "model": "opencode-go/deepseek-v4-flash",
+        "prompt": "判断库存风险、价格异常和调价触发，输出 severity 和建议动作。",
+        "deps": [
+          "ip-normalize"
+        ],
+        "acceptanceCriteria": [
+          "包含库存风险",
+          "包含价格异常",
+          "包含 severity",
+          "包含建议动作"
+        ]
+      },
+      {
+        "id": "ip-review",
+        "name": "调价风险审查",
+        "profileId": "strong-quality-reviewer",
+        "model": "opencode-go/deepseek-v4-pro",
+        "prompt": "审查调价建议对毛利、平台规则和品牌定位的风险，输出人工审批建议。",
+        "deps": [
+          "ip-alert"
+        ],
+        "acceptanceCriteria": [
+          "包含审批建议",
+          "包含毛利风险",
+          "包含平台风险",
+          "包含人工确认项"
+        ]
+      }
+    ]
+  },
+  "ecommerce-promo-creative-batch": {
+    "id": "ecommerce-promo-creative-batch",
+    "name": "大促文案与海报批量生产",
+    "description": "输入活动主题和商品池，批量产出营销文案与海报排版稿。",
+    "leadProfileId": "strong-task-architect",
+    "reviewPolicy": "lead_plus_reviewer",
+    "sourceSessionId": "",
+    "cwd": "/Users/yipengfei/Desktop/pi-fork",
+    "projectId": "",
+    "createdAt": 1782860300000,
+    "updatedAt": 1782860300000,
+    "status": "active",
+    "domain": "ecommerce",
+    "templateType": "generate-variants",
+    "tasks": [
+      {
+        "id": "pc-brief",
+        "name": "活动策略与商品分组",
+        "profileId": "strong-task-architect",
+        "model": "opencode-go/deepseek-v4-pro",
+        "prompt": "定义活动目标、人群、商品分组、优惠表达边界和测试指标。",
+        "deps": [],
+        "acceptanceCriteria": [
+          "包含活动目标",
+          "包含人群",
+          "包含商品分组",
+          "包含表达边界"
+        ]
+      },
+      {
+        "id": "pc-copy",
+        "name": "多版本营销文案",
+        "profileId": "ecommerce-listing-optimizer",
+        "model": "opencode-go/deepseek-v4-flash",
+        "prompt": "按商品分组生成多版本主标题、副标题、卖点、CTA 和海报文案。",
+        "deps": [
+          "pc-brief"
+        ],
+        "acceptanceCriteria": [
+          "包含主标题",
+          "包含副标题",
+          "包含卖点",
+          "包含 CTA"
+        ]
+      },
+      {
+        "id": "pc-review",
+        "name": "促销风险审查",
+        "profileId": "strong-quality-reviewer",
+        "model": "opencode-go/deepseek-v4-pro",
+        "prompt": "审查价格承诺、平台违禁词、夸张表达和活动一致性。",
+        "deps": [
+          "pc-copy"
+        ],
+        "acceptanceCriteria": [
+          "包含风险审查",
+          "包含可用版本",
+          "包含删除建议",
+          "包含测试建议"
+        ]
+      }
+    ]
+  },
+  "support-auto-answer": {
+    "id": "support-auto-answer",
+    "name": "常见问题自动应答",
+    "description": "输入用户咨询，匹配知识库回答；低置信度转人工并记录未命中问题。",
+    "leadProfileId": "strong-task-architect",
+    "reviewPolicy": "lead_plus_reviewer",
+    "sourceSessionId": "",
+    "cwd": "/Users/yipengfei/Desktop/pi-fork",
+    "projectId": "",
+    "createdAt": 1782860300000,
+    "updatedAt": 1782860300000,
+    "status": "active",
+    "domain": "customer-support",
+    "templateType": "classify-route",
+    "tasks": [
+      {
+        "id": "aa-classify",
+        "name": "咨询分类与知识匹配",
+        "profileId": "support-kb-responder",
+        "model": "opencode-go/deepseek-v4-flash",
+        "prompt": "分类用户咨询，匹配知识库条目，输出置信度和未命中原因。",
+        "deps": [],
+        "acceptanceCriteria": [
+          "包含分类",
+          "包含知识条目",
+          "包含置信度",
+          "包含未命中原因"
+        ]
+      },
+      {
+        "id": "aa-draft",
+        "name": "自动回复草稿",
+        "profileId": "support-kb-responder",
+        "model": "opencode-go/deepseek-v4-flash",
+        "prompt": "生成标准回复草稿；低置信度或高风险问题必须 manual_review_required=true。",
+        "deps": [
+          "aa-classify"
+        ],
+        "acceptanceCriteria": [
+          "包含回复草稿",
+          "包含 manual_review_required",
+          "包含不能承诺内容",
+          "包含升级条件"
+        ]
+      },
+      {
+        "id": "aa-review",
+        "name": "高风险回复审查",
+        "profileId": "strong-quality-reviewer",
+        "model": "opencode-go/deepseek-v4-pro",
+        "prompt": "审查退款/赔偿/法务/投诉相关回复，输出可发版本或转人工原因。",
+        "deps": [
+          "aa-draft"
+        ],
+        "acceptanceCriteria": [
+          "包含可发版本",
+          "包含转人工原因",
+          "包含风险说明",
+          "包含返工建议"
+        ]
+      }
+    ]
+  },
+  "support-ticket-priority-routing": {
+    "id": "support-ticket-priority-routing",
+    "name": "工单分类与优先级路由",
+    "description": "输入工单内容，输出分类标签、优先级和处理队列。",
+    "leadProfileId": "strong-task-architect",
+    "reviewPolicy": "lead_plus_reviewer",
+    "sourceSessionId": "",
+    "cwd": "/Users/yipengfei/Desktop/pi-fork",
+    "projectId": "",
+    "createdAt": 1782860300000,
+    "updatedAt": 1782860300000,
+    "status": "active",
+    "domain": "customer-support",
+    "templateType": "classify-route",
+    "tasks": [
+      {
+        "id": "tp-normalize",
+        "name": "工单字段标准化",
+        "profileId": "weak-structured-operator",
+        "model": "opencode-go/deepseek-v4-flash",
+        "prompt": "整理工单内容、客户等级、订单信息、时间、渠道和历史记录。",
+        "deps": [],
+        "acceptanceCriteria": [
+          "包含工单内容",
+          "包含客户等级",
+          "包含时间",
+          "包含渠道"
+        ]
+      },
+      {
+        "id": "tp-route",
+        "name": "分类优先级判断",
+        "profileId": "classification-router",
+        "model": "opencode-go/deepseek-v4-flash",
+        "prompt": "输出咨询/投诉/紧急故障等标签、优先级、处理队列和原因。",
+        "deps": [
+          "tp-normalize"
+        ],
+        "acceptanceCriteria": [
+          "包含标签",
+          "包含优先级",
+          "包含队列",
+          "包含原因"
+        ]
+      },
+      {
+        "id": "tp-sla",
+        "name": "SLA 与升级审查",
+        "profileId": "strong-quality-reviewer",
+        "model": "opencode-go/deepseek-v4-pro",
+        "prompt": "审查紧急/高价值/投诉工单路由是否符合 SLA，输出调整建议。",
+        "deps": [
+          "tp-route"
+        ],
+        "acceptanceCriteria": [
+          "包含 SLA 判断",
+          "包含升级建议",
+          "包含风险工单",
+          "包含调整建议"
+        ]
+      }
+    ]
+  },
+  "support-prehandoff-info-collection": {
+    "id": "support-prehandoff-info-collection",
+    "name": "转人工前信息收集",
+    "description": "多轮对话前置收集订单号、问题描述、期望解决方案。",
+    "leadProfileId": "strong-task-architect",
+    "reviewPolicy": "lead_plus_reviewer",
+    "sourceSessionId": "",
+    "cwd": "/Users/yipengfei/Desktop/pi-fork",
+    "projectId": "",
+    "createdAt": 1782860300000,
+    "updatedAt": 1782860300000,
+    "status": "active",
+    "domain": "customer-support",
+    "templateType": "extract-writeback",
+    "tasks": [
+      {
+        "id": "ph-extract",
+        "name": "已有信息抽取",
+        "profileId": "structured-writeback-operator",
+        "model": "opencode-go/deepseek-v4-flash",
+        "prompt": "从对话中抽取订单号、问题描述、期望方案、联系方式和缺失字段。",
+        "deps": [],
+        "acceptanceCriteria": [
+          "包含订单号字段",
+          "包含问题描述",
+          "包含期望方案",
+          "包含缺失字段"
+        ]
+      },
+      {
+        "id": "ph-question",
+        "name": "补充问题生成",
+        "profileId": "support-kb-responder",
+        "model": "opencode-go/deepseek-v4-flash",
+        "prompt": "针对缺失字段生成简洁补充问题，不重复询问已提供信息。",
+        "deps": [
+          "ph-extract"
+        ],
+        "acceptanceCriteria": [
+          "包含补充问题",
+          "不重复已知信息",
+          "包含转人工摘要",
+          "包含用户可执行步骤"
+        ]
+      },
+      {
+        "id": "ph-payload",
+        "name": "人工队列 payload",
+        "profileId": "structured-writeback-operator",
+        "model": "opencode-go/deepseek-v4-flash",
+        "prompt": "生成转人工队列 payload、字段校验结果和原文锚点。",
+        "deps": [
+          "ph-question"
+        ],
+        "acceptanceCriteria": [
+          "包含 payload",
+          "包含字段校验",
+          "包含原文锚点",
+          "包含人工备注"
+        ]
+      },
+      {
+        "id": "ph-review",
+        "name": "转人工字段与风险审查",
+        "profileId": "strong-quality-reviewer",
+        "model": "opencode-go/deepseek-v4-pro",
+        "prompt": "审查转人工前信息是否足够、是否重复询问、是否遗漏高风险情绪/赔偿/投诉信号，并输出最终人工队列摘要。",
+        "deps": [
+          "ph-payload"
+        ],
+        "acceptanceCriteria": [
+          "包含字段完整性审查",
+          "包含重复询问检查",
+          "包含高风险信号",
+          "包含最终人工队列摘要"
+        ]
+      }
+    ]
+  },
+  "support-service-quality-review": {
+    "id": "support-service-quality-review",
+    "name": "客服服务质检与话术复盘",
+    "description": "输入客服历史对话，输出违规话术、服务标准打分和优化建议。",
+    "leadProfileId": "strong-task-architect",
+    "reviewPolicy": "lead_plus_reviewer",
+    "sourceSessionId": "",
+    "cwd": "/Users/yipengfei/Desktop/pi-fork",
+    "projectId": "",
+    "createdAt": 1782860300000,
+    "updatedAt": 1782860300000,
+    "status": "active",
+    "domain": "customer-support",
+    "templateType": "fetch-summarize",
+    "tasks": [
+      {
+        "id": "qa-extract",
+        "name": "对话结构化",
+        "profileId": "weak-structured-operator",
+        "model": "opencode-go/deepseek-v4-flash",
+        "prompt": "整理客服对话、用户诉求、客服动作、承诺语句和结果。",
+        "deps": [],
+        "acceptanceCriteria": [
+          "包含用户诉求",
+          "包含客服动作",
+          "包含承诺语句",
+          "包含结果"
+        ]
+      },
+      {
+        "id": "qa-score",
+        "name": "质检打分",
+        "profileId": "classification-router",
+        "model": "opencode-go/deepseek-v4-flash",
+        "prompt": "按服务标准输出违规话术、得分、问题标签和证据片段。",
+        "deps": [
+          "qa-extract"
+        ],
+        "acceptanceCriteria": [
+          "包含违规检测",
+          "包含得分",
+          "包含问题标签",
+          "包含证据"
+        ]
+      },
+      {
+        "id": "qa-coach",
+        "name": "话术优化建议",
+        "profileId": "strong-quality-reviewer",
+        "model": "opencode-go/deepseek-v4-pro",
+        "prompt": "审查质检结果，输出可替换话术、培训建议和高风险案例。",
+        "deps": [
+          "qa-score"
+        ],
+        "acceptanceCriteria": [
+          "包含替换话术",
+          "包含培训建议",
+          "包含高风险案例",
+          "包含复盘结论"
+        ]
+      }
+    ]
+  },
+  "sales-lead-scoring": {
+    "id": "sales-lead-scoring",
+    "name": "电话销售线索初筛与分级",
+    "description": "输入 CRM 新线索，结合成交特征输出 A/B/C 级和跟进优先级。",
+    "leadProfileId": "strong-task-architect",
+    "reviewPolicy": "lead_plus_reviewer",
+    "sourceSessionId": "",
+    "cwd": "/Users/yipengfei/Desktop/pi-fork",
+    "projectId": "",
+    "createdAt": 1782860300000,
+    "updatedAt": 1782860300000,
+    "status": "active",
+    "domain": "sales",
+    "templateType": "classify-route",
+    "tasks": [
+      {
+        "id": "ls-normalize",
+        "name": "线索字段整理",
+        "profileId": "structured-writeback-operator",
+        "model": "opencode-go/deepseek-v4-flash",
+        "prompt": "整理来源、行业、规模、预算、职位、历史互动和缺失字段。",
+        "deps": [],
+        "acceptanceCriteria": [
+          "包含来源",
+          "包含行业规模",
+          "包含预算",
+          "包含历史互动"
+        ]
+      },
+      {
+        "id": "ls-score",
+        "name": "线索评分与分级",
+        "profileId": "sales-call-analyst",
+        "model": "opencode-go/deepseek-v4-pro",
+        "prompt": "基于历史成交特征输出 A/B/C 分级、评分理由和跟进优先级。",
+        "deps": [
+          "ls-normalize"
+        ],
+        "acceptanceCriteria": [
+          "包含 A/B/C 分级",
+          "包含评分理由",
+          "包含优先级",
+          "包含不确定项"
+        ]
+      },
+      {
+        "id": "ls-route",
+        "name": "跟进队列建议",
+        "profileId": "classification-router",
+        "model": "opencode-go/deepseek-v4-flash",
+        "prompt": "按分级和优先级输出处理队列、SLA 和人工确认条件。",
+        "deps": [
+          "ls-score"
+        ],
+        "acceptanceCriteria": [
+          "包含处理队列",
+          "包含 SLA",
+          "包含人工确认条件",
+          "包含日志字段"
+        ]
+      }
+    ]
+  },
+  "sales-precall-brief": {
+    "id": "sales-precall-brief",
+    "name": "电话销售通话前简报",
+    "description": "输入客户历史交互记录，输出一页通话简报和切入话术。",
+    "leadProfileId": "strong-task-architect",
+    "reviewPolicy": "lead_plus_reviewer",
+    "sourceSessionId": "",
+    "cwd": "/Users/yipengfei/Desktop/pi-fork",
+    "projectId": "",
+    "createdAt": 1782860300000,
+    "updatedAt": 1782860300000,
+    "status": "active",
+    "domain": "sales",
+    "templateType": "fetch-summarize",
+    "tasks": [
+      {
+        "id": "pb-history",
+        "name": "客户历史整理",
+        "profileId": "weak-research-extractor",
+        "model": "opencode-go/deepseek-v4-flash",
+      "prompt": "整理客户背景、历史交互、上次沟通要点、已知异议和未解决问题；每条结论保留来源、证据锚点或原文片段。",
+        "deps": [],
+        "acceptanceCriteria": [
+          "包含客户背景",
+          "包含历史交互",
+          "包含上次要点",
+        "包含已知异议",
+        "包含来源证据"
+        ]
+      },
+      {
+        "id": "pb-angle",
+        "name": "本次切入策略",
+        "profileId": "sales-call-analyst",
+        "model": "opencode-go/deepseek-v4-pro",
+        "prompt": "输出本次目标、切入点、关键问题、异议预案和禁忌点。",
+        "deps": [
+          "pb-history"
+        ],
+        "acceptanceCriteria": [
+          "包含本次目标",
+          "包含切入点",
+          "包含关键问题",
+          "包含异议预案"
+        ]
+      },
+      {
+        "id": "pb-brief",
+        "name": "一页通话简报",
+      "profileId": "sales-call-analyst",
+      "model": "opencode-go/deepseek-v4-pro",
+      "prompt": "生成一页通话简报最终版，方便销售会前阅读；强模型复核来源证据、切入话术风险和人工确认项。",
+        "deps": [
+          "pb-angle"
+        ],
+        "acceptanceCriteria": [
+          "包含背景",
+          "包含话术切入",
+          "包含问题清单",
+        "包含下一步建议",
+        "包含来源证据",
+        "包含人工确认项"
+        ]
+      }
+    ]
+  },
+  "sales-objection-coach": {
+    "id": "sales-objection-coach",
+    "name": "销售异议处理建议",
+    "description": "输入客户异议原文，匹配话术库并标记新异议类型。",
+    "leadProfileId": "strong-task-architect",
+    "reviewPolicy": "lead_plus_reviewer",
+    "sourceSessionId": "",
+    "cwd": "/Users/yipengfei/Desktop/pi-fork",
+    "projectId": "",
+    "createdAt": 1782860300000,
+    "updatedAt": 1782860300000,
+    "status": "active",
+    "domain": "sales",
+    "templateType": "classify-route",
+    "tasks": [
+      {
+        "id": "oc-classify",
+        "name": "异议类型识别",
+        "profileId": "classification-router",
+        "model": "opencode-go/deepseek-v4-flash",
+      "prompt": "把客户异议分类为价格、竞品、时机、决策权、预算、信任等标签，输出置信度、路由分支和人工审核触发条件。",
+        "deps": [],
+        "acceptanceCriteria": [
+          "包含异议类型",
+          "包含置信度",
+          "包含原文依据",
+        "包含新类型判断",
+        "包含路由分支",
+        "包含人工审核条件"
+        ]
+      },
+      {
+        "id": "oc-response",
+        "name": "应对建议生成",
+        "profileId": "sales-call-analyst",
+        "model": "opencode-go/deepseek-v4-pro",
+        "prompt": "基于异议类型输出应对话术、追问问题和下一步动作。",
+        "deps": [
+          "oc-classify"
+        ],
+        "acceptanceCriteria": [
+          "包含应对话术",
+          "包含追问问题",
+          "包含下一步动作",
+          "包含风险提示"
+        ]
+      },
+    {
+      "id": "oc-kb",
+      "name": "话术库迭代项",
+      "profileId": "structured-writeback-operator",
+        "model": "opencode-go/deepseek-v4-flash",
+        "prompt": "生成话术库新增/更新 payload，保留原文锚点和审核状态。",
+        "deps": [
+          "oc-response"
+        ],
+      "acceptanceCriteria": [
+        "包含更新 payload",
+        "包含原文锚点",
+        "包含审核状态",
+        "包含幂等键"
+      ]
+    },
+    {
+      "id": "oc-review",
+      "name": "话术建议最终复核",
+      "profileId": "sales-call-analyst",
+      "model": "opencode-go/deepseek-v4-pro",
+      "prompt": "复核异议标签、路由、应对话术和话术库 payload，输出可用/需人工/返工结论；高风险客户或低置信度必须转人工。",
+      "deps": [
+        "oc-kb"
+      ],
+      "acceptanceCriteria": [
+        "包含最终可用结论",
+        "包含标签与路由复核",
+        "包含人工升级条件",
+        "包含返工建议"
+      ]
+    }
+    ]
+  },
+  "sales-followup-cadence": {
+    "id": "sales-followup-cadence",
+    "name": "销售跟进节奏与草稿生成",
+    "description": "根据客户阶段和通话结果，生成下次跟进时间与话术/短信草稿。",
+    "leadProfileId": "strong-task-architect",
+    "reviewPolicy": "lead_plus_reviewer",
+    "sourceSessionId": "",
+    "cwd": "/Users/yipengfei/Desktop/pi-fork",
+    "projectId": "",
+    "createdAt": 1782860300000,
+    "updatedAt": 1782860300000,
+    "status": "active",
+    "domain": "sales",
+    "templateType": "generate-variants",
+    "tasks": [
+      {
+        "id": "fc-stage",
+        "name": "客户阶段与动作整理",
+        "profileId": "structured-writeback-operator",
+        "model": "opencode-go/deepseek-v4-flash",
+        "prompt": "整理客户阶段、通话结果、承诺时间、异议点和下一步动作。",
+        "deps": [],
+        "acceptanceCriteria": [
+          "包含客户阶段",
+          "包含通话结果",
+          "包含承诺时间",
+          "包含异议点"
+        ]
+      },
+      {
+        "id": "fc-plan",
+        "name": "跟进节奏建议",
+        "profileId": "sales-call-analyst",
+        "model": "opencode-go/deepseek-v4-pro",
+        "prompt": "输出下次跟进时间、触发条件、沟通目标和风险点。",
+        "deps": [
+          "fc-stage"
+        ],
+        "acceptanceCriteria": [
+          "包含跟进时间",
+          "包含触发条件",
+          "包含沟通目标",
+          "包含风险点"
+        ]
+      },
+      {
+        "id": "fc-draft",
+        "name": "跟进话术草稿",
+      "profileId": "sales-followup-draft-producer",
+      "model": "opencode-go/deepseek-v4-flash",
+      "prompt": "生成短信、微信、电话开场白三种跟进文案版本/变体，可包含标题式开场和可替换字段，保持销售语气专业克制。",
+        "deps": [
+          "fc-plan"
+        ],
+        "acceptanceCriteria": [
+          "包含短信草稿",
+          "包含微信草稿",
+          "包含电话话术",
+        "包含可替换字段",
+        "包含多版本变体"
+      ]
+    },
+    {
+      "id": "fc-review",
+      "name": "跟进方案最终复核",
+      "profileId": "sales-call-analyst",
+      "model": "opencode-go/deepseek-v4-pro",
+      "prompt": "复核跟进时间、触发条件和多版本文案，输出最终推荐版本、人工确认项和风险提醒。",
+      "deps": [
+        "fc-draft"
+      ],
+      "acceptanceCriteria": [
+        "包含最终推荐版本",
+        "包含人工确认项",
+        "包含风险提醒",
+        "包含下一步动作"
+      ]
+    }
+    ]
+  },
+  "new-workflow": {
+    "id": "new-workflow",
+    "name": "New Workflow",
+    "description": "",
+    "leadProfileId": "lead-agent",
+    "reviewPolicy": "lead_plus_reviewer",
+    "sourceSessionId": "",
+    "cwd": "/private/tmp/pi-multi-agent/c383ad96-0861-4758-881c-bdd60ab6c406/t2",
+    "projectId": "",
+    "createdAt": 1782789048479,
+    "updatedAt": 1782789048479,
+    "tasks": [],
+    "status": "legacy",
+    "domain": "internal",
+    "category": "内部旧项",
+    "templateType": "manual-check"
   }
 }

@@ -5,12 +5,12 @@ import type { AgentMessage, AssistantMessage, TextContent } from "@/lib/types";
 
 interface Props {
   messages: AgentMessage[];
-  streamingMessage: Partial<AgentMessage> | null;
+  streamingMessage?: Partial<AgentMessage> | null;
   scrollContainer: RefObject<HTMLDivElement | null>;
   messageRefs: RefObject<(HTMLDivElement | null)[]>;
 }
 
-const MINIMAP_WIDTH = 36;
+const MINIMAP_WIDTH = 12;
 
 function getMessagePreview(msg: AgentMessage | Partial<AgentMessage>): string {
   if (msg.role === "user") {
@@ -43,9 +43,9 @@ function getMessagePreview(msg: AgentMessage | Partial<AgentMessage>): string {
 
 function getNodeColor(msg: AgentMessage | Partial<AgentMessage>): { bg: string; border: string } {
   if (msg.role === "user") {
-    return { bg: "rgba(37,99,235,0.18)", border: "rgba(37,99,235,0.7)" };
+    return { bg: "color-mix(in srgb, var(--accent) 78%, transparent)", border: "color-mix(in srgb, var(--accent) 78%, transparent)" };
   }
-  return { bg: "rgba(107,114,128,0.12)", border: "rgba(107,114,128,0.5)" };
+  return { bg: "color-mix(in srgb, var(--text-muted) 42%, transparent)", border: "color-mix(in srgb, var(--text-muted) 42%, transparent)" };
 }
 
 function hasTextContent(msg: AgentMessage | Partial<AgentMessage>): boolean {
@@ -64,7 +64,7 @@ interface NodeInfo {
   index: number;
 }
 
-export function ChatMinimap({ messages, streamingMessage, scrollContainer, messageRefs }: Props) {
+export function ChatMinimap({ messages, scrollContainer, messageRefs }: Props) {
   const [scrollRatio, setScrollRatio] = useState(0);
   const [viewportRatio, setViewportRatio] = useState(1);
   const [visible, setVisible] = useState(false);
@@ -74,10 +74,7 @@ export function ChatMinimap({ messages, streamingMessage, scrollContainer, messa
   const draggingRef = useRef(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const allMessages = useMemo(
-    () => (streamingMessage ? [...messages, streamingMessage] : messages) as (AgentMessage | Partial<AgentMessage>)[],
-    [messages, streamingMessage]
-  );
+  const allMessages = useMemo(() => messages as (AgentMessage | Partial<AgentMessage>)[], [messages]);
   const allMessagesRef = useRef(allMessages);
   allMessagesRef.current = allMessages;
 
@@ -245,24 +242,25 @@ export function ChatMinimap({ messages, streamingMessage, scrollContainer, messa
         width: MINIMAP_WIDTH,
         flexShrink: 0,
         position: "relative",
-        cursor: "default",
+        cursor: "pointer",
         userSelect: "none",
-        borderLeft: "1px solid var(--border)",
-        background: "var(--bg-panel)",
+        borderLeft: "none",
+        background: "transparent",
         overflow: "visible",
+        opacity: minimapHovered ? 1 : 0.38,
+        transition: "opacity 0.16s ease, width 0.16s ease",
       }}
     >
       {/* Viewport indicator */}
       <div
         style={{
           position: "absolute",
-          left: 0,
-          right: 0,
+          left: 4,
+          right: 4,
           top: `${viewportBoxTop}%`,
           height: `${viewportBoxHeight}%`,
-          background: "rgba(100,100,100,0.1)",
-          borderTop: "1px solid rgba(100,100,100,0.2)",
-          borderBottom: "1px solid rgba(100,100,100,0.2)",
+          background: "color-mix(in srgb, var(--text) 18%, transparent)",
+          borderRadius: 999,
           pointerEvents: "none",
           zIndex: 1,
         }}
@@ -285,7 +283,7 @@ export function ChatMinimap({ messages, streamingMessage, scrollContainer, messa
               transform: "translateY(-50%)",
               left: 0,
               right: 0,
-              height: "12px",
+              height: "10px",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -296,13 +294,13 @@ export function ChatMinimap({ messages, streamingMessage, scrollContainer, messa
             {/* Dot */}
             <div
               style={{
-                width: isUser ? 8 : 6,
-                height: isUser ? 8 : 6,
-                borderRadius: isUser ? 2 : "50%",
+                width: minimapHovered ? (isUser ? 7 : 5) : 3,
+                height: minimapHovered ? (isUser ? 7 : 5) : 3,
+                borderRadius: 999,
                 background: color.bg,
-                border: `1.5px solid ${color.border}`,
+                border: `1px solid ${color.border}`,
                 flexShrink: 0,
-                transition: "transform 0.1s",
+                transition: "transform 0.1s, width 0.12s, height 0.12s",
                 transform: isNearest ? "scale(1.6)" : "scale(1)",
               }}
             />
@@ -316,12 +314,12 @@ export function ChatMinimap({ messages, streamingMessage, scrollContainer, messa
       <div
         style={{
           position: "absolute",
-          left: "50%",
+          left: 5,
           top: 0,
           bottom: 0,
-          width: 1,
-          background: "var(--border)",
-          transform: "translateX(-50%)",
+          width: 2,
+          borderRadius: 999,
+          background: "color-mix(in srgb, var(--shell-edge) 80%, transparent)",
           zIndex: 0,
         }}
       />

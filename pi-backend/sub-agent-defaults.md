@@ -30,3 +30,12 @@
   - 是否可用
   - 是否还存在 bug
   - 是否可直接交给下游 Agent
+- 末尾必须包含“交接包”，格式固定：
+  - 完成状态：`completed` / `incomplete` / `blocked`
+  - 对照验收标准：逐条说明满足 / 未满足
+  - 给下游的交付物：可直接消费的结论、文件、路径或建议
+  - 未完成 / 阻塞原因：没有则写“无”
+  - 下一步建议：给 Lead 的明确动作建议
+  - Memory Diff：本轮建议沉淀到 `context.md` / `progress.md` / `bugs.md` 的差异；没有则写“无”
+- 如果无法满足 Definition of Done，不要假装完成；明确写 `incomplete` 或 `blocked`，并说明需要 Lead、其他 Agent 或用户补什么。
+- 交接包不是装饰文本；编排层会机械解析它。缺失交接包、完成状态不是 `completed`、或阻塞原因不为“无”，都会导致完成门禁失败。

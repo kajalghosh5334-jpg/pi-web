@@ -1,21 +1,25 @@
 "use client";
 import { useState } from "react";
+import type React from "react";
 import type { AgentTask, ArtifactInfo, PendingConfirmation } from "@/hooks/useOrchestrate";
 
 const AVAILABLE_MODELS = [
-  "opencore-go/glm-5.2",
-  "opencore-go/glm-5.1",
-  "opencore-go/deepseek-v4-flash",
-  "opencore-go/deepseek-v4-pro",
-  "opencore-go/qwen3.7-plus",
+  "opencode-go/glm-5.2",
+  "opencode-go/glm-5.1",
+  "opencode-go/deepseek-v4-flash",
+  "opencode-go/deepseek-v4-pro",
+  "opencode-go/qwen3.7-plus",
 ];
 
 const STATUS_COLOR: Record<AgentTask["status"], string> = {
   pending: "#888",
+  queued: "#94a3b8",
   waiting_for_dependency: "#f59e0b",
   running: "#3b82f6",
   waiting_confirmation: "#f97316",
   completed: "#22c55e",
+  incomplete: "#fb923c",
+  blocked: "#ef4444",
   error: "#ef4444",
   aborted: "#64748b",
   paused: "#a855f7",
@@ -23,10 +27,13 @@ const STATUS_COLOR: Record<AgentTask["status"], string> = {
 
 const STATUS_ICON: Record<AgentTask["status"], string> = {
   pending: "⏸",
+  queued: "…",
   waiting_for_dependency: "⏳",
   running: "⟳",
   waiting_confirmation: "❓",
   completed: "✓",
+  incomplete: "!",
+  blocked: "!",
   error: "✗",
   aborted: "■",
   paused: "⏸",
@@ -82,7 +89,9 @@ export function SubAgentList({ tasks = [], artifacts = [], phase = "idle", onSwi
       )}
 
       <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-        {tasks.map((task) => (
+        {tasks.map((task) => {
+          const heartbeatText = formatHeartbeat(task);
+          return (
           <div key={task.id}>
             <div
               onClick={() => setExpanded(expanded === task.id ? null : task.id)}
@@ -104,6 +113,12 @@ export function SubAgentList({ tasks = [], artifacts = [], phase = "idle", onSwi
               <div style={{ color: "var(--text-muted)", fontSize: 11, marginTop: 2 }}>
                 {task.model.split("/")[1]}{task.currentTaskStage ? ` · ${task.currentTaskStage}` : ""}{task.needsPlanDiscussion ? " · 方案讨论" : ""}
               </div>
+              {heartbeatText && (
+                <div style={heartbeatStyle}>
+                  <span style={heartbeatDotStyle} />
+                  {heartbeatText}
+                </div>
+              )}
               {task.status === "running" && task.delta && (
                 <div style={{ marginTop: 4, fontSize: 11, color: "#94a3b8", maxHeight: 36, overflow: "hidden" }}>
                   {task.delta.slice(-120)}
@@ -168,13 +183,27 @@ export function SubAgentList({ tasks = [], artifacts = [], phase = "idle", onSwi
                   </div>
                 )}
                 {!task.output && !task.delta && (
-                  <span style={{ color: "var(--text-muted)" }}>等待执行...</span>
+                  <span style={{ color: "var(--text-muted)" }}>{heartbeatText || "等待执行..."}</span>
                 )}
               </div>
             )}
           </div>
-        ))}
+        );
+        })}
       </div>
     </div>
   );
+}
+
+const heartbeatStyle: React.CSSProperties = { display: "flex", alignItems: "center", gap: 6, marginTop: 6, fontSize: 11, color: "#3b82f6", padding: "4px 6px", borderRadius: 6, border: "1px solid #3b82f633", background: "#3b82f611" };
+const heartbeatDotStyle: React.CSSProperties = { width: 7, height: 7, borderRadius: 999, background: "#3b82f6", boxShadow: "0 0 0 3px #3b82f622", flexShrink: 0 };
+
+function formatHeartbeat(task?: AgentTask | null) {
+  if (!task || task.status !== "running" || !task.heartbeat) return "";
+  const elapsedMs = typeof task.heartbeat.elapsedMs === "number"
+    ? task.heartbeat.elapsedMs
+    : task.heartbeat.startedAt ? Date.now() - task.heartbeat.startedAt : 0;
+  const seconds = Math.max(0, Math.floor(elapsedMs / 1000));
+  const label = task.heartbeat.message || (task.heartbeat.phase === "receiving_model_output" ? "模型正在返回内容" : "等待模型返回");
+  return `${label}${seconds ? ` · ${seconds}s` : ""}`;
 }

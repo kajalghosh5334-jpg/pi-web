@@ -1,13 +1,80 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { WorkflowDefinition, WorkflowTaskDefinition } from "@/lib/types";
+
+type ProfileDropPayload = {
+  id: string;
+  name?: string;
+  skills?: string[];
+};
+
+type SkillItem = {
+  id: string;
+  description?: string;
+};
+
+type NodePoint = {
+  x: number;
+  y: number;
+};
+
+type RunNotice =
+  | { status: "running"; input: string; startedAt: number }
+  | { status: "success"; input: string; sessionId: string; cwd: string; startedAt: number }
+  | { status: "error"; input: string; message: string; startedAt: number };
+
+const NODE_WIDTH = 190;
+const NODE_HEIGHT = 84;
+const START_NODE = { x: 34, y: 56, width: 110, height: 56 };
+
+const WORKFLOW_DOMAIN_LABELS: Record<string, string> = {
+  "self-media": "自媒体",
+  research: "行业调研",
+  ecommerce: "电商",
+  "customer-support": "客服",
+  sales: "电话销售",
+  generic: "通用模板",
+  internal: "内部旧项",
+  evaluation: "评测旧项",
+};
+
+const WORKFLOW_DOMAIN_ORDER = ["self-media", "research", "ecommerce", "customer-support", "sales", "generic", "internal", "evaluation"];
+const WORKFLOW_TEMPLATE_LABELS: Record<string, string> = {
+  "fetch-summarize": "抓取-摘要",
+  "generate-variants": "生成-多版本",
+  "classify-route": "分类-路由",
+  "monitor-alert": "监控-告警",
+  "extract-writeback": "结构化回写",
+  "smoke-test": "烟测旧项",
+  "manual-check": "手动检查",
+  "eval-run": "评测运行",
+};
+
+function workflowDomainLabel(domain: string | undefined): string {
+  if (!domain) return "未分类";
+  return WORKFLOW_DOMAIN_LABELS[domain] || domain;
+}
+
+function workflowTemplateLabel(templateType: string | undefined): string {
+  return templateType ? WORKFLOW_TEMPLATE_LABELS[templateType] || templateType : "Workflow";
+}
+
+function slugDomain(label: string): string {
+  const trimmed = label.trim();
+  if (!trimmed) return "custom";
+  return trimmed
+    .toLowerCase()
+    .replace(/[\s_]+/g, "-")
+    .replace(/[^a-z0-9\u4e00-\u9fa5-]/g, "")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "") || "custom";
+}
 
 export function WorkflowEditor({
   workflow,
   onBack,
   onChange,
-  onDeleted,
   onRan,
 }: {
   workflow: WorkflowDefinition;
@@ -17,71 +84,166 @@ export function WorkflowEditor({
   onRan?: (sessionId: string, cwd: string) => void;
 }) {
   const [draft, setDraft] = useState<WorkflowDefinition>(workflow);
-  const [busy, setBusy] = useState<"save" | "run" | "delete" | null>(null);
+  const [runInput, setRunInput] = useState("");
+  const [categorySelection, setCategorySelection] = useState(workflow.domain || "self-media");
+  const [customCategory, setCustomCategory] = useState("");
+  const [busy, setBusy] = useState<"save" | "run" | null>(null);
+  const [runNotice, setRunNotice] = useState<RunNotice | null>(null);
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(workflow.tasks?.[0]?.id || null);
+  const [dragActive, setDragActive] = useState(false);
+  const [inspectorOpen, setInspectorOpen] = useState(false);
   const [profiles, setProfiles] = useState<Array<{ id: string; name?: string }>>([]);
-  const [skills, setSkills] = useState<Array<{ id: string; description?: string }>>([]);
+  const [skills, setSkills] = useState<SkillItem[]>([]);
+  const [skillsLoadedForCwd, setSkillsLoadedForCwd] = useState<string | null>(null);
 
   useEffect(() => {
-    setDraft({
-      ...workflow,
-      tasks: (workflow.tasks || []).map((task) => ({ ...task, deps: [...(task.deps || [])] })),
-    });
+    const normalizedTasks = (workflow.tasks || []).map((task, index) => ({
+      ...task,
+      id: task.id || `task-${index + 1}`,
+      deps: [...(task.deps || [])],
+      layout: {
+        x: task.layout?.x ?? 180 + (index % 3) * 230,
+        y: task.layout?.y ?? 58 + Math.floor(index / 3) * 132,
+      },
+    }));
+    setDraft({ ...workflow, tasks: normalizedTasks });
+    setRunInput("");
+    setRunNotice(null);
+    setCategorySelection(workflow.domain || "self-media");
+    setCustomCategory("");
+    setSelectedTaskId(normalizedTasks[0]?.id || null);
+    setInspectorOpen(false);
   }, [workflow]);
 
   useEffect(() => {
-    fetch("/api/agent-profiles")
-      .then((r) => r.json())
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10000);
+    fetch("/api/agent-profiles", { signal: controller.signal })
+      .then((res) => res.json())
       .then((data) => setProfiles(Array.isArray(data?.profiles) ? data.profiles : []))
-      .catch(() => setProfiles([]));
+      .catch(() => setProfiles([]))
+      .finally(() => clearTimeout(timeout));
+    return () => {
+      clearTimeout(timeout);
+      controller.abort();
+    };
   }, []);
 
-  useEffect(() => {
-    const cwd = encodeURIComponent(draft.cwd || "");
-    fetch(`/api/skills?cwd=${cwd}`)
-      .then((r) => r.json())
-      .then((data) => setSkills(Array.isArray(data?.skills) ? data.skills.map((skill: { name: string; description?: string }) => ({ id: skill.name, description: skill.description })) : []))
-      .catch(() => setSkills([]));
-  }, [draft.cwd]);
-
-  const profileOptions = useMemo(() => {
-    const map = new Map<string, string>();
-    for (const profile of profiles) {
-      map.set(profile.id, profile.name || profile.id);
-    }
-    if (draft.leadProfileId) map.set(draft.leadProfileId, map.get(draft.leadProfileId) || draft.leadProfileId);
-    for (const task of draft.tasks || []) {
-      if (task.profileId) map.set(task.profileId, map.get(task.profileId) || task.profileId);
-    }
-    return [...map.entries()].map(([id, name]) => ({ id, name }));
-  }, [profiles, draft.leadProfileId, draft.tasks]);
-
-  const updateDraft = (patch: Partial<WorkflowDefinition>) => {
-    setDraft((prev) => ({ ...prev, ...patch }));
-  };
-
-  const updateTask = (index: number, patch: Partial<WorkflowTaskDefinition>) => {
-    setDraft((prev) => {
-      const tasks = [...(prev.tasks || [])];
-      tasks[index] = { ...(tasks[index] || {}), ...patch };
-      return { ...prev, tasks };
+  const tasks = useMemo(() => draft.tasks || [], [draft.tasks]);
+  const selectedTask = tasks.find((task) => task.id === selectedTaskId) || null;
+  const profileNames = useMemo(() => new Map(profiles.map((profile) => [profile.id, profile.name || profile.id])), [profiles]);
+  const taskById = useMemo(() => new Map(tasks.map((task) => [task.id || "", task])), [tasks]);
+  const hasRunnableChain = useMemo(() => {
+    if (tasks.length < 2) return false;
+    return tasks.some((task) => (task.deps || []).some((dep) => dep && taskById.has(dep)));
+  }, [taskById, tasks]);
+  const canRun = hasRunnableChain && runInput.trim().length > 0;
+  const categoryOptions = useMemo(() => {
+    const domains = new Set(WORKFLOW_DOMAIN_ORDER);
+    if (draft.domain) domains.add(draft.domain);
+    return [...domains].sort((a, b) => {
+      const ia = WORKFLOW_DOMAIN_ORDER.indexOf(a);
+      const ib = WORKFLOW_DOMAIN_ORDER.indexOf(b);
+      if (ia !== -1 || ib !== -1) return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib);
+      return workflowDomainLabel(a).localeCompare(workflowDomainLabel(b));
     });
-  };
+  }, [draft.domain]);
 
-  const addTask = () => {
+  useEffect(() => {
+    if (!inspectorOpen || !selectedTask) return;
+    const cwdKey = draft.cwd || "";
+    if (skillsLoadedForCwd === cwdKey) return;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10000);
+    const cwd = encodeURIComponent(cwdKey);
+    fetch(`/api/skills?cwd=${cwd}`, { signal: controller.signal })
+      .then((res) => res.json())
+      .then((data) => {
+        const nextSkills = Array.isArray(data?.skills)
+          ? data.skills
+              .map((skill: { name?: string; id?: string; description?: string }) => ({
+                id: skill.name || skill.id || "",
+                description: skill.description,
+              }))
+              .filter((skill: SkillItem) => skill.id)
+          : [];
+        setSkills(nextSkills);
+        setSkillsLoadedForCwd(cwdKey);
+      })
+      .catch(() => setSkills([]))
+      .finally(() => clearTimeout(timeout));
+    return () => {
+      clearTimeout(timeout);
+      controller.abort();
+    };
+  }, [draft.cwd, inspectorOpen, selectedTask, skillsLoadedForCwd]);
+
+  const updateDraft = useCallback((patch: Partial<WorkflowDefinition>) => {
+    setDraft((prev) => ({ ...prev, ...patch }));
+  }, []);
+
+  const updateTask = useCallback((taskId: string, patch: Partial<WorkflowTaskDefinition>) => {
     setDraft((prev) => ({
       ...prev,
-      tasks: [
-        ...(prev.tasks || []),
-        { id: `task-${(prev.tasks?.length || 0) + 1}`, name: "", profileId: "", deps: [] },
-      ],
+      tasks: (prev.tasks || []).map((task) => task.id === taskId ? { ...task, ...patch } : task),
     }));
-  };
+  }, []);
 
-  const removeTask = (index: number) => {
-    setDraft((prev) => ({ ...prev, tasks: (prev.tasks || []).filter((_, i) => i !== index) }));
-  };
+  const updateCategory = useCallback((next: string, customLabel = customCategory) => {
+    setCategorySelection(next);
+    if (next === "__new__") {
+      const nextLabel = customLabel.trim();
+      updateDraft({
+        domain: nextLabel ? slugDomain(nextLabel) : "custom",
+        category: nextLabel,
+      });
+      return;
+    }
+    updateDraft({ domain: next, category: workflowDomainLabel(next) });
+  }, [customCategory, updateDraft]);
 
-  const save = async () => {
+  const addProfileNode = useCallback((profile: ProfileDropPayload, x = 190, y = 64) => {
+    setDraft((prev) => {
+      const existing = prev.tasks || [];
+      const nextNumber = existing.length + 1;
+      const idBase = profile.id.replace(/[^a-zA-Z0-9_-]/g, "-") || "profile";
+      let id = `${idBase}-${nextNumber}`;
+      let counter = nextNumber;
+      while (existing.some((task) => task.id === id)) {
+        counter += 1;
+        id = `${idBase}-${counter}`;
+      }
+      const previousId = existing[existing.length - 1]?.id;
+      const task: WorkflowTaskDefinition = {
+        id,
+        name: profile.name || profile.id,
+        profileId: profile.id,
+        skills: profile.skills || [],
+        deps: previousId ? [previousId] : [],
+        prompt: "",
+        budget: { maxRetries: 1, timeoutMs: 120000 },
+        layout: { x, y },
+      };
+      setSelectedTaskId(id);
+      setInspectorOpen(false);
+      return { ...prev, tasks: [...existing, task] };
+    });
+  }, []);
+
+  const removeTask = useCallback((taskId: string) => {
+    setDraft((prev) => {
+      const nextTasks = (prev.tasks || [])
+        .filter((task) => task.id !== taskId)
+        .map((task) => ({ ...task, deps: (task.deps || []).filter((dep) => dep !== taskId) }));
+      if (selectedTaskId === taskId) {
+        setSelectedTaskId(nextTasks[0]?.id || null);
+        setInspectorOpen(false);
+      }
+      return { ...prev, tasks: nextTasks };
+    });
+  }, [selectedTaskId]);
+
+  const save = useCallback(async () => {
     setBusy("save");
     try {
       const res = await fetch(`/api/workflows/${encodeURIComponent(draft.id)}`, {
@@ -91,20 +253,35 @@ export function WorkflowEditor({
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok || !data?.workflow) {
-        alert(data?.error || "Workflow 保存失败");
+        window.alert(data?.error || "Workflow 保存失败");
         return;
       }
       onChange?.(data.workflow);
     } finally {
       setBusy(null);
     }
-  };
+  }, [draft, onChange]);
 
-  const run = async () => {
+  const run = useCallback(async () => {
+    const input = runInput.trim();
+    if (!hasRunnableChain || !input) return;
+    const startedAt = Date.now();
+    setRunNotice({ status: "running", input, startedAt });
     setBusy("run");
     try {
-      const input = window.prompt("本次 workflow 目标", draft.description || draft.name || "运行工作流");
-      if (input === null) return;
+      const saveRes = await fetch(`/api/workflows/${encodeURIComponent(draft.id)}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(draft),
+      });
+      const saveData = await saveRes.json().catch(() => ({}));
+      if (!saveRes.ok || !saveData?.workflow) {
+        const message = saveData?.error || "Workflow 保存失败";
+        setRunNotice({ status: "error", input, message, startedAt });
+        window.alert(message);
+        return;
+      }
+      onChange?.(saveData.workflow);
       const res = await fetch(`/api/workflows/${encodeURIComponent(draft.id)}/run`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -112,163 +289,493 @@ export function WorkflowEditor({
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok || !data?.sessionId) {
-        alert(data?.error || "Workflow 运行失败");
+        const message = data?.error || "Workflow 运行失败";
+        setRunNotice({ status: "error", input, message, startedAt });
+        window.alert(message);
         return;
       }
-      onRan?.(data.sessionId, draft.cwd || "");
+      setRunNotice({ status: "success", input, sessionId: data.sessionId, cwd: draft.cwd || "", startedAt });
     } finally {
       setBusy(null);
     }
-  };
+  }, [draft, hasRunnableChain, onChange, runInput]);
 
-  const removeWorkflow = async () => {
-    if (!window.confirm(`Delete workflow: ${draft.name}?`)) return;
-    setBusy("delete");
-    try {
-      const res = await fetch(`/api/workflows/${encodeURIComponent(draft.id)}`, { method: "DELETE" });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        alert(data?.error || "Workflow 删除失败");
-        return;
-      }
-      onDeleted?.(draft.id);
-    } finally {
-      setBusy(null);
-    }
-  };
+  const edges = useMemo(() => buildEdges(tasks), [tasks]);
 
   return (
-    <div style={{ height: "100%", overflowY: "auto", background: "var(--bg)" }}>
-      <div style={{ maxWidth: 960, margin: "0 auto", padding: 20, display: "flex", flexDirection: "column", gap: 14 }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, paddingBottom: 10, borderBottom: "1px solid var(--border)", position: "sticky", top: 0, background: "var(--bg)", zIndex: 2 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
-            {onBack ? <button onClick={onBack} style={{ border: "none", background: "none", color: "var(--text-muted)", cursor: "pointer", fontSize: 12, padding: 0 }}>← 返回</button> : null}
-            <div style={{ minWidth: 0 }}>
-              <div style={{ fontSize: 20, fontWeight: 700, color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{draft.name || "未命名 Workflow"}</div>
-              <div style={{ fontSize: 12, color: "var(--text-muted)" }}>{draft.tasks?.length || 0} tasks · {draft.reviewPolicy || "lead_plus_reviewer"}</div>
+    <div style={{ height: "100%", minHeight: 0, display: "grid", gridTemplateRows: "minmax(0, 1fr) auto", gap: 10 }}>
+      <section
+        onDragEnter={(event) => {
+          event.preventDefault();
+          setDragActive(true);
+        }}
+        onDragOver={(event) => {
+          event.preventDefault();
+          event.dataTransfer.dropEffect = "copy";
+        }}
+        onDragLeave={(event) => {
+          if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setDragActive(false);
+        }}
+        onDrop={(event) => {
+          event.preventDefault();
+          setDragActive(false);
+          const raw = event.dataTransfer.getData("application/pi-profile");
+          if (!raw) return;
+          try {
+            const profile = JSON.parse(raw) as ProfileDropPayload;
+            const rect = event.currentTarget.getBoundingClientRect();
+            addProfileNode(profile, Math.max(172, event.clientX - rect.left - NODE_WIDTH / 2), Math.max(28, event.clientY - rect.top - NODE_HEIGHT / 2));
+          } catch {
+            // Invalid external drag data is ignored.
+          }
+        }}
+        style={{
+          minHeight: 0,
+          position: "relative",
+          overflow: "hidden",
+          borderRadius: 22,
+          border: `1px solid ${dragActive ? "color-mix(in srgb, var(--accent) 46%, transparent)" : "color-mix(in srgb, var(--shell-edge) 86%, transparent)"}`,
+          background: "linear-gradient(135deg, color-mix(in srgb, var(--bg) 94%, transparent), color-mix(in srgb, var(--bg-secondary) 82%, transparent))",
+          boxShadow: "var(--shell-shadow-sm)",
+        }}
+      >
+        <div style={{
+          position: "absolute",
+          inset: 0,
+          backgroundImage: "radial-gradient(color-mix(in srgb, var(--text-dim) 18%, transparent) 1px, transparent 1px)",
+          backgroundSize: "24px 24px",
+          opacity: 0.45,
+        }} />
+
+        <WorkflowTitle workflow={draft} />
+        <StartNode />
+        <EdgesLayer tasks={tasks} edges={edges} />
+
+        {tasks.length === 0 ? (
+          <div style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center", pointerEvents: "none" }}>
+            <div style={{ textAlign: "center", color: "var(--text-muted)", fontSize: 13, lineHeight: 1.8 }}>
+              <div style={{ fontWeight: 800, color: "var(--text)", marginBottom: 4 }}>Drag profiles into the canvas</div>
+              <div>第一个 Profile 会接在 Start 后面，后续 Profile 会自动串成链路。</div>
             </div>
           </div>
-          <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
-            <button onClick={removeWorkflow} disabled={busy !== null} style={buttonStyle("danger")}>{busy === "delete" ? "删除中..." : "删除"}</button>
-            <button onClick={run} disabled={busy !== null} style={buttonStyle()}>{busy === "run" ? "运行中..." : "Run"}</button>
-            <button onClick={save} disabled={busy !== null} style={buttonStyle("primary")}>{busy === "save" ? "保存中..." : "Save"}</button>
+        ) : null}
+
+        {tasks.map((task, index) => {
+          const x = task.layout?.x ?? 180 + (index % 3) * 230;
+          const y = task.layout?.y ?? 58 + Math.floor(index / 3) * 132;
+          const selected = task.id === selectedTaskId;
+          return (
+            <button
+              key={task.id || index}
+              type="button"
+              onClick={() => setSelectedTaskId(task.id || null)}
+              onDoubleClick={() => {
+                setSelectedTaskId(task.id || null);
+                setInspectorOpen(true);
+              }}
+              style={{
+                position: "absolute",
+                left: x,
+                top: y,
+                zIndex: 3,
+                width: NODE_WIDTH,
+                minHeight: NODE_HEIGHT,
+                textAlign: "left",
+                borderRadius: 14,
+                border: selected ? "1px solid color-mix(in srgb, var(--accent) 58%, transparent)" : "1px solid color-mix(in srgb, var(--shell-edge) 90%, transparent)",
+                background: selected ? "color-mix(in srgb, var(--accent) 9%, var(--bg))" : "color-mix(in srgb, var(--bg) 94%, transparent)",
+                color: "var(--text)",
+                boxShadow: selected ? "0 16px 36px rgba(15,23,42,0.14)" : "var(--shell-shadow-sm)",
+                padding: 12,
+                cursor: "pointer",
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 7 }}>
+                <span style={{ width: 8, height: 8, borderRadius: 999, background: selected ? "var(--accent)" : "var(--text-dim)", flexShrink: 0 }} />
+                <span style={{ fontSize: 12, fontWeight: 850, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  {task.name || task.id || `Task ${index + 1}`}
+                </span>
+              </div>
+              <div style={{ fontSize: 11, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {profileNames.get(task.profileId || "") || task.profileId || "No profile"}
+              </div>
+              <div style={{ marginTop: 10, display: "flex", alignItems: "center", gap: 6, fontSize: 10, color: "var(--text-dim)" }}>
+                <span className="codex-pill" style={{ fontSize: 10, minHeight: 22, padding: "0 8px" }}>{(task.deps || []).length || "Start"} deps</span>
+                <span className="codex-pill" style={{ fontSize: 10, minHeight: 22, padding: "0 8px" }}>{(task.skills || []).length} skills</span>
+              </div>
+            </button>
+          );
+        })}
+
+        <div style={{ position: "absolute", left: 16, bottom: 16, zIndex: 4, display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <button type="button" onClick={() => setInspectorOpen(true)} disabled={!selectedTask} style={buttonStyle()}>
+            Inspector
+          </button>
+          {hasRunnableChain ? (
+            <button type="button" onClick={run} disabled={busy !== null || !canRun} style={buttonStyle("primary")}>
+              {busy === "run" ? "Running..." : "Run"}
+            </button>
+          ) : null}
+        </div>
+      </section>
+
+      <section className="codex-card" style={{ borderRadius: 18, padding: "12px", display: "grid", gap: 12 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "minmax(280px, 1fr) auto", gap: 10, alignItems: "end" }}>
+          <Field label="Task Input">
+            <textarea
+              value={runInput}
+              onChange={(event) => setRunInput(event.target.value)}
+              placeholder="输入这次要让该 Workflow 完成的具体任务..."
+              style={{ ...inputStyle, minHeight: 62, resize: "vertical" }}
+            />
+          </Field>
+          <button type="button" onClick={run} disabled={busy !== null || !canRun} style={{ ...buttonStyle("primary"), minHeight: 38 }}>
+            {busy === "run" ? "Running..." : "Run workflow"}
+          </button>
+        </div>
+        {runNotice ? (
+          <div
+            style={{
+              border: "1px solid var(--border)",
+              borderRadius: 12,
+              padding: "9px 10px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 10,
+              background: runNotice.status === "error" ? "rgba(239,68,68,0.08)" : runNotice.status === "success" ? "rgba(34,197,94,0.08)" : "var(--bg-secondary)",
+              color: "var(--text)",
+              fontSize: 12,
+            }}
+          >
+            <div style={{ minWidth: 0, lineHeight: 1.6 }}>
+              <strong>{runNotice.status === "success" ? "Workflow run created" : runNotice.status === "error" ? "Workflow run failed" : "Workflow run starting"}</strong>
+              <span style={{ color: "var(--text-muted)" }}> · {new Date(runNotice.startedAt).toLocaleTimeString()}</span>
+              <div style={{ color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {runNotice.input}
+              </div>
+              {runNotice.status === "error" ? <div style={{ color: "#ef4444" }}>{runNotice.message}</div> : null}
+              {runNotice.status === "success" ? <div style={{ color: "var(--text-muted)", fontFamily: "var(--font-mono)" }}>{runNotice.sessionId}</div> : null}
+            </div>
+            {runNotice.status === "success" ? (
+              <button type="button" onClick={() => onRan?.(runNotice.sessionId, runNotice.cwd)} style={buttonStyle()}>
+                Open session
+              </button>
+            ) : null}
+          </div>
+        ) : null}
+        <div style={{ display: "grid", gridTemplateColumns: "minmax(150px, 0.75fr) minmax(220px, 1fr) minmax(130px, 0.55fr) minmax(160px, 0.7fr) auto", gap: 10, alignItems: "end" }}>
+          <Field label="Name">
+            <input value={draft.name || ""} onChange={(event) => updateDraft({ name: event.target.value })} style={{ ...inputStyle, fontWeight: 800 }} />
+          </Field>
+          <Field label="Description">
+            <input value={draft.description || ""} onChange={(event) => updateDraft({ description: event.target.value })} placeholder="Describe what this workflow does" style={inputStyle} />
+          </Field>
+          <Field label="Category">
+            <select value={categorySelection} onChange={(event) => updateCategory(event.target.value)} style={inputStyle}>
+              {categoryOptions.map((domain) => (
+                <option key={domain} value={domain}>{workflowDomainLabel(domain)}</option>
+              ))}
+              <option value="__new__">新建分类</option>
+            </select>
+          </Field>
+          {categorySelection === "__new__" ? (
+            <Field label="New Category">
+              <input
+                value={customCategory}
+                onChange={(event) => {
+                  setCustomCategory(event.target.value);
+                  updateCategory("__new__", event.target.value);
+                }}
+                placeholder="例如：医疗运营"
+                style={inputStyle}
+              />
+            </Field>
+          ) : (
+            <Field label="Template">
+              <input readOnly value={workflowTemplateLabel(draft.templateType)} style={{ ...inputStyle, color: "var(--text-muted)" }} />
+            </Field>
+          )}
+          <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+            {onBack ? <button type="button" onClick={onBack} style={buttonStyle()}>Back</button> : null}
+            <button type="button" onClick={save} disabled={busy !== null} style={buttonStyle("primary")}>
+              {busy === "save" ? "Saving..." : "Save"}
+            </button>
           </div>
         </div>
+      </section>
 
-        <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1.2fr) minmax(320px, 0.8fr)", gap: 16, alignItems: "start" }}>
-          <div style={{ display: "grid", gap: 12 }}>
-            <section style={panelStyle}>
-              <div style={panelTitleStyle}>Workflow 设置</div>
-              <div style={{ display: "grid", gap: 10 }}>
-                <Field label="名称">
-                  <input value={draft.name || ""} onChange={(e) => updateDraft({ name: e.target.value })} style={inputStyle} />
-                </Field>
-                <Field label="描述">
-                  <textarea value={draft.description || ""} onChange={(e) => updateDraft({ description: e.target.value })} style={{ ...inputStyle, minHeight: 100, resize: "vertical" }} />
-                </Field>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                  <Field label="Lead Profile">
-                    <select value={draft.leadProfileId || "lead-agent"} onChange={(e) => updateDraft({ leadProfileId: e.target.value })} style={inputStyle}>
-                      {profileOptions.map((profile) => (
-                        <option key={profile.id} value={profile.id}>{profile.name} · {profile.id}</option>
-                      ))}
-                    </select>
-                  </Field>
-                  <Field label="Review Policy">
-                    <select value={draft.reviewPolicy || "lead_plus_reviewer"} onChange={(e) => updateDraft({ reviewPolicy: e.target.value as WorkflowDefinition["reviewPolicy"] })} style={inputStyle}>
-                      <option value="lead_plus_reviewer">lead_plus_reviewer</option>
-                      <option value="lead_only">lead_only</option>
-                    </select>
-                  </Field>
-                </div>
-                <Field label="工作目录">
-                  <input value={draft.cwd || ""} onChange={(e) => updateDraft({ cwd: e.target.value })} style={{ ...inputStyle, fontFamily: "var(--font-mono)" }} />
-                </Field>
-              </div>
-            </section>
+      {inspectorOpen ? (
+        <InspectorDrawer title={selectedTask?.name || selectedTask?.id || "Workflow Inspector"} onClose={() => setInspectorOpen(false)}>
+          {selectedTask ? (
+            <TaskInspector
+              task={selectedTask}
+              tasks={tasks}
+              profiles={profiles}
+              skills={skills}
+              updateTask={updateTask}
+              removeTask={removeTask}
+            />
+          ) : (
+            <WorkflowInspector draft={draft} profiles={profiles} updateDraft={updateDraft} />
+          )}
+        </InspectorDrawer>
+      ) : null}
+    </div>
+  );
+}
 
-            <section style={panelStyle}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 10 }}>
-                <div style={panelTitleStyle}>任务节点</div>
-                <button onClick={addTask} style={buttonStyle()}>+ 任务</button>
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                {(draft.tasks || []).map((task, index) => (
-                  <div key={`${draft.id}-task-${index}`} style={{ border: "1px solid color-mix(in srgb, var(--border) 70%, transparent)", borderRadius: 12, padding: 12, background: "color-mix(in srgb, var(--bg-secondary) 65%, transparent)", display: "grid", gap: 8 }}>
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-                      <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text)" }}>{task.name || task.id || `任务 ${index + 1}`}</div>
-                      <button onClick={() => removeTask(index)} style={buttonStyle("danger")}>删除</button>
-                    </div>
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                      <Field label="Task ID">
-                        <input value={task.id || ""} onChange={(e) => updateTask(index, { id: e.target.value })} style={{ ...inputStyle, fontFamily: "var(--font-mono)" }} />
-                      </Field>
-                      <Field label="任务名">
-                        <input value={task.name || ""} onChange={(e) => updateTask(index, { name: e.target.value })} style={inputStyle} />
-                      </Field>
-                    </div>
-                    <Field label="Profile">
-                      <select value={task.profileId || ""} onChange={(e) => updateTask(index, { profileId: e.target.value })} style={inputStyle}>
-                        <option value="">选择 Profile</option>
-                        {profileOptions.map((profile) => (
-                          <option key={profile.id} value={profile.id}>{profile.name} · {profile.id}</option>
-                        ))}
-                      </select>
-                    </Field>
-                    <Field label="Skills">
-                      <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-                        {skills.map((skill) => {
-                          const active = (task.skills || []).includes(skill.id);
-                          return (
-                            <button
-                              key={`${task.id || index}-${skill.id}`}
-                              type="button"
-                              title={skill.description || skill.id}
-                              onClick={() => updateTask(index, { skills: active ? (task.skills || []).filter((item) => item !== skill.id) : [...(task.skills || []), skill.id] })}
-                              style={{
-                                border: `1px solid ${active ? "rgba(59,130,246,0.35)" : "var(--border)"}`,
-                                background: active ? "rgba(59,130,246,0.08)" : "var(--bg)",
-                                color: "var(--text)",
-                                borderRadius: 999,
-                                padding: "5px 10px",
-                                cursor: "pointer",
-                                fontSize: 12,
-                              }}
-                            >
-                              {skill.id}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </Field>
-                    <Field label="依赖任务（逗号分隔 task id）">
-                      <input value={(task.deps || []).join(", ")} onChange={(e) => updateTask(index, { deps: e.target.value.split(",").map((v) => v.trim()).filter(Boolean) })} style={{ ...inputStyle, fontFamily: "var(--font-mono)" }} />
-                    </Field>
-                  </div>
-                ))}
-                {(draft.tasks || []).length === 0 ? <div style={{ fontSize: 12, color: "var(--text-muted)" }}>还没有任务，点右上角「+ 任务」开始搭节点。</div> : null}
-              </div>
-            </section>
-          </div>
+function buildEdges(tasks: WorkflowTaskDefinition[]) {
+  const taskById = new Map(tasks.map((task, index) => [task.id || `task-${index + 1}`, task]));
+  const edges: Array<{ from: "start" | string; to: string }> = [];
+  tasks.forEach((task, index) => {
+    const to = task.id || `task-${index + 1}`;
+    const validDeps = (task.deps || []).filter((dep) => taskById.has(dep));
+    if (validDeps.length === 0 && index === 0) edges.push({ from: "start", to });
+    validDeps.forEach((dep) => edges.push({ from: dep, to }));
+  });
+  return edges;
+}
 
-          <div style={{ display: "grid", gap: 12, position: "sticky", top: 82 }}>
-            <section style={panelStyle}>
-              <div style={panelTitleStyle}>节点预览</div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                {(draft.tasks || []).map((task, index) => (
-                  <div key={`preview-${draft.id}-${index}`} style={{ border: "1px solid var(--border)", borderRadius: 12, padding: 12, background: "var(--bg-secondary)" }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text)" }}>{task.name || task.id || `任务 ${index + 1}`}</div>
-                    <div style={{ marginTop: 4, fontSize: 11, color: "var(--text-muted)" }}>Profile: {task.profileId || "—"}</div>
-                    <div style={{ marginTop: 4, fontSize: 11, color: "var(--text-dim)" }}>Skills: {(task.skills || []).length ? (task.skills || []).join(", ") : "无"}</div>
-                    <div style={{ marginTop: 4, fontSize: 11, color: "var(--text-dim)" }}>Deps: {(task.deps || []).length ? (task.deps || []).join(", ") : "无"}</div>
-                  </div>
-                ))}
-                {(draft.tasks || []).length === 0 ? <div style={{ fontSize: 12, color: "var(--text-muted)" }}>这里会显示 workflow 节点摘要。</div> : null}
-              </div>
-            </section>
-          </div>
-        </div>
+function getTaskPoint(task: WorkflowTaskDefinition, index: number, side: "left" | "right"): NodePoint {
+  const x = task.layout?.x ?? 180 + (index % 3) * 230;
+  const y = task.layout?.y ?? 58 + Math.floor(index / 3) * 132;
+  return {
+    x: x + (side === "right" ? NODE_WIDTH : 0),
+    y: y + NODE_HEIGHT / 2,
+  };
+}
+
+function EdgesLayer({ tasks, edges }: { tasks: WorkflowTaskDefinition[]; edges: Array<{ from: "start" | string; to: string }> }) {
+  const taskIndex = useMemo(() => new Map(tasks.map((task, index) => [task.id || `task-${index + 1}`, index])), [tasks]);
+  return (
+    <svg aria-hidden="true" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", zIndex: 2, pointerEvents: "none" }}>
+      <defs>
+        <marker id="workflow-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="color-mix(in srgb, var(--accent) 62%, var(--text-muted))" />
+        </marker>
+      </defs>
+      {edges.map((edge, index) => {
+        const toIndex = taskIndex.get(edge.to);
+        if (toIndex === undefined) return null;
+        const toTask = tasks[toIndex];
+        const from = edge.from === "start"
+          ? { x: START_NODE.x + START_NODE.width, y: START_NODE.y + START_NODE.height / 2 }
+          : (() => {
+              const fromIndex = taskIndex.get(edge.from);
+              return fromIndex === undefined ? null : getTaskPoint(tasks[fromIndex], fromIndex, "right");
+            })();
+        if (!from) return null;
+        const to = getTaskPoint(toTask, toIndex, "left");
+        const mid = Math.max(42, (to.x - from.x) / 2);
+        const path = `M ${from.x} ${from.y} C ${from.x + mid} ${from.y}, ${to.x - mid} ${to.y}, ${to.x - 8} ${to.y}`;
+        return (
+          <path
+            key={`${edge.from}-${edge.to}-${index}`}
+            d={path}
+            fill="none"
+            stroke="color-mix(in srgb, var(--accent) 48%, var(--text-dim))"
+            strokeWidth="1.7"
+            strokeDasharray={edge.from === "start" ? "0" : "5 5"}
+            markerEnd="url(#workflow-arrow)"
+            opacity="0.86"
+          />
+        );
+      })}
+    </svg>
+  );
+}
+
+function StartNode() {
+  return (
+    <div style={{
+      position: "absolute",
+      left: START_NODE.x,
+      top: START_NODE.y,
+      zIndex: 3,
+      width: START_NODE.width,
+      height: START_NODE.height,
+      borderRadius: 16,
+      border: "1px solid color-mix(in srgb, var(--accent) 32%, transparent)",
+      background: "color-mix(in srgb, var(--accent) 10%, var(--bg))",
+      color: "var(--text)",
+      display: "grid",
+      placeItems: "center",
+      boxShadow: "var(--shell-shadow-sm)",
+      fontSize: 12,
+      fontWeight: 850,
+    }}>
+      Start
+    </div>
+  );
+}
+
+function WorkflowTitle({ workflow }: { workflow: WorkflowDefinition }) {
+  return (
+    <div style={{
+      position: "absolute",
+      right: 16,
+      top: 14,
+      zIndex: 4,
+      maxWidth: 320,
+      textAlign: "right",
+      padding: "8px 12px",
+      borderRadius: 999,
+      border: "1px solid color-mix(in srgb, var(--shell-edge) 80%, transparent)",
+      background: "color-mix(in srgb, var(--bg) 80%, transparent)",
+      backdropFilter: "blur(12px)",
+    }}>
+      <div style={{ fontSize: 13, fontWeight: 850, color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+        {workflow.name || "Untitled workflow"}
       </div>
+    </div>
+  );
+}
+
+function TaskInspector({
+  task,
+  tasks,
+  profiles,
+  skills,
+  updateTask,
+  removeTask,
+}: {
+  task: WorkflowTaskDefinition;
+  tasks: WorkflowTaskDefinition[];
+  profiles: Array<{ id: string; name?: string }>;
+  skills: SkillItem[];
+  updateTask: (taskId: string, patch: Partial<WorkflowTaskDefinition>) => void;
+  removeTask: (taskId: string) => void;
+}) {
+  const taskId = task.id || "";
+  return (
+    <div style={{ display: "grid", gap: 12 }}>
+      <Field label="Task ID">
+        <input value={task.id || ""} onChange={(event) => updateTask(taskId, { id: event.target.value })} style={{ ...inputStyle, fontFamily: "var(--font-mono)" }} />
+      </Field>
+      <Field label="Name">
+        <input value={task.name || ""} onChange={(event) => updateTask(taskId, { name: event.target.value })} style={inputStyle} />
+      </Field>
+      <Field label="Profile">
+        <select value={task.profileId || ""} onChange={(event) => updateTask(taskId, { profileId: event.target.value })} style={inputStyle}>
+          <option value="">Select profile</option>
+          {profiles.map((profile) => (
+            <option key={profile.id} value={profile.id}>{profile.name || profile.id}</option>
+          ))}
+        </select>
+      </Field>
+      <Field label="Goal">
+        <textarea value={task.prompt || ""} onChange={(event) => updateTask(taskId, { prompt: event.target.value })} style={{ ...inputStyle, minHeight: 96, resize: "vertical" }} />
+      </Field>
+      <Field label="Dependencies">
+        <select
+          multiple
+          value={task.deps || []}
+          onChange={(event) => updateTask(taskId, { deps: Array.from(event.target.selectedOptions).map((option) => option.value) })}
+          style={{ ...inputStyle, minHeight: 92 }}
+        >
+          {tasks.filter((item) => item.id !== task.id).map((item) => (
+            <option key={item.id} value={item.id}>{item.name || item.id}</option>
+          ))}
+        </select>
+      </Field>
+      <Field label="Skills">
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+          {skills.map((skill) => {
+            const active = (task.skills || []).includes(skill.id);
+            return (
+              <button
+                key={skill.id}
+                type="button"
+                title={skill.description || skill.id}
+                onClick={() => updateTask(taskId, { skills: active ? (task.skills || []).filter((item) => item !== skill.id) : [...(task.skills || []), skill.id] })}
+                style={{
+                  border: `1px solid ${active ? "color-mix(in srgb, var(--accent) 35%, transparent)" : "var(--border)"}`,
+                  background: active ? "color-mix(in srgb, var(--accent) 10%, var(--bg))" : "var(--bg-secondary)",
+                  color: "var(--text)",
+                  borderRadius: 999,
+                  padding: "5px 9px",
+                  cursor: "pointer",
+                  fontSize: 11,
+                }}
+              >
+                {skill.id}
+              </button>
+            );
+          })}
+        </div>
+      </Field>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+        <Field label="Retries">
+          <input
+            type="number"
+            min={0}
+            value={task.budget?.maxRetries ?? 0}
+            onChange={(event) => updateTask(taskId, { budget: { ...(task.budget || {}), maxRetries: Number(event.target.value) } })}
+            style={inputStyle}
+          />
+        </Field>
+        <Field label="Timeout sec">
+          <input
+            type="number"
+            min={0}
+            value={Math.round((task.budget?.timeoutMs ?? 0) / 1000)}
+            onChange={(event) => updateTask(taskId, { budget: { ...(task.budget || {}), timeoutMs: Number(event.target.value) * 1000 } })}
+            style={inputStyle}
+          />
+        </Field>
+      </div>
+      <button type="button" onClick={() => removeTask(taskId)} style={{ ...buttonStyle("danger"), justifySelf: "start" }}>
+        Remove node
+      </button>
+    </div>
+  );
+}
+
+function WorkflowInspector({
+  draft,
+  profiles,
+  updateDraft,
+}: {
+  draft: WorkflowDefinition;
+  profiles: Array<{ id: string; name?: string }>;
+  updateDraft: (patch: Partial<WorkflowDefinition>) => void;
+}) {
+  return (
+    <div style={{ display: "grid", gap: 12 }}>
+      <Field label="Lead Profile">
+        <select value={draft.leadProfileId || "lead-agent"} onChange={(event) => updateDraft({ leadProfileId: event.target.value })} style={inputStyle}>
+          {profiles.map((profile) => (
+            <option key={profile.id} value={profile.id}>{profile.name || profile.id}</option>
+          ))}
+        </select>
+      </Field>
+      <Field label="Review Policy">
+        <select value={draft.reviewPolicy || "lead_plus_reviewer"} onChange={(event) => updateDraft({ reviewPolicy: event.target.value as WorkflowDefinition["reviewPolicy"] })} style={inputStyle}>
+          <option value="lead_plus_reviewer">lead_plus_reviewer</option>
+          <option value="lead_only">lead_only</option>
+        </select>
+      </Field>
+      <Field label="Working Directory">
+        <input value={draft.cwd || ""} onChange={(event) => updateDraft({ cwd: event.target.value })} style={{ ...inputStyle, fontFamily: "var(--font-mono)" }} />
+      </Field>
+    </div>
+  );
+}
+
+function InspectorDrawer({ title, children, onClose }: { title: string; children: React.ReactNode; onClose: () => void }) {
+  return (
+    <div style={{ position: "fixed", inset: 0, zIndex: 950, display: "flex", justifyContent: "flex-end", background: "rgba(15,23,42,0.18)" }} onClick={onClose}>
+      <aside onClick={(event) => event.stopPropagation()} className="codex-card codex-scroll-column" style={{ width: 390, maxWidth: "92vw", height: "100%", borderRadius: "24px 0 0 24px", padding: 18, overflow: "auto" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 16 }}>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontSize: 15, fontWeight: 850, color: "var(--text)", letterSpacing: "-0.02em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{title}</div>
+            <div style={{ marginTop: 2, fontSize: 11, color: "var(--text-muted)" }}>Inspector</div>
+          </div>
+          <button type="button" onClick={onClose} style={iconButtonStyle}>×</button>
+        </div>
+        {children}
+      </aside>
     </div>
   );
 }
@@ -276,47 +783,43 @@ export function WorkflowEditor({
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label style={{ display: "grid", gap: 6 }}>
-      <span style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 600 }}>{label}</span>
+      <span style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 700 }}>{label}</span>
       {children}
     </label>
   );
 }
 
-const panelStyle: React.CSSProperties = {
-  border: "1px solid var(--border)",
-  borderRadius: 14,
-  padding: 14,
-  background: "var(--bg)",
-};
-
-const panelTitleStyle: React.CSSProperties = {
-  fontSize: 12,
-  fontWeight: 700,
-  color: "var(--text-muted)",
-  letterSpacing: "0.05em",
-  textTransform: "uppercase",
-  marginBottom: 10,
-};
-
 const inputStyle: React.CSSProperties = {
   width: "100%",
-  padding: "9px 10px",
-  borderRadius: 10,
+  padding: "8px 10px",
+  borderRadius: 8,
   border: "1px solid var(--border)",
   background: "var(--bg)",
   color: "var(--text)",
-  fontSize: 13,
+  fontSize: 12,
+};
+
+const iconButtonStyle: React.CSSProperties = {
+  width: 30,
+  height: 30,
+  borderRadius: 10,
+  border: "1px solid var(--border)",
+  background: "var(--bg-secondary)",
+  color: "var(--text)",
+  cursor: "pointer",
+  fontSize: 16,
+  lineHeight: 1,
 };
 
 function buttonStyle(kind: "default" | "primary" | "danger" = "default"): React.CSSProperties {
   return {
-    padding: "6px 10px",
-    borderRadius: 8,
+    padding: "7px 10px",
+    borderRadius: 9,
     border: kind === "danger" ? "1px solid rgba(239,68,68,0.28)" : "1px solid var(--border)",
-    background: kind === "primary" ? "var(--bg-secondary)" : "var(--bg)",
-    color: kind === "danger" ? "#ef4444" : "var(--text)",
+    background: kind === "primary" ? "var(--text)" : "var(--bg-secondary)",
+    color: kind === "primary" ? "var(--bg)" : kind === "danger" ? "#ef4444" : "var(--text)",
     cursor: "pointer",
     fontSize: 12,
-    fontWeight: 600,
+    fontWeight: 750,
   };
 }

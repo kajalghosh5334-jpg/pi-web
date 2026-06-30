@@ -25,6 +25,8 @@ packages/*/dist-firefox/
 .npm/
 coverage/
 .nyc_output/
+agent_memory/eval_runs/
+agent_memory/projects/
 .pi_config/
 tui-debug.log
 compaction-results/

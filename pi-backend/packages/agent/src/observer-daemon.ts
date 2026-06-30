@@ -217,7 +217,7 @@ export class ObserverDaemon {
 				temperature: 0.7,
 			}),
 		});
-		const data = await response.json();
+		const data = (await response.json()) as { choices: [{ message: { content: string } }] };
 		return data.choices[0].message.content;
 	}
 
@@ -231,7 +231,7 @@ export class ObserverDaemon {
 				stream: false,
 			}),
 		});
-		const data = await response.json();
+		const data = (await response.json()) as { response: string };
 		return data.response;
 	}
 

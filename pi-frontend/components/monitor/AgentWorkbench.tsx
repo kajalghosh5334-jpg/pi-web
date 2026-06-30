@@ -15,7 +15,7 @@ interface Props {
 
 export function AgentWorkbench({ task, sessionId, onBack, onRerun, onPromoteProfile, onPromoteTaskSkills, onRenameProfile }: Props) {
   const [skills, setSkills] = useState<string[]>(task.skills || []);
-  const [availableSkills, setAvailableSkills] = useState<Array<{ id: string; description?: string }>>([]);
+  const [availableSkills, setAvailableSkills] = useState<Array<{ name: string; description?: string }>>([]);
   const [input, setInput] = useState("");
   const [lesson, setLesson] = useState("");
   const [saved, setSaved] = useState(false);
@@ -23,10 +23,18 @@ export function AgentWorkbench({ task, sessionId, onBack, onRerun, onPromoteProf
   const [promoteDescription, setPromoteDescription] = useState("");
   const [promoteStatus, setPromoteStatus] = useState("");
   const [promoteSkillsStatus, setPromoteSkillsStatus] = useState("");
+  const [renamingProfile, setRenamingProfile] = useState(false);
+  const [renameValue, setRenameValue] = useState(task.profileName || task.profileId || "");
+  const [renameBusy, setRenameBusy] = useState(false);
 
   useEffect(() => {
     setSkills(task.skills || []);
   }, [task.id, task.skills]);
+
+  useEffect(() => {
+    setRenamingProfile(false);
+    setRenameValue(task.profileName || task.profileId || "");
+  }, [task.id, task.profileId, task.profileName]);
 
   useEffect(() => {
     fetch("/api/skills")
@@ -37,12 +45,12 @@ export function AgentWorkbench({ task, sessionId, onBack, onRerun, onPromoteProf
 
   const messages = useMemo(() => {
     const rows: Array<{ role: "system" | "user" | "assistant"; text: string }> = [];
-    rows.push({ role: "system", text: `Agent：${task.name}\n模型：${task.model}\n状态：${task.status}\n阶段：${task.currentTaskStage || "未记录"}\n协作：${task.collaborationStatus || "未审查"}` });
+    rows.push({ role: "system", text: `Agent: ${task.name}\nModel: ${task.model}\nStatus: ${task.status}\nStage: ${task.currentTaskStage || "N/A"}\nCollab: ${task.collaborationStatus || "N/A"}` });
     if (task.prompt) rows.push({ role: "user", text: task.prompt });
     if (task.delta && task.status === "running") rows.push({ role: "assistant", text: task.delta });
     if (task.output) rows.push({ role: "assistant", text: task.output });
-    if (task.error) rows.push({ role: "assistant", text: `错误：${task.error}` });
-    if (task.nextAction) rows.push({ role: "system", text: `Lead 下一步建议：${task.nextAction}` });
+    if (task.error) rows.push({ role: "assistant", text: `Error: ${task.error}` });
+    if (task.nextAction) rows.push({ role: "system", text: `Lead suggestion: ${task.nextAction}` });
     return rows;
   }, [task]);
 
@@ -69,10 +77,16 @@ export function AgentWorkbench({ task, sessionId, onBack, onRerun, onPromoteProf
 
   const renameCurrentProfile = async () => {
     if (!task.profileId || !onRenameProfile) return;
-    const name = window.prompt("Profile 名称", task.profileName || task.profileId);
-    if (!name || name === task.profileName) return;
+    const name = renameValue.trim();
+    if (!name || name === (task.profileName || task.profileId)) {
+      setRenamingProfile(false);
+      return;
+    }
+    setRenameBusy(true);
     const result = await onRenameProfile(task.profileId, name).catch(() => ({ ok: false, profile: undefined, error: "rename failed" }));
-    setPromoteStatus(result?.ok ? `已更新 Profile 名称：${result.profile?.name || name}` : `重命名失败：${result?.error || "unknown error"}`);
+    setRenameBusy(false);
+    setRenamingProfile(false);
+    setPromoteStatus(result?.ok ? `Profile name updated: ${result.profile?.name || name}` : `Rename failed: ${result?.error || "unknown error"}`);
   };
 
   const promoteProfile = async () => {
@@ -81,45 +95,85 @@ export function AgentWorkbench({ task, sessionId, onBack, onRerun, onPromoteProf
       description: promoteDescription.trim() || lesson.trim() || undefined,
     }).catch(() => ({ ok: false, profile: undefined, error: "promote failed" }));
     setPromoteStatus(result?.ok
-      ? `已升级为 Profile：${result.profile?.name || result.profile?.id || "新 Profile"}`
-      : `升级失败：${result?.error || "unknown error"}`);
+      ? `Promoted to Profile: ${result.profile?.name || result.profile?.id || "New Profile"}`
+      : `Promotion failed: ${result?.error || "unknown error"}`);
   };
 
   const promoteTaskSkills = async (targetSkills?: string[]) => {
     const picked = (targetSkills || skills).filter(Boolean);
     if (!picked.length) {
-      setPromoteSkillsStatus("没有可升级的 skills");
+      setPromoteSkillsStatus("No skills to promote");
       return;
     }
     const result = await onPromoteTaskSkills(task.id, picked).catch(() => ({ ok: false, error: "promote skills failed" }));
     const promoted = result && typeof result === "object" && "skills" in result && Array.isArray(result.skills) ? result.skills : picked;
     setPromoteSkillsStatus(result?.ok
-      ? `已升级为 Profile 自带：${promoted.join(", ")}`
-      : `升级失败：${result?.error || "unknown error"}`);
+      ? `Promoted to profile defaults: ${promoted.join(", ")}`
+      : `Promotion failed: ${result?.error || "unknown error"}`);
   };
 
   return (
     <div style={{ height: "100%", display: "flex", flexDirection: "column", background: "var(--bg)", color: "var(--text)" }}>
       <div style={{ padding: "10px 14px", borderBottom: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <button onClick={onBack} style={btnStyle}>← 主对话</button>
+          <button onClick={onBack} style={btnStyle}>← Main</button>
           <div>
             <div style={{ fontWeight: 700 }}>{task.name}</div>
             <div style={{ fontSize: 12, color: "var(--text-muted)" }}>{task.model} · {task.status}</div>
           </div>
         </div>
-        <button onClick={() => onRerun(task.id, { skills })} style={btnStyle}>重跑</button>
+        <button onClick={() => onRerun(task.id, { skills })} style={btnStyle}>Rerun</button>
       </div>
 
       <div style={{ flex: 1, overflow: "auto", padding: "18px 20px", display: "flex", flexDirection: "column", gap: 12 }}>
         <div style={{ padding: 12, borderRadius: 12, border: "1px solid var(--border)", background: "var(--bg-secondary)", fontSize: 12, color: "var(--text-muted)", lineHeight: 1.6 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}><strong style={{ color: "var(--text)" }}>Profile</strong>: {task.profileName || task.profileId || "未记录"}{task.profileId && onRenameProfile ? <button onClick={renameCurrentProfile} style={btnStyle}>编辑名称</button> : null}</div>
-          <div><strong style={{ color: "var(--text)" }}>本次激活 Skills</strong>: {task.skills?.join(", ") || "无"}</div>
-          <div><strong style={{ color: "var(--text)" }}>Profile 固定 Skills</strong>: {task.profileSkills?.join(", ") || "无"}</div>
-          {task.promotedProfileSkills?.length ? <div><strong style={{ color: "var(--text)" }}>已升为自带</strong>: {task.promotedProfileSkills.join(", ")}</div> : null}
-          <div><strong style={{ color: "var(--text)" }}>Profile 可选技能池</strong>: {task.profileAvailableSkills?.join(", ") || "无"}</div>
-          <div><strong style={{ color: "var(--text)" }}>项目配置</strong>: {task.profileProjectConfig ? JSON.stringify(task.profileProjectConfig) : "无"}</div>
-          {task.profileSavedExperiences?.length ? <div><strong style={{ color: "var(--text)" }}>最近经验</strong>: {task.profileSavedExperiences.slice(0, 2).map((item) => item.lesson || item.taskName || "经验").join(" / ")}</div> : null}
+          <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+            <strong style={{ color: "var(--text)" }}>Profile</strong>:
+            {renamingProfile ? (
+              <>
+                <input
+                  value={renameValue}
+                  autoFocus
+                  onChange={(event) => setRenameValue(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") void renameCurrentProfile();
+                    if (event.key === "Escape") {
+                      setRenameValue(task.profileName || task.profileId || "");
+                      setRenamingProfile(false);
+                    }
+                  }}
+                  style={{ minWidth: 220, height: 30, borderRadius: 8, border: "1px solid var(--border)", background: "var(--bg)", color: "var(--text)", padding: "0 9px", fontSize: 12 }}
+                />
+                <button onClick={() => void renameCurrentProfile()} disabled={renameBusy} style={btnStyle}>{renameBusy ? "Saving..." : "Save"}</button>
+                <button
+                  onClick={() => {
+                    setRenameValue(task.profileName || task.profileId || "");
+                    setRenamingProfile(false);
+                  }}
+                  disabled={renameBusy}
+                  style={btnStyle}
+                >
+                  Cancel
+                </button>
+              </>
+            ) : (
+              <>
+                <span>{task.profileName || task.profileId || "N/A"}</span>
+                {task.profileId && onRenameProfile ? <button onClick={() => setRenamingProfile(true)} style={btnStyle}>Rename</button> : null}
+              </>
+            )}
+          </div>
+          <div><strong style={{ color: "var(--text)" }}>Active Skills</strong>: {task.skills?.join(", ") || "None"}</div>
+          <div><strong style={{ color: "var(--text)" }}>Profile Skills</strong>: {task.profileSkills?.join(", ") || "None"}</div>
+          {task.promotedProfileSkills?.length ? <div><strong style={{ color: "var(--text)" }}>Promoted</strong>: {task.promotedProfileSkills.join(", ")}</div> : null}
+          <div><strong style={{ color: "var(--text)" }}>Available Skills</strong>: {task.profileAvailableSkills?.join(", ") || "None"}</div>
+          <div><strong style={{ color: "var(--text)" }}>Project Config</strong>: {task.profileProjectConfig ? JSON.stringify(task.profileProjectConfig) : "None"}</div>
+          <div><strong style={{ color: "var(--text)" }}>Definition of Done</strong>: {task.definitionOfDone || "Not recorded"}</div>
+          <div><strong style={{ color: "var(--text)" }}>Acceptance</strong>: {task.acceptanceCriteria?.length ? task.acceptanceCriteria.join(" / ") : "Not recorded"}</div>
+          <div><strong style={{ color: "var(--text)" }}>Budget</strong>: {task.budget ? JSON.stringify(task.budget) : "Default"}</div>
+          {task.lastProgressStage ? <div><strong style={{ color: "var(--text)" }}>Last Checkpoint</strong>: {task.lastProgressStage}</div> : null}
+          {task.completionGate ? <div><strong style={{ color: "var(--text)" }}>Completion Gate</strong>: {task.completionGate.status}{task.completionGate.issues?.length ? ` · ${task.completionGate.issues.join(", ")}` : ""}</div> : null}
+          {task.profileSavedExperiences?.length ? <div><strong style={{ color: "var(--text)" }}>Recent Experience</strong>: {task.profileSavedExperiences.slice(0, 2).map((item) => item.lesson || item.taskName || "experience").join(" / ")}</div> : null}
         </div>
         {messages.map((m, i) => (
           <div key={i} style={{ display: "flex", justifyContent: m.role === "user" ? "flex-end" : "flex-start" }}>
@@ -133,7 +187,7 @@ export function AgentWorkbench({ task, sessionId, onBack, onRerun, onPromoteProf
       <div style={{ borderTop: "1px solid var(--border)", padding: 12 }}>
         <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 8 }}>
           {availableSkills.map((skill) => (
-            <button key={skill.id} title={skill.description || skill.id} onClick={() => toggleSkill(skill.id)} style={{ ...chipStyle, borderColor: skills.includes(skill.id) ? "#3b82f6" : "var(--border)", color: skills.includes(skill.id) ? "#3b82f6" : "var(--text-muted)", background: skills.includes(skill.id) ? "#3b82f622" : "transparent" }}>{skill.id}</button>
+            <button key={skill.name} title={skill.description || skill.name} onClick={() => toggleSkill(skill.name)} style={{ ...chipStyle, borderColor: skills.includes(skill.name) ? "#3b82f6" : "var(--border)", color: skills.includes(skill.name) ? "#3b82f6" : "var(--text-muted)", background: skills.includes(skill.name) ? "#3b82f622" : "transparent" }}>{skill.name}</button>
           ))}
         </div>
         <div style={{ display: "flex", gap: 8, alignItems: "flex-end" }}>
@@ -141,34 +195,34 @@ export function AgentWorkbench({ task, sessionId, onBack, onRerun, onPromoteProf
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
-            placeholder="像主对话一样给这个 Agent 下调试指令；Enter 重跑，Shift+Enter 换行"
+            placeholder="Send debug instructions like a main chat. Enter to rerun, Shift+Enter newline."
             style={{ flex: 1, minHeight: 52, maxHeight: 160, resize: "vertical", padding: 10, borderRadius: 12, border: "1px solid var(--border)", background: "var(--bg)", color: "var(--text)" }}
           />
-          <button onClick={send} style={{ ...btnStyle, padding: "10px 14px" }}>发送给Agent</button>
+          <button onClick={send} style={{ ...btnStyle, padding: "10px 14px" }}>Send to Agent</button>
         </div>
         <div style={{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "center", marginTop: 8, fontSize: 12, color: "var(--text-muted)" }}>
-          <div>临时装配的 skills 可以沉淀回当前 Profile。</div>
-          <button onClick={() => void promoteTaskSkills()} style={btnStyle}>升级本次 Skills 为自带</button>
+          <div>Assembled skills can be persisted back to the current Profile.</div>
+          <button onClick={() => void promoteTaskSkills()} style={btnStyle}>Promote Skills</button>
         </div>
-        {promoteSkillsStatus ? <div style={{ marginTop: 6, fontSize: 12, color: promoteSkillsStatus.startsWith("已升级") ? "#22c55e" : "#ef4444" }}>{promoteSkillsStatus}</div> : null}
+        {promoteSkillsStatus ? <div style={{ marginTop: 6, fontSize: 12, color: promoteSkillsStatus.startsWith("Promoted") ? "#22c55e" : "#ef4444" }}>{promoteSkillsStatus}</div> : null}
         <details style={{ marginTop: 8 }}>
-          <summary style={{ fontSize: 12, color: "var(--text-muted)", cursor: "pointer" }}>保存经验到 profile</summary>
+          <summary style={{ fontSize: 12, color: "var(--text-muted)", cursor: "pointer" }}>Save experience to profile</summary>
           <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
-            <textarea value={lesson} onChange={(e) => setLesson(e.target.value)} placeholder="总结这个 Agent 的做事方式、适用任务和推荐 skill" style={{ flex: 1, minHeight: 60, padding: 8, borderRadius: 8, border: "1px solid var(--border)", background: "var(--bg)", color: "var(--text)" }} />
-            <button onClick={saveExperience} style={btnStyle}>保存</button>
+            <textarea value={lesson} onChange={(e) => setLesson(e.target.value)} placeholder="Summarize this agent's approach, applicable tasks, and recommended skills." style={{ flex: 1, minHeight: 60, padding: 8, borderRadius: 8, border: "1px solid var(--border)", background: "var(--bg)", color: "var(--text)" }} />
+            <button onClick={saveExperience} style={btnStyle}>Save</button>
           </div>
-          {saved && <div style={{ marginTop: 6, fontSize: 12, color: "#22c55e" }}>已保存。</div>}
+          {saved && <div style={{ marginTop: 6, fontSize: 12, color: "#22c55e" }}>Saved.</div>}
         </details>
         <details style={{ marginTop: 8 }}>
-          <summary style={{ fontSize: 12, color: "var(--text-muted)", cursor: "pointer" }}>升级为新 Profile</summary>
+          <summary style={{ fontSize: 12, color: "var(--text-muted)", cursor: "pointer" }}>Promote to new Profile</summary>
           <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 8 }}>
             <input value={promoteName} onChange={(e) => setPromoteName(e.target.value)} placeholder={`${task.name} Profile`} style={{ padding: 8, borderRadius: 8, border: "1px solid var(--border)", background: "var(--bg)", color: "var(--text)" }} />
-            <textarea value={promoteDescription} onChange={(e) => setPromoteDescription(e.target.value)} placeholder="说明这个 Profile 什么时候该用；如果这是 coach 后确认的结果，这里写你的确认说明" style={{ minHeight: 64, padding: 8, borderRadius: 8, border: "1px solid var(--border)", background: "var(--bg)", color: "var(--text)" }} />
+            <textarea value={promoteDescription} onChange={(e) => setPromoteDescription(e.target.value)} placeholder="Describe when this Profile should be used. If confirmed after coaching, note the confirmation." style={{ minHeight: 64, padding: 8, borderRadius: 8, border: "1px solid var(--border)", background: "var(--bg)", color: "var(--text)" }} />
             <div style={{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "center" }}>
-              <div style={{ fontSize: 12, color: "var(--text-muted)" }}>单 Agent 会话可直接升级；coach 后由用户点这一下，等于确认可升级。</div>
-              <button onClick={promoteProfile} style={btnStyle}>升级为 Profile</button>
+              <div style={{ fontSize: 12, color: "var(--text-muted)" }}>Single-agent sessions can promote directly. After coaching, this confirms the promotion.</div>
+              <button onClick={promoteProfile} style={btnStyle}>Promote</button>
             </div>
-            {promoteStatus ? <div style={{ fontSize: 12, color: promoteStatus.startsWith("已升级") ? "#22c55e" : "#ef4444" }}>{promoteStatus}</div> : null}
+            {promoteStatus ? <div style={{ fontSize: 12, color: promoteStatus.startsWith("Promoted") ? "#22c55e" : "#ef4444" }}>{promoteStatus}</div> : null}
           </div>
         </details>
       </div>

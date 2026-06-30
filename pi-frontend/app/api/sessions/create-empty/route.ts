@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { existsSync, mkdirSync, writeFileSync } from "fs";
 import { dirname } from "path";
 import { SessionManager } from "@earendil-works/pi-coding-agent";
-import { cacheSessionPath } from "@/lib/session-reader";
+import { cacheSessionPath, invalidateSessionListCache } from "@/lib/session-reader";
 import { allowFileRoot } from "@/lib/file-access";
 
 export async function POST(req: Request) {
@@ -30,6 +30,7 @@ export async function POST(req: Request) {
     }
     const sessionId = sm.getHeader()?.id || sm.getSessionId();
     if (filePath) cacheSessionPath(sessionId, filePath);
+    invalidateSessionListCache();
     allowFileRoot(cwd);
 
     return NextResponse.json({ ok: true, sessionId, filePath });

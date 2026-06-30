@@ -1,10 +1,20 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { SessionInfo, WorkflowDefinition } from "@/lib/types";
-import { FileExplorer } from "./FileExplorer";
+
+interface AgentProfileItem {
+  id: string;
+  name?: string;
+  defaultModel?: string;
+  skills?: string[];
+  availableSkills?: string[];
+  collaborationProtocol?: string;
+}
 
 interface Props {
+  mode: "chat" | "workflow";
+  onModeChange?: (mode: "chat" | "workflow") => void;
   selectedSessionId: string | null;
   onSelectSession: (session: SessionInfo, isRestore?: boolean) => void;
   onNewSession?: (sessionId: string, cwd: string | null) => void;
@@ -14,13 +24,33 @@ interface Props {
   onSessionDeleted?: (sessionId: string) => void;
   selectedCwd?: string | null;
   onCwdChange?: (cwd: string | null) => void;
-  onOpenFile?: (filePath: string, fileName: string) => void;
-  explorerRefreshKey?: number;
-  onAtMention?: (relativePath: string) => void;
   selectedWorkflowId?: string | null;
   onSelectWorkflow?: (workflow: WorkflowDefinition | null) => void;
   workflowRefreshKey?: number;
 }
+
+const WORKFLOW_DOMAIN_LABELS: Record<string, string> = {
+  "self-media": "自媒体",
+  research: "行业调研",
+  ecommerce: "电商",
+  "customer-support": "客服",
+  sales: "电话销售",
+  generic: "通用模板",
+  internal: "内部旧项",
+  evaluation: "评测旧项",
+};
+
+const WORKFLOW_DOMAIN_ORDER = ["self-media", "research", "ecommerce", "customer-support", "sales", "generic", "internal", "evaluation"];
+const WORKFLOW_TEMPLATE_LABELS: Record<string, string> = {
+  "fetch-summarize": "抓取-摘要",
+  "generate-variants": "生成-多版本",
+  "classify-route": "分类-路由",
+  "monitor-alert": "监控-告警",
+  "extract-writeback": "结构化回写",
+  "smoke-test": "烟测旧项",
+  "manual-check": "手动检查",
+  "eval-run": "评测运行",
+};
 
 function formatRelativeTime(dateStr: string): string {
   const date = new Date(dateStr);
@@ -36,61 +66,54 @@ function formatRelativeTime(dateStr: string): string {
   return date.toLocaleDateString();
 }
 
-/** Return the 5 most recently active cwds across all sessions */
 function getRecentCwds(sessions: SessionInfo[]): string[] {
-  const latestByCwd = new Map<string, string>(); // cwd -> most recent modified
-  for (const s of sessions) {
-    if (!s.cwd) continue;
-    const prev = latestByCwd.get(s.cwd);
-    if (!prev || s.modified > prev) {
-      latestByCwd.set(s.cwd, s.modified);
-    }
+  const latestByCwd = new Map<string, string>();
+  for (const session of sessions) {
+    if (!session.cwd) continue;
+    const current = latestByCwd.get(session.cwd);
+    if (!current || session.modified > current) latestByCwd.set(session.cwd, session.modified);
   }
   return [...latestByCwd.entries()]
     .sort((a, b) => b[1].localeCompare(a[1]))
-    .slice(0, 5)
     .map(([cwd]) => cwd);
 }
 
-function shortenCwd(cwd: string, homeDir?: string): string {
-  const path = (homeDir && cwd.startsWith(homeDir)) ? "~" + cwd.slice(homeDir.length) : cwd;
-  const sep = path.includes("/") ? "/" : "\\";
-  const parts = path.split(sep).filter(Boolean);
-  if (parts.length <= 2) return path;
-  return "…/" + parts.slice(-2).join(sep);
+function shortenCwd(cwd: string): string {
+  const parts = cwd.split("/").filter(Boolean);
+  if (parts.length <= 2) return cwd;
+  return `.../${parts.slice(-2).join("/")}`;
 }
 
-function decodeDroppedFileUri(uri: string): string | null {
-  const value = uri.trim();
-  if (!value.startsWith("file://")) return null;
-  try {
-    const url = new URL(value);
-    return decodeURIComponent(url.pathname || "") || null;
-  } catch {
-    return null;
-  }
+function workflowDomain(workflow: WorkflowDefinition): string {
+  return workflow.domain || workflow.category || "uncategorized";
 }
 
-function extractDroppedDirectoryPath(dataTransfer: DataTransfer): string | null {
-  const files = Array.from(dataTransfer.files || []);
-  const firstWithPath = files.find((file) => Boolean((file as File & { path?: string }).path));
-  if (firstWithPath) return (firstWithPath as File & { path?: string }).path || null;
+function workflowDomainLabel(domain: string): string {
+  return WORKFLOW_DOMAIN_LABELS[domain] || domain || "未分类";
+}
 
-  const uriList = dataTransfer.getData("text/uri-list");
-  if (uriList) {
-    const firstUri = uriList.split("\n").map((line) => line.trim()).find((line) => line && !line.startsWith("#"));
-    if (firstUri) {
-      const decoded = decodeDroppedFileUri(firstUri);
-      if (decoded) return decoded;
-    }
-  }
+function workflowTemplateLabel(templateType: string | undefined): string {
+  return templateType ? WORKFLOW_TEMPLATE_LABELS[templateType] || templateType : "Workflow";
+}
 
-  const plain = dataTransfer.getData("text/plain").trim();
-  if (plain.startsWith("/") || /^[A-Za-z]:[\\/]/.test(plain) || plain.startsWith("~/")) {
-    return plain;
-  }
+function sortWorkflowDomains(domains: string[]) {
+  return domains.sort((a, b) => {
+    const ia = WORKFLOW_DOMAIN_ORDER.indexOf(a);
+    const ib = WORKFLOW_DOMAIN_ORDER.indexOf(b);
+    if (ia !== -1 || ib !== -1) return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib);
+    return workflowDomainLabel(a).localeCompare(workflowDomainLabel(b));
+  });
+}
 
-  return null;
+function slugDomain(label: string): string {
+  const trimmed = label.trim();
+  if (!trimmed) return "custom";
+  return trimmed
+    .toLowerCase()
+    .replace(/[\s_]+/g, "-")
+    .replace(/[^a-z0-9\u4e00-\u9fa5-]/g, "")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "") || "custom";
 }
 
 interface SessionTreeNode {
@@ -100,25 +123,23 @@ interface SessionTreeNode {
 
 function buildSessionTree(sessions: SessionInfo[]): SessionTreeNode[] {
   const byId = new Map<string, SessionTreeNode>();
-  for (const s of sessions) {
-    byId.set(s.id, { session: s, children: [] });
+  for (const session of sessions) {
+    byId.set(session.id, { session, children: [] });
   }
 
-  // Build a map of parentSessionId chains so we can resolve missing ancestors
   const parentOf = new Map<string, string>();
-  for (const s of sessions) {
-    if (s.parentSessionId) parentOf.set(s.id, s.parentSessionId);
+  for (const session of sessions) {
+    if (session.parentSessionId) parentOf.set(session.id, session.parentSessionId);
   }
 
-  // Walk up the parentSessionId chain to find the nearest ancestor that exists in byId
   function resolveAncestor(id: string): string | null {
-    let cur = parentOf.get(id);
+    let current = parentOf.get(id);
     const visited = new Set<string>();
-    while (cur) {
-      if (visited.has(cur)) return null; // cycle guard
-      visited.add(cur);
-      if (byId.has(cur)) return cur;
-      cur = parentOf.get(cur);
+    while (current) {
+      if (visited.has(current)) return null;
+      visited.add(current);
+      if (byId.has(current)) return current;
+      current = parentOf.get(current);
     }
     return null;
   }
@@ -126,91 +147,74 @@ function buildSessionTree(sessions: SessionInfo[]): SessionTreeNode[] {
   const roots: SessionTreeNode[] = [];
   for (const node of byId.values()) {
     const ancestor = resolveAncestor(node.session.id);
-    if (ancestor) {
-      byId.get(ancestor)!.children.push(node);
-    } else {
-      roots.push(node);
-    }
+    if (ancestor) byId.get(ancestor)?.children.push(node);
+    else roots.push(node);
   }
 
-  // Sort each level by modified desc
-  const sort = (nodes: SessionTreeNode[]) => {
+  const sortNodes = (nodes: SessionTreeNode[]) => {
     nodes.sort((a, b) => b.session.modified.localeCompare(a.session.modified));
-    nodes.forEach((n) => sort(n.children));
+    nodes.forEach((node) => sortNodes(node.children));
   };
-  sort(roots);
+  sortNodes(roots);
   return roots;
 }
 
-function PiAgentTitle() {
-  const [showVersion, setShowVersion] = useState(false);
-  const revertTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const handleClick = useCallback(() => {
-    if (revertTimerRef.current) clearTimeout(revertTimerRef.current);
-    setShowVersion(true);
-    revertTimerRef.current = setTimeout(() => setShowVersion(false), 3000);
-  }, []);
-
-  useEffect(() => () => { if (revertTimerRef.current) clearTimeout(revertTimerRef.current); }, []);
-
-  return (
-    <button
-      onClick={handleClick}
-      title={showVersion ? `web v${process.env.NEXT_PUBLIC_APP_VERSION ?? "0.0.0"} · pi v${process.env.NEXT_PUBLIC_PI_VERSION ?? "0.0.0"}` : "Pi Web.app"}
-      style={{
-        background: "none", border: "none", padding: 0, cursor: "default",
-        display: "flex", alignItems: "center", gap: 8,
-        color: showVersion ? "var(--accent)" : "var(--text)",
-      }}
-    >
-      <img src="/pi-web-app-icon.png" alt="Pi Web.app" style={{ width: 32, height: 32, borderRadius: 8, display: "block" }} />
-      {showVersion ? <span style={{ fontWeight: 700, fontSize: 12, letterSpacing: "-0.01em", fontFamily: "var(--font-mono)" }}>{process.env.NEXT_PUBLIC_APP_VERSION ?? "0.0.0"}p{process.env.NEXT_PUBLIC_PI_VERSION ?? "0.0.0"}</span> : null}
-    </button>
-  );
-}
-
-export function SessionSidebar({ selectedSessionId, onSelectSession, onNewSession, initialSessionId, onInitialRestoreDone, refreshKey, onSessionDeleted, selectedCwd: selectedCwdProp, onCwdChange, onOpenFile, explorerRefreshKey, onAtMention, selectedWorkflowId, onSelectWorkflow, workflowRefreshKey }: Props) {
-  const [allSessions, setAllSessions] = useState<SessionInfo[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [selectedCwd, setSelectedCwd] = useState<string | null>(null);
-  const [homeDir, setHomeDir] = useState<string>("");
-  const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [customPathOpen, setCustomPathOpen] = useState(false);
-  const [customPathValue, setCustomPathValue] = useState("");
-  const [customPathError, setCustomPathError] = useState<string | null>(null);
-  const [customPathValidating, setCustomPathValidating] = useState(false);
-  const [projectPathDragOver, setProjectPathDragOver] = useState(false);
-  const customPathInputRef = useRef<HTMLInputElement>(null);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-  const [activeSection, setActiveSection] = useState<"sessions" | "workflows" | "files">("sessions");
-  const [explorerOpen, setExplorerOpen] = useState(true);
+export function SessionSidebar({
+  mode,
+  onModeChange,
+  selectedSessionId,
+  onSelectSession,
+  onNewSession,
+  initialSessionId,
+  onInitialRestoreDone,
+  refreshKey,
+  onSessionDeleted,
+  selectedCwd: selectedCwdProp,
+  onCwdChange,
+  selectedWorkflowId,
+  onSelectWorkflow,
+  workflowRefreshKey,
+}: Props) {
+  const [sessions, setSessions] = useState<SessionInfo[]>([]);
   const [workflows, setWorkflows] = useState<WorkflowDefinition[]>([]);
+  const [profiles, setProfiles] = useState<AgentProfileItem[]>([]);
+  const [loadingSessions, setLoadingSessions] = useState(true);
+  const [loadingProfiles, setLoadingProfiles] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [profileError, setProfileError] = useState<string | null>(null);
   const [workflowBusyId, setWorkflowBusyId] = useState<string | null>(null);
-  const [explorerKey, setExplorerKey] = useState(0);
+  const [profileInspector, setProfileInspector] = useState<AgentProfileItem | null>(null);
+  const [workflowCreateOpen, setWorkflowCreateOpen] = useState(false);
+  const [fallbackCwd, setFallbackCwd] = useState<string | null>(selectedCwdProp ?? null);
+  const restoredRef = useRef(false);
+  const refreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [sessionRefreshDone, setSessionRefreshDone] = useState(false);
-  const [explorerRefreshDone, setExplorerRefreshDone] = useState(false);
-  const sessionRefreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const explorerRefreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const effectiveCwd = selectedCwdProp ?? fallbackCwd;
 
   const loadSessions = useCallback(async (showLoading = false) => {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 60000);
     try {
-      if (showLoading) setLoading(true);
-      const res = await fetch("/api/sessions");
+      if (showLoading) setLoadingSessions(true);
+      const res = await fetch("/api/sessions", { signal: controller.signal });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json() as { sessions: SessionInfo[] };
-      setAllSessions(data.sessions);
+      setSessions(Array.isArray(data.sessions) ? data.sessions : []);
       setError(null);
       if (!showLoading) {
         setSessionRefreshDone(true);
-        if (sessionRefreshTimerRef.current) clearTimeout(sessionRefreshTimerRef.current);
-        sessionRefreshTimerRef.current = setTimeout(() => setSessionRefreshDone(false), 2000);
+        if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current);
+        refreshTimerRef.current = setTimeout(() => setSessionRefreshDone(false), 1800);
       }
-    } catch (e) {
-      setError(String(e));
+    } catch (err) {
+      setError(err instanceof Error && err.name === "AbortError" ? "Loading sessions timed out. Refresh or switch workspace." : err instanceof Error ? err.message : String(err));
+      if (err instanceof Error && err.name === "AbortError") {
+        setTimeout(() => void loadSessions(showLoading), 1200);
+      }
     } finally {
-      if (showLoading) setLoading(false);
+      clearTimeout(timeout);
+      setLoadingSessions(false);
     }
   }, []);
 
@@ -225,669 +229,599 @@ export function SessionSidebar({ selectedSessionId, onSelectSession, onNewSessio
     }
   }, []);
 
-  const initialLoadDone = useRef(false);
+  const loadProfiles = useCallback(async () => {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10000);
+    setLoadingProfiles(true);
+    setProfileError(null);
+    try {
+      const res = await fetch("/api/agent-profiles", { signal: controller.signal });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json().catch(() => ({}));
+      if (!Array.isArray(data?.profiles)) throw new Error(data?.error || "Invalid profile response");
+      setProfiles(Array.isArray(data?.profiles) ? data.profiles : []);
+    } catch (err) {
+      setProfiles([]);
+      setProfileError(err instanceof Error && err.name === "AbortError" ? "Loading profiles timed out." : err instanceof Error ? err.message : String(err));
+    } finally {
+      clearTimeout(timeout);
+      setLoadingProfiles(false);
+    }
+  }, []);
+
   useEffect(() => {
-    const isFirst = !initialLoadDone.current;
-    initialLoadDone.current = true;
-    loadSessions(isFirst);
-  }, [loadSessions, refreshKey]);
+    void loadSessions(!sessions.length);
+  }, [loadSessions, refreshKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     void loadWorkflows();
-  }, [loadWorkflows]);
+  }, [loadWorkflows, workflowRefreshKey]);
 
   useEffect(() => {
-    if (activeSection === "workflows") void loadWorkflows();
-  }, [activeSection, loadWorkflows]);
+    if (mode === "workflow" && selectedWorkflowId) void loadProfiles();
+  }, [mode, selectedWorkflowId, loadProfiles]);
 
   useEffect(() => {
-    if (workflowRefreshKey !== undefined) void loadWorkflows();
-  }, [workflowRefreshKey, loadWorkflows]);
+    if (selectedCwdProp !== undefined) setFallbackCwd(selectedCwdProp ?? null);
+  }, [selectedCwdProp]);
 
   useEffect(() => {
-    if (explorerRefreshKey !== undefined) setExplorerKey((k) => k + 1);
-  }, [explorerRefreshKey]);
+    onCwdChange?.(effectiveCwd);
+  }, [effectiveCwd, onCwdChange]);
 
   useEffect(() => {
-    fetch("/api/home").then((r) => r.json()).then((d: { home?: string }) => {
-      if (d.home) setHomeDir(d.home);
-    }).catch(() => {});
-  }, []);
-
-  const restoredRef = useRef(false);
-
-  useEffect(() => {
-    onCwdChange?.(selectedCwd);
-  }, [selectedCwd, onCwdChange]);
-
-  // Auto-select cwd and restore session from URL on first load
-  useEffect(() => {
-    if (allSessions.length === 0) return;
-
-    if (selectedCwd === null) {
-      // If restoring a session, set cwd to match that session
-      if (initialSessionId && !restoredRef.current) {
-        restoredRef.current = true;
-        const target = allSessions.find((s) => s.id === initialSessionId);
-        if (target) {
-          setSelectedCwd(target.cwd);
-          onSelectSession(target, true);
-          return;
-        }
-        // Session not found — notify parent so it can show the placeholder
-        onInitialRestoreDone?.();
-      }
-      const cwds = getRecentCwds(allSessions);
-      if (cwds.length > 0) setSelectedCwd(cwds[0]);
-    }
-  }, [allSessions, selectedCwd, initialSessionId, onSelectSession, onInitialRestoreDone]);
-
-  const commitCustomPath = useCallback(async () => {
-    const path = customPathValue.trim();
-    if (!path || customPathValidating) return;
-
-    setCustomPathValidating(true);
-    setCustomPathError(null);
-    try {
-      const res = await fetch("/api/cwd/validate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ cwd: path }),
-      });
-      const data = await res.json().catch(() => ({})) as { cwd?: string; error?: string };
-      if (!res.ok || data.error) {
-        setCustomPathError(data.error ?? `HTTP ${res.status}`);
+    if (!sessions.length) return;
+    if (!restoredRef.current && initialSessionId) {
+      restoredRef.current = true;
+      const target = sessions.find((session) => session.id === initialSessionId);
+      if (target) {
+        setFallbackCwd(target.cwd);
+        onSelectSession(target, true);
         return;
       }
-      setSelectedCwd(data.cwd ?? path);
-      setCustomPathOpen(false);
-      setCustomPathValue("");
-      setDropdownOpen(false);
-    } catch (e) {
-      setCustomPathError(e instanceof Error ? e.message : String(e));
-    } finally {
-      setCustomPathValidating(false);
+      onInitialRestoreDone?.();
     }
-  }, [customPathValue, customPathValidating]);
 
-  const handleDroppedProjectPath = useCallback(async (path: string) => {
-    setCustomPathOpen(true);
-    setCustomPathValue(path);
-    setCustomPathError(null);
-    setDropdownOpen(true);
-    setProjectPathDragOver(false);
-    setCustomPathValidating(true);
-    try {
-      const res = await fetch("/api/cwd/validate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ cwd: path }),
-      });
-      const data = await res.json().catch(() => ({})) as { cwd?: string; error?: string };
-      if (!res.ok || data.error) {
-        setCustomPathError(data.error ?? `HTTP ${res.status}`);
-        return;
-      }
-      setSelectedCwd(data.cwd ?? path);
-      setCustomPathOpen(false);
-      setCustomPathValue("");
-      setCustomPathError(null);
-      setDropdownOpen(false);
-    } catch (e) {
-      setCustomPathError(e instanceof Error ? e.message : String(e));
-    } finally {
-      setCustomPathValidating(false);
+    if (!effectiveCwd) {
+      const [firstCwd] = getRecentCwds(sessions);
+      if (firstCwd) setFallbackCwd(firstCwd);
+      else onInitialRestoreDone?.();
     }
-  }, []);
+  }, [sessions, initialSessionId, effectiveCwd, onSelectSession, onInitialRestoreDone]);
 
-  const handleProjectPathDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    const path = extractDroppedDirectoryPath(e.dataTransfer);
-    if (!path) {
-      setProjectPathDragOver(false);
-      setCustomPathError("这个浏览器拖拽目录时拿不到本地绝对路径，点下面的“选择文件夹…”更稳。");
-      setCustomPathOpen(true);
-      setDropdownOpen(true);
-      return;
-    }
-    void handleDroppedProjectPath(path);
-  }, [handleDroppedProjectPath]);
-
-  const handleNativeFolderPick = useCallback(async () => {
-    setCustomPathError(null);
-    try {
-      const res = await fetch("/api/cwd/pick", { method: "POST" });
-      const data = await res.json().catch(() => ({})) as { cwd?: string; error?: string; cancelled?: boolean };
-      if (data.cancelled) return;
-      if (!res.ok || data.error || !data.cwd) {
-        setCustomPathOpen(true);
-        setDropdownOpen(true);
-        setCustomPathError(data.error ?? `HTTP ${res.status}`);
-        return;
-      }
-      setSelectedCwd(data.cwd);
-      setCustomPathOpen(false);
-      setCustomPathValue("");
-      setCustomPathError(null);
-      setDropdownOpen(false);
-    } catch (e) {
-      setCustomPathOpen(true);
-      setDropdownOpen(true);
-      setCustomPathError(e instanceof Error ? e.message : String(e));
-    }
-  }, []);
-
-  const handleDefaultCwd = useCallback(async () => {
-    try {
-      const res = await fetch("/api/default-cwd", { method: "POST" });
-      const data = await res.json() as { cwd?: string; error?: string };
-      if (data.cwd) {
-        setSelectedCwd(data.cwd);
-        setCustomPathOpen(false);
-        setCustomPathValue("");
-        setCustomPathError(null);
-        setDropdownOpen(false);
-      }
-    } catch {
-      // ignore
-    }
-  }, []);
-
-  // Close dropdown on outside click
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
-        setDropdownOpen(false);
-        setCustomPathOpen(false);
-        setCustomPathValue("");
-        setCustomPathError(null);
-      }
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
+  useEffect(() => () => {
+    if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current);
   }, []);
 
   const handleNewSession = useCallback(() => {
     const tempId = typeof crypto.randomUUID === "function"
       ? crypto.randomUUID()
-      : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}-${Math.random().toString(36).slice(2)}`;
-    onNewSession?.(tempId, selectedCwd ?? null);
-  }, [selectedCwd, onNewSession]);
+      : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
+    onNewSession?.(tempId, effectiveCwd ?? null);
+  }, [onNewSession, effectiveCwd]);
 
-  const recentCwds = getRecentCwds(allSessions);
-  const filteredSessions = selectedCwd
-    ? allSessions.filter((s) => s.cwd === selectedCwd)
-    : allSessions;
-
-  // Build parent-child tree within the filtered set
-  const sessionTree = buildSessionTree(filteredSessions);
-
-  // ponytail: progressive render for long session lists — avoid rendering 200+ nodes at once
-  const LIST_CHUNK = 50;
-  const [visibleNodes, setVisibleNodes] = useState(LIST_CHUNK);
-  const sentinelRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const el = sentinelRef.current;
-    if (!el || visibleNodes >= sessionTree.length) return;
-    const obs = new IntersectionObserver(([entry]) => {
-      if (entry?.isIntersecting) {
-        setVisibleNodes((n) => Math.min(n + LIST_CHUNK, sessionTree.length));
-      }
-    }, { root: el.parentElement, rootMargin: "200px" });
-    obs.observe(el);
-    return () => obs.disconnect();
-  }, [visibleNodes, sessionTree.length]);
-
-  // Reset visible count when tree changes (different session set)
-  useEffect(() => { setVisibleNodes(LIST_CHUNK); }, [sessionTree.length]);
-
-  const createWorkflow = useCallback(async () => {
-    const name = window.prompt("Workflow 名称", "New Workflow");
-    if (!name) return;
+  const createWorkflow = useCallback(async (payload: {
+    name: string;
+    description: string;
+    templateId: string;
+    domain: string;
+    category: string;
+    templateType: string;
+  }) => {
+    const template = workflows.find((workflow) => workflow.id === payload.templateId);
+    const tasks = (template?.tasks || []).map((task) => ({
+      ...task,
+      deps: [...(task.deps || [])],
+      skills: [...(task.skills || [])],
+      acceptanceCriteria: [...(task.acceptanceCriteria || [])],
+      layout: task.layout ? { ...task.layout } : undefined,
+      budget: task.budget ? { ...task.budget } : undefined,
+    }));
     const res = await fetch("/api/workflows", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, cwd: selectedCwdProp ?? selectedCwd ?? "", tasks: [] }),
+      body: JSON.stringify({
+        name: payload.name,
+        description: payload.description,
+        cwd: effectiveCwd ?? template?.cwd ?? "",
+        status: "active",
+        domain: payload.domain,
+        category: payload.category,
+        templateType: payload.templateType || template?.templateType || "",
+        leadProfileId: template?.leadProfileId || "strong-task-architect",
+        reviewPolicy: template?.reviewPolicy || "lead_plus_reviewer",
+        tasks,
+      }),
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok || !data?.workflow) {
-      alert(data?.error || "Workflow 创建失败");
+      window.alert(data?.error || "Workflow creation failed");
       return;
     }
+    await loadWorkflows();
+    setWorkflowCreateOpen(false);
     onSelectWorkflow?.(data.workflow);
-    void loadWorkflows();
-  }, [loadWorkflows, onSelectWorkflow, selectedCwdProp, selectedCwd]);
-
-  const runWorkflow = useCallback(async (workflow: WorkflowDefinition) => {
-    setWorkflowBusyId(workflow.id);
-    try {
-      const input = window.prompt("本次 workflow 目标", workflow.description || workflow.name || "运行工作流");
-      if (input === null) return;
-      const res = await fetch(`/api/workflows/${encodeURIComponent(workflow.id)}/run`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ input, cwd: selectedCwdProp ?? selectedCwd ?? workflow.cwd ?? "" }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (res.ok && data.sessionId) {
-        onNewSession?.(data.sessionId, data.workflow?.cwd || selectedCwdProp || selectedCwd || workflow.cwd || "");
-      }
-    } finally {
-      setWorkflowBusyId(null);
-    }
-  }, [onNewSession, selectedCwdProp, selectedCwd]);
+  }, [effectiveCwd, loadWorkflows, onSelectWorkflow, workflows]);
 
   const deleteWorkflow = useCallback(async (workflow: WorkflowDefinition) => {
     if (!window.confirm(`Delete workflow: ${workflow.name}?`)) return;
-    await fetch(`/api/workflows/${encodeURIComponent(workflow.id)}`, { method: "DELETE" });
-    if (selectedWorkflowId === workflow.id) onSelectWorkflow?.(null);
-    await loadWorkflows();
+    setWorkflowBusyId(workflow.id);
+    try {
+      const res = await fetch(`/api/workflows/${encodeURIComponent(workflow.id)}`, { method: "DELETE" });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        window.alert(data?.error || "Workflow deletion failed");
+        return;
+      }
+      await loadWorkflows();
+      if (selectedWorkflowId === workflow.id) onSelectWorkflow?.(null);
+    } finally {
+      setWorkflowBusyId(null);
+    }
   }, [loadWorkflows, onSelectWorkflow, selectedWorkflowId]);
 
+  const currentWorkflow = useMemo(
+    () => workflows.find((workflow) => workflow.id === selectedWorkflowId) ?? null,
+    [workflows, selectedWorkflowId],
+  );
+
+  const workflowTemplates = useMemo(
+    () => workflows.filter((workflow) => workflow.status === "template" || workflow.id.startsWith("template-")),
+    [workflows],
+  );
+
+  const workflowGroups = useMemo(() => {
+    const groups = new Map<string, WorkflowDefinition[]>();
+    for (const workflow of workflows) {
+      const status = workflow.status || "active";
+      if (status === "template") continue;
+      const domain = status === "legacy" ? "legacy" : workflowDomain(workflow);
+      const list = groups.get(domain) || [];
+      list.push(workflow);
+      groups.set(domain, list);
+    }
+    return sortWorkflowDomains([...groups.keys()]).map((domain) => ({
+      domain,
+      label: domain === "legacy" ? "旧项 / 实验" : workflowDomainLabel(domain),
+      workflows: (groups.get(domain) || []).sort((a, b) => {
+        const sa = a.status === "legacy" ? 1 : 0;
+        const sb = b.status === "legacy" ? 1 : 0;
+        if (sa !== sb) return sa - sb;
+        return (a.name || a.id).localeCompare(b.name || b.id);
+      }),
+    }));
+  }, [workflows]);
+
+  const workflowDomains = useMemo(() => {
+    const domains = new Set<string>();
+    for (const workflow of workflows) {
+      if (workflow.status === "legacy" || workflow.status === "template") continue;
+      domains.add(workflowDomain(workflow));
+    }
+    return sortWorkflowDomains([...domains]);
+  }, [workflows]);
+
+  const filteredSessions = useMemo(
+    () => effectiveCwd ? sessions.filter((session) => session.cwd === effectiveCwd) : sessions,
+    [sessions, effectiveCwd],
+  );
+
+  const sessionTree = useMemo(() => buildSessionTree(filteredSessions), [filteredSessions]);
+
+  const headerTitle = mode === "workflow" ? (selectedWorkflowId ? "Profile Library" : "Workflow Library") : "Sessions";
+  const headerSubtitle = mode === "workflow"
+    ? (selectedWorkflowId ? (currentWorkflow?.name || "Drag profiles into the workflow canvas") : "Choose a saved workflow")
+    : (effectiveCwd ? shortenCwd(effectiveCwd) : "Choose a workspace from the top bar");
+
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }}>
-      {/* Header */}
-      <div
-        style={{
-          padding: "12px 10px 10px",
-          borderBottom: "1px solid var(--border)",
-          flexShrink: 0,
-        }}
-      >
-        <div style={{ height: 6 }} />
-
-        {false && activeSection === "sessions" && !selectedSessionId && <div ref={dropdownRef} style={{ position: "relative" }}>
-          <button
-            onClick={() => setDropdownOpen((v) => !v)}
-            style={{
-              width: "100%",
-              display: "flex",
-              alignItems: "center",
-              padding: "6px 10px",
-              background: selectedCwd ? "var(--bg-hover)" : "rgba(37,99,235,0.06)",
-              border: selectedCwd ? "1px solid var(--border)" : "1px solid rgba(37,99,235,0.4)",
-              borderRadius: 7,
-              cursor: "pointer",
-              fontSize: 12,
-              color: "var(--text)",
-              textAlign: "left",
-              transition: "border-color 0.15s, background 0.15s",
-            }}
-          >
-            <span
-              style={{
-                flex: 1,
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-                fontFamily: "var(--font-mono)",
-                fontSize: 11,
-                color: selectedCwd ? "var(--text)" : "var(--text-dim)",
-              }}
-              title={selectedCwd ?? ""}
-            >
-              {selectedCwd ? shortenCwd(selectedCwd || "", homeDir) : (initialSessionId && !restoredRef.current ? "" : "Select project…")}
-            </span>
-          </button>
-
-          {dropdownOpen && (
-            <div
-              onDragEnter={(e) => { e.preventDefault(); setProjectPathDragOver(true); }}
-              onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = "copy"; setProjectPathDragOver(true); }}
-              onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setProjectPathDragOver(false); }}
-              onDrop={handleProjectPathDrop}
-              style={{
-                position: "absolute",
-                top: "calc(100% + 4px)",
-                left: 0,
-                right: 0,
-                zIndex: 100,
-                background: "var(--bg)",
-                border: `1px solid ${projectPathDragOver ? "rgba(59,130,246,0.55)" : "var(--border)"}`,
-                borderRadius: 8,
-                boxShadow: projectPathDragOver ? "0 0 0 3px rgba(59,130,246,0.10), 0 6px 20px rgba(0,0,0,0.10)" : "0 6px 20px rgba(0,0,0,0.10)",
-                overflow: "hidden",
-                transition: "border-color 0.15s, box-shadow 0.15s",
-              }}
-            >
-              {projectPathDragOver && (
-                <div style={{ padding: "8px 10px", borderBottom: "1px solid var(--border)", background: "rgba(59,130,246,0.08)", color: "#2563eb", fontSize: 11, fontWeight: 600 }}>
-                  松开以选择项目文件夹
-                </div>
-              )}
-              {recentCwds.map((cwd) => (
-                <button
-                  key={cwd}
-                  onClick={() => {
-                    setSelectedCwd(cwd);
-                    setCustomPathOpen(false);
-                    setCustomPathValue("");
-                    setCustomPathError(null);
-                    setDropdownOpen(false);
-                  }}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 7,
-                    width: "100%",
-                    padding: "8px 10px",
-                    background: cwd === selectedCwd ? "var(--bg-selected)" : "none",
-                    border: "none",
-                    borderBottom: "1px solid var(--border)",
-                    color: cwd === selectedCwd ? "var(--text)" : "var(--text-muted)",
-                    cursor: "pointer",
-                    textAlign: "left",
-                    fontSize: 11,
-                    fontFamily: "var(--font-mono)",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                  }}
-                  title={cwd}
-                >
-                  {cwd === selectedCwd && (
-                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
-                      <polyline points="1.5 5 4 7.5 8.5 2.5" />
-                    </svg>
-                  )}
-                  {cwd !== selectedCwd && <span style={{ width: 10, flexShrink: 0 }} />}
-                  <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{shortenCwd(cwd, homeDir)}</span>
-                </button>
-              ))}
-
-              {!customPathOpen && (
-                <>
-                  <button
-                    onClick={(e) => { e.stopPropagation(); void handleNativeFolderPick(); }}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 7,
-                      width: "100%",
-                      padding: "8px 10px",
-                      background: "none",
-                      border: "none",
-                      borderTop: recentCwds.length > 0 ? "1px solid var(--border)" : "none",
-                      color: "var(--text-muted)",
-                      cursor: "pointer",
-                      textAlign: "left",
-                      fontSize: 11,
-                    }}
-                  >
-                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
-                      <path d="M1 3A1 1 0 0 1 2 2H4L5 3.5H8.5a.5.5 0 0 1 .5.5v4a.5.5 0 0 1-.5.5h-7A.5.5 0 0 1 1 8V3Z" />
-                      <path d="M5 4.2v2.6" />
-                      <path d="M3.7 5.5H6.3" />
-                    </svg>
-                    <span>选择文件夹…</span>
-                  </button>
-
-                  <button
-                    onClick={(e) => { e.stopPropagation(); handleDefaultCwd(); }}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 7,
-                      width: "100%",
-                      padding: "8px 10px",
-                      background: "none",
-                      border: "none",
-                      borderTop: "1px solid var(--border)",
-                      color: "var(--text-muted)",
-                      cursor: "pointer",
-                      textAlign: "left",
-                      fontSize: 11,
-                    }}
-                  >
-                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
-                      <path d="M1 3A1 1 0 0 1 2 2H4L5 3.5H8.5a.5.5 0 0 1 .5.5v4a.5.5 0 0 1-.5.5h-7A.5.5 0 0 1 1 8V3Z" />
-                    </svg>
-                    <span>Use default directory</span>
-                  </button>
-                </>
-              )}
-
-              {/* Custom path entry */}
-              {!customPathOpen ? (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setCustomPathOpen(true);
-                    setCustomPathError(null);
-                    setTimeout(() => customPathInputRef.current?.focus(), 0);
-                  }}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 7,
-                    width: "100%",
-                    padding: "8px 10px",
-                    background: "none",
-                    border: "none",
-                    color: "var(--text-muted)",
-                    cursor: "pointer",
-                    textAlign: "left",
-                    fontSize: 11,
-                  }}
-                >
-                  <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" style={{ flexShrink: 0 }}>
-                    <line x1="5" y1="1" x2="5" y2="9" />
-                    <line x1="1" y1="5" x2="9" y2="5" />
-                  </svg>
-                  <span>Custom path…</span>
-                </button>
-              ) : (
-                <div style={{ padding: "6px 8px", borderTop: recentCwds.length > 0 ? "none" : undefined }}>
-                  <input
-                    ref={customPathInputRef}
-                    value={customPathValue}
-                    onChange={(e) => {
-                      setCustomPathValue(e.target.value);
-                      setCustomPathError(null);
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                        void commitCustomPath();
-                      }
-                      if (e.key === "Escape") {
-                        setCustomPathOpen(false);
-                        setCustomPathValue("");
-                        setCustomPathError(null);
-                      }
-                    }}
-                    placeholder="/path/to/project"
-                    style={{
-                      width: "100%",
-                      fontSize: 11,
-                      fontFamily: "var(--font-mono)",
-                      padding: "5px 8px",
-                      border: "1px solid var(--accent)",
-                      borderRadius: 5,
-                      outline: "none",
-                      background: "var(--bg)",
-                      color: "var(--text)",
-                      boxSizing: "border-box",
-                    }}
-                  />
-                  {customPathError && (
-                    <div style={{
-                      marginTop: 5,
-                      color: "#dc2626",
-                      fontSize: 11,
-                      lineHeight: 1.35,
-                      overflowWrap: "anywhere",
-                    }}>
-                      {customPathError}
-                    </div>
-                  )}
-                  <div style={{ marginTop: 6, padding: "6px 8px", border: `1px dashed ${projectPathDragOver ? "rgba(59,130,246,0.55)" : "var(--border)"}`, borderRadius: 6, background: projectPathDragOver ? "rgba(59,130,246,0.06)" : "var(--bg-hover)", color: projectPathDragOver ? "#2563eb" : "var(--text-dim)", fontSize: 11, textAlign: "center", transition: "border-color 0.15s, background 0.15s, color 0.15s" }}>
-                    可拖拽文件夹；不行就点上面的“选择文件夹…”
-                  </div>
-                  <div style={{ display: "flex", gap: 5, marginTop: 5 }}>
-                    <button
-                      onClick={() => void commitCustomPath()}
-                      disabled={customPathValidating || !customPathValue.trim()}
-                      style={{
-                        flex: 1,
-                        padding: "4px 0",
-                        background: "var(--accent)",
-                        border: "none",
-                        borderRadius: 5,
-                        color: "#fff",
-                        fontSize: 11,
-                        fontWeight: 600,
-                        cursor: customPathValidating || !customPathValue.trim() ? "not-allowed" : "pointer",
-                        opacity: customPathValidating || !customPathValue.trim() ? 0.65 : 1,
-                      }}
-                    >
-                      {customPathValidating ? "Checking…" : "Open"}
-                    </button>
-                    <button
-                      onClick={() => { setCustomPathOpen(false); setCustomPathValue(""); setCustomPathError(null); }}
-                      style={{
-                        flex: 1,
-                        padding: "4px 0",
-                        background: "var(--bg-hover)",
-                        border: "1px solid var(--border)",
-                        borderRadius: 5,
-                        color: "var(--text-muted)",
-                        fontSize: 11,
-                        cursor: "pointer",
-                      }}
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-        </div>}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6 }}>
-          {([
-            { id: "sessions", label: "对话" },
-            { id: "workflows", label: "Workflow" },
-            { id: "files", label: "资料" },
-          ] as const).map((item) => {
-            const active = activeSection === item.id;
-            return (
-              <button
-                key={item.id}
-                onClick={() => setActiveSection(item.id)}
-                style={{
-                  padding: "7px 8px",
-                  borderRadius: 8,
-                  border: "none",
-                  background: "none",
-                  color: active ? "var(--accent)" : "var(--text-muted)",
-                  cursor: "pointer",
-                  fontSize: 12,
-                  fontWeight: active ? 700 : 600,
-                  textDecorationLine: active ? "underline" : "none",
-                  textDecorationStyle: "solid",
-                  textDecorationColor: active ? "currentColor" : "transparent",
-                  textUnderlineOffset: "0.28em",
-                  textDecorationThickness: "1.5px",
-                }}
-              >
-                {item.label}
-              </button>
-            );
-          })}
+    <div className={mode === "chat" ? "session-list-hover-scope" : undefined} style={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden", position: "relative" }}>
+      <div className="codex-sidebar-backdrop" />
+      <div style={{ padding: "14px 12px 10px", borderBottom: "1px solid color-mix(in srgb, var(--shell-edge) 82%, transparent)", position: "relative", zIndex: 1 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 9, minWidth: 0 }}>
+            <img src="/pi-web-app-icon.png" alt="" style={{ width: 26, height: 26, borderRadius: 7, flexShrink: 0 }} />
+            <div style={{ fontSize: 14, fontWeight: 850, letterSpacing: "-0.03em", color: "var(--text)", whiteSpace: "nowrap" }}>pi-multi</div>
+          </div>
+          {selectedWorkflowId ? (
+            <button onClick={() => onSelectWorkflow?.(null)} style={ghostButtonStyle}>Back</button>
+          ) : null}
         </div>
+        {!selectedWorkflowId ? (
+          <div className="codex-segmented" style={{ width: "100%", marginTop: 12 }}>
+            {([
+              { id: "chat", label: "Session" },
+              { id: "workflow", label: "Workflow" },
+            ] as const).map((item) => {
+              const active = mode === item.id;
+              return (
+                <button
+                  key={item.id}
+                  data-active={active}
+                  onClick={() => onModeChange?.(item.id)}
+                  style={{ flex: 1, minHeight: 32, borderRadius: 999, cursor: "pointer", fontSize: 11, fontWeight: active ? 800 : 650 }}
+                >
+                  {item.label}
+                </button>
+              );
+            })}
+          </div>
+        ) : null}
+        <div style={{ marginTop: 12 }}>
+          <div style={{ fontSize: 13, fontWeight: 800, color: "var(--text)", letterSpacing: "-0.01em" }}>{headerTitle}</div>
+          <div style={{ marginTop: 2, fontSize: 11, color: "var(--text-muted)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 230 }}>{headerSubtitle}</div>
+        </div>
+        {mode === "chat" && sessionRefreshDone ? (
+          <div style={{ fontSize: 10, color: "var(--status-success)" }}>Refreshed</div>
+        ) : null}
       </div>
 
-      {activeSection === "sessions" && <div style={{ flex: "1 1 0", overflowY: "auto", padding: "0", minHeight: 80 }}>
-        <div style={{ padding: "8px 10px 6px", borderBottom: "1px solid color-mix(in srgb, var(--border) 65%, transparent)" }}>
-          <button
-            onClick={handleNewSession}
-            title={selectedCwd ? `New session in ${selectedCwd}` : "新建对话"}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              width: "100%",
-              padding: "6px 4px",
-              background: "none",
-              border: "none",
-              color: "var(--text-muted)",
-              cursor: "pointer",
-              opacity: 1,
-              fontSize: 12,
-              fontWeight: 600,
-              textAlign: "left",
-            }}
-          >
-            <span>新建对话</span>
-            <span style={{ fontSize: 18, lineHeight: 1 }}>+</span>
-          </button>
-        </div>
-        {loading && <div style={{ padding: "16px 14px", color: "var(--text-muted)", fontSize: 12 }}>Loading...</div>}
-        {error && <div style={{ padding: "12px 14px", color: "#f87171", fontSize: 12 }}>{error}</div>}
-        {!loading && !error && filteredSessions.length === 0 && <div style={{ padding: "16px 14px", color: "var(--text-muted)", fontSize: 12 }}>No sessions found</div>}
-        {sessionTree.slice(0, visibleNodes).map((node) => (
-          <SessionTreeItem
-            key={node.session.id}
-            node={node}
-            selectedSessionId={selectedSessionId}
-            onSelectSession={onSelectSession}
-            onRenamed={loadSessions}
-            onSessionDeleted={(id) => {
-              onSessionDeleted?.(id);
-              loadSessions();
-            }}
-            depth={0}
+      <div className="codex-scroll-column" style={{ flex: 1, overflowY: "auto", padding: "8px 8px 10px", minHeight: 0, position: "relative", zIndex: 1 }}>
+        {mode === "chat" ? (
+          <>
+            <CreateListItem
+              label="New session"
+              sublabel={effectiveCwd ? shortenCwd(effectiveCwd) : "Choose a workspace first"}
+              disabled={!effectiveCwd}
+              onClick={handleNewSession}
+            />
+            {loadingSessions ? <EmptyState label="Loading sessions..." /> : null}
+            {!loadingSessions && error ? <EmptyState label={error} tone="error" /> : null}
+            {!loadingSessions && !error && sessionTree.length === 0 ? <EmptyState label="No sessions found for this workspace." /> : null}
+            {sessionTree.map((node) => (
+              <SessionTreeItem
+                key={node.session.id}
+                node={node}
+                selectedSessionId={selectedSessionId}
+                onSelectSession={onSelectSession}
+                onSessionsChanged={() => void loadSessions()}
+                onSessionDeleted={onSessionDeleted}
+                depth={0}
+              />
+            ))}
+          </>
+        ) : selectedWorkflowId ? (
+          <>
+            {loadingProfiles ? <EmptyState label="Loading profiles..." /> : null}
+            {!loadingProfiles && profileError ? (
+              <div style={{ padding: "12px 8px", display: "grid", gap: 8 }}>
+                <EmptyState label={profileError} tone="error" />
+                <button type="button" onClick={() => void loadProfiles()} style={{ ...ghostButtonStyle, justifySelf: "start" }}>
+                  Retry
+                </button>
+              </div>
+            ) : null}
+            {!loadingProfiles && !profileError && profiles.length === 0 ? <EmptyState label="No profiles available yet." /> : null}
+            {profiles.map((profile) => (
+              <div
+                key={profile.id}
+                className="codex-card"
+                draggable
+                onDragStart={(event) => {
+                  const payload = JSON.stringify({
+                    id: profile.id,
+                    name: profile.name || profile.id,
+                    skills: profile.skills || [],
+                  });
+                  event.dataTransfer.setData("application/pi-profile", payload);
+                  event.dataTransfer.setData("text/plain", profile.name || profile.id);
+                  event.dataTransfer.effectAllowed = "copy";
+                }}
+                style={{ borderRadius: 18, padding: "14px 14px 12px", marginBottom: 8, cursor: "grab" }}
+              >
+                <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10 }}>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontSize: 12, fontWeight: 800, color: "var(--text)", marginBottom: 3 }}>{profile.name || profile.id}</div>
+                    <div style={{ fontSize: 11, color: "var(--text-dim)", fontFamily: "var(--font-mono)" }}>{profile.id}</div>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+                    <button
+                      type="button"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        setProfileInspector(profile);
+                      }}
+                      style={ghostButtonStyle}
+                    >
+                      Inspector
+                    </button>
+                  </div>
+                </div>
+                <div style={{ marginTop: 10, fontSize: 11, color: "var(--text-muted)", lineHeight: 1.6 }}>
+                  {profile.defaultModel || "No default model"}
+                </div>
+                <div style={{ marginTop: 10, display: "flex", gap: 6, flexWrap: "wrap" }}>
+                  {(profile.skills || []).slice(0, 3).map((skill) => (
+                    <span key={`${profile.id}-${skill}`} className="codex-pill" style={{ fontSize: 10 }}>
+                      {skill}
+                    </span>
+                  ))}
+                  {(profile.skills || []).length > 3 ? (
+                    <span className="codex-pill" style={{ fontSize: 10 }}>+{(profile.skills || []).length - 3}</span>
+                  ) : null}
+                </div>
+              </div>
+            ))}
+          </>
+        ) : (
+          <>
+            <CreateListItem
+              label="New workflow"
+              sublabel="Choose a template and category"
+              onClick={() => setWorkflowCreateOpen(true)}
+            />
+            {workflows.length === 0 ? <EmptyState label="No workflows yet. Create one to start building." /> : null}
+            {workflowGroups.map((group) => (
+              <WorkflowGroup
+                key={group.domain}
+                label={group.label}
+                workflows={group.workflows}
+                selectedWorkflowId={selectedWorkflowId}
+                workflowBusyId={workflowBusyId}
+                onSelectWorkflow={(workflow) => onSelectWorkflow?.(workflow)}
+                onDeleteWorkflow={(workflow) => void deleteWorkflow(workflow)}
+              />
+            ))}
+          </>
+        )}
+      </div>
+      {workflowCreateOpen ? (
+        <WorkflowCreateOverlay
+          templates={workflowTemplates}
+          domains={workflowDomains}
+          onClose={() => setWorkflowCreateOpen(false)}
+          onCreate={(payload) => void createWorkflow(payload)}
+        />
+      ) : null}
+      {profileInspector ? (
+        <InspectorOverlay title={profileInspector.name || profileInspector.id} onClose={() => setProfileInspector(null)}>
+          <div style={{ display: "grid", gap: 10, fontSize: 12, color: "var(--text-muted)", lineHeight: 1.7 }}>
+            <div><strong style={{ color: "var(--text)" }}>ID</strong><br /><span style={{ fontFamily: "var(--font-mono)" }}>{profileInspector.id}</span></div>
+            <div><strong style={{ color: "var(--text)" }}>Default Model</strong><br />{profileInspector.defaultModel || "No default model"}</div>
+            <div><strong style={{ color: "var(--text)" }}>Skills</strong><br />{(profileInspector.skills || []).length ? profileInspector.skills?.join(", ") : "No skills"}</div>
+            {profileInspector.collaborationProtocol ? <div><strong style={{ color: "var(--text)" }}>Protocol</strong><br />{profileInspector.collaborationProtocol}</div> : null}
+          </div>
+        </InspectorOverlay>
+      ) : null}
+    </div>
+  );
+}
+
+function EmptyState({ label, tone = "muted" }: { label: string; tone?: "muted" | "error" }) {
+  return (
+    <div style={{ padding: "14px 12px", fontSize: 12, color: tone === "error" ? "#f87171" : "var(--text-muted)" }}>
+      {label}
+    </div>
+  );
+}
+
+function CreateListItem({ label, sublabel, disabled, onClick }: { label: string; sublabel: string; disabled?: boolean; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={disabled ? undefined : onClick}
+      disabled={disabled}
+      style={{
+        width: "100%",
+        minHeight: 54,
+        marginBottom: 8,
+        padding: "0 12px",
+        border: "1px dashed color-mix(in srgb, var(--shell-edge) 90%, transparent)",
+        borderRadius: 16,
+        background: "color-mix(in srgb, var(--bg) 70%, transparent)",
+        color: disabled ? "var(--text-dim)" : "var(--text)",
+        cursor: disabled ? "not-allowed" : "pointer",
+        display: "flex",
+        alignItems: "center",
+        gap: 10,
+        textAlign: "left",
+        opacity: disabled ? 0.55 : 1,
+      }}
+    >
+      <span style={{ width: 26, height: 26, borderRadius: 9, display: "inline-flex", alignItems: "center", justifyContent: "center", background: "color-mix(in srgb, var(--accent) 10%, var(--bg))", color: "var(--accent)", flexShrink: 0, fontSize: 18, lineHeight: 1 }}>+</span>
+      <span style={{ minWidth: 0 }}>
+        <span style={{ display: "block", fontSize: 12, fontWeight: 800 }}>{label}</span>
+        <span style={{ display: "block", marginTop: 2, fontSize: 11, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{sublabel}</span>
+      </span>
+    </button>
+  );
+}
+
+function WorkflowGroup({
+  label,
+  workflows,
+  selectedWorkflowId,
+  workflowBusyId,
+  onSelectWorkflow,
+  onDeleteWorkflow,
+}: {
+  label: string;
+  workflows: WorkflowDefinition[];
+  selectedWorkflowId?: string | null;
+  workflowBusyId?: string | null;
+  onSelectWorkflow: (workflow: WorkflowDefinition) => void;
+  onDeleteWorkflow: (workflow: WorkflowDefinition) => void;
+}) {
+  const legacy = workflows.every((workflow) => workflow.status === "legacy");
+  return (
+    <details open={!legacy} style={{ marginBottom: 8 }}>
+      <summary style={{ cursor: "pointer", padding: "8px 6px", color: "var(--text-muted)", fontSize: 11, fontWeight: 850, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+        <span>{label}</span>
+        <span className="codex-pill" style={{ fontSize: 10, minHeight: 20, padding: "0 7px" }}>{workflows.length}</span>
+      </summary>
+      <div>
+        {workflows.map((workflow) => (
+          <WorkflowListItem
+            key={workflow.id}
+            workflow={workflow}
+            active={workflow.id === selectedWorkflowId}
+            busy={workflowBusyId === workflow.id}
+            onSelect={() => onSelectWorkflow(workflow)}
+            onDelete={() => onDeleteWorkflow(workflow)}
           />
         ))}
-        {visibleNodes < sessionTree.length && <div ref={sentinelRef} style={{ height: 1 }} />}
-      </div>}
+      </div>
+    </details>
+  );
+}
 
-      {activeSection === "workflows" && <div style={{ flex: "1 1 0", minHeight: 0, overflow: "hidden", display: "flex", flexDirection: "column", borderTop: "1px solid var(--border)" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", padding: "8px 10px 6px", borderBottom: "1px solid color-mix(in srgb, var(--border) 65%, transparent)", flexShrink: 0 }}>
-          <button onClick={() => void createWorkflow()} title="New workflow" style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 26, height: 26, padding: 0, background: "none", border: "none", color: "var(--text-dim)", cursor: "pointer", borderRadius: 5, flexShrink: 0 }}>＋</button>
-        </div>
-        <div style={{ flex: 1, overflowY: "auto" }}>
-          {workflows.length === 0 ? <div style={{ padding: "10px 12px", fontSize: 12, color: "var(--text-muted)" }}>还没有 workflow。点右上角 + 新建，主界面会直接进入编辑。</div> : workflows.map((workflow) => (
-            <div
-              key={workflow.id}
-              role="button"
-              tabIndex={0}
-              onClick={() => onSelectWorkflow?.(workflow)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  onSelectWorkflow?.(workflow);
-                }
-              }}
-              style={{ width: "100%", padding: "10px", borderBottom: "1px solid color-mix(in srgb, var(--border) 60%, transparent)", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, background: workflow.id === selectedWorkflowId ? "var(--bg-selected)" : "none", cursor: "pointer", textAlign: "left" }}
-            >
-              <div style={{ minWidth: 0 }}>
-                <div style={{ fontSize: 12, fontWeight: 600, color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{workflow.name}</div>
-                <div style={{ fontSize: 11, color: "var(--text-muted)" }}>{workflow.tasks?.length || 0} tasks · {workflow.reviewPolicy || "lead_plus_reviewer"}</div>
-                {workflow.description ? <div style={{ marginTop: 4, fontSize: 11, color: "var(--text-dim)", whiteSpace: "pre-wrap" }}>{workflow.description}</div> : null}
-              </div>
-              <div style={{ display: "flex", gap: 4, flexShrink: 0 }}>
-                <button onClick={(e) => { e.stopPropagation(); void runWorkflow(workflow); }} style={{ fontSize: 11, padding: "3px 6px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--bg-secondary)", color: "var(--text)", cursor: "pointer" }}>{workflowBusyId === workflow.id ? "..." : "Run"}</button>
-                <button onClick={(e) => { e.stopPropagation(); void deleteWorkflow(workflow); }} style={{ fontSize: 11, padding: "3px 6px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--bg-secondary)", color: "#ef4444", cursor: "pointer" }}>Del</button>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>}
+function WorkflowCreateOverlay({
+  templates,
+  domains,
+  onClose,
+  onCreate,
+}: {
+  templates: WorkflowDefinition[];
+  domains: string[];
+  onClose: () => void;
+  onCreate: (payload: { name: string; description: string; templateId: string; domain: string; category: string; templateType: string }) => void;
+}) {
+  const [templateId, setTemplateId] = useState(templates[0]?.id || "");
+  const selectedTemplate = templates.find((template) => template.id === templateId);
+  const [name, setName] = useState(selectedTemplate ? `${selectedTemplate.name.replace(/^模板：/, "")} Copy` : "New Workflow");
+  const [description, setDescription] = useState(selectedTemplate?.description || "");
+  const [domain, setDomain] = useState(domains[0] || "self-media");
+  const [customDomain, setCustomDomain] = useState("");
 
-      {activeSection === "files" && (selectedCwdProp || selectedCwd) && <div style={{ borderTop: "1px solid var(--border)", display: "flex", flexDirection: "column", flex: "1 1 0", minHeight: 0, overflow: "hidden" }}>
-        <div style={{ display: "flex", alignItems: "center", flexShrink: 0 }}>
-          <button onClick={() => setExplorerOpen((v) => !v)} style={{ display: "flex", alignItems: "center", gap: 6, flex: 1, padding: "6px 10px", background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", fontSize: 11, fontWeight: 600, letterSpacing: "0.05em", textTransform: "uppercase", textAlign: "left" }}>
-            <svg width="9" height="9" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ transform: explorerOpen ? "rotate(90deg)" : "none", transition: "transform 0.15s", flexShrink: 0 }}><polyline points="3 2 7 5 3 8" /></svg>
-            资源 / 物料
+  const effectiveDomain = domain === "__new__" ? slugDomain(customDomain) : domain;
+  const effectiveCategory = domain === "__new__" ? customDomain.trim() : workflowDomainLabel(domain);
+  const canCreate = name.trim().length > 0 && effectiveDomain.length > 0;
+
+  const selectTemplate = (nextTemplateId: string) => {
+    setTemplateId(nextTemplateId);
+    const template = templates.find((item) => item.id === nextTemplateId);
+    if (!template) return;
+    setName(`${template.name.replace(/^模板：/, "")} Copy`);
+    setDescription(template.description || "");
+    if (template.templateType && !domain) setDomain("self-media");
+  };
+
+  return (
+    <InspectorOverlay title="New workflow" onClose={onClose}>
+      <div style={{ display: "grid", gap: 12 }}>
+        <Field label="Template">
+          <select value={templateId} onChange={(event) => selectTemplate(event.target.value)} style={inputStyle}>
+            <option value="">Blank workflow</option>
+            {templates.map((template) => (
+              <option key={template.id} value={template.id}>{template.name} · {workflowTemplateLabel(template.templateType)}</option>
+            ))}
+          </select>
+        </Field>
+        <Field label="Name">
+          <input value={name} onChange={(event) => setName(event.target.value)} style={{ ...inputStyle, fontWeight: 800 }} />
+        </Field>
+        <Field label="Description">
+          <textarea value={description} onChange={(event) => setDescription(event.target.value)} style={{ ...inputStyle, minHeight: 76, resize: "vertical" }} />
+        </Field>
+        <Field label="Category">
+          <select value={domain} onChange={(event) => setDomain(event.target.value)} style={inputStyle}>
+            {domains.map((item) => (
+              <option key={item} value={item}>{workflowDomainLabel(item)}</option>
+            ))}
+            <option value="__new__">New category</option>
+          </select>
+        </Field>
+        {domain === "__new__" ? (
+          <Field label="New Category">
+            <input value={customDomain} onChange={(event) => setCustomDomain(event.target.value)} style={inputStyle} />
+          </Field>
+        ) : null}
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
+          <button type="button" onClick={onClose} style={ghostButtonStyle}>Cancel</button>
+          <button
+            type="button"
+            disabled={!canCreate}
+            onClick={() => onCreate({
+              name: name.trim(),
+              description: description.trim(),
+              templateId,
+              domain: effectiveDomain,
+              category: effectiveCategory || effectiveDomain,
+              templateType: selectedTemplate?.templateType || "",
+            })}
+            style={{ ...ghostButtonStyle, background: canCreate ? "var(--text)" : "var(--bg-secondary)", color: canCreate ? "var(--bg)" : "var(--text-dim)" }}
+          >
+            Create
           </button>
-          <button onClick={() => { setExplorerKey((k) => k + 1); setExplorerRefreshDone(true); if (explorerRefreshTimerRef.current) clearTimeout(explorerRefreshTimerRef.current); explorerRefreshTimerRef.current = setTimeout(() => setExplorerRefreshDone(false), 2000); }} title="Refresh explorer" style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 26, height: 26, padding: 0, marginRight: 6, background: explorerRefreshDone ? "rgba(74,222,128,0.18)" : "none", border: "none", color: explorerRefreshDone ? "#4ade80" : "var(--text-dim)", cursor: "pointer", borderRadius: 5, flexShrink: 0, transition: "color 0.3s, background 0.3s" }}>↻</button>
         </div>
-        {explorerOpen && <div style={{ flex: 1, overflowY: "auto", overflowX: "hidden" }}><FileExplorer cwd={selectedCwdProp ?? selectedCwd!} onOpenFile={onOpenFile ?? (() => {})} refreshKey={explorerKey} onAtMention={onAtMention} /></div>}
-      </div>}
+      </div>
+    </InspectorOverlay>
+  );
+}
+
+function WorkflowListItem({ workflow, active, busy, onSelect, onDelete }: { workflow: WorkflowDefinition; active: boolean; busy: boolean; onSelect: () => void; onDelete: () => void }) {
+  const [hovered, setHovered] = useState(false);
+  return (
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={onSelect}
+      onKeyDown={(event) => {
+        if (event.key !== "Enter" && event.key !== " ") return;
+        event.preventDefault();
+        onSelect();
+      }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      className="codex-card"
+      style={{
+        width: "100%",
+        textAlign: "left",
+        borderRadius: 18,
+        padding: "14px 14px 12px",
+        marginBottom: 8,
+        cursor: "pointer",
+        background: active ? "color-mix(in srgb, var(--accent) 8%, var(--bg))" : undefined,
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10 }}>
+        <div style={{ minWidth: 0 }}>
+          <div style={{ fontSize: 12, fontWeight: 800, color: "var(--text)", marginBottom: 4 }}>{workflow.name}</div>
+          <div style={{ fontSize: 11, color: "var(--text-muted)" }}>
+            {workflow.tasks?.length || 0} tasks · {workflow.reviewPolicy || "lead_plus_reviewer"}
+          </div>
+        </div>
+        <div style={{ display: "flex", gap: 6, opacity: hovered || busy ? 1 : 0, pointerEvents: hovered || busy ? "auto" : "none", transition: "opacity 0.14s ease" }}>
+          <button
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              onDelete();
+            }}
+            disabled={busy}
+            style={{ ...ghostButtonStyle, color: "#ef4444" }}
+          >
+            {busy ? "..." : "Delete"}
+          </button>
+        </div>
+      </div>
+      {workflow.description ? (
+        <div style={{ marginTop: 8, fontSize: 11, color: "var(--text-dim)", lineHeight: 1.7 }}>
+          {workflow.description}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <label style={{ display: "grid", gap: 6 }}>
+      <span style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 700 }}>{label}</span>
+      {children}
+    </label>
+  );
+}
+
+function InspectorOverlay({ title, children, onClose }: { title: string; children: React.ReactNode; onClose: () => void }) {
+  return (
+    <div style={{ position: "fixed", inset: 0, zIndex: 900, display: "flex", justifyContent: "flex-end", background: "rgba(15,23,42,0.18)" }} onClick={onClose}>
+      <aside onClick={(event) => event.stopPropagation()} className="codex-card" style={{ width: 360, maxWidth: "92vw", height: "100%", borderRadius: "22px 0 0 22px", padding: 18, overflow: "auto" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 16 }}>
+          <div style={{ fontSize: 15, fontWeight: 850, color: "var(--text)", letterSpacing: "-0.02em" }}>{title}</div>
+          <button type="button" onClick={onClose} style={iconButtonStyle}>×</button>
+        </div>
+        {children}
+      </aside>
     </div>
   );
 }
@@ -896,15 +830,15 @@ function SessionTreeItem({
   node,
   selectedSessionId,
   onSelectSession,
-  onRenamed,
+  onSessionsChanged,
   onSessionDeleted,
   depth,
 }: {
   node: SessionTreeNode;
   selectedSessionId: string | null;
-  onSelectSession: (s: SessionInfo) => void;
-  onRenamed?: () => void;
-  onSessionDeleted?: (id: string) => void;
+  onSelectSession: (session: SessionInfo) => void;
+  onSessionsChanged: () => void;
+  onSessionDeleted?: (sessionId: string) => void;
   depth: number;
 }) {
   const [collapsed, setCollapsed] = useState(false);
@@ -912,45 +846,28 @@ function SessionTreeItem({
 
   return (
     <div>
-      <div style={{ position: "relative" }}>
-        {/* Indent line for child sessions */}
-        {depth > 0 && (
-          <div style={{
-            position: "absolute",
-            left: depth * 12 + 6,
-            top: 0, bottom: 0,
-            width: 1,
-            background: "var(--border)",
-            pointerEvents: "none",
-          }} />
-        )}
-        <SessionItem
-          session={node.session}
-          isSelected={node.session.id === selectedSessionId}
-          onClick={() => onSelectSession(node.session)}
-          onRenamed={onRenamed}
-          onDeleted={(id) => onSessionDeleted?.(id)}
-          depth={depth}
-          hasChildren={hasChildren}
-          collapsed={collapsed}
-          onToggleCollapse={() => setCollapsed((v) => !v)}
+      <SessionItem
+        session={node.session}
+        isSelected={node.session.id === selectedSessionId}
+        depth={depth}
+        hasChildren={hasChildren}
+        collapsed={collapsed}
+        onToggleCollapse={() => setCollapsed((value) => !value)}
+        onClick={() => onSelectSession(node.session)}
+        onChanged={onSessionsChanged}
+        onDeleted={onSessionDeleted}
+      />
+      {hasChildren && !collapsed ? node.children.map((child) => (
+        <SessionTreeItem
+          key={child.session.id}
+          node={child}
+          selectedSessionId={selectedSessionId}
+          onSelectSession={onSelectSession}
+          onSessionsChanged={onSessionsChanged}
+          onSessionDeleted={onSessionDeleted}
+          depth={depth + 1}
         />
-      </div>
-      {hasChildren && !collapsed && (
-        <div>
-          {node.children.map((child) => (
-            <SessionTreeItem
-              key={child.session.id}
-              node={child}
-              selectedSessionId={selectedSessionId}
-              onSelectSession={onSelectSession}
-              onRenamed={onRenamed}
-              onSessionDeleted={onSessionDeleted}
-              depth={depth + 1}
-            />
-          ))}
-        </div>
-      )}
+      )) : null}
     </div>
   );
 }
@@ -958,285 +875,236 @@ function SessionTreeItem({
 function SessionItem({
   session,
   isSelected,
-  onClick,
-  onRenamed,
-  onDeleted,
-  depth = 0,
-  hasChildren = false,
-  collapsed = false,
+  depth,
+  hasChildren,
+  collapsed,
   onToggleCollapse,
+  onClick,
+  onChanged,
+  onDeleted,
 }: {
   session: SessionInfo;
   isSelected: boolean;
+  depth: number;
+  hasChildren: boolean;
+  collapsed: boolean;
+  onToggleCollapse: () => void;
   onClick: () => void;
-  onRenamed?: () => void;
-  onDeleted?: (id: string) => void;
-  depth?: number;
-  hasChildren?: boolean;
-  collapsed?: boolean;
-  onToggleCollapse?: () => void;
+  onChanged: () => void;
+  onDeleted?: (sessionId: string) => void;
 }) {
   const [hovered, setHovered] = useState(false);
+  const [expanded, setExpanded] = useState(false);
   const [renaming, setRenaming] = useState(false);
-  const [renameValue, setRenameValue] = useState("");
-  const [confirmDelete, setConfirmDelete] = useState(false);
-  const [deleting, setDeleting] = useState(false);
+  const [renameValue, setRenameValue] = useState(session.name || "");
   const inputRef = useRef<HTMLInputElement>(null);
 
   const title = session.name || session.firstMessage.slice(0, 50) || session.id.slice(0, 12);
 
-  const startRename = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation();
-    setRenameValue(session.name ?? "");
-    setRenaming(true);
-    setTimeout(() => inputRef.current?.select(), 0);
-  }, [session.name]);
+  useEffect(() => {
+    if (renaming) inputRef.current?.select();
+  }, [renaming]);
 
   const commitRename = useCallback(async () => {
-    const name = renameValue.trim();
+    const nextName = renameValue.trim();
     setRenaming(false);
-    if (name === (session.name ?? "")) return;
-    try {
-      await fetch(`/api/sessions/${encodeURIComponent(session.id)}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name }),
-      });
-      onRenamed?.();
-    } catch {
-      // ignore
-    }
-  }, [renameValue, session.id, session.name, onRenamed]);
+    if (nextName === (session.name || "")) return;
+    await fetch(`/api/sessions/${encodeURIComponent(session.id)}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: nextName }),
+    }).catch(() => null);
+    onChanged();
+  }, [renameValue, session.id, session.name, onChanged]);
 
-  const handleDeleteClick = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation();
-    setConfirmDelete(true);
-  }, []);
-
-  const handleDeleteConfirm = useCallback(async (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setConfirmDelete(false);
-    setDeleting(true);
-    try {
-      await fetch(`/api/sessions/${encodeURIComponent(session.id)}`, { method: "DELETE" });
-      onDeleted?.(session.id);
-    } catch {
-      setDeleting(false);
-    }
-  }, [session.id, onDeleted]);
-
-  const handleDeleteCancel = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation();
-    setConfirmDelete(false);
-  }, []);
-
-  // Fixed-height outer wrapper — content swaps in place so the list never reflows
-  const ITEM_HEIGHT = 54;
+  const deleteSession = useCallback(async () => {
+    if (!window.confirm(`Delete session "${title}"?`)) return;
+    await fetch(`/api/sessions/${encodeURIComponent(session.id)}`, { method: "DELETE" }).catch(() => null);
+    onDeleted?.(session.id);
+    onChanged();
+  }, [session.id, title, onDeleted, onChanged]);
 
   return (
-    <div
-      onClick={confirmDelete || renaming ? undefined : onClick}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => { setHovered(false); }}
-      style={{
-        height: ITEM_HEIGHT,
-        display: "flex",
-        alignItems: "center",
-        paddingLeft: depth > 0 ? depth * 12 + 14 : 14,
-        paddingRight: 8,
-        cursor: confirmDelete || renaming ? "default" : "pointer",
-        background: confirmDelete
-          ? "rgba(239,68,68,0.06)"
-          : isSelected ? "var(--bg-selected)" : hovered ? "var(--bg-hover)" : "transparent",
-        borderLeft: confirmDelete
-          ? "2px solid #ef4444"
-          : isSelected ? "2px solid var(--accent)" : "2px solid transparent",
-        transition: "background 0.1s",
-        opacity: deleting ? 0.5 : 1,
-        gap: 6,
-        overflow: "hidden",
-      }}
-    >
-      {confirmDelete ? (
-        /* ── Delete confirmation: same height, two flat buttons ── */
-        <>
-          <div style={{ flex: 1, minWidth: 0, fontSize: 12, color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-            Delete <span style={{ fontWeight: 600 }}>&ldquo;{title.slice(0, 22)}{title.length > 22 ? "…" : ""}&rdquo;</span>?
-          </div>
-          <div style={{ display: "flex", gap: 5, flexShrink: 0 }}>
-            <button
-              onClick={handleDeleteConfirm}
-              style={{
-                display: "flex", alignItems: "center", justifyContent: "center", gap: 4,
-                height: 30, padding: "0 11px",
-                background: "#ef4444", border: "none",
-                borderRadius: 6, color: "#fff",
-                cursor: "pointer", fontSize: 12, fontWeight: 600,
-                whiteSpace: "nowrap",
+    <div style={{ marginBottom: 6 }}>
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={renaming ? undefined : onClick}
+        onKeyDown={(event) => {
+          if (renaming) return;
+          if (event.key !== "Enter" && event.key !== " ") return;
+          event.preventDefault();
+          onClick();
+        }}
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+          minHeight: 54,
+          paddingLeft: 12 + depth * 14,
+          paddingRight: 10,
+          borderRadius: 16,
+          background: isSelected ? "color-mix(in srgb, var(--accent) 10%, var(--bg))" : hovered ? "color-mix(in srgb, var(--bg-hover) 85%, var(--bg))" : "transparent",
+          boxShadow: isSelected ? "var(--shell-shadow-sm)" : "none",
+          cursor: renaming ? "default" : "pointer",
+        }}
+      >
+        {hasChildren ? (
+          <button
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              onToggleCollapse();
+            }}
+            style={{ ...iconButtonStyle, transform: collapsed ? "rotate(-90deg)" : "none" }}
+          >
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="2 3.5 5 6.5 8 3.5" />
+            </svg>
+          </button>
+        ) : (
+          <div style={{ width: 20, flexShrink: 0 }} />
+        )}
+
+        <div style={{ minWidth: 0, flex: 1 }}>
+          {renaming ? (
+            <input
+              ref={inputRef}
+              value={renameValue}
+              onChange={(event) => setRenameValue(event.target.value)}
+              onBlur={commitRename}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") void commitRename();
+                if (event.key === "Escape") setRenaming(false);
               }}
+              style={{
+                width: "100%",
+                height: 30,
+                borderRadius: 10,
+                border: "1px solid color-mix(in srgb, var(--accent) 35%, transparent)",
+                background: "var(--bg)",
+                color: "var(--text)",
+                fontSize: 12,
+                padding: "0 10px",
+              }}
+            />
+          ) : (
+            <>
+              <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {title}
+              </div>
+              <div className="session-row-meta" style={{ marginTop: 2, display: "flex", gap: 8, fontSize: 11, color: "var(--text-dim)" }}>
+                <span>{formatRelativeTime(session.modified)}</span>
+                <span>{session.messageCount} msgs</span>
+              </div>
+            </>
+          )}
+        </div>
+
+        {(hovered || expanded || isSelected) && !renaming ? (
+          <div style={{ display: "flex", alignItems: "center", gap: 4, flexShrink: 0 }}>
+            <button
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation();
+                setExpanded((value) => !value);
+              }}
+              title="Details"
+              style={iconButtonStyle}
             >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="16" x2="12" y2="12" />
+                <line x1="12" y1="8" x2="12.01" y2="8" />
+              </svg>
+            </button>
+            <button
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation();
+                setRenameValue(session.name || "");
+                setRenaming(true);
+              }}
+              title="Rename"
+              style={iconButtonStyle}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" />
+              </svg>
+            </button>
+            <button
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation();
+                void deleteSession();
+              }}
+              title="Delete"
+              style={iconButtonStyle}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="3 6 5 6 21 6" />
                 <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
                 <path d="M10 11v6M14 11v6" />
                 <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
               </svg>
-              Delete
-            </button>
-            <button
-              onClick={handleDeleteCancel}
-              style={{
-                display: "flex", alignItems: "center", justifyContent: "center",
-                height: 30, padding: "0 11px",
-                background: "var(--bg)", border: "1px solid var(--border)",
-                borderRadius: 6, color: "var(--text-muted)",
-                cursor: "pointer", fontSize: 12, fontWeight: 500,
-                whiteSpace: "nowrap",
-              }}
-            >
-              Cancel
             </button>
           </div>
-        </>
-      ) : renaming ? (
-        /* ── Rename: input fills the same row ── */
-        <input
-          ref={inputRef}
-          value={renameValue}
-          onChange={(e) => setRenameValue(e.target.value)}
-          onBlur={commitRename}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") commitRename();
-            if (e.key === "Escape") setRenaming(false);
-          }}
-          autoFocus
-          style={{
-            flex: 1,
-            fontSize: 12,
-            padding: "5px 8px",
-            border: "1px solid var(--accent)",
-            borderRadius: 5,
-            outline: "none",
-            background: "var(--bg)",
-            color: "var(--text)",
-            height: 30,
-          }}
-        />
-      ) : (
-        /* ── Normal view ── */
-        <>
-          {/* Fork indicator for child sessions */}
-          {depth > 0 && (
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--text-dim)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
-              <line x1="6" y1="3" x2="6" y2="15" />
-              <circle cx="18" cy="6" r="3" />
-              <circle cx="6" cy="18" r="3" />
-              <path d="M18 9a9 9 0 0 1-9 9" />
-            </svg>
-          )}
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div
-              style={{
-                fontSize: 12,
-                fontWeight: isSelected ? 500 : 400,
-                lineHeight: 1.4,
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-                color: "var(--text)",
-              }}
-              title={title}
-            >
-              {title}
+        ) : null}
+      </div>
+
+      {expanded ? (
+        <div style={{ marginTop: 4, marginLeft: 44 + depth * 14, padding: "4px 10px 8px", borderLeft: "1px solid color-mix(in srgb, var(--shell-edge) 82%, transparent)" }}>
+          <div style={{ display: "grid", gap: 8, fontSize: 11, color: "var(--text-muted)", lineHeight: 1.6 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
+              <span>Directory</span>
+              <span style={{ color: "var(--text)", fontFamily: "var(--font-mono)" }}>{shortenCwd(session.cwd)}</span>
             </div>
-            <div style={{ marginTop: 2, display: "flex", gap: 8, color: "var(--text-dim)", fontSize: 11 }}>
-              <span title={session.modified}>{formatRelativeTime(session.modified)}</span>
-              <span>{session.messageCount} msgs</span>
+            <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
+              <span>Created</span>
+              <span style={{ color: "var(--text)" }}>{new Date(session.created).toLocaleDateString()}</span>
             </div>
+            <div style={{ color: "var(--text-dim)" }}>{session.firstMessage || "No summary yet."}</div>
           </div>
-
-          {/* Collapse toggle — always visible when has children */}
-          {hasChildren && (
-            <button
-              onClick={(e) => { e.stopPropagation(); onToggleCollapse?.(); }}
-              title={collapsed ? "Expand forks" : "Collapse forks"}
-              style={{
-                display: "flex", alignItems: "center", justifyContent: "center",
-                width: 20, height: 20, padding: 0, flexShrink: 0,
-                background: "none", border: "none",
-                color: "var(--text-dim)", cursor: "pointer",
-                transform: collapsed ? "rotate(-90deg)" : "none",
-                transition: "transform 0.15s",
-              }}
-            >
-              <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="2 3.5 5 6.5 8 3.5" />
-              </svg>
-            </button>
-          )}
-
-          {/* Action buttons — shown on hover */}
-          {hovered && (
-            <div style={{ display: "flex", gap: 4, flexShrink: 0 }}>
-              <button
-                onClick={startRename}
-                title="Rename"
-                style={{
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  width: 32, height: 32, padding: 0,
-                  background: "var(--bg-hover)", border: "1px solid var(--border)",
-                  borderRadius: 7, color: "var(--text-muted)",
-                  cursor: "pointer", flexShrink: 0,
-                  transition: "background 0.12s, color 0.12s, border-color 0.12s",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = "var(--bg-selected)";
-                  e.currentTarget.style.color = "var(--accent)";
-                  e.currentTarget.style.borderColor = "rgba(37,99,235,0.35)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = "var(--bg-hover)";
-                  e.currentTarget.style.color = "var(--text-muted)";
-                  e.currentTarget.style.borderColor = "var(--border)";
-                }}
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" />
-                </svg>
-              </button>
-              <button
-                onClick={handleDeleteClick}
-                title="Delete"
-                style={{
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  width: 32, height: 32, padding: 0,
-                  background: "var(--bg-hover)", border: "1px solid var(--border)",
-                  borderRadius: 7, color: "var(--text-muted)",
-                  cursor: "pointer", flexShrink: 0,
-                  transition: "background 0.12s, color 0.12s, border-color 0.12s",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = "rgba(239,68,68,0.08)";
-                  e.currentTarget.style.color = "#ef4444";
-                  e.currentTarget.style.borderColor = "rgba(239,68,68,0.35)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = "var(--bg-hover)";
-                  e.currentTarget.style.color = "var(--text-muted)";
-                  e.currentTarget.style.borderColor = "var(--border)";
-                }}
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="3 6 5 6 21 6" />
-                  <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-                  <path d="M10 11v6M14 11v6" />
-                  <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
-                </svg>
-              </button>
-            </div>
-          )}
-        </>
-      )}
+        </div>
+      ) : null}
     </div>
   );
 }
+
+const ghostButtonStyle: React.CSSProperties = {
+  flexShrink: 0,
+  height: 30,
+  padding: "0 10px",
+  borderRadius: 10,
+  border: "1px solid var(--border)",
+  background: "var(--bg-secondary)",
+  color: "var(--text)",
+  fontSize: 11,
+  cursor: "pointer",
+};
+
+const inputStyle: React.CSSProperties = {
+  width: "100%",
+  padding: "8px 10px",
+  borderRadius: 8,
+  border: "1px solid var(--border)",
+  background: "var(--bg)",
+  color: "var(--text)",
+  fontSize: 12,
+};
+
+const iconButtonStyle: React.CSSProperties = {
+  width: 30,
+  height: 30,
+  borderRadius: 9,
+  border: "1px solid var(--border)",
+  background: "var(--bg-secondary)",
+  color: "var(--text-muted)",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  cursor: "pointer",
+  flexShrink: 0,
+};

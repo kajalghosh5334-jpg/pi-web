@@ -1,41 +1,302 @@
 "use client";
 
 import { useState, useCallback, useRef, useEffect } from "react";
+import dynamic from "next/dynamic";
 import { useRouter, useSearchParams } from "next/navigation";
 import { SessionSidebar } from "./SessionSidebar";
-import { ChatWindow } from "./ChatWindow";
-import { FileViewer } from "./FileViewer";
-import { TabBar, type Tab } from "./TabBar";
-import { ModelsConfig } from "./ModelsConfig";
-import { SkillsConfig } from "./SkillsConfig";
-import { BranchNavigator } from "./BranchNavigator";
-import { AgentWorkbench } from "./monitor/AgentWorkbench";
-import { WorkflowEditor } from "./WorkflowEditor";
-import { ProfilesPanel } from "./ProfilesPanel";
-import { AgentDagView, AgentDetailView, ArtifactFlowView, ProjectMemoryView, StageFlowView } from "./monitor/MultiAgentVisuals";
-import { useOrchestrate } from "@/hooks/useOrchestrate";
-import { useTheme } from "@/hooks/useTheme";
+import type { Tab } from "./TabBar";
+import type { FlowState } from "./monitor/MultiAgentVisuals";
+import { useOrchestrate, type TrainRound } from "@/hooks/useOrchestrate";
 import type { AgentMessage, SessionInfo, SessionTreeNode, WorkflowDefinition } from "@/lib/types";
 import type { ChatInputHandle, AttachedImage } from "./ChatInput";
+
+type MainView = "chat" | "workflow";
+
+interface TrainRoundDetail {
+  challengerOutput?: string;
+  challenger_output?: string;
+  base_output_before?: string;
+  base_output_after?: string;
+  suggestion?: TrainRound["suggestion"];
+  alignment?: TrainRound["alignment"];
+  summary?: string;
+}
+
+type TrainRoundDetailState =
+  | { status: "loading" }
+  | { status: "loaded"; detail: TrainRoundDetail }
+  | { status: "error"; error: string }
+  | undefined;
+
+interface WorkflowRecommendationResult {
+  model: string;
+  decision: "use-existing" | "customize-template" | "create-from-profiles";
+  inferred?: {
+    domain?: string;
+    templateType?: string;
+    confidence?: number;
+  };
+  recommendations?: Array<{
+    workflow: WorkflowDefinition;
+    score: number;
+    reasons: string[];
+  }>;
+  templateRecommendations?: Array<{
+    workflow: WorkflowDefinition;
+    score: number;
+    reasons: string[];
+  }>;
+  profilePlan?: Array<{
+    id: string;
+    name: string;
+    tier: string;
+    model: string;
+    role: string;
+  }>;
+  guidance?: string[];
+}
+
+const ChatWindow = dynamic(() => import("./ChatWindow").then((mod) => mod.ChatWindow), { ssr: false });
+const FileViewer = dynamic(() => import("./FileViewer").then((mod) => mod.FileViewer), { ssr: false });
+const ModelsConfig = dynamic(() => import("./ModelsConfig").then((mod) => mod.ModelsConfig), { ssr: false });
+const SkillsConfig = dynamic(() => import("./SkillsConfig").then((mod) => mod.SkillsConfig), { ssr: false });
+const ProfilesPanel = dynamic(() => import("./ProfilesPanel").then((mod) => mod.ProfilesPanel), { ssr: false });
+const BranchNavigator = dynamic(() => import("./BranchNavigator").then((mod) => mod.BranchNavigator), { ssr: false });
+const AgentWorkbench = dynamic(() => import("./monitor/AgentWorkbench").then((mod) => mod.AgentWorkbench), { ssr: false });
+const WorkflowEditor = dynamic(() => import("./WorkflowEditor").then((mod) => mod.WorkflowEditor), { ssr: false });
+const StageFlowView = dynamic(() => import("./monitor/MultiAgentVisuals").then((mod) => mod.StageFlowView), { ssr: false });
+const ArtifactFlowView = dynamic(() => import("./monitor/MultiAgentVisuals").then((mod) => mod.ArtifactFlowView), { ssr: false });
+const LedgerTimelineView = dynamic(() => import("./monitor/MultiAgentVisuals").then((mod) => mod.LedgerTimelineView), { ssr: false });
+const AgentDagView = dynamic(() => import("./monitor/MultiAgentVisuals").then((mod) => mod.AgentDagView), { ssr: false });
+const ProjectMemoryView = dynamic(() => import("./monitor/MultiAgentVisuals").then((mod) => mod.ProjectMemoryView), { ssr: false });
+
+function isFlowState(value: unknown): value is FlowState {
+  return typeof value === "object" && value !== null;
+}
+
+function decisionLabel(decision: WorkflowRecommendationResult["decision"]) {
+  if (decision === "use-existing") return "推荐使用已有 Workflow";
+  if (decision === "customize-template") return "推荐从模板微调";
+  return "推荐从 Profile 自建";
+}
+
+function workflowDomainName(domain?: string) {
+  const labels: Record<string, string> = {
+    "self-media": "自媒体",
+    ecommerce: "电商",
+    "customer-support": "客服",
+    research: "行业调研",
+    sales: "电话销售",
+    generic: "通用模板",
+  };
+  return labels[domain || ""] || domain || "未分类";
+}
+
+function WorkflowFlashGuide({ onSelectWorkflow }: { onSelectWorkflow: (workflow: WorkflowDefinition) => void }) {
+  const [task, setTask] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [result, setResult] = useState<WorkflowRecommendationResult | null>(null);
+  const topRecommendation = result?.recommendations?.[0];
+  const topTemplate = result?.templateRecommendations?.[0];
+  const canAsk = task.trim().length > 3 && !busy;
+
+  const askFlash = async () => {
+    if (!canAsk) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/workflow-recommend", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ task }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
+      setResult(data as WorkflowRecommendationResult);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="codex-card" style={{ borderRadius: 22, padding: "22px 24px", minHeight: 360, display: "grid", gap: 16 }}>
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 14, flexWrap: "wrap" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 260 }}>
+          <div style={{ width: 48, height: 48, borderRadius: 16, display: "flex", alignItems: "center", justifyContent: "center", background: "color-mix(in srgb, var(--accent) 10%, var(--bg))", color: "var(--accent)", flexShrink: 0 }}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M6 7h4" />
+              <path d="M14 7h4" />
+              <path d="M6 17h4" />
+              <path d="M14 17h4" />
+              <path d="M10 7h4" />
+              <path d="M10 17h4" />
+              <path d="M12 7v10" />
+            </svg>
+          </div>
+          <div>
+            <div style={{ fontSize: 18, fontWeight: 850, color: "var(--text)" }}>选择或新建一个 Workflow</div>
+            <div style={{ marginTop: 4, fontSize: 12, color: "var(--text-muted)", lineHeight: 1.7 }}>
+              Flash 路由助手会先判断行业、任务类型和可复用 Profile。
+            </div>
+          </div>
+        </div>
+        <span className="codex-pill" style={{ fontSize: 11, minHeight: 26, alignSelf: "center" }}>
+          {result?.model || "opencode-go/deepseek-v4-flash"}
+        </span>
+      </div>
+
+      <div style={{ display: "grid", gap: 10 }}>
+        <textarea
+          value={task}
+          onChange={(event) => setTask(event.target.value)}
+          onKeyDown={(event) => {
+            if ((event.metaKey || event.ctrlKey) && event.key === "Enter") void askFlash();
+          }}
+          placeholder="输入你想让 workflow 完成的任务，例如：把近 7 天 AI Agent 行业新闻整理成每日监控简报，并标记融资、政策和竞品变化。"
+          style={{
+            width: "100%",
+            minHeight: 92,
+            borderRadius: 16,
+            border: "1px solid var(--shell-edge)",
+            background: "var(--bg)",
+            color: "var(--text)",
+            padding: "13px 14px",
+            resize: "vertical",
+            outline: "none",
+            lineHeight: 1.65,
+            fontSize: 13,
+          }}
+        />
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            {["评论区分级回复", "通话纪要回写 CRM", "竞品变化监控"].map((sample) => (
+              <button
+                key={sample}
+                type="button"
+                onClick={() => setTask(sample)}
+                style={{ border: "1px solid var(--shell-edge)", background: "transparent", color: "var(--text-muted)", borderRadius: 999, padding: "6px 9px", fontSize: 11, cursor: "pointer" }}
+              >
+                {sample}
+              </button>
+            ))}
+          </div>
+          <button
+            type="button"
+            disabled={!canAsk}
+            onClick={() => void askFlash()}
+            style={{
+              border: "1px solid var(--text)",
+              background: canAsk ? "var(--text)" : "var(--bg-secondary)",
+              color: canAsk ? "var(--bg)" : "var(--text-dim)",
+              borderRadius: 12,
+              padding: "9px 13px",
+              fontSize: 12,
+              fontWeight: 850,
+              cursor: canAsk ? "pointer" : "not-allowed",
+            }}
+          >
+            {busy ? "推荐中..." : "让 Flash 推荐"}
+          </button>
+        </div>
+        {error ? <div style={{ fontSize: 12, color: "#f87171" }}>{error}</div> : null}
+      </div>
+
+      {result ? (
+        <div style={{ display: "grid", gap: 12 }}>
+          <div style={{ border: "1px solid var(--shell-edge)", borderRadius: 16, padding: "14px 15px", background: "color-mix(in srgb, var(--bg-secondary) 58%, transparent)" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, flexWrap: "wrap" }}>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 850, color: "var(--text)" }}>{decisionLabel(result.decision)}</div>
+                <div style={{ marginTop: 5, fontSize: 12, color: "var(--text-muted)", lineHeight: 1.7 }}>
+                  行业：{workflowDomainName(result.inferred?.domain)} · 模式：{result.inferred?.templateType || topTemplate?.workflow.templateType || "待确认"} · 置信度：{Math.round((result.inferred?.confidence || 0) * 100)}%
+                </div>
+              </div>
+              {topRecommendation ? (
+                <button
+                  type="button"
+                  onClick={() => onSelectWorkflow(topRecommendation.workflow)}
+                  style={{ border: "1px solid var(--accent)", background: "color-mix(in srgb, var(--accent) 12%, var(--bg))", color: "var(--accent)", borderRadius: 12, padding: "8px 11px", fontSize: 12, fontWeight: 850, cursor: "pointer" }}
+                >
+                  打开推荐 Workflow
+                </button>
+              ) : null}
+            </div>
+
+            <div style={{ display: "grid", gap: 8, marginTop: 12 }}>
+              {(result.recommendations || []).slice(0, 3).map((item, index) => (
+                <button
+                  key={item.workflow.id}
+                  type="button"
+                  onClick={() => onSelectWorkflow(item.workflow)}
+                  style={{ width: "100%", textAlign: "left", border: "1px solid var(--shell-edge)", background: index === 0 ? "color-mix(in srgb, var(--accent) 8%, transparent)" : "transparent", color: "var(--text)", borderRadius: 14, padding: "11px 12px", cursor: "pointer" }}
+                >
+                  <span style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center" }}>
+                    <span style={{ fontSize: 13, fontWeight: 820 }}>{item.workflow.name}</span>
+                    <span style={{ fontSize: 11, color: "var(--text-muted)" }}>{item.score}</span>
+                  </span>
+                  <span style={{ display: "block", marginTop: 6, fontSize: 11, color: "var(--text-muted)", lineHeight: 1.6 }}>
+                    {item.reasons.join("；") || item.workflow.description || "可作为当前任务的起点"}
+                  </span>
+                </button>
+              ))}
+              {(!result.recommendations || result.recommendations.length === 0) && topTemplate ? (
+                <div style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.7 }}>
+                  推荐从「{topTemplate.workflow.name}」开始新建，左侧点击 New workflow 后选择这个模板。
+                </div>
+              ) : null}
+            </div>
+          </div>
+
+          {(result.profilePlan || []).length ? (
+            <div style={{ border: "1px solid var(--shell-edge)", borderRadius: 16, padding: "13px 15px" }}>
+              <div style={{ fontSize: 12, fontWeight: 850, color: "var(--text)", marginBottom: 9 }}>Profile 链路</div>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                {(result.profilePlan || []).map((profile) => (
+                  <span key={profile.id} className="codex-pill" style={{ fontSize: 11, maxWidth: "100%" }}>
+                    <span style={{ fontWeight: 800 }}>{profile.name}</span>
+                    <span>{profile.tier}</span>
+                  </span>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
+          {(result.guidance || []).length ? (
+            <div style={{ display: "grid", gap: 6, fontSize: 12, color: "var(--text-muted)", lineHeight: 1.7 }}>
+              {(result.guidance || []).map((line) => (
+                <div key={line}>{line}</div>
+              ))}
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+    </div>
+  );
+}
 
 export function AppShell() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { isDark, toggleTheme } = useTheme();
   const [selectedSession, setSelectedSession] = useState<SessionInfo | null>(null);
   const [selectedWorkflow, setSelectedWorkflow] = useState<WorkflowDefinition | null>(null);
+  const [mainView, setMainView] = useState<MainView>("chat");
   const [workflowRefreshKey, setWorkflowRefreshKey] = useState(0);
   // When user clicks +, we only store the cwd — no fake session id
   const [newSessionCwd, setNewSessionCwd] = useState<string | null>(null);
   const [draftChatOpen, setDraftChatOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const [sessionKey, setSessionKey] = useState(0);
-  const [explorerRefreshKey, setExplorerRefreshKey] = useState(0);
   const [modelsConfigOpen, setModelsConfigOpen] = useState(false);
   const [modelsRefreshKey, setModelsRefreshKey] = useState(0);
   const [skillsConfigOpen, setSkillsConfigOpen] = useState(false);
   const [profilesPanelOpen, setProfilesPanelOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [trainSaveOpen, setTrainSaveOpen] = useState(false);
+  const [trainSaveName, setTrainSaveName] = useState("");
+  const [trainSaveBusy, setTrainSaveBusy] = useState(false);
   const chatInputRef = useRef<ChatInputHandle | null>(null);
   const topBarRef = useRef<HTMLDivElement>(null);
 
@@ -101,11 +362,32 @@ export function AppShell() {
   const [multiAgentMode, setMultiAgentMode] = useState(false);
   const [guardianAutoMultiAgentSuppressed, setGuardianAutoMultiAgentSuppressed] = useState(false);
   const [multiAgentMessages, setMultiAgentMessages] = useState<AgentMessage[]>([]);
+  const [multiAgentSwitchNotice, setMultiAgentSwitchNotice] = useState<string | null>(null);
   const [focusedAgentTaskId, setFocusedAgentTaskId] = useState<string | null>(null);
+  const [openTrainRounds, setOpenTrainRounds] = useState<Record<number, boolean>>({});
+  const [trainRoundDetails, setTrainRoundDetails] = useState<Record<number, TrainRoundDetailState>>({});
+  const trainRoundDetailsRef = useRef<Record<number, TrainRoundDetailState>>({});
   const persistedMultiAgentOutputRef = useRef<string | null>(null);
-  const persistedProgressIdsRef = useRef<Set<string>>(new Set());
   const activeMultiAgentSessionRef = useRef<string | null>(null);
-  const { state: orchestrateState, run: runOrchestrate, switchModel, abortTask, pauseTask, resumeTask, rerunTask, promoteProfile, promoteTaskSkills, confirm: confirmOrchestrate, clearProjectSummaries, refreshProjectMemory } = useOrchestrate();
+  const { state: orchestrateState, run: runOrchestrate, switchModel, abortTask, pauseTask, resumeTask, rerunTask, promoteProfile, promoteTaskSkills, confirm: confirmOrchestrate, startTrain, cancelTrain, saveTrain, clearProjectSummaries, refreshProjectMemory } = useOrchestrate();
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (sessionStorage.getItem("pi.modelRoutingSetupSeen") === "1") return;
+    fetch("/api/models-config", { cache: "no-store" })
+      .then((r) => r.json())
+      .then((config: { providers?: Record<string, { models?: Array<{ id?: string; role?: string }> }>; modelSetup?: { guideModel?: string } }) => {
+        const models = Object.values(config.providers ?? {}).flatMap((provider) => provider.models ?? []);
+        const hasWeak = models.some((model) => model.id?.trim() && model.role === "weak");
+        const hasStrong = models.some((model) => model.id?.trim() && model.role === "strong");
+        const hasGuide = Boolean(config.modelSetup?.guideModel);
+        if (!models.some((model) => model.id?.trim()) || !hasGuide || !hasWeak || !hasStrong) {
+          sessionStorage.setItem("pi.modelRoutingSetupSeen", "1");
+          setModelsConfigOpen(true);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const multiAgentModeKey = selectedSession?.id
     ? `session:${selectedSession.id}`
@@ -125,18 +407,6 @@ export function AppShell() {
     setGuardianAutoMultiAgentSuppressed(guardianSuppressionKey ? localStorage.getItem(guardianSuppressionKey) === "1" : false);
   }, [multiAgentModeKey, guardianSuppressionKey]);
 
-  const abortCurrentMultiAgent = useCallback(async () => {
-    const sessionId = orchestrateState.sessionId || activeMultiAgentSessionRef.current;
-    if (!sessionId) return;
-    await fetch(`/api/orchestrate/${encodeURIComponent(sessionId)}/abort`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ reason: "Multi-Agent switch turned off" }),
-    }).catch(() => {});
-    setMultiAgentMessages([]);
-    activeMultiAgentSessionRef.current = null;
-  }, [orchestrateState.sessionId]);
-
   const toggleMultiAgentMode = useCallback(() => {
     setMultiAgentMode((prev) => {
       const next = !prev;
@@ -152,14 +422,19 @@ export function AppShell() {
           setGuardianAutoMultiAgentSuppressed(false);
         }
       }
-      if (!next) void abortCurrentMultiAgent();
+      const hasRunningTasks = orchestrateState.tasks.some((task) => ["queued", "running", "waiting_for_dependency", "waiting_confirmation"].includes(task.status));
+      setMultiAgentSwitchNotice(hasRunningTasks
+        ? `多Agent已${next ? "开启" : "关闭"}，将在下一条消息生效；当前任务组会继续跑完。`
+        : `多Agent已${next ? "开启" : "关闭"}，下一条消息生效。`);
       return next;
     });
-  }, [multiAgentModeKey, guardianSuppressionKey, abortCurrentMultiAgent]);
+  }, [multiAgentModeKey, guardianSuppressionKey, orchestrateState.tasks]);
 
-  const handleAtMention = useCallback((relativePath: string) => {
-    chatInputRef.current?.insertText("`" + relativePath + "`");
-  }, []);
+  useEffect(() => {
+    if (!multiAgentSwitchNotice) return;
+    const timer = setTimeout(() => setMultiAgentSwitchNotice(null), 3600);
+    return () => clearTimeout(timer);
+  }, [multiAgentSwitchNotice]);
 
   const appendMessageToSession = useCallback(async (message: AgentMessage, sessionId = selectedSession?.id): Promise<boolean> => {
     if (!sessionId) return false;
@@ -238,16 +513,17 @@ export function AppShell() {
     return /不满意|不太满意|继续调教|调教|改得不对|结果不对|这部分不对|不符合|再优化|重新优化|修正这个结果|teach|coach|not satisfied/i.test(message);
   }, []);
 
+  const shouldPreRouteToMultiAgent = useCallback((message: string) => {
+    const text = String(message || "").trim();
+    if (!text) return false;
+    if (text.length <= 32 && !text.includes("\n")) return false;
+    if (text.length >= 140 || text.includes("\n")) return true;
+    return /multi-agent|workflow|dag|lead|sub-?agent|profile|前端|后端|全栈|跨文件|改代码|改这个项目|修这个项目|monitor-server|AppShell|useOrchestrate|session|路由|监控面板|协作图|任务拆分|代码库|仓库|项目里|这个项目/i.test(text);
+  }, []);
+
   const getMultiAgentAssistantText = useCallback(() => {
-    return orchestrateState.mainOutput || (
-      orchestrateState.phase === "guardian" ? "🧠 Guardian 正在分析任务..." :
-      orchestrateState.phase === "running" ? "🤖 Sub-Agents 正在并行工作，详情见右侧监控面板..." :
-      orchestrateState.phase === "waiting_confirmation" ? `⏸️ 子 Agent 需要确认：${orchestrateState.pendingConfirmation?.question ?? "请在右侧监控面板确认后继续"}` :
-      orchestrateState.phase === "synthesizing" ? "⚡ 正在整合各 Sub-Agent 结果..." :
-      orchestrateState.phase === "error" ? `❌ ${orchestrateState.error ?? "多Agent执行失败"}` :
-      ""
-    );
-  }, [orchestrateState.mainOutput, orchestrateState.phase, orchestrateState.error, orchestrateState.pendingConfirmation]);
+    return orchestrateState.mainOutput || "";
+  }, [orchestrateState.mainOutput]);
 
   const handleMultiAgentSend = useCallback(async (message: string) => {
     if (!message.trim()) return;
@@ -263,22 +539,15 @@ export function AppShell() {
     setSessionKey((k) => k + 1);
     setRefreshKey((k) => k + 1);
 
-    // Only the in-progress assistant status is temporary. Final assistant output
-    // is appended to the session and then this temporary message is cleared.
-    setMultiAgentMessages([{
-      role: "assistant",
-      content: [{ type: "text", text: "🧠 Guardian 正在分析任务..." }],
-      model: "multi-agent",
-      provider: "orchestrator",
-      timestamp: now + 1,
-    }]);
+    // Codex-style transcript: process state lives in the collaboration strip/panel;
+    // only the final assistant report is persisted into the chat.
+    setMultiAgentMessages([]);
 
     const orchestrateInput = await buildContextualMultiAgentInput(message, sessionId);
     await runOrchestrate(orchestrateInput, { cwd: selectedSession?.cwd ?? newSessionCwd ?? activeCwd, sessionId });
   }, [runOrchestrate, appendMessageToSession, ensureMultiAgentSession, buildContextualMultiAgentInput, selectedSession?.cwd, newSessionCwd, activeCwd]);
 
   const runMultiAgentInBackground = useCallback(async (message: string) => {
-    const now = Date.now();
     // 如果普通主模型还在创建新会话，先不抢建另一个 Multi-Agent session，避免一条消息分裂成两个会话。
     if (!selectedSession?.id) return;
     const sessionId = selectedSession.id;
@@ -309,8 +578,11 @@ export function AppShell() {
       return;
     }
 
-    // Multi-Agent 开关打开时：本轮直接由 Lead 接管，主对话不再深答。
-    if (multiAgentMode) {
+    const looksComplex = shouldPreRouteToMultiAgent(message);
+    const multiAgentBusy = ["guardian", "running", "waiting_confirmation", "synthesizing"].includes(orchestrateState.phase);
+
+    // Multi-Agent 开关打开时，只让复杂消息或当前协作中的消息继续走 Lead。
+    if (multiAgentMode && (looksComplex || multiAgentBusy)) {
       await handleMultiAgentSend(message);
       return;
     }
@@ -321,7 +593,13 @@ export function AppShell() {
       return;
     }
 
-    // 开关未开时：先做超轻量 owner 判定。复杂任务直接由 Lead 接管，避免同轮双线程深答。
+    // 普通短消息直接走主对话，避免每句话都等 Guardian。
+    if (!looksComplex) {
+      void defaultSend(message, images);
+      return;
+    }
+
+    // 命中复杂任务特征时：先做超轻量 owner 判定。复杂任务直接由 Lead 接管，避免同轮双线程深答。
     const res = await fetch("/api/guardian/decide", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -337,9 +615,9 @@ export function AppShell() {
       return;
     }
 
-    // 简单任务仍由主对话直接处理。
+    // Guardian 没接管时，回到主对话。
     void defaultSend(message, images);
-  }, [multiAgentMode, guardianAutoMultiAgentSuppressed, runMultiAgentInBackground, selectedSession?.id, newSessionCwd, activeCwd, isCoachingIntent, handleMultiAgentSend]);
+  }, [multiAgentMode, guardianAutoMultiAgentSuppressed, runMultiAgentInBackground, selectedSession?.id, newSessionCwd, activeCwd, isCoachingIntent, handleMultiAgentSend, shouldPreRouteToMultiAgent, orchestrateState.phase]);
 
   const pickDraftCwd = useCallback(async () => {
     const res = await fetch("/api/cwd/pick", { method: "POST" }).catch(() => null);
@@ -368,18 +646,6 @@ export function AppShell() {
   useEffect(() => {
     const text = getMultiAgentAssistantText();
     if (!text) return;
-    setMultiAgentMessages((prev) => {
-      const idx = [...prev].reverse().findIndex((m) => m.role === "assistant" && "model" in m && m.model === "multi-agent");
-      if (idx < 0) return prev;
-      const realIdx = prev.length - 1 - idx;
-      return prev.map((m, i) => i === realIdx ? {
-        role: "assistant",
-        content: [{ type: "text", text }],
-        model: "multi-agent",
-        provider: "orchestrator",
-        timestamp: m.timestamp,
-      } : m);
-    });
     if (orchestrateState.phase === "done" && orchestrateState.mainOutput && persistedMultiAgentOutputRef.current !== orchestrateState.mainOutput) {
       persistedMultiAgentOutputRef.current = orchestrateState.mainOutput;
       void (async () => {
@@ -393,30 +659,12 @@ export function AppShell() {
         if (saved) {
           setSessionKey((k) => k + 1);
           setRefreshKey((k) => k + 1);
-          setExplorerRefreshKey((k) => k + 1);
           setMultiAgentMessages([]);
           activeMultiAgentSessionRef.current = null;
         }
       })();
     }
   }, [getMultiAgentAssistantText, orchestrateState.phase, orchestrateState.mainOutput, appendMessageToSession]);
-
-  useEffect(() => {
-    const sessionId = orchestrateState.sessionId || activeMultiAgentSessionRef.current || selectedSession?.id;
-    if (!sessionId) return;
-    for (const update of orchestrateState.progressUpdates || []) {
-      if (!update?.id || persistedProgressIdsRef.current.has(update.id)) continue;
-      persistedProgressIdsRef.current.add(update.id);
-      void appendMessageToSession({
-        role: "custom",
-        customType: "collaboration_progress",
-        content: update.text,
-        display: true,
-        details: update,
-        timestamp: update.timestamp,
-      }, sessionId);
-    }
-  }, [orchestrateState.progressUpdates, orchestrateState.sessionId, selectedSession?.id, appendMessageToSession]);
 
   const [initialSessionId] = useState<string | null>(() => searchParams.get("session"));
   // True once the initial ?session= URL param has been resolved (or confirmed absent)
@@ -455,6 +703,7 @@ export function AppShell() {
     setDraftChatOpen(false);
     setNewSessionCwd(null);
     setSelectedWorkflow(null);
+    setMainView("chat");
     setSelectedSession(session);
     setSessionKey((k) => k + 1);
     setSystemPrompt(null);
@@ -490,6 +739,7 @@ export function AppShell() {
     }
     setSelectedWorkflow(null);
     setSelectedSession(null);
+    setMainView("chat");
     setRightPanelOpen(false);
     setDraftChatOpen(true);
     setNewSessionCwd(cwd ?? null);
@@ -506,6 +756,7 @@ export function AppShell() {
     setDraftChatOpen(false);
     setNewSessionCwd(null);
     setSelectedWorkflow(null);
+    setMainView("chat");
     setSelectedSession(session);
     setRefreshKey((k) => k + 1);
     router.replace(`?session=${encodeURIComponent(session.id)}`, { scroll: false });
@@ -513,7 +764,6 @@ export function AppShell() {
 
   const handleAgentEnd = useCallback(() => {
     setRefreshKey((k) => k + 1);
-    setExplorerRefreshKey((k) => k + 1);
   }, []);
 
   const handleSessionForked = useCallback((newSessionId: string) => {
@@ -555,6 +805,7 @@ export function AppShell() {
     setSelectedSession(null);
     setNewSessionCwd(null);
     setSelectedWorkflow(workflow);
+    setMainView("workflow");
     setSessionKey((k) => k + 1);
     setBranchTree([]);
     setBranchActiveLeafId(null);
@@ -587,6 +838,7 @@ export function AppShell() {
     setActiveFileTabId(tabId);
     setRightPanelOpen(false);
     setSidebarOpen(false);
+    setMainView("chat");
   }, []);
 
   const handleCloseFileTab = useCallback((tabId: string) => {
@@ -607,20 +859,80 @@ export function AppShell() {
     window.location.href = `/api/sessions/${encodeURIComponent(selectedSession.id)}/export`;
   }, [selectedSession]);
 
-  const handlePromoteSessionProfile = useCallback(async () => {
-    if (!selectedSession?.id) return;
-    const name = window.prompt("Profile 名称", `${selectedSession.name || selectedSession.firstMessage || "Session"} Profile`);
-    if (!name) return;
-    const description = window.prompt("Profile 说明", selectedSession.firstMessage || "");
-    const res = await fetch(`/api/sessions/${encodeURIComponent(selectedSession.id)}/promote-profile`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, description, sessionName: selectedSession.name, firstMessage: selectedSession.firstMessage, cwd: selectedSession.cwd }),
-    });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) return window.alert(data?.error || "保存为 Profile 失败");
-    window.alert(`已保存为 Profile：${data.profile?.name || data.profile?.id || name}`);
+  const trainStatusText = useCallback((phase: string | undefined) => {
+    switch (phase) {
+      case "DISPATCH_CHALLENGER":
+        return "派生中";
+      case "CHALLENGER_RUNNING":
+        return "等待结果";
+      case "EVALUATING":
+      case "SUGGESTION_READY":
+        return "对比分析中";
+      case "APPLYING_PATCH":
+        return "打补丁中";
+      case "BASE_MODEL_RERUNNING":
+        return "重跑中";
+      default:
+        return "取消";
+    }
+  }, []);
+
+  const handleTrainClick = useCallback(async () => {
+    const training = orchestrateState.training;
+    if (training?.status === "running") {
+      if (!training.hasChallengerOutput && training.phase === "CHALLENGER_RUNNING") {
+        const ok = window.confirm("挑战者高端调用仍在运行，取消会丢弃本轮且下次需要重新派生。确认取消？");
+        if (!ok) return;
+      }
+      await cancelTrain();
+      return;
+    }
+    await startTrain({ taskId: focusedAgentTaskId || undefined });
+  }, [cancelTrain, focusedAgentTaskId, orchestrateState.training, startTrain]);
+
+  const openTrainSave = useCallback(() => {
+    setTrainSaveName(`${selectedSession?.name || selectedSession?.id || "Trained"} Profile`);
+    setTrainSaveOpen(true);
   }, [selectedSession]);
+
+  const handleSaveTrain = useCallback(async () => {
+    const name = trainSaveName.trim();
+    if (!name) return;
+    setTrainSaveBusy(true);
+    try {
+      await saveTrain({ name });
+      setTrainSaveOpen(false);
+    } finally {
+      setTrainSaveBusy(false);
+    }
+  }, [saveTrain, trainSaveName]);
+
+  const loadTrainRoundDetail = useCallback((round: number) => {
+    if (!orchestrateState.sessionId) return;
+    const current = trainRoundDetailsRef.current[round];
+    if (current?.status === "loaded" || current?.status === "loading") return;
+    trainRoundDetailsRef.current = { ...trainRoundDetailsRef.current, [round]: { status: "loading" } };
+    setTrainRoundDetails(trainRoundDetailsRef.current);
+    void fetch(`/api/train/${encodeURIComponent(orchestrateState.sessionId)}/round/${round}`)
+      .then((res) => res.json().then((data) => ({ ok: res.ok, data })))
+      .then(({ ok, data }) => {
+        if (!ok) throw new Error(data?.error || "round detail load failed");
+        trainRoundDetailsRef.current = { ...trainRoundDetailsRef.current, [round]: { status: "loaded", detail: data.detail as TrainRoundDetail } };
+        setTrainRoundDetails(trainRoundDetailsRef.current);
+      })
+      .catch((error) => {
+        trainRoundDetailsRef.current = { ...trainRoundDetailsRef.current, [round]: { status: "error", error: error instanceof Error ? error.message : String(error) } };
+        setTrainRoundDetails(trainRoundDetailsRef.current);
+      });
+  }, [orchestrateState.sessionId]);
+
+  useEffect(() => {
+    const rounds = orchestrateState.training?.rounds?.filter((round) => round.status !== "discarded") || [];
+    const latest = rounds[rounds.length - 1];
+    if (!latest || latest.status !== "done") return;
+    if (openTrainRounds[latest.round] === false) return;
+    loadTrainRoundDetail(latest.round);
+  }, [loadTrainRoundDetail, openTrainRounds, orchestrateState.training?.rounds]);
 
   const handleRenameProfile = useCallback(async (profileId: string, name: string) => {
     const res = await fetch(`/api/agent-profiles/${encodeURIComponent(profileId)}`, {
@@ -631,21 +943,6 @@ export function AppShell() {
     return res.json().catch(() => ({ ok: res.ok, error: "rename failed" }));
   }, []);
 
-  const handleSaveWorkflow = useCallback(async () => {
-    if (!orchestrateState.sessionId) return;
-    const baseTitle = (selectedSession?.name || selectedSession?.firstMessage || "当前对话").trim();
-    const name = window.prompt("Workflow 名称", `${baseTitle} Workflow`);
-    if (!name) return;
-    const description = window.prompt("Workflow 说明", baseTitle);
-    const res = await fetch(`/api/workflows/from-session/${encodeURIComponent(orchestrateState.sessionId)}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, description }),
-    });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) return window.alert(data?.error || "保存为 Workflow 失败");
-    window.alert(`已保存为 Workflow：${data.workflow?.name || data.workflow?.id || name}`);
-  }, [orchestrateState.sessionId, selectedSession]);
 
   // Show chat area if a session is selected, or if we have a cwd to start a new session in
   const effectiveNewSessionCwd = newSessionCwd ?? (selectedSession === null && !selectedWorkflow && draftChatOpen ? activeCwd : null);
@@ -659,7 +956,6 @@ export function AppShell() {
     if (selectedSession?.id && selectedSession.id !== activeMultiAgentSessionRef.current) {
       setMultiAgentMessages([]);
     }
-    persistedProgressIdsRef.current.clear();
   }, [selectedSession?.id, effectiveNewSessionCwd]);
   // While restoring initial session from URL, don't show the placeholder
   const showPlaceholder = initialSessionRestored && !showChat && !showWorkflow;
@@ -675,7 +971,7 @@ export function AppShell() {
         ? "chat"
         : "empty";
   const filePreviewMode = workspaceMode === "file";
-  const conversationTitle = (selectedWorkflow?.name || selectedSession?.name || selectedSession?.firstMessage || "当前对话").trim();
+  const flowState = isFlowState(orchestrateState.flowState) ? orchestrateState.flowState : null;
   const collaborationSummary = {
     running: orchestrateState.tasks.filter((t) => t.status === "running").length,
     needsConfirmation: orchestrateState.tasks.filter((t) => t.status === "waiting_confirmation").length,
@@ -683,88 +979,297 @@ export function AppShell() {
     debugging: orchestrateState.tasks.filter((t) => t.collaborationStatus === "debugging").length,
     review: orchestrateState.tasks.filter((t) => t.collaborationStatus === "ready_for_review").length,
     blocked: orchestrateState.tasks.filter((t) => t.collaborationStatus === "blocked" || t.status === "error").length,
-    stage: orchestrateState.flowState?.currentStage || "未开始",
+    stage: flowState?.currentStage || "Not started",
     artifactsReady: orchestrateState.artifacts.filter((a) => a.status === "ready").length,
     artifactsTotal: orchestrateState.artifacts.length,
   };
-  const collaborationAccessory = showChat && workspaceMode !== "agent" ? (
-    <div
-      role="button"
-      tabIndex={0}
-      onClick={selectedSession?.id ? () => setRightPanelOpen((v) => !v) : () => void pickDraftCwd()}
-      onKeyDown={(e) => {
-        if (e.key !== "Enter" && e.key !== " ") return;
-        e.preventDefault();
-        if (selectedSession?.id) setRightPanelOpen((v) => !v);
-        else void pickDraftCwd();
-      }}
-      style={{
-        width: "100%",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        gap: 12,
-        padding: 0,
-        background: "transparent",
-        border: "none",
-        color: "var(--text)",
-        cursor: "pointer",
-        textAlign: "left",
-      }}
-    >
-      {!selectedSession?.id ? (
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, minWidth: 0, width: "100%" }}>
-          <div style={{ minWidth: 0, flex: 1, display: "flex", alignItems: "center", gap: 10 }}>
-            <span style={{ fontSize: 12, fontWeight: 750, letterSpacing: "0.01em", flexShrink: 0 }}>地址</span>
-            <span style={{ fontSize: 11, color: newSessionCwd || activeCwd ? "var(--text-muted)" : "var(--text-dim)", fontFamily: "var(--font-mono)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={newSessionCwd || activeCwd || ""}>
-              {newSessionCwd || activeCwd || "先选择工作地址"}
-            </span>
-          </div>
-          <span style={{ fontSize: 10, color: "#f59e0b", padding: "2px 6px", borderRadius: 999, background: "rgba(245,158,11,0.10)", flexShrink: 0 }}>用户接管</span>
-        </div>
-      ) : !multiAgentMode ? (
-        <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
-          <span style={{ fontSize: 12, fontWeight: 750, letterSpacing: "0.01em" }}>协作</span>
-          <span style={{ fontSize: 11, color: "var(--text-muted)" }}>{collaborationSummary.stage}</span>
-          {guardianAutoMultiAgentSuppressed && <span style={{ fontSize: 10, color: "#f59e0b", padding: "2px 6px", borderRadius: 999, background: "rgba(245,158,11,0.10)" }}>用户接管</span>}
-        </div>
-      ) : (() => {
-        const chips: { label: string; value: number | string; color: string }[] = [];
-        if (collaborationSummary.running > 0) chips.push({ label: "运行", value: collaborationSummary.running, color: "#3b82f6" });
-        if (collaborationSummary.needsConfirmation > 0) chips.push({ label: "需确认", value: collaborationSummary.needsConfirmation, color: "#f97316" });
-        if (collaborationSummary.waiting > 0) chips.push({ label: "等待", value: collaborationSummary.waiting, color: "#8b5cf6" });
-        if (collaborationSummary.debugging > 0) chips.push({ label: "调试", value: collaborationSummary.debugging, color: "#f59e0b" });
-        if (collaborationSummary.review > 0) chips.push({ label: "审查", value: collaborationSummary.review, color: "#22c55e" });
-        if (collaborationSummary.blocked > 0) chips.push({ label: "阻塞", value: collaborationSummary.blocked, color: "#ef4444" });
-        if (collaborationSummary.artifactsTotal > 0) chips.push({ label: "产物", value: `${collaborationSummary.artifactsReady}/${collaborationSummary.artifactsTotal}`, color: "var(--text-muted)" });
-        return (
-          <div style={{ minWidth: 0, flex: 1, display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-            <span style={{ fontSize: 12, fontWeight: 750, letterSpacing: "0.01em" }}>协作</span>
-            <span style={{ fontSize: 11, color: "var(--text-muted)" }}>阶段：{collaborationSummary.stage}</span>
-            {guardianAutoMultiAgentSuppressed && <span style={{ fontSize: 10, color: "#f59e0b", padding: "2px 6px", borderRadius: 999, background: "rgba(245,158,11,0.10)" }}>用户接管</span>}
-            {collaborationSummary.needsConfirmation > 0 && (
-              <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#f97316", display: "inline-block", flexShrink: 0 }} />
-            )}
-            <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0, flexWrap: "wrap" }}>
-              {chips.map(({ label, value, color }) => (
-                <span key={label} style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "2px 7px", borderRadius: 999, background: "var(--bg-secondary)", fontSize: 10, color: "var(--text-muted)", whiteSpace: "nowrap" }}>
-                  <span style={{ color, fontWeight: 700 }}>{label}</span>
-                  <span>{value}</span>
+  const workflowSignalCount = collaborationSummary.running + collaborationSummary.waiting + collaborationSummary.needsConfirmation + collaborationSummary.blocked;
+  const hasWorkflowRuntimeSignals = Boolean(selectedSession?.id || orchestrateState.tasks.length || workflowSignalCount > 0 || collaborationSummary.artifactsTotal > 0);
+  const collaborationPanelBody = selectedSession?.id ? (
+    <div style={{ display: "grid", gap: 10, gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", marginTop: 10 }}>
+      <StageFlowView flowState={flowState} />
+      <ArtifactFlowView artifacts={orchestrateState.artifacts} />
+      <LedgerTimelineView events={orchestrateState.ledgerEvents} />
+      <div style={{ gridColumn: "1 / -1" }}>
+        <AgentDagView
+          tasks={orchestrateState.tasks}
+          artifacts={orchestrateState.artifacts}
+          onOpenTask={setFocusedAgentTaskId}
+          onSwitchModel={switchModel}
+          onAbortTask={abortTask}
+          onPauseTask={pauseTask}
+          onResumeTask={resumeTask}
+          pendingConfirmation={orchestrateState.pendingConfirmation}
+          onConfirm={confirmOrchestrate}
+        />
+      </div>
+      <div style={{ gridColumn: "1 / -1" }}>
+        <ProjectMemoryView memory={orchestrateState.projectMemory} onRefresh={() => orchestrateState.sessionId && void refreshProjectMemory(orchestrateState.sessionId)} onClearSummaries={() => void clearProjectSummaries()} />
+      </div>
+    </div>
+  ) : null;
+  const activeWorkflowTask = focusedAgentTaskId
+    ? orchestrateState.tasks.find((task) => task.id === focusedAgentTaskId) ?? null
+    : orchestrateState.tasks[0]
+      ? orchestrateState.tasks[0]
+      : null;
+  const workflowStages = activeWorkflowTask?.taskStages?.length
+    ? activeWorkflowTask.taskStages
+    : [
+        { name: "Dispatch", status: "completed", goal: "派发任务" },
+        { name: activeWorkflowTask?.currentTaskStage || "执行", status: activeWorkflowTask?.status === "completed" ? "completed" : "active", goal: activeWorkflowTask?.nextAction || activeWorkflowTask?.prompt || "任务执行中" },
+        { name: "结果聚合", status: activeWorkflowTask?.status === "completed" ? "completed" : "pending", goal: activeWorkflowTask?.leadDecision || "等待主线程汇总" },
+      ];
+  const workflowBody = (
+    <div className="codex-scroll-column" style={{ height: "100%", overflowY: selectedWorkflow ? "hidden" : "auto", padding: selectedWorkflow ? "8px 12px 12px" : "10px 16px 16px" }}>
+      <div style={{ display: "grid", gap: 12, height: selectedWorkflow ? "100%" : undefined, minHeight: 0 }}>
+        {!selectedWorkflow && hasWorkflowRuntimeSignals ? <div className="codex-card" style={{ borderRadius: 20, padding: "12px 16px" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+            <div>
+              <div style={{ fontSize: 18, fontWeight: 800, color: "var(--text)", marginBottom: 4 }}>
+                {activeWorkflowTask?.name || "Workflow"}
+              </div>
+              <div style={{ fontSize: 12, color: "var(--text-muted)" }}>
+                {activeWorkflowTask?.profileName || "Build your workflow by dragging profiles into the canvas."}
+              </div>
+            </div>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              {[
+                { label: "运行中", value: collaborationSummary.running, color: "#0a84ff" },
+                { label: "等待中", value: collaborationSummary.waiting, color: "#8b5cf6" },
+                { label: "需确认", value: collaborationSummary.needsConfirmation, color: "#f97316" },
+                { label: "阻塞", value: collaborationSummary.blocked, color: "#ef4444" },
+              ].filter((item) => item.value > 0).map((item) => (
+                <span key={item.label} className="codex-pill" style={{ fontSize: 11, color: "var(--text-muted)" }}>
+                  <span style={{ width: 7, height: 7, borderRadius: 999, background: item.color }} />
+                  <span style={{ color: item.color, fontWeight: 700 }}>{item.label}</span>
+                  <span>{item.value}</span>
                 </span>
               ))}
             </div>
           </div>
+        </div> : null}
+
+        {mainView === "workflow" && selectedWorkflow ? (
+          <WorkflowEditor
+            workflow={selectedWorkflow}
+            onBack={() => {
+              setSelectedWorkflow(null);
+              setMainView("workflow");
+            }}
+            onChange={handleWorkflowChange}
+            onDeleted={handleWorkflowDeleted}
+            onRan={handleWorkflowRan}
+          />
+        ) : (
+          <WorkflowFlashGuide onSelectWorkflow={(workflow) => {
+            setSelectedWorkflow(workflow);
+            setMainView("workflow");
+          }} />
+        )}
+
+        {!selectedWorkflow && hasWorkflowRuntimeSignals ? <details open className="codex-card" style={{ borderRadius: 22, padding: "16px 18px" }}>
+          <summary style={{ cursor: "pointer", listStyle: "none", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+            <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text-dim)" }}>
+              Workflow Runtime
+            </span>
+            <span style={{ fontSize: 11, color: "var(--text-muted)" }}>
+              {workflowSignalCount} active signals
+            </span>
+          </summary>
+          <div style={{ display: "grid", gap: 14, marginTop: 14 }}>
+            <div style={{ display: "flex", alignItems: "stretch", gap: 8, overflowX: "auto", paddingBottom: 4 }}>
+              {workflowStages.map((stage, index) => {
+                const status = stage.status || "pending";
+                const tone = status === "completed" ? "#22c55e" : status === "active" || status === "current" ? "#0a84ff" : "#94a3b8";
+                return (
+                  <div key={`${stage.name || stage.stage}-${index}`} style={{ display: "flex", alignItems: "center", minWidth: 180, flex: index === workflowStages.length - 1 ? "0 0 180px" : "0 0 220px" }}>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ width: 28, height: 28, borderRadius: 999, display: "flex", alignItems: "center", justifyContent: "center", background: `${tone}16`, color: tone, fontSize: 12, fontWeight: 800, marginBottom: 10 }}>
+                        {status === "completed" ? "✓" : status === "active" || status === "current" ? "●" : index + 1}
+                      </div>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text)", marginBottom: 4 }}>{stage.name || stage.stage || `Stage ${index + 1}`}</div>
+                      <div style={{ fontSize: 11, color: "var(--text-muted)", lineHeight: 1.7 }}>{stage.goal || "等待进入该阶段"}</div>
+                    </div>
+                    {index < workflowStages.length - 1 ? (
+                      <div style={{ width: 56, height: 1, background: status === "completed" ? "rgba(34,197,94,0.45)" : "color-mix(in srgb, var(--shell-edge) 80%, transparent)", margin: "0 10px" }} />
+                    ) : null}
+                  </div>
+                );
+              })}
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 12 }}>
+              <div style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.8 }}>
+                <div style={{ fontWeight: 700, color: "var(--text)", marginBottom: 6 }}>故障隔离</div>
+                重试上限：{activeWorkflowTask?.budget?.maxRetries ?? 0} · 超时：{activeWorkflowTask?.budget?.timeoutMs ? `${Math.round(activeWorkflowTask.budget.timeoutMs / 1000)}s` : "未设置"}
+                <br />
+                {activeWorkflowTask?.error || activeWorkflowTask?.leadDecisionReason || activeWorkflowTask?.definitionOfDone || "当前没有新的故障升级信息。"}
+              </div>
+              <div style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.8 }}>
+                <div style={{ fontWeight: 700, color: "var(--text)", marginBottom: 6 }}>下一动作</div>
+                {activeWorkflowTask?.nextAction || activeWorkflowTask?.handoff?.nextStep || "继续等待任务推进或切换回总览查看其他 agent。"}
+              </div>
+            </div>
+          </div>
+        </details> : null}
+
+        {!selectedWorkflow && hasWorkflowRuntimeSignals ? collaborationPanelBody : null}
+      </div>
+    </div>
+  );
+  const collaborationAccessory = showChat && workspaceMode !== "agent" ? (() => {
+    const activeTaskCount = orchestrateState.tasks.filter((task) => !["completed", "aborted"].includes(task.status)).length;
+    const latestProgress = orchestrateState.progressUpdates.at(-1);
+    const chips: { label: string; value: number | string; color: string }[] = [];
+    if (collaborationSummary.running > 0) chips.push({ label: "运行", value: collaborationSummary.running, color: "#0a84ff" });
+    if (collaborationSummary.needsConfirmation > 0) chips.push({ label: "需确认", value: collaborationSummary.needsConfirmation, color: "#f97316" });
+    if (collaborationSummary.waiting > 0) chips.push({ label: "等待", value: collaborationSummary.waiting, color: "#8b5cf6" });
+    if (collaborationSummary.debugging > 0) chips.push({ label: "调教", value: collaborationSummary.debugging, color: "#f59e0b" });
+    if (collaborationSummary.review > 0) chips.push({ label: "审查", value: collaborationSummary.review, color: "#22c55e" });
+    if (collaborationSummary.blocked > 0) chips.push({ label: "阻塞", value: collaborationSummary.blocked, color: "#ef4444" });
+    if (collaborationSummary.artifactsTotal > 0) chips.push({ label: "产物", value: `${collaborationSummary.artifactsReady}/${collaborationSummary.artifactsTotal}`, color: "var(--text-muted)" });
+    return (
+    <div style={{ width: "100%", display: "grid", gap: 8 }}>
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={selectedSession?.id ? () => setRightPanelOpen((v) => !v) : () => void pickDraftCwd()}
+        onKeyDown={(e) => {
+          if (e.key !== "Enter" && e.key !== " ") return;
+          e.preventDefault();
+          if (selectedSession?.id) setRightPanelOpen((v) => !v);
+          else void pickDraftCwd();
+        }}
+        style={{
+          width: "100%",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 12,
+          padding: 0,
+          background: "transparent",
+          border: "none",
+          color: "var(--text)",
+          cursor: "pointer",
+          textAlign: "left",
+        }}
+      >
+        {!selectedSession?.id ? (
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, minWidth: 0, width: "100%" }}>
+            <div style={{ minWidth: 0, flex: 1, display: "flex", alignItems: "center", gap: 10 }}>
+              <span style={{ fontSize: 12, fontWeight: 750, letterSpacing: "0.01em", flexShrink: 0 }}>地址</span>
+              <span style={{ fontSize: 11, color: newSessionCwd || activeCwd ? "var(--text-muted)" : "var(--text-dim)", fontFamily: "var(--font-mono)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={newSessionCwd || activeCwd || ""}>
+                {newSessionCwd || activeCwd || "先选择工作地址"}
+              </span>
+            </div>
+            <span style={{ fontSize: 10, color: "#f59e0b", padding: "2px 6px", borderRadius: 999, background: "rgba(245,158,11,0.10)", flexShrink: 0 }}>用户接管</span>
+          </div>
+        ) : (
+          <div style={{ minWidth: 0, flex: 1, display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 7, fontSize: 12, fontWeight: 800, letterSpacing: "0.01em" }}>
+              <span style={{ width: 7, height: 7, borderRadius: 999, background: multiAgentMode ? "#0a84ff" : "var(--border)", boxShadow: multiAgentMode ? "0 0 0 4px rgba(10,132,255,0.12)" : "none" }} />
+              多Agent
+            </span>
+            <span style={{ fontSize: 11, color: "var(--text-muted)" }}>
+              {multiAgentMode ? (latestProgress?.text || `阶段：${collaborationSummary.stage}`) : "关闭，下一条复杂消息走单Agent"}
+            </span>
+            {activeTaskCount > 0 && <span style={{ fontSize: 10, color: "#0a84ff", padding: "2px 7px", borderRadius: 999, background: "rgba(10,132,255,0.10)" }}>任务组运行中</span>}
+            {guardianAutoMultiAgentSuppressed && <span style={{ fontSize: 10, color: "#f59e0b", padding: "2px 6px", borderRadius: 999, background: "rgba(245,158,11,0.10)" }}>用户接管</span>}
+            {multiAgentMode ? (
+              <>
+              {collaborationSummary.needsConfirmation > 0 && (
+                <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#f97316", display: "inline-block", flexShrink: 0 }} />
+              )}
+              <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0, flexWrap: "wrap" }}>
+                {chips.map(({ label, value, color }) => (
+                  <span key={label} style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "2px 7px", borderRadius: 999, background: "var(--bg-secondary)", fontSize: 10, color: "var(--text-muted)", whiteSpace: "nowrap" }}>
+                    <span style={{ color, fontWeight: 700 }}>{label}</span>
+                    <span>{value}</span>
+                  </span>
+                ))}
+              </div>
+              </>
+            ) : null}
+          </div>
+        )}
+        {selectedSession?.id ? (
+          <button
+            onClick={(e) => { e.stopPropagation(); toggleMultiAgentMode(); }}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 7,
+              height: 28,
+              padding: "0 9px 0 4px",
+              borderRadius: 999,
+              border: multiAgentMode ? "1px solid rgba(10,132,255,0.45)" : "1px solid var(--border)",
+              cursor: "pointer",
+              background: multiAgentMode ? "#0a84ff" : "var(--bg-secondary)",
+              color: multiAgentMode ? "white" : "var(--text-muted)",
+              flexShrink: 0,
+              fontSize: 11,
+              fontWeight: 800,
+              letterSpacing: "0.02em",
+              boxShadow: multiAgentMode ? "0 8px 18px rgba(10,132,255,0.18)" : "none",
+              transition: "background 0.16s ease, color 0.16s ease, box-shadow 0.16s ease",
+            }}
+            title={multiAgentMode ? "关闭 Multi-Agent" : "开启 Multi-Agent"}
+          >
+            <span style={{ position: "relative", width: 22, height: 20, borderRadius: 999, background: multiAgentMode ? "rgba(255,255,255,0.22)" : "var(--border)", display: "inline-block" }}>
+              <span style={{ position: "absolute", top: 3, left: multiAgentMode ? 10 : 3, width: 14, height: 14, borderRadius: 999, background: multiAgentMode ? "white" : "var(--bg)", transition: "left 0.16s ease" }} />
+            </span>
+            {multiAgentMode ? "ON" : "OFF"}
+          </button>
+        ) : null}
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ transform: selectedSession?.id && rightPanelOpen ? "rotate(90deg)" : "none", transition: "transform 0.18s ease", color: "var(--text-muted)", flexShrink: 0 }}>
+          <polyline points="9 18 15 12 9 6" />
+        </svg>
+      </div>
+      {multiAgentSwitchNotice ? (
+        <div style={{ fontSize: 11, lineHeight: 1.5, color: "#0a84ff", background: "rgba(10,132,255,0.08)", border: "1px solid rgba(10,132,255,0.18)", borderRadius: 10, padding: "7px 9px" }}>
+          {multiAgentSwitchNotice}
+        </div>
+      ) : null}
+      {selectedSession?.id && multiAgentMode && rightPanelOpen ? collaborationPanelBody : null}
+    </div>
+    );
+  })() : null;
+
+  const trainRoundsPanel = showChat && orchestrateState.training?.rounds?.some((round) => round.status !== "discarded") ? (
+    <div style={{ display: "grid", gap: 8, padding: "8px 12px", borderBottom: "1px solid var(--border)", background: "color-mix(in srgb, var(--bg-panel) 78%, transparent)" }}>
+      {orchestrateState.training.rounds.filter((round) => round.status !== "discarded").map((round, index, rounds) => {
+        const latest = index === rounds.length - 1;
+        const open = openTrainRounds[round.round] ?? latest;
+        return (
+          <TrainRoundCard
+            key={`${round.round}-${round.timestamp || index}`}
+            sessionId={orchestrateState.sessionId}
+            round={round}
+            open={open}
+            detailState={trainRoundDetails[round.round]}
+            onToggle={(nextOpen) => {
+              setOpenTrainRounds((prev) => ({ ...prev, [round.round]: nextOpen }));
+              if (nextOpen) loadTrainRoundDetail(round.round);
+            }}
+          />
         );
-      })()}
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ transform: selectedSession?.id && rightPanelOpen ? "rotate(90deg)" : "none", transition: "transform 0.18s ease", color: "var(--text-muted)", flexShrink: 0 }}>
-        <polyline points="9 18 15 12 9 6" />
-      </svg>
+      })}
     </div>
   ) : null;
+  const trainCurrentRound = orchestrateState.training?.currentRound ?? 0;
+  const trainMaxRounds = orchestrateState.training?.maxRounds ?? 5;
+  const trainRunning = orchestrateState.training?.status === "running";
+  const trainAtLimit = trainCurrentRound >= trainMaxRounds && !trainRunning;
+  const trainCanSave = Boolean(orchestrateState.training) && trainCurrentRound >= 1 && !trainRunning;
 
   const sidebarContent = (
     <>
       <SessionSidebar
+        mode={mainView === "workflow" ? "workflow" : "chat"}
+        onModeChange={(mode) => {
+          setMainView(mode);
+          if (mode === "chat") setSelectedWorkflow(null);
+        }}
         selectedSessionId={selectedSession?.id ?? null}
         onSelectSession={handleSelectSession}
         onNewSession={handleNewSession}
@@ -774,9 +1279,6 @@ export function AppShell() {
         onSessionDeleted={handleSessionDeleted}
         selectedCwd={selectedSession?.cwd ?? newSessionCwd ?? null}
         onCwdChange={handleCwdChange}
-        onOpenFile={handleOpenFile}
-        explorerRefreshKey={explorerRefreshKey}
-        onAtMention={handleAtMention}
         selectedWorkflowId={selectedWorkflow?.id ?? null}
         onSelectWorkflow={handleSelectWorkflow}
         workflowRefreshKey={workflowRefreshKey}
@@ -794,6 +1296,19 @@ export function AppShell() {
                 <line x1="9" y1="20" x2="9" y2="23" /><line x1="15" y1="20" x2="15" y2="23" />
                 <line x1="20" y1="9" x2="23" y2="9" /><line x1="20" y1="14" x2="23" y2="14" />
                 <line x1="1" y1="9" x2="4" y2="9" /><line x1="1" y1="14" x2="4" y2="14" />
+              </svg>
+            ),
+          },
+          {
+            label: "Profiles",
+            onClick: () => setProfilesPanelOpen(true),
+            disabled: false,
+            icon: (
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="8" cy="8" r="3" />
+                <circle cx="16" cy="16" r="3" />
+                <path d="M11 8h3a2 2 0 0 1 2 2v3" />
+                <path d="M6 20v-1a4 4 0 0 1 4-4" />
               </svg>
             ),
           },
@@ -835,7 +1350,8 @@ export function AppShell() {
 
   return (
     <>
-    <div style={{ display: "flex", height: "100dvh", overflow: "hidden", background: "var(--bg)" }}>
+    <div style={{ height: "100dvh", overflow: "hidden", background: "transparent", padding: "14px" }}>
+    <div className="codex-shell" style={{ display: "flex", height: "calc(100dvh - 28px)", overflow: "hidden", background: "transparent", borderRadius: 28, position: "relative" }}>
       {/* Mobile overlay backdrop */}
       <div
         className="sidebar-overlay-backdrop"
@@ -855,92 +1371,35 @@ export function AppShell() {
       <div
         className={`sidebar-container${sidebarOpen ? " sidebar-open" : " sidebar-closed"}`}
         style={{
-          background: "var(--bg-panel)",
-          borderRight: "1px solid var(--border)",
+          background: "linear-gradient(180deg, color-mix(in srgb, var(--bg) 84%, transparent) 0%, color-mix(in srgb, var(--bg-panel) 92%, transparent) 100%)",
+          borderRight: "1px solid color-mix(in srgb, var(--shell-edge) 80%, transparent)",
           display: "flex",
           flexDirection: "column",
           flexShrink: 0,
           zIndex: 200,
           position: "relative",
           overflow: "hidden",
+          boxShadow: "var(--surface-shadow)",
         }}
       >
         {sidebarContent}
-        {rightPanelOpen && showChat && (
-          <div style={{
-            position: "absolute",
-            inset: 0,
-            background: "var(--bg-panel)",
-            zIndex: 20,
-            display: "flex",
-            flexDirection: "column",
-            minHeight: 0,
-          }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "12px 12px 10px", borderBottom: "1px solid var(--border)", minWidth: 0, flexShrink: 0 }}>
-              <button
-                onClick={() => setRightPanelOpen(false)}
-                style={{ width: 24, height: 24, borderRadius: 8, border: "none", background: "transparent", color: "var(--text-muted)", cursor: "pointer", flexShrink: 0 }}
-                title="收起协作区"
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="15 18 9 12 15 6" />
-                </svg>
-              </button>
-              <div style={{ minWidth: 0, flex: 1, fontSize: 12, fontWeight: 700, color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{conversationTitle}</div>
-              {!focusedAgentTaskId && orchestrateState.sessionId && orchestrateState.tasks.length > 0 ? <button onClick={() => void handleSaveWorkflow()} style={{ fontSize: 11, padding: "5px 8px", borderRadius: 8, border: "1px solid var(--border)", background: "var(--bg-secondary)", color: "var(--text)", cursor: "pointer", flexShrink: 0 }}>保存为 Workflow</button> : null}
-              <button
-                onClick={toggleMultiAgentMode}
-                style={{ width: 32, height: 18, borderRadius: 10, border: "none", cursor: "pointer", background: multiAgentMode ? "#3b82f6" : "var(--border)", position: "relative", flexShrink: 0 }}
-                title={multiAgentMode ? "关闭 Multi-Agent" : "开启 Multi-Agent"}
-              >
-                <span style={{ position: "absolute", top: 2, left: multiAgentMode ? 16 : 2, width: 14, height: 14, borderRadius: "50%", background: "#fff", transition: "left 0.2s" }} />
-              </button>
-            </div>
-            <div style={{ flex: 1, overflow: "auto", padding: 10 }}>
-              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                {focusedAgentTaskId ? (
-                  <AgentDetailView
-                    task={orchestrateState.tasks.find((t) => t.id === focusedAgentTaskId)}
-                    artifacts={orchestrateState.artifacts}
-                    onAbort={abortTask}
-                    onPause={pauseTask}
-                    onResume={resumeTask}
-                  />
-                ) : (
-                  <>
-                    <StageFlowView flowState={orchestrateState.flowState} />
-                    <ProjectMemoryView memory={orchestrateState.projectMemory} onRefresh={() => orchestrateState.sessionId && void refreshProjectMemory(orchestrateState.sessionId)} onClearSummaries={() => void clearProjectSummaries()} />
-                    <AgentDagView
-                      tasks={orchestrateState.tasks}
-                      artifacts={orchestrateState.artifacts}
-                      onOpenTask={setFocusedAgentTaskId}
-                      onSwitchModel={switchModel}
-                      onAbortTask={abortTask}
-                      onPauseTask={pauseTask}
-                      onResumeTask={resumeTask}
-                      pendingConfirmation={orchestrateState.pendingConfirmation}
-                      onConfirm={confirmOrchestrate}
-                    />
-                    <ArtifactFlowView artifacts={orchestrateState.artifacts} />
-                  </>
-                )}
-              </div>
-            </div>
-          </div>
+        {false && rightPanelOpen && showChat && (
+          <div />
         )}
       </div>
 
       {/* Center: chat */}
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", minWidth: 0 }}>
+      <div className="app-shell-main" style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", minWidth: 0 }}>
         {/* Top bar with sidebar toggle */}
-        <div ref={topBarRef} style={{ display: "flex", alignItems: "center", flexShrink: 0, borderBottom: "1px solid var(--border)", height: 36, background: "var(--bg-panel)" }}>
+        <div ref={topBarRef} className="codex-top-hover-zone" style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0, borderBottom: "1px solid color-mix(in srgb, var(--shell-edge) 36%, transparent)", minHeight: 42, padding: "6px 12px", background: "linear-gradient(180deg, color-mix(in srgb, var(--bg) 76%, transparent) 0%, color-mix(in srgb, var(--bg) 26%, transparent) 72%, transparent 100%)" }}>
           <button
             onClick={() => setSidebarOpen((v) => !v)}
             title={sidebarOpen ? "Hide sidebar" : "Show sidebar"}
             style={{
               display: "flex", alignItems: "center", justifyContent: "center",
-              width: 36, height: 36, padding: 0,
-              background: "none", border: "none", borderRight: "1px solid var(--border)",
+              width: 30, height: 30, padding: 0,
+              background: "color-mix(in srgb, var(--bg) 50%, transparent)", border: "1px solid color-mix(in srgb, var(--shell-edge) 64%, transparent)",
+              borderRadius: 10,
               color: "var(--text-muted)", cursor: "pointer", flexShrink: 0, transition: "color 0.12s",
             }}
             onMouseEnter={(e) => { e.currentTarget.style.color = "var(--text)"; }}
@@ -956,41 +1415,95 @@ export function AppShell() {
               </svg>
             )}
           </button>
-          {selectedSession ? <button onClick={() => void handlePromoteSessionProfile()} title="保存当前对话为 Profile" style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 36, padding: "0 10px", background: "none", border: "none", borderRight: "1px solid var(--border)", color: "var(--text-muted)", cursor: "pointer", flexShrink: 0, transition: "color 0.12s", fontSize: 12, fontWeight: 600 }} onMouseEnter={(e) => { e.currentTarget.style.color = "var(--text)"; }} onMouseLeave={(e) => { e.currentTarget.style.color = "var(--text-muted)"; }}>保存为Profile</button> : null}
-          <button onClick={() => setProfilesPanelOpen(true)} title="管理 Profile 名称" style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 36, padding: "0 10px", background: "none", border: "none", borderRight: "1px solid var(--border)", color: "var(--text-muted)", cursor: "pointer", flexShrink: 0, transition: "color 0.12s", fontSize: 12, fontWeight: 600 }} onMouseEnter={(e) => { e.currentTarget.style.color = "var(--text)"; }} onMouseLeave={(e) => { e.currentTarget.style.color = "var(--text-muted)"; }}>Profile</button>
-          <button
-            onClick={(e) => {
-              const rect = e.currentTarget.getBoundingClientRect();
-              toggleTheme({ x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 });
-            }}
-            title={isDark ? "Switch to light mode" : "Switch to dark mode"}
-            aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
-            aria-pressed={isDark}
-            style={{
-              display: "flex", alignItems: "center", justifyContent: "center",
-              width: 36, height: 36, padding: 0,
-              background: "none", border: "none", borderRight: "1px solid var(--border)",
-              color: "var(--text-muted)", cursor: "pointer", flexShrink: 0, transition: "color 0.12s",
-            }}
-            onMouseEnter={(e) => { e.currentTarget.style.color = "var(--text)"; }}
-            onMouseLeave={(e) => { e.currentTarget.style.color = "var(--text-muted)"; }}
-          >
-            {isDark ? (
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="5" />
-                <line x1="12" y1="1" x2="12" y2="3" /><line x1="12" y1="21" x2="12" y2="23" />
-                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" /><line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
-                <line x1="1" y1="12" x2="3" y2="12" /><line x1="21" y1="12" x2="23" y2="12" />
-                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" /><line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
-              </svg>
-            ) : (
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
-              </svg>
-            )}
-          </button>
-          {showChat && (
-            <div style={{ display: "flex", alignItems: "stretch", height: "100%" }}>
+          <div style={{ minWidth: 0, flex: 1 }} />
+          {mainView === "chat" && showChat && selectedSession?.id && (
+            <div className="codex-top-reveal codex-segmented" style={{ marginLeft: "auto" }}>
+              <button
+                onClick={() => void handleTrainClick()}
+                disabled={trainAtLimit}
+                title="Train current task against a high-end challenger"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                  minHeight: 34,
+                  padding: "0 12px",
+                  border: "none",
+                  color: "var(--text-muted)",
+                  cursor: trainAtLimit ? "not-allowed" : "pointer",
+                  opacity: trainAtLimit ? 0.45 : 1,
+                  flexShrink: 0,
+                  fontSize: 11,
+                  whiteSpace: "nowrap",
+                  transition: "color 0.1s, background 0.1s, opacity 0.1s",
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.color = "var(--text)"; e.currentTarget.style.background = "color-mix(in srgb, var(--bg-hover) 80%, var(--bg))"; }}
+                onMouseLeave={(e) => { e.currentTarget.style.color = "var(--text-muted)"; e.currentTarget.style.background = "none"; }}
+              >
+                <span>{trainRunning ? trainStatusText(orchestrateState.training?.phase) : "Train"}</span>
+                <span style={{ color: "var(--text-dim)" }}>第 {Math.min(trainCurrentRound + (trainRunning ? 1 : 0), trainMaxRounds)}/{trainMaxRounds} 轮</span>
+              </button>
+              <button
+                onClick={openTrainSave}
+                disabled={!trainCanSave}
+                title="Save trained shadow patches as a Profile"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                  minHeight: 34,
+                  padding: "0 12px",
+                  border: "none",
+                  color: trainCanSave ? "var(--text-muted)" : "var(--text-dim)",
+                  cursor: trainCanSave ? "pointer" : "not-allowed",
+                  opacity: trainCanSave ? 1 : 0.45,
+                  flexShrink: 0,
+                  fontSize: 11,
+                  whiteSpace: "nowrap",
+                  transition: "color 0.1s, background 0.1s, opacity 0.1s",
+                }}
+                onMouseEnter={(e) => {
+                  if (!trainCanSave) return;
+                  e.currentTarget.style.color = "var(--text)";
+                  e.currentTarget.style.background = "color-mix(in srgb, var(--bg-hover) 80%, var(--bg))";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = trainCanSave ? "var(--text-muted)" : "var(--text-dim)";
+                  e.currentTarget.style.background = "none";
+                }}
+              >
+                <span>Save</span>
+              </button>
+              {trainSaveOpen ? (
+                <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "0 6px" }}>
+                  <input
+                    value={trainSaveName}
+                    onChange={(event) => setTrainSaveName(event.target.value)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter") void handleSaveTrain();
+                      if (event.key === "Escape") setTrainSaveOpen(false);
+                    }}
+                    placeholder="Profile name"
+                    style={{ height: 28, width: 210, borderRadius: 8, border: "1px solid var(--border)", background: "var(--bg)", color: "var(--text)", padding: "0 9px", fontSize: 11 }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => void handleSaveTrain()}
+                    disabled={trainSaveBusy || !trainSaveName.trim()}
+                    style={{ border: "1px solid var(--border)", background: "var(--bg-secondary)", color: "var(--text)", borderRadius: 8, height: 28, padding: "0 8px", cursor: trainSaveBusy ? "default" : "pointer", fontSize: 11 }}
+                  >
+                    {trainSaveBusy ? "Saving..." : "Save"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setTrainSaveOpen(false)}
+                    disabled={trainSaveBusy}
+                    style={{ border: "1px solid var(--border)", background: "var(--bg-secondary)", color: "var(--text-muted)", borderRadius: 8, height: 28, padding: "0 8px", cursor: "pointer", fontSize: 11 }}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              ) : null}
               <button
                 onClick={handleExportSession}
                 disabled={!selectedSession}
@@ -1000,12 +1513,9 @@ export function AppShell() {
                   display: "flex",
                   alignItems: "center",
                   gap: 6,
-                  height: "100%",
+                  minHeight: 34,
                   padding: "0 12px",
-                  background: "none",
                   border: "none",
-                  borderTop: "2px solid transparent",
-                  borderRight: "1px solid var(--border)",
                   color: selectedSession ? "var(--text-muted)" : "var(--text-dim)",
                   cursor: selectedSession ? "pointer" : "not-allowed",
                   opacity: selectedSession ? 1 : 0.45,
@@ -1017,7 +1527,7 @@ export function AppShell() {
                 onMouseEnter={(e) => {
                   if (!selectedSession) return;
                   e.currentTarget.style.color = "var(--text)";
-                  e.currentTarget.style.background = "var(--bg-hover)";
+                  e.currentTarget.style.background = "color-mix(in srgb, var(--bg-hover) 80%, var(--bg))";
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.color = selectedSession ? "var(--text-muted)" : "var(--text-dim)";
@@ -1058,11 +1568,9 @@ export function AppShell() {
                 onClick={() => toggleTopPanel("system")}
                 style={{
                   display: "flex", alignItems: "center", gap: 6,
-                  height: "100%", padding: "0 12px",
-                  background: activeTopPanel === "system" ? "var(--bg-selected)" : "none",
+                  minHeight: 34, padding: "0 12px",
+                  background: activeTopPanel === "system" ? "color-mix(in srgb, var(--accent) 10%, var(--bg))" : "transparent",
                   border: "none",
-                  borderTop: activeTopPanel === "system" ? "2px solid var(--accent)" : "2px solid transparent",
-                  borderRight: "1px solid var(--border)",
                   cursor: "pointer",
                   color: activeTopPanel === "system" ? "var(--text)" : "var(--text-muted)",
                   fontSize: 11, whiteSpace: "nowrap", transition: "color 0.1s, background 0.1s",
@@ -1081,7 +1589,7 @@ export function AppShell() {
             </div>
           )}
           {/* Session stats — right-aligned in top bar */}
-          {showChat && (sessionStats || contextUsage) && (() => {
+          {mainView === "chat" && showChat && selectedSession?.id && (sessionStats || contextUsage) && (() => {
             const t = sessionStats?.tokens;
             const c = sessionStats?.cost ?? 0;
             const fmt = (n: number) => n >= 1_000_000 ? `${(n / 1_000_000).toFixed(1)}M` : n >= 1000 ? `${(n / 1000).toFixed(0)}k` : String(n);
@@ -1113,15 +1621,19 @@ export function AppShell() {
             return (
               <div
                 title={tooltip}
+                className="codex-top-reveal"
                 style={{
                   marginLeft: "auto",
                   display: "flex", alignItems: "center", gap: 10,
                   paddingLeft: 12,
-                  paddingRight: rightPanelOpen ? 12 : 48,
-                  height: "100%",
+                  paddingRight: rightPanelOpen ? 12 : 0,
                   fontSize: 11, color: "var(--text-muted)",
                   whiteSpace: "nowrap", cursor: "default",
                   fontVariantNumeric: "tabular-nums",
+                  minHeight: 34,
+                  borderRadius: 999,
+                  border: "1px solid color-mix(in srgb, var(--shell-edge) 85%, transparent)",
+                  background: "color-mix(in srgb, var(--bg) 82%, transparent)",
                 }}
               >
                 {t && t.input > 0 && (
@@ -1175,7 +1687,7 @@ export function AppShell() {
             }}>
               {activeTopPanel === "system" && (
                 <div style={{
-                  background: "var(--bg-panel)",
+                  background: "var(--panel-gradient)",
                   borderBottom: "1px solid var(--border)",
                 }}>
                   {systemPrompt ? (
@@ -1208,42 +1720,45 @@ export function AppShell() {
         </div>
 
         {/* Chat / file preview content */}
-        <div style={{ flex: 1, overflow: "hidden", position: "relative", display: filePreviewMode ? "flex" : "block" }}>
+        <div style={{ flex: 1, overflow: "hidden", position: "relative", display: filePreviewMode ? "flex" : "block", background: "linear-gradient(180deg, color-mix(in srgb, var(--bg) 95%, transparent) 0%, color-mix(in srgb, var(--bg-panel) 88%, transparent) 100%)" }}>
           {filePreviewMode && activeFileTab ? (
             <>
               <div style={{ width: 360, minWidth: 280, maxWidth: 440, borderRight: "1px solid var(--border)", overflow: "hidden", display: "flex", flexDirection: "column", background: "var(--bg)" }}>
                 {showChat ? (
-                  <ChatWindow
-                    session={selectedSession}
-                    newSessionCwd={effectiveNewSessionCwd}
-                    onAgentEnd={handleAgentEnd}
-                    onSessionCreated={handleSessionCreated}
-                    onSessionForked={handleSessionForked}
-                    modelsRefreshKey={modelsRefreshKey}
-                    chatInputRef={chatInputRef}
-                    onBranchDataChange={handleBranchDataChange}
-                    onSystemPromptChange={handleSystemPromptChange}
-                    onSessionStatsChange={handleSessionStatsChange}
-                    onContextUsageChange={handleContextUsageChange}
-                    onSendOverride={handleFileContextSend}
-                    externalMessages={multiAgentMessages}
-                    inputPlaceholder={activeFileTab ? `针对当前文件提问：${activeFileTab.filePath}` : "Message…"}
-                    inputAccessory={collaborationAccessory}
-                  />
-                ) : <div style={{ padding: 16, color: "var(--text-muted)", fontSize: 12 }}>无主会话</div>}
+                  <div style={{ display: "flex", flexDirection: "column", height: "100%", minHeight: 0 }}>
+                    {trainRoundsPanel}
+                    <ChatWindow
+                      session={selectedSession}
+                      newSessionCwd={effectiveNewSessionCwd}
+                      onAgentEnd={handleAgentEnd}
+                      onSessionCreated={handleSessionCreated}
+                      onSessionForked={handleSessionForked}
+                      modelsRefreshKey={modelsRefreshKey}
+                      chatInputRef={chatInputRef}
+                      onBranchDataChange={handleBranchDataChange}
+                      onSystemPromptChange={handleSystemPromptChange}
+                      onSessionStatsChange={handleSessionStatsChange}
+                      onContextUsageChange={handleContextUsageChange}
+                      onSendOverride={handleFileContextSend}
+                      externalMessages={multiAgentMessages}
+                      inputPlaceholder={activeFileTab ? `Ask about file: ${activeFileTab.filePath}` : "Message…"}
+                      inputAccessory={collaborationAccessory}
+                    />
+                  </div>
+                ) : <div style={{ padding: 16, color: "var(--text-muted)", fontSize: 12 }}>No active session</div>}
               </div>
               <div style={{ flex: 1, minWidth: 0, overflow: "hidden", display: "flex", flexDirection: "column" }}>
                 <div style={{ height: 34, borderBottom: "1px solid var(--border)", display: "flex", alignItems: "center", gap: 8, padding: "0 10px", background: "var(--bg-panel)", flexShrink: 0 }}>
-                  <span style={{ fontSize: 12, color: "var(--text-muted)" }}>文件预览</span>
+                  <span style={{ fontSize: 12, color: "var(--text-muted)" }}>Preview</span>
                   <span style={{ fontSize: 12, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{activeFileTab.filePath}</span>
-                  <button onClick={() => setActiveFileTabId(null)} style={{ marginLeft: "auto", fontSize: 12, border: "1px solid var(--border)", background: "var(--bg)", color: "var(--text)", borderRadius: 6, padding: "3px 8px", cursor: "pointer" }}>关闭</button>
+                  <button onClick={() => setActiveFileTabId(null)} style={{ marginLeft: "auto", fontSize: 12, border: "1px solid var(--border)", background: "var(--bg)", color: "var(--text)", borderRadius: 6, padding: "3px 8px", cursor: "pointer" }}>Close</button>
                 </div>
                 <div style={{ flex: 1, overflow: "auto" }}>
                   <FileViewer filePath={activeFileTab.filePath} cwd={activeCwd ?? undefined} />
                 </div>
               </div>
             </>
-          ) : focusedAgentTaskId && orchestrateState.tasks.find((t) => t.id === focusedAgentTaskId) ? (
+          ) : mainView !== "workflow" && focusedAgentTaskId && orchestrateState.tasks.find((t) => t.id === focusedAgentTaskId) ? (
             <AgentWorkbench
               task={orchestrateState.tasks.find((t) => t.id === focusedAgentTaskId)!}
               sessionId={orchestrateState.sessionId}
@@ -1253,47 +1768,83 @@ export function AppShell() {
               onPromoteTaskSkills={promoteTaskSkills}
               onRenameProfile={handleRenameProfile}
             />
-          ) : showWorkflow && selectedWorkflow ? (
-            <WorkflowEditor
-              workflow={selectedWorkflow}
-              onBack={() => setSelectedWorkflow(null)}
-              onChange={handleWorkflowChange}
-              onDeleted={handleWorkflowDeleted}
-              onRan={handleWorkflowRan}
+          ) : mainView === "workflow" && focusedAgentTaskId && orchestrateState.tasks.find((t) => t.id === focusedAgentTaskId) ? (
+            <AgentWorkbench
+              task={orchestrateState.tasks.find((t) => t.id === focusedAgentTaskId)!}
+              sessionId={orchestrateState.sessionId}
+              onBack={() => {
+                setFocusedAgentTaskId(null);
+                setMainView("workflow");
+              }}
+              onRerun={rerunTask}
+              onPromoteProfile={promoteProfile}
+              onPromoteTaskSkills={promoteTaskSkills}
+              onRenameProfile={handleRenameProfile}
             />
+          ) : mainView === "workflow" ? (
+            workflowBody
           ) : showChat ? (
-            <ChatWindow
-              session={selectedSession}
-              newSessionCwd={effectiveNewSessionCwd}
-              onAgentEnd={handleAgentEnd}
-              onSessionCreated={handleSessionCreated}
-              onSessionForked={handleSessionForked}
-              modelsRefreshKey={modelsRefreshKey}
-              chatInputRef={chatInputRef}
-              onBranchDataChange={handleBranchDataChange}
-              onSystemPromptChange={handleSystemPromptChange}
-              onSessionStatsChange={handleSessionStatsChange}
-              onContextUsageChange={handleContextUsageChange}
-              onSendOverride={handleGuardianRoutedSend}
-              externalMessages={multiAgentMessages}
-              inputPlaceholder={!selectedSession?.id && !(newSessionCwd ?? activeCwd) ? "先选择工作地址，再发送第一句消息…" : "Message…"}
-              inputAccessory={collaborationAccessory}
-            />
+            <div style={{ display: "flex", flexDirection: "column", height: "100%", minHeight: 0 }}>
+              {trainRoundsPanel}
+              <ChatWindow
+                session={selectedSession}
+                newSessionCwd={effectiveNewSessionCwd}
+                onAgentEnd={handleAgentEnd}
+                onSessionCreated={handleSessionCreated}
+                onSessionForked={handleSessionForked}
+                modelsRefreshKey={modelsRefreshKey}
+                chatInputRef={chatInputRef}
+                onBranchDataChange={handleBranchDataChange}
+                onSystemPromptChange={handleSystemPromptChange}
+                onSessionStatsChange={handleSessionStatsChange}
+                onContextUsageChange={handleContextUsageChange}
+                onSendOverride={handleGuardianRoutedSend}
+                externalMessages={multiAgentMessages}
+                inputPlaceholder={!selectedSession?.id && !(newSessionCwd ?? activeCwd) ? "Select a directory to start…" : "Message…"}
+                inputAccessory={collaborationAccessory}
+              />
+            </div>
           ) : showPlaceholder ? (
             activeCwd ? (
               <div style={{ height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-muted)", fontSize: 15 }}>
                 Select a session from the sidebar
               </div>
             ) : (
-              <div style={{ position: "absolute", top: 12, left: 12, display: "flex", alignItems: "flex-start", gap: 8, userSelect: "none", pointerEvents: "none" }}>
-                <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.7, flexShrink: 0 }}>
-                  <line x1="20" y1="12" x2="4" y2="12" /><polyline points="10 6 4 12 10 18" />
-                </svg>
-                <div>
-                  <div style={{ fontSize: 18, fontWeight: 600, color: "var(--text)", marginBottom: 8 }}>Get Started</div>
-                  <div style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.8 }}>
-                    <span style={{ color: "var(--text-dim)", marginRight: 6 }}>1.</span>Select a project directory from the sidebar<br />
-                    <span style={{ color: "var(--text-dim)", marginRight: 6 }}>2.</span>Add models via the <strong style={{ color: "var(--text)" }}>Models</strong> button at the bottom
+              <div style={{ height: "100%", display: "flex", alignItems: "center", justifyContent: "center", padding: 28 }}>
+                <div className="codex-card" style={{ width: "min(720px, 100%)", borderRadius: 28, padding: "28px 30px", display: "grid", gap: 18, background: "linear-gradient(135deg, color-mix(in srgb, var(--accent) 5%, var(--bg)) 0%, color-mix(in srgb, var(--bg-panel) 92%, transparent) 100%)" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                    <div style={{ width: 52, height: 52, borderRadius: 18, display: "flex", alignItems: "center", justifyContent: "center", background: "color-mix(in srgb, var(--accent) 12%, var(--bg))", color: "var(--accent)" }}>
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M7 20h10" />
+                        <path d="M10 20c5.5-2.5.8-6.4 3-10" />
+                        <path d="M9.5 9.4c.6-1.9 2.1-3.1 4.1-3.8" />
+                        <path d="M14.5 3c2.7 1.1 4.5 3.5 4.5 6.5 0 4.5-4 6.8-7 8.5" />
+                        <path d="M5 10c0-2.1 1.1-3.9 2.8-5" />
+                      </svg>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 22, fontWeight: 800, color: "var(--text)", letterSpacing: "-0.03em", marginBottom: 6 }}>Start a Codex-style workspace</div>
+                      <div style={{ fontSize: 13, color: "var(--text-muted)", lineHeight: 1.7 }}>
+                        Pick a project, open a session, and keep chat, files, workflows, and multi-agent state in one surface.
+                      </div>
+                    </div>
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12 }}>
+                    <div className="codex-card" style={{ borderRadius: 20, padding: "16px 16px 14px" }}>
+                      <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text-dim)", marginBottom: 6 }}>1. Project</div>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)", marginBottom: 4 }}>Choose a workspace folder</div>
+                      <div style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.7 }}>Bind sessions, files, and workflows to the same repo from the left project switcher.</div>
+                    </div>
+                    <div className="codex-card" style={{ borderRadius: 20, padding: "16px 16px 14px" }}>
+                      <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text-dim)", marginBottom: 6 }}>2. Models</div>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)", marginBottom: 4 }}>Connect model profiles</div>
+                      <div style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.7 }}>Add or switch model profiles from the footer so the composer can route work immediately.</div>
+                    </div>
+                    <div className="codex-card" style={{ borderRadius: 20, padding: "16px 16px 14px" }}>
+                      <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text-dim)", marginBottom: 6 }}>3. Collaborate</div>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)", marginBottom: 4 }}>Run chat or multi-agent</div>
+                      <div style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.7 }}>Stay in one transcript while the orchestration strip exposes progress, retries, and escalation state.</div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1304,12 +1855,99 @@ export function AppShell() {
 
 
     </div>
+    </div>
 
     {modelsConfigOpen && <ModelsConfig onClose={() => { setModelsConfigOpen(false); setModelsRefreshKey((k) => k + 1); }} />}
+    {profilesPanelOpen && <ProfilesPanel onClose={() => setProfilesPanelOpen(false)} />}
     {skillsConfigOpen && (activeCwd ?? selectedSession?.cwd ?? newSessionCwd) && (
       <SkillsConfig cwd={(activeCwd ?? selectedSession?.cwd ?? newSessionCwd)!} onClose={() => setSkillsConfigOpen(false)} />
     )}
-    {profilesPanelOpen && <ProfilesPanel onClose={() => setProfilesPanelOpen(false)} />}
     </>
+  );
+}
+
+function TrainRoundCard({
+  sessionId,
+  round,
+  open,
+  detailState,
+  onToggle,
+}: {
+  sessionId: string | null;
+  round: TrainRound;
+  open: boolean;
+  detailState: TrainRoundDetailState;
+  onToggle: (open: boolean) => void;
+}) {
+  const detail = detailState?.status === "loaded" ? detailState.detail : null;
+  const suggestion = detail?.suggestion || round.suggestion;
+  const alignment = detail?.alignment || round.alignment;
+  const challengerText = detail?.challengerOutput || detail?.challenger_output || round.challengerPreview || "";
+  const afterText = detail?.base_output_after || round.baseAfterPreview || "";
+  const suggestionText = suggestion
+    ? `${suggestion.target_file}#${suggestion.target_section}\n${suggestion.change_type}: ${suggestion.after || ""}\n\n${suggestion.rationale || ""}`
+    : "";
+  const chars = [
+    alignment?.score ? `对齐 ${alignment.score}/100` : "",
+    round.challengerChars ? `高端 ${round.challengerChars.toLocaleString()} chars` : "",
+    round.baseAfterChars ? `重跑 ${round.baseAfterChars.toLocaleString()} chars` : "",
+  ].filter(Boolean).join(" · ");
+
+  return (
+    <details
+      open={open}
+      onToggle={(event) => onToggle(event.currentTarget.open)}
+      style={{ border: "1px solid var(--border)", borderRadius: 10, background: "var(--bg)", overflow: "hidden" }}
+    >
+      <summary style={{ cursor: "pointer", padding: "8px 10px", listStyle: "none", display: "flex", justifyContent: "space-between", gap: 12, fontSize: 12 }}>
+        <span style={{ fontWeight: 700, color: "var(--text)", whiteSpace: "nowrap" }}>Round {round.round}</span>
+        <span style={{ color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          {round.summary || round.suggestion?.rationale || "训练轮次完成"}
+        </span>
+        {chars ? <span style={{ color: "var(--text-dim)", whiteSpace: "nowrap" }}>{chars}</span> : null}
+      </summary>
+      {open ? (
+        <div style={{ display: "grid", gap: 8, padding: "0 10px 10px", fontSize: 12, color: "var(--text-muted)" }}>
+          {!sessionId ? (
+            <div style={{ color: "var(--text-dim)" }}>等待 session 连接…</div>
+          ) : detailState?.status === "loading" ? (
+            <div style={{ color: "var(--text-dim)" }}>正在加载本轮详情…</div>
+          ) : detailState?.status === "error" ? (
+            <div style={{ color: "#ef4444" }}>详情加载失败：{detailState.error}</div>
+          ) : null}
+          {alignment ? (
+            <div style={{ display: "flex", gap: 8, alignItems: "center", padding: "6px 8px", border: "1px solid var(--border)", borderRadius: 8, background: "color-mix(in srgb, var(--bg-panel) 72%, transparent)" }}>
+              <span style={{ fontWeight: 800, color: alignment.score >= 80 ? "#22c55e" : "#f59e0b" }}>对齐分 {alignment.score}/100</span>
+              <span style={{ color: "var(--text-dim)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{alignment.reason || alignment.remaining_gap || "已完成对齐评估"}</span>
+            </div>
+          ) : null}
+          <TrainSection title="高端模型输出" text={challengerText} />
+          <TrainSection title="改进意见" text={suggestionText} />
+          <TrainSection title="当前模型新输出" text={afterText} />
+        </div>
+      ) : null}
+    </details>
+  );
+}
+
+function TrainSection({ title, text }: { title: string; text: string }) {
+  return (
+    <section style={{ display: "grid", gap: 5 }}>
+      <div style={{ fontSize: 11, fontWeight: 800, color: "var(--text)", letterSpacing: "0.02em" }}>{title}</div>
+      <div style={{
+        maxHeight: 220,
+        overflow: "auto",
+        whiteSpace: "pre-wrap",
+        fontFamily: "var(--font-mono)",
+        lineHeight: 1.55,
+        padding: "8px 10px",
+        borderRadius: 8,
+        border: "1px solid var(--border)",
+        background: "color-mix(in srgb, var(--bg-panel) 72%, transparent)",
+        color: "var(--text-muted)",
+      }}>
+        {text || "无"}
+      </div>
+    </section>
   );
 }

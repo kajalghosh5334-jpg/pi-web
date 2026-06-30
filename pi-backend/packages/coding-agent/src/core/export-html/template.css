@@ -353,10 +353,10 @@
     }
 
     .user-message {
-      background: var(--userMessageBg);
+      background: transparent;
       color: var(--userMessageText);
-      padding: var(--line-height);
-      border-radius: 4px;
+      padding: 0;
+      border-radius: 0;
       position: relative;
     }
 
@@ -890,10 +890,10 @@
     }
 
     .markdown-content code {
-      background: rgba(128, 128, 128, 0.2);
+      background: transparent;
       color: var(--mdCode);
       padding: 0 4px;
-      border-radius: 3px;
+      border-radius: 6px;
       font-family: inherit;
     }
 
@@ -901,11 +901,14 @@
       background: transparent;
       margin: var(--line-height) 0;
       overflow-x: auto;
+      border-radius: 10px;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.12);
+      padding: 12px 16px;
     }
 
     .markdown-content pre code {
       display: block;
-      background: none;
+      background: none !important;
       color: var(--text);
     }
 

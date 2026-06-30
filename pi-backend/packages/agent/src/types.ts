@@ -422,6 +422,9 @@ export type AgentEvent =
 	// Only emitted for assistant messages during streaming
 	| { type: "message_update"; message: AgentMessage; assistantMessageEvent: AssistantMessageEvent }
 	| { type: "message_end"; message: AgentMessage }
+	// Final output lifecycle - emitted when the agent has finished internal reasoning and the
+	// current assistant response is the final user-visible output for this run.
+	| { type: "final_output_started"; message: AgentMessage; ts: number }
 	// Tool execution lifecycle
 	| { type: "tool_execution_start"; toolCallId: string; toolName: string; args: any }
 	| { type: "tool_execution_update"; toolCallId: string; toolName: string; args: any; partialResult: any }

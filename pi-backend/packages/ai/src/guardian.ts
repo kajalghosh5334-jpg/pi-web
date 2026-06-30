@@ -62,6 +62,7 @@ export class Guardian {
 				to: "fallback",
 				reason: "timeout",
 				taskId,
+				timestamp: Date.now(),
 			};
 		}
 
@@ -78,6 +79,7 @@ export class Guardian {
 			to: "fallback",
 			reason: "failure",
 			taskId,
+			timestamp: Date.now(),
 		};
 	}
 

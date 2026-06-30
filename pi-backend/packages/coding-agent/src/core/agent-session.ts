@@ -274,6 +274,12 @@ export class AgentSession {
 	private _unsubscribeAgent?: () => void;
 	private _eventListeners: AgentSessionEventListener[] = [];
 
+	// ponytail: final_output_started is emitted by each inner agent loop, but a single
+	// user prompt may trigger multiple loops (retry/compaction/queued messages). We
+	// suppress intermediate events and emit one true final event after _runAgentPrompt.
+	private _suppressFinalOutputStarted = false;
+	private _pendingFinalOutputMessage?: AgentMessage;
+
 	/** Tracks pending steering messages for UI display. Removed when delivered. */
 	private _steeringMessages: string[] = [];
 	/** Tracks pending follow-up messages for UI display. Removed when delivered. */
@@ -486,6 +492,17 @@ export class AgentSession {
 
 	/** Internal handler for agent events - shared by subscribe and reconnect */
 	private _handleAgentEvent = async (event: AgentEvent): Promise<void> => {
+		if (event.type === "agent_start") {
+			this._pendingFinalOutputMessage = undefined;
+		}
+
+		if (event.type === "final_output_started") {
+			if (this._suppressFinalOutputStarted) {
+				this._pendingFinalOutputMessage = event.message;
+				return;
+			}
+		}
+
 		// When a user message starts, check if it's from either queue and remove it BEFORE emitting
 		// This ensures the UI sees the updated queue state
 		if (event.type === "message_start" && event.message.role === "user") {
@@ -946,13 +963,20 @@ export class AgentSession {
 	// =========================================================================
 
 	private async _runAgentPrompt(messages: AgentMessage | AgentMessage[]): Promise<void> {
+		this._suppressFinalOutputStarted = true;
+		this._pendingFinalOutputMessage = undefined;
 		try {
 			await this.agent.prompt(messages);
 			while (await this._handlePostAgentRun()) {
 				await this.agent.continue();
 			}
 		} finally {
+			this._suppressFinalOutputStarted = false;
 			this._flushPendingBashMessages();
+		}
+		if (this._pendingFinalOutputMessage) {
+			this._emit({ type: "final_output_started", message: this._pendingFinalOutputMessage, ts: Date.now() });
+			this._pendingFinalOutputMessage = undefined;
 		}
 	}
 

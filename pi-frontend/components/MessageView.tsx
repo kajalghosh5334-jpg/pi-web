@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { MarkdownBody } from "./MarkdownBody";
 import type {
   AgentMessage,
@@ -26,7 +26,9 @@ interface Props {
   prevAssistantEntryId?: string;
   onEditContent?: (content: string) => void;
   showTimestamp?: boolean;
-  prevTimestamp?: number;
+  agentRunning?: boolean;
+  finalOutputStarted?: boolean;
+  runSteps?: Step[];
 }
 
 function formatTime(ts?: number): string | null {
@@ -65,12 +67,12 @@ function copyText(text: string): Promise<void> {
   }
 }
 
-export function MessageView({ message, isStreaming, toolResults, modelNames, entryId, onFork, forking, onNavigate, prevAssistantEntryId, onEditContent, showTimestamp, prevTimestamp }: Props) {
+export function MessageView({ message, isStreaming, toolResults, entryId, onFork, forking, onNavigate, prevAssistantEntryId, onEditContent, showTimestamp, agentRunning, finalOutputStarted, runSteps }: Props) {
   if (message.role === "user") {
     return <UserMessageView message={message as UserMessage} entryId={entryId} onFork={onFork} forking={forking} onNavigate={onNavigate} prevAssistantEntryId={prevAssistantEntryId} onEditContent={onEditContent} />;
   }
   if (message.role === "assistant") {
-    return <AssistantMessageView message={message as AssistantMessage} isStreaming={isStreaming} toolResults={toolResults} modelNames={modelNames} showTimestamp={showTimestamp} prevTimestamp={prevTimestamp} />;
+    return <AssistantMessageView message={message as AssistantMessage} isStreaming={isStreaming} toolResults={toolResults} showTimestamp={showTimestamp} agentRunning={agentRunning} finalOutputStarted={finalOutputStarted} runSteps={runSteps} />;
   }
   if (message.role === "toolResult") {
     // Rendered inline under its toolCall — skip standalone rendering if paired
@@ -120,19 +122,15 @@ function UserMessageView({ message, entryId, onFork, forking, onNavigate, prevAs
 
   return (
     <div
-      style={{ marginBottom: 16, display: "flex", flexDirection: "column", alignItems: "flex-end" }}
+      style={{ marginBottom: 18, display: "flex", flexDirection: "column", alignItems: "flex-end" }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
-      <div style={{ display: "flex", alignItems: "flex-end", gap: 6, maxWidth: "85%" }}>
+      <div style={{ display: "flex", alignItems: "flex-end", gap: 6, maxWidth: "min(860px, 92%)" }}>
         <div
           style={{
             flex: 1,
             minWidth: 0,
-            background: "var(--user-bg)",
-            border: "1px solid rgba(59,130,246,0.2)",
-            borderRadius: 12,
-            padding: "8px 12px",
             fontSize: 14,
             lineHeight: 1.6,
             color: "var(--text)",
@@ -184,10 +182,11 @@ function UserMessageView({ message, entryId, onFork, forking, onNavigate, prevAs
             <button
               onClick={copyContent}
               title="Copy message"
+              className="message-meta-button"
               style={{
                 display: "flex", alignItems: "center", gap: 4,
                 padding: "3px 8px", height: 22,
-                background: "none", border: "none",
+                background: "transparent", border: "1px solid transparent",
                 borderRadius: 5,
                 color: copied ? "var(--accent)" : "var(--text-dim)",
                 cursor: "pointer",
@@ -222,10 +221,11 @@ function UserMessageView({ message, entryId, onFork, forking, onNavigate, prevAs
                 <button
                   onClick={() => { onNavigate!(prevAssistantEntryId!); onEditContent?.(content); }}
                   title="Edit from here — branches within this session"
+                  className="message-meta-button"
                   style={{
                     display: "flex", alignItems: "center", gap: 4,
                     padding: "3px 8px", height: 22,
-                    background: "none", border: "none",
+                    background: "transparent", border: "1px solid transparent",
                     borderRadius: 5,
                     color: "var(--text-dim)",
                     cursor: "pointer",
@@ -248,10 +248,11 @@ function UserMessageView({ message, entryId, onFork, forking, onNavigate, prevAs
                   onClick={() => { onFork!(entryId!); }}
                   disabled={forking}
                   title={forking ? "Creating new session…" : "New session — creates an independent copy from here"}
+                  className="message-meta-button"
                   style={{
                     display: "flex", alignItems: "center", gap: 4,
                     padding: "3px 8px", height: 22,
-                    background: "none", border: "none",
+                    background: "transparent", border: "1px solid transparent",
                     borderRadius: 5,
                     color: forking ? "var(--accent)" : "var(--text-dim)",
                     cursor: forking ? "not-allowed" : "pointer",
@@ -294,7 +295,7 @@ function CustomMessageView({ message, showTimestamp }: { message: Extract<AgentM
   const isProgress = message.customType === "collaboration_progress";
   return (
     <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
-      <div style={{ maxWidth: "88%", width: "fit-content", minWidth: 320, borderRadius: 14, border: `1px solid ${isProgress ? "rgba(245,158,11,0.24)" : "var(--border)"}`, background: isProgress ? "rgba(245,158,11,0.08)" : "var(--bg-secondary)", padding: "10px 12px" }}>
+      <div style={{ maxWidth: "100%", width: "fit-content", minWidth: 320, borderLeft: isProgress ? "2px solid #f59e0b" : "none", paddingLeft: isProgress ? 10 : 0 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
           <span style={{ fontSize: 12, fontWeight: 700, color: isProgress ? "#f59e0b" : "var(--text)" }}>{isProgress ? "协作进展" : "系统消息"}</span>
         </div>
@@ -311,58 +312,31 @@ function AssistantMessageView({
   message,
   isStreaming,
   toolResults,
-  modelNames,
   showTimestamp,
-  prevTimestamp,
+  agentRunning,
+  finalOutputStarted,
+  runSteps,
 }: {
   message: AssistantMessage;
   isStreaming?: boolean;
   toolResults?: Map<string, ToolResultMessage>;
-  modelNames?: Record<string, string>;
   showTimestamp?: boolean;
-  prevTimestamp?: number;
+  agentRunning?: boolean;
+  finalOutputStarted?: boolean;
+  runSteps?: Step[];
 }) {
   const time = showTimestamp ? formatTime(message.timestamp) : null;
-  const blocks = message.content ?? [];
+  const blocks = useMemo(() => message.content ?? [], [message.content]);
   const [hovered, setHovered] = useState(false);
   const [copied, setCopied] = useState(false);
-  const streamStartRef = useRef<number | null>(null);
-  const [tps, setTps] = useState<number | null>(null);
-  const blocksRef = useRef(blocks);
-  blocksRef.current = blocks;
-
-  // Streaming-based timing for thinking blocks
-  const blockStartTimesRef = useRef<Map<number, number>>(new Map());
-  const [streamingDurations, setStreamingDurations] = useState<Map<number, number>>(new Map());
-
-  // Thinking duration derived from file timestamps: time from prev message end to this message end
-  // This is the total generation time (thinking + any text before first tool call)
-  const thinkingDurationFromFile = useMemo<number | undefined>(() => {
-    if (!message.timestamp || !prevTimestamp) return undefined;
-    const secs = Math.round((message.timestamp - prevTimestamp) / 1000);
-    return secs > 0 ? secs : undefined;
-  }, [message.timestamp, prevTimestamp]);
-
-  // Tool call durations derived from session file timestamps (accurate for completed messages)
-  // assistant message timestamp = when generation ended = when tools started running
-  // toolResult timestamp = when tool execution finished
-  const toolCallDurations = useMemo<Map<string, number>>(() => {
-    const map = new Map<string, number>();
-    if (!toolResults || !message.timestamp) return map;
-    for (const [callId, result] of toolResults) {
-      if (result.timestamp && message.timestamp) {
-        const secs = Math.round((result.timestamp - message.timestamp) / 1000);
-        if (secs > 0) map.set(callId, secs);
-      }
-    }
-    return map;
-  }, [toolResults, message.timestamp]);
 
   const resultBlocks = blocks.filter((b): b is TextContent => b.type === "text" && !!stripThinkingTags(b.text));
-  const toolBlocks = blocks.filter((b): b is ToolCallContent => b.type === "toolCall");
   const textContent = resultBlocks
     .map((b) => stripThinkingTags(b.text))
     .join("\n");
+
+  // ponytail: ordered execution steps for the new single-node status line
+  const orderedSteps = useMemo(() => deriveSteps(blocks, toolResults), [blocks, toolResults]);
 
   const copyContent = () => {
     copyText(textContent).then(() => {
@@ -371,92 +345,36 @@ function AssistantMessageView({
     });
   };
 
-  useEffect(() => {
-    if (!isStreaming) {
-      // Finalise any un-finished thinking block durations on stream end
-      const now = Date.now();
-      setStreamingDurations((prev: Map<number, number>) => {
-        const next = new Map(prev);
-        for (const [idx, start] of blockStartTimesRef.current) {
-          if (!next.has(idx)) next.set(idx, Math.round((now - start) / 1000));
-        }
-        return next;
-      });
-      streamStartRef.current = null;
-      setTps(null);
-      return;
-    }
-    const tick = () => {
-      const bs = blocksRef.current;
-      const now = Date.now();
-
-      // Record start time for each block the first time we see it
-      bs.forEach((_, i) => {
-        if (!blockStartTimesRef.current.has(i)) blockStartTimesRef.current.set(i, now);
-      });
-
-      // When a non-last block has a successor already started, finalise its duration
-      setStreamingDurations((prev: Map<number, number>) => {
-        let changed = false;
-        const next = new Map(prev);
-        for (let i = 0; i < bs.length - 1; i++) {
-          if (!next.has(i) && blockStartTimesRef.current.has(i)) {
-            const start = blockStartTimesRef.current.get(i)!;
-            const nextStart = blockStartTimesRef.current.get(i + 1) ?? now;
-            next.set(i, Math.round((nextStart - start) / 1000));
-            changed = true;
-          }
-        }
-        return changed ? next : prev;
-      });
-
-      let chars = 0;
-      for (const b of bs) {
-        if (b.type === "text") chars += (b as TextContent).text?.length ?? 0;
-        else if (b.type === "thinking") chars += (b as ThinkingContent).thinking?.length ?? 0;
-        else if (b.type === "toolCall") chars += JSON.stringify((b as ToolCallContent).input ?? {}).length;
-      }
-      if (chars === 0) return;
-      if (streamStartRef.current === null) streamStartRef.current = now;
-      const elapsed = (now - streamStartRef.current) / 1000;
-      if (elapsed > 0.5) setTps(chars / 4 / elapsed);
-    };
-    const id = setInterval(tick, 300);
-    return () => clearInterval(id);
-  }, [isStreaming]);
+  // ponytail: removed 300ms setInterval that drove per-message streaming timing & tps.
+  // Streaming duration display isn't worth the n×300ms re-render cost.
 
   return (
     <div
-      style={{ marginBottom: 16 }}
+      style={{ marginBottom: 20 }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
-      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-        {resultBlocks.map((block, index) => (
-          <TextBlock key={`result-${index}`} block={block} isStreaming={isStreaming} />
-        ))}
-      </div>
-
-      {!isStreaming && (toolBlocks.length > 0 || message.usage || message.provider) && (
-        <details style={{ marginTop: 8 }}>
-          <summary style={{ cursor: "pointer", fontSize: 12, color: "var(--text-dim)", userSelect: "none" }}>查看执行详情</summary>
-          <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 8 }}>
-            {message.provider && (
-              <div style={{ fontSize: 11, color: "var(--text-dim)" }}>
-                模型：{modelNames?.[`${message.provider}:${message.model}`] ?? modelNames?.[message.model] ?? message.model}
-              </div>
-            )}
-            {message.usage && (
-              <div style={{ fontSize: 11, color: "var(--text-dim)" }}>
-                {formatUsage(message.usage)}
-              </div>
-            )}
-            {toolBlocks.length > 0 && (
-              <ToolTraceGroup blocks={toolBlocks} toolResults={toolResults} toolCallDurations={toolCallDurations} title="工具日志" />
-            )}
-          </div>
-        </details>
+      {/* Execution trace — single-node status line, collapsible history.
+          Only the last assistant message in the run gets the status line;
+          earlier messages skip it so history shows exactly one per agent run. */}
+      {((orderedSteps.length > 0 || isStreaming) && runSteps !== undefined) && (
+        <ThinkingStatusLine
+          steps={orderedSteps}
+          runSteps={runSteps}
+          isStreaming={!!isStreaming}
+          agentRunning={!!agentRunning}
+          finalOutputStarted={!!finalOutputStarted}
+        />
       )}
+
+      {/* Text blocks — the final summary */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        <div style={{ maxWidth: "100%" }}>
+          {resultBlocks.map((block, index) => (
+            <TextBlock key={`result-${index}`} block={block} isStreaming={isStreaming} />
+          ))}
+        </div>
+      </div>
 
       <div style={{
         display: "flex", alignItems: "center", gap: 8, marginTop: 4,
@@ -465,10 +383,11 @@ function AssistantMessageView({
           <button
             onClick={copyContent}
             title="Copy message"
+            className="message-meta-button"
             style={{
               display: "flex", alignItems: "center", gap: 4,
               padding: "3px 8px", height: 22,
-              background: "none", border: "none",
+              background: "transparent", border: "1px solid transparent",
               borderRadius: 5,
               color: copied ? "var(--accent)" : "var(--text-dim)",
               cursor: "pointer",
@@ -502,411 +421,349 @@ function AssistantMessageView({
   );
 }
 
-function BlockView({ block, toolResults, isStreaming, streamingDuration, toolCallDurations }: { block: AssistantContentBlock; toolResults?: Map<string, ToolResultMessage>; isStreaming?: boolean; streamingDuration?: number; toolCallDurations?: Map<string, number> }) {
-  if (block.type === "text") {
-    return <TextBlock block={block as TextContent} isStreaming={isStreaming} />;
-  }
-  if (block.type === "thinking") {
-    return null;
-  }
-  if (block.type === "toolCall") {
-    const tc = block as ToolCallContent;
-    const result = toolResults?.get(tc.toolCallId);
-    const duration = toolCallDurations?.get(tc.toolCallId);
-    return <ToolCallBlock block={tc} result={result} duration={duration} forceExpand={isStreaming} />;
-  }
-  return null;
-}
-
 function TextBlock({ block, isStreaming }: { block: TextContent; isStreaming?: boolean }) {
   const text = stripThinkingTags(block.text);
   if (!text) return null;
   return <MarkdownBody isStreaming={isStreaming}>{text}</MarkdownBody>;
 }
 
-function ThinkingBlock({ block, duration }: { block: ThinkingContent; duration?: number }) {
+function firstSentence(text: string): string {
+  const t = text.trim().replace(/\s+/g, " ");
+  const separators = [".", "!", "?", "。", "！", "？", "\n"];
+  let end = -1;
+  for (const sep of separators) {
+    const idx = t.indexOf(sep);
+    if (idx !== -1 && (end === -1 || idx < end)) end = idx;
+  }
+  const s = end === -1 ? t.slice(0, 100) : t.slice(0, end + 1).trim();
+  // ponytail: ignore fragments: too short, only punctuation, or a single word
+  if (!s || s.length < 4 || /^[\s\p{P}\p{S}]+$/u.test(s) || (s.length < 12 && !s.includes(" "))) return "";
+  return s;
+}
+
+// ponytail: some providers stream tool arguments as thinking text before the
+// toolCall block arrives; never show paths/json/"no output" in the status line.
+function isToolLikeFragment(text: string): boolean {
+  const t = text.trim();
+  if (t.startsWith("/") || t.startsWith("\\")) return true;
+  if (/^[\[{]/.test(t) && /[}\]]$/.test(t)) return true;
+  const slashCount = (t.match(/\//g) || []).length;
+  const sepCount = (t.match(/[\r\n]/g) || []).length;
+  if (slashCount >= 2 && (slashCount > t.split(/\s+/).length || sepCount >= 2)) return true;
+  if (/\bno output\b|\bundefined\b|\bnull\b/i.test(t)) return true;
+  return false;
+}
+
+export interface Step {
+  type: "thinking" | "tool_call";
+  statusText: string; // shown in the single-node status line while streaming
+  summary: string;    // shown in the collapsed history list
+  full: string;       // shown when a history entry is expanded
+}
+
+export function deriveSteps(
+  blocks: AssistantContentBlock[],
+  toolResults?: Map<string, ToolResultMessage>
+): Step[] {
+  const steps: Step[] = [];
+  for (let i = 0; i < blocks.length; i++) {
+    const b = blocks[i];
+    if (b.type === "thinking") {
+      const text = (b as ThinkingContent).thinking.trim();
+      if (!text) continue;
+      // ponytail: type-based split — thinking blocks preview the first sentence
+      const sent = firstSentence(text);
+      if (!sent || isToolLikeFragment(text)) continue;
+      steps.push({ type: "thinking", statusText: sent, summary: "思考：" + sent, full: text });
+    } else if (b.type === "toolCall") {
+      const tc = b as ToolCallContent;
+      // ponytail: type-based split — tool calls show a fixed label, never input/output
+      if (!tc.toolName) continue;
+      const result = toolResults?.get(tc.toolCallId);
+      const status = result ? (result.isError ? "错误" : "完成") : "执行中";
+      steps.push({
+        type: "tool_call",
+        statusText: "调用工具：" + tc.toolName,
+        summary: "工具调用：" + tc.toolName,
+        full: `工具：${tc.toolName}\n状态：${status}`,
+      });
+    }
+  }
+  return steps;
+}
+
+export function ThinkingStatusLine({
+  steps,
+  runSteps,
+  isStreaming,
+  agentRunning,
+  finalOutputStarted,
+}: {
+  steps: Step[];
+  runSteps?: Step[];
+  isStreaming: boolean;
+  agentRunning: boolean;
+  finalOutputStarted: boolean;
+}) {
   const [expanded, setExpanded] = useState(false);
+  const [openEntries, setOpenEntries] = useState<Set<number>>(new Set());
+  const [displayText, setDisplayText] = useState("");
+  const [fading, setFading] = useState(false);
+  const currentIdRef = useRef<string>("");
+  const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const startedAtRef = useRef<number | null>(null);
+
+  const showStatusLine = isStreaming || (agentRunning && !finalOutputStarted);
+  // ponytail: expanded history shows the whole agent-run trace, not just this message
+  const historySteps = runSteps ?? steps;
+
+  // ponytail: track duration with a tick counter (avoids setState inside interval causing infinite loops)
+  const [tick, setTick] = useState(0);
+  useEffect(() => {
+    if (!showStatusLine) return;
+    startedAtRef.current ??= Date.now();
+    const id = setInterval(() => setTick((t) => t + 1), 1000);
+    return () => clearInterval(id);
+  }, [showStatusLine]);
+  // ponytail: duration derived from tick counter, stable across renders
+  const duration = startedAtRef.current
+    ? Math.max(1, Math.round((Date.now() - startedAtRef.current) / 1000))
+    : 0;
+
+  // Collapse when the thinking phase ends.
+  useEffect(() => {
+    if (!showStatusLine) setExpanded(false);
+  }, [showStatusLine]);
+
+  // Single-node status text animation: placeholder -> content, same node, opacity transition.
+  useEffect(() => {
+    timersRef.current.forEach(clearTimeout);
+    timersRef.current = [];
+
+    const schedule = (fn: () => void, delay: number) => {
+      const id = setTimeout(fn, delay);
+      timersRef.current.push(id);
+    };
+
+    const animateTo = (text: string, then?: () => void) => {
+      setFading(true);
+      schedule(() => {
+        setDisplayText(text);
+        setFading(false);
+        then?.();
+      }, 180);
+    };
+
+    if (!showStatusLine) {
+      setDisplayText("");
+      currentIdRef.current = "";
+      return;
+    }
+
+    const currentStep = steps[steps.length - 1] ?? null;
+    const currentId = currentStep ? `${steps.length - 1}-${currentStep.type}` : "";
+
+    if (!currentStep) {
+      animateTo("思考中…");
+      currentIdRef.current = currentId;
+      return;
+    }
+
+    const placeholder = currentStep.type === "thinking" ? "思考中…" : "调用工具…";
+    // ponytail: while a thinking block is still streaming, keep the placeholder so
+    // partial first-sentence extraction doesn't flash meaningless fragments.
+    // When streaming ends, still use the placeholder to avoid long text overflowing the status line.
+    const targetText = currentStep.type === "thinking"
+      ? placeholder
+      : currentStep.statusText || placeholder;
+
+    if (currentId !== currentIdRef.current) {
+      currentIdRef.current = currentId;
+      animateTo(placeholder, () => {
+        schedule(() => animateTo(targetText), 350);
+      });
+    } else {
+      animateTo(targetText);
+    }
+
+    return () => timersRef.current.forEach(clearTimeout);
+  }, [steps, showStatusLine]);
+
+  if (!showStatusLine && steps.length === 0) return null;
+
   return (
-    <div
-      style={{
-        border: "1px solid var(--border)",
-        borderRadius: 6,
-        overflow: "hidden",
-        fontSize: 13,
-      }}
-    >
-      <button
-        onClick={() => setExpanded((v) => !v)}
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 6,
-          width: "100%",
-          padding: "6px 10px",
-          background: "var(--bg-panel)",
-          border: "none",
-          color: "var(--text-muted)",
-          cursor: "pointer",
-          fontSize: 12,
-          textAlign: "left",
-        }}
-      >
-        <span>Thinking</span>
-        {duration !== undefined && (
-          <span style={{ marginLeft: "auto", fontSize: 11, color: "var(--text-dim)", fontVariantNumeric: "tabular-nums" }}>{duration}s</span>
-        )}
-      </button>
-      {expanded && (
+    <div style={{ marginBottom: 10 }}>
+      {showStatusLine && (
         <div
           style={{
-            padding: "8px 10px",
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            fontSize: 13,
             color: "var(--text-muted)",
-            fontSize: 12,
-            lineHeight: 1.6,
-            whiteSpace: "pre-wrap",
-            background: "var(--bg-panel)",
-            borderTop: "1px solid var(--border)",
-          }}
-        >
-          {block.thinking}
-        </div>
-      )}
-    </div>
-  );
-}
-
-
-function ToolCallBlock({ block, result, duration, forceExpand }: { block: ToolCallContent; result?: ToolResultMessage; duration?: number; forceExpand?: boolean }) {
-  // ponytail: default collapsed except during streaming (forceExpand) or on error
-  const [expanded, setExpanded] = useState(forceExpand || (result?.isError ?? false));
-  // track when a streaming tool gets its result — collapse after completion
-  useEffect(() => {
-    if (forceExpand && result && !result.isError) setExpanded(false);
-  }, [forceExpand, result]);
-  const inputStr = JSON.stringify(block.input, null, 2);
-
-  // Result display
-  const resultText = result
-    ? result.content.filter((b): b is { type: "text"; text: string } => b.type === "text").map((b) => b.text).join("\n")
-    : null;
-  const resultIsEmpty = resultText === null ? false : (resultText.trim() === "(no output)" || resultText.trim() === "");
-  const isError = result?.isError ?? false;
-
-  return (
-    <div
-      style={{
-        borderRadius: 7,
-        overflow: "hidden",
-        fontSize: 12,
-        border: isError ? "1px solid rgba(248,113,113,0.45)" : "1px solid rgba(34,197,94,0.25)",
-        background: isError ? "rgba(248,113,113,0.05)" : "rgba(34,197,94,0.04)",
-      }}
-    >
-      {/* ── Tool call header ── */}
-      <button
-        onClick={() => setExpanded((v) => !v)}
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 7,
-          width: "100%",
-          padding: "6px 10px",
-          background: "none",
-          border: "none",
-          color: "var(--text-muted)",
-          cursor: "pointer",
-          fontSize: 12,
-          textAlign: "left",
-          minWidth: 0,
-        }}
-      >
-        <span style={{ color: isError ? "#f87171" : "#16a34a", fontFamily: "var(--font-mono)", fontWeight: 600, fontSize: 11, flexShrink: 0 }}>
-          {block.toolName}
-        </span>
-        <span style={{ color: "var(--text-dim)", fontFamily: "var(--font-mono)", fontSize: 11, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1, minWidth: 0 }}>
-          {getToolPreview(block)}
-        </span>
-        {duration !== undefined && (
-          <span style={{ fontSize: 11, color: "var(--text-dim)", flexShrink: 0, fontVariantNumeric: "tabular-nums" }}>{duration}s</span>
-        )}
-        <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="var(--text-dim)" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, transform: expanded ? "rotate(180deg)" : "none", transition: "transform 0.15s" }}>
-          <polyline points="2 3.5 5 6.5 8 3.5" />
-        </svg>
-      </button>
-
-      {/* ── Expanded: input args ── */}
-      {expanded && (
-        <pre
-          style={{
-            margin: 0,
-            padding: "8px 10px",
-            color: "var(--text-muted)",
-            fontSize: 12,
             lineHeight: 1.5,
-            overflow: "auto",
-            background: "var(--bg-subtle)",
-            borderTop: isError ? "1px solid rgba(248,113,113,0.25)" : "1px solid rgba(34,197,94,0.2)",
-            whiteSpace: "pre-wrap",
-            wordBreak: "break-all",
+            minHeight: 34,
+            width: "fit-content",
+            maxWidth: "100%",
+            padding: "7px 11px",
+            borderRadius: 999,
+            border: "1px solid rgba(10,132,255,0.18)",
+            background: "linear-gradient(90deg, rgba(10,132,255,0.09), color-mix(in srgb, var(--bg) 92%, rgba(10,132,255,0.03)))",
+            boxShadow: "0 8px 24px -18px rgba(10,132,255,0.55)",
           }}
         >
-          {inputStr}
-        </pre>
-      )}
-
-      {/* ── Paired result — only shown when expanded ── */}
-      {expanded && result && (
-        <PairedResult
-          text={resultText ?? ""}
-          isEmpty={resultIsEmpty}
-          isError={isError}
-        />
-      )}
-    </div>
-  );
-}
-
-function PairedResult({ text, isEmpty, isError }: {
-  text: string;
-  isEmpty: boolean;
-  isError: boolean;
-}) {
-  return (
-    <div
-      style={{
-        borderTop: `1px solid ${isError ? "rgba(248,113,113,0.3)" : "rgba(34,197,94,0.15)"}`,
-        background: isError ? "rgba(248,113,113,0.04)" : "var(--bg-subtle)",
-      }}
-    >
-      <pre
-        style={{
-          margin: 0,
-          padding: "8px 10px",
-          color: isError ? "#f87171" : (isEmpty ? "var(--text-dim)" : "var(--text-muted)"),
-          fontSize: 12,
-          lineHeight: 1.5,
-          overflow: "auto",
-          maxHeight: 400,
-          background: "var(--bg)",
-          whiteSpace: "pre-wrap",
-          wordBreak: "break-all",
-          fontStyle: isEmpty ? "italic" : "normal",
-          opacity: isEmpty ? 0.6 : 1,
-        }}
-      >
-        {isEmpty ? "(no output)" : text}
-      </pre>
-    </div>
-  );
-}
-
-// ── Tool trace group: aggregates consecutive tool calls into one collapsible row ──
-
-function renderBlocksWithToolGroups(
-  blocks: AssistantContentBlock[],
-  toolResults: Map<string, ToolResultMessage> | undefined,
-  isStreaming: boolean | undefined,
-  streamingDurations: Map<number, number>,
-  thinkingDurationFromFile: number | undefined,
-  toolCallDurations: Map<string, number>,
-): React.ReactNode[] {
-  const nodes: React.ReactNode[] = [];
-  let toolGroupStart = -1;
-  let pendingThinking: number[] = []; // thinking block indices absorbed by tool group
-
-  const flushToolGroup = (endExclusive: number) => {
-    if (toolGroupStart < 0) return;
-    const groupBlocks = [];
-    for (let j = toolGroupStart; j < endExclusive; j++) {
-      if (blocks[j].type === "toolCall" || blocks[j].type === "thinking") {
-        groupBlocks.push(blocks[j]);
-      }
-    }
-    const toolBlocks = groupBlocks.filter((b) => b.type === "toolCall") as ToolCallContent[];
-    if (toolBlocks.length === 1 && pendingThinking.length === 0) {
-      nodes.push(<ToolCallBlock key={toolBlocks[0].toolCallId} block={toolBlocks[0]} result={toolResults?.get(toolBlocks[0].toolCallId)} duration={toolCallDurations?.get(toolBlocks[0].toolCallId)} forceExpand={isStreaming} />);
-    } else {
-      nodes.push(
-        <ToolTraceGroup
-          key={`trace-${toolBlocks[0].toolCallId}`}
-          blocks={toolBlocks}
-          toolResults={toolResults}
-          toolCallDurations={toolCallDurations}
-        />,
-      );
-    }
-    toolGroupStart = -1;
-    pendingThinking = [];
-  };
-
-  for (let i = 0; i < blocks.length; i++) {
-    const block = blocks[i];
-    if (block.type === "thinking") {
-      if (toolGroupStart >= 0) {
-        // thinking inside a tool group — absorb it, don't break the group
-        pendingThinking.push(i);
-      } else {
-        // standalone thinking outside any tool group — render normally
-        nodes.push(
-          <BlockView
-            key={i}
-            block={block}
-            toolResults={toolResults}
-            isStreaming={isStreaming}
-            streamingDuration={streamingDurations.get(i) ?? (block.type === "thinking" ? thinkingDurationFromFile : undefined)}
-            toolCallDurations={toolCallDurations}
-          />,
-        );
-      }
-    } else if (block.type === "toolCall") {
-      if (toolGroupStart < 0) toolGroupStart = i;
-    } else {
-      flushToolGroup(i);
-      nodes.push(
-        <BlockView
-          key={i}
-          block={block}
-          toolResults={toolResults}
-          isStreaming={isStreaming}
-          streamingDuration={streamingDurations.get(i) ?? undefined}
-          toolCallDurations={toolCallDurations}
-        />,
-      );
-    }
-  }
-  flushToolGroup(blocks.length);
-  return nodes;
-}
-
-export function ToolTraceGroup({ blocks, toolResults, toolCallDurations, title = "执行详情" }: {
-  blocks: ToolCallContent[];
-  toolResults?: Map<string, ToolResultMessage>;
-  toolCallDurations?: Map<string, number>;
-  title?: string;
-}) {
-  const [expanded, setExpanded] = useState(false);
-
-  const totalDuration = blocks.reduce((sum, b) => sum + (toolCallDurations?.get(b.toolCallId) ?? 0), 0);
-  const counts: Record<string, number> = {};
-  const editPaths: string[] = [];
-  const writePaths: string[] = [];
-  const errorNames: string[] = [];
-  const commandPreviews: string[] = [];
-
-  for (const b of blocks) {
-    counts[b.toolName] = (counts[b.toolName] ?? 0) + 1;
-    const result = toolResults?.get(b.toolCallId);
-    if (result?.isError) errorNames.push(getToolPreview(b));
-    if (b.toolName === "edit" && b.input?.file_path) editPaths.push(shortPath(String(b.input.file_path)));
-    if (b.toolName === "write" && b.input?.file_path) writePaths.push(shortPath(String(b.input.file_path)));
-    if (b.toolName === "bash" && b.input?.command) commandPreviews.push(String(b.input.command).slice(0, 80));
-  }
-
-  const modifiedFiles = [...editPaths, ...writePaths];
-  const hasError = errorNames.length > 0;
-  const hasModifications = modifiedFiles.length > 0;
-
-  const countParts = Object.entries(counts).map(([name, n]) => `${toolLabel(name)} ${n}`);
-
-  return (
-    <div
-      style={{
-        borderRadius: 7,
-        overflow: "hidden",
-        fontSize: 12,
-        border: hasError ? "1px solid rgba(248,113,113,0.35)" : "1px solid var(--border)",
-        background: hasError ? "rgba(248,113,113,0.04)" : "var(--bg-subtle)",
-      }}
-    >
-      <button
-        onClick={() => setExpanded((v) => !v)}
-        style={{
-          display: "flex", alignItems: "center", gap: 8,
-          width: "100%", padding: "6px 10px",
-          background: "none", border: "none",
-          color: hasError ? "#f87171" : "var(--text-muted)",
-          cursor: "pointer", fontSize: 12, textAlign: "left", minWidth: 0,
-        }}
-      >
-        <span style={{ flexShrink: 0 }}>
-          {hasError ? "⚠" : "⚙"}
-        </span>
-        <span style={{ flex: 1, minWidth: 0 }}>
-          {title}
-        </span>
-        {hasModifications && (
-          <span style={{ color: "#16a34a", fontSize: 11, flexShrink: 0, maxWidth: 160, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-            修改 {modifiedFiles.length} 个文件
+          <span
+            style={{
+              width: 8,
+              height: 8,
+              borderRadius: "50%",
+              background: "#0a84ff",
+              flex: "0 0 auto",
+              animation: "thinking-dot-pulse 1.1s ease-in-out infinite",
+            }}
+          />
+          <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase", color: "#0a84ff", flex: "0 0 auto" }}>Running</span>
+          <span
+            style={{
+              transition: "opacity .18s ease",
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              opacity: fading ? 0 : 1,
+              minWidth: 0,
+              flex: "1 1 auto",
+            }}
+          >
+            {displayText}
           </span>
-        )}
-        {hasError && (
-          <span style={{ color: "#f87171", fontSize: 11, flexShrink: 0 }}>
-            {errorNames.length} 个错误
-          </span>
-        )}
-        <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" style={{ flexShrink: 0, transform: expanded ? "rotate(180deg)" : "none", transition: "transform 0.15s" }}>
-          <polyline points="2 3.5 5 6.5 8 3.5" />
-        </svg>
-      </button>
-
-      {expanded && hasModifications && (
-        <div style={{ padding: "4px 10px 6px", borderTop: "1px solid var(--border)", background: "var(--bg-subtle)", fontSize: 11, color: "var(--text-muted)" }}>
-          已修改：{modifiedFiles.join(", ")}
         </div>
       )}
 
-      {expanded && (
-        <div style={{ display: "flex", flexDirection: "column" }}>
-          {blocks.map((b) => {
-            const result = toolResults?.get(b.toolCallId);
-            const duration = toolCallDurations?.get(b.toolCallId);
-            return <ToolCallBlock key={b.toolCallId} block={b} result={result} duration={duration} />;
-          })}
-        </div>
+      {!showStatusLine && (
+        <>
+          <button
+            onClick={() => setExpanded((v) => !v)}
+            className="thinking-summary"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 9,
+              width: "100%",
+              fontSize: 13,
+              padding: "7px 10px",
+              margin: "0 -8px",
+              borderRadius: 10,
+              cursor: "pointer",
+              userSelect: "none",
+              background: "none",
+              border: "none",
+              color: "inherit",
+              textAlign: "left",
+            }}
+          >
+            <span style={{ color: "#22c55e", fontSize: 13, fontWeight: 800, flex: "0 0 auto" }}>✓</span>
+            <span>
+              <span style={{ color: "var(--text)", fontWeight: 650 }}>运行步骤</span>
+              <span style={{ color: "var(--text-muted)" }}> · {duration}s · {historySteps.length} 步</span>
+            </span>
+            <span
+              style={{
+                marginLeft: "auto",
+                fontSize: 11,
+                color: "var(--text-muted)",
+                transform: expanded ? "rotate(90deg)" : "rotate(0deg)",
+                transition: "transform .2s ease",
+              }}
+            >
+              ▸
+            </span>
+          </button>
+
+          {expanded && (
+            <div
+              className="thinking-scroll"
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: 6,
+                padding: "10px 12px 8px 28px",
+                fontSize: 12.5,
+                color: "var(--text-muted)",
+                borderLeft: "1px solid var(--border)",
+                marginLeft: 9,
+                maxHeight: 220,
+                overflowY: "auto",
+              }}
+            >
+              {historySteps.map((step, i) => {
+                const isOpen = openEntries.has(i);
+                const isTool = step.type === "tool_call";
+                return (
+                  <div key={i} style={{ display: "flex", flexDirection: "column" }}>
+                    <div
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setOpenEntries((prev) => {
+                          const next = new Set(prev);
+                          if (next.has(i)) next.delete(i);
+                          else next.add(i);
+                          return next;
+                        });
+                      }}
+                      style={{ display: "flex", alignItems: "center", gap: 8, padding: "3px 0", cursor: "pointer" }}
+                    >
+                      <span
+                        style={{
+                          width: 14,
+                          textAlign: "center",
+                          fontSize: 11,
+                          flex: "0 0 auto",
+                          color: isTool ? "#636366" : "#86868b",
+                        }}
+                      >
+                        {isTool ? "⚙" : "◆"}
+                      </span>
+                      <span
+                        style={{
+                          flex: 1,
+                          whiteSpace: "nowrap",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          fontFamily: isTool ? "var(--font-mono)" : "inherit",
+                          fontSize: isTool ? 12 : 12.5,
+                        }}
+                      >
+                        {step.summary}
+                      </span>
+
+                    </div>
+                    {isOpen && (
+                      <div
+                        className="thinking-scroll"
+                        style={{
+                          fontSize: isTool ? 12 : 12.5,
+                          color: "var(--text)",
+                          lineHeight: 1.6,
+                          background: "var(--bg-subtle)",
+                          borderRadius: 8,
+                          padding: "8px 10px",
+                          margin: "2px 0 6px",
+                          whiteSpace: "pre-wrap",
+                          maxHeight: 140,
+                          overflowY: "auto",
+                          fontFamily: isTool ? "var(--font-mono)" : "inherit",
+                        }}
+                      >
+                        {step.full}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </>
       )}
     </div>
   );
-}
-
-function toolLabel(name: string): string {
-  const map: Record<string, string> = { read: "读", bash: "命令", edit: "改", write: "写", grep: "搜", find: "查", ls: "列" };
-  return map[name] ?? name;
-}
-
-function shortPath(p: string): string {
-  const parts = p.split("/");
-  return parts.length > 2 ? parts.slice(-2).join("/") : p;
-}
-
-
-function getToolPreview(block: ToolCallContent): string {
-  const input = block.input;
-  if (!input || typeof input !== "object") return "";
-  const keys = Object.keys(input);
-  if (keys.length === 0) return "";
-
-  // Common tool input patterns
-  if ("command" in input) return String(input.command).slice(0, 120);
-  if ("path" in input) return String(input.path).slice(0, 120);
-  if ("file_path" in input) return String(input.file_path).slice(0, 120);
-  if ("pattern" in input) return String(input.pattern).slice(0, 120);
-  if ("query" in input) return String(input.query).slice(0, 120);
-
-  const first = input[keys[0]];
-  return String(first).slice(0, 120);
-}
-
-function formatUsage(usage: {
-  input: number;
-  output: number;
-  cacheRead: number;
-  cacheWrite: number;
-  cost: { total: number };
-}): string {
-  const parts = [];
-  if (usage.input) parts.push(`${usage.input.toLocaleString()} in`);
-  if (usage.output) parts.push(`${usage.output.toLocaleString()} out`);
-  if (usage.cacheRead) parts.push(`${usage.cacheRead.toLocaleString()} cache`);
-  if (usage.cost?.total) parts.push(`$${usage.cost.total.toFixed(4)}`);
-  return parts.join(" · ");
 }

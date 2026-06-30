@@ -246,6 +246,7 @@ async function runLoop(
 					newMessages,
 				})
 			) {
+				await emit({ type: "final_output_started", message, ts: Date.now() });
 				await emit({ type: "agent_end", messages: newMessages });
 				return;
 			}
@@ -265,6 +266,10 @@ async function runLoop(
 		break;
 	}
 
+	const finalMessage = newMessages[newMessages.length - 1];
+	if (finalMessage?.role === "assistant") {
+		await emit({ type: "final_output_started", message: finalMessage, ts: Date.now() });
+	}
 	await emit({ type: "agent_end", messages: newMessages });
 }
 

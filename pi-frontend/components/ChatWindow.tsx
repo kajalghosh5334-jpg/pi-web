@@ -1,12 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
-import type { AgentMessage, SessionInfo, SessionTreeNode } from "@/lib/types";
-import { MessageView, ToolTraceGroup } from "./MessageView";
-import type { ToolCallContent, ToolResultMessage } from "@/lib/types";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { AgentMessage, AssistantMessage, ToolResultMessage, SessionInfo, SessionTreeNode } from "@/lib/types";
+import { MessageView, ThinkingStatusLine, deriveSteps, type Step } from "./MessageView";
+
 import { ChatInput, type ChatInputHandle, type AttachedImage } from "./ChatInput";
 import { ChatMinimap, useMessageRefs } from "./ChatMinimap";
-import { useAgentSession, type AgentPhase } from "@/hooks/useAgentSession";
+import { useAgentSession } from "@/hooks/useAgentSession";
 import { useAudio } from "@/hooks/useAudio";
 import { useDragDrop } from "@/hooks/useDragDrop";
 
@@ -28,32 +28,31 @@ interface Props {
   inputAccessory?: React.ReactNode;
 }
 
-function phaseLabel(phase: AgentPhase): string {
-  if (phase?.kind === "running_tools") {
-    const names = phase.tools.map((t) => t.name);
-    if (names.length === 0) return "正在执行工具...";
-    if (names.length === 1) return `正在执行 ${names[0]}...`;
-    if (names.length <= 3) return `正在执行 ${names.join(", ")}...`;
-    return `正在执行 ${names.slice(0, 2).join(", ")} (+${names.length - 2})...`;
-  }
-  if (phase?.kind === "waiting_model") return "正在生成结果...";
-  return "正在处理...";
-}
-
 function isToolOnlyAssistantMessage(msg: AgentMessage): boolean {
   if (msg.role !== "assistant") return false;
   const content = msg.content;
   if (!Array.isArray(content)) return false;
-  return content.length > 0 && content.every((b) => b.type === "thinking" || b.type === "toolCall");
+  // thinking-only messages should remain visible so users can inspect reasoning
+  if (content.some((b) => b.type === "thinking")) return false;
+  return content.length > 0 && content.every((b) => b.type === "toolCall");
 }
 
-function isFinalAssistantMessageInTurn(messages: AgentMessage[], idx: number): boolean {
+function isCollaborationProgressMessage(msg: AgentMessage): boolean {
+  return msg.role === "custom" && msg.customType === "collaboration_progress";
+}
+
+function hasAssistantText(msg: AgentMessage): boolean {
+  if (msg.role !== "assistant" || !Array.isArray(msg.content)) return false;
+  return msg.content.some((block) => block.type === "text" && String(block.text || "").trim());
+}
+
+function isFinalTextAssistantMessageInTurn(messages: AgentMessage[], idx: number): boolean {
   const msg = messages[idx];
-  if (msg?.role !== "assistant") return false;
+  if (!hasAssistantText(msg)) return false;
   for (let i = idx + 1; i < messages.length; i++) {
     const next = messages[i];
     if (next.role === "user") break;
-    if (next.role === "assistant") return false;
+    if (hasAssistantText(next)) return false;
   }
   return true;
 }
@@ -69,7 +68,7 @@ const TYPEWRITER_PHRASES = [
   "explain it like I'm five.",
   "pair-program with me.",
   "fix that pesky bug.",
-  "translate to 中文.",
+  "translate to English.",
   "write a haiku.",
   "brainstorm ideas.",
   "review my pull request.",
@@ -113,14 +112,14 @@ function Typewriter({ phrases }: { phrases: string[] }) {
   );
 }
 
-export function ChatWindow({ session, newSessionCwd, onAgentEnd, onSessionCreated, onSessionForked, modelsRefreshKey, chatInputRef, onBranchDataChange, onSystemPromptChange, onSessionStatsChange, onContextUsageChange, onSendOverride, externalMessages = [], inputPlaceholder, inputAccessory }: Props) {
+const ChatWindow = memo(function ChatWindow({ session, newSessionCwd, onAgentEnd, onSessionCreated, onSessionForked, modelsRefreshKey, chatInputRef, onBranchDataChange, onSystemPromptChange, onSessionStatsChange, onContextUsageChange, onSendOverride, externalMessages = [], inputPlaceholder, inputAccessory }: Props) {
   const {
-    loading, error, messages, entryIds, streamState,
+    loading, error, messages, entryIds, isStreaming, currentStreamingMessageId,
     agentRunning, modelNames, modelList, modelThinkingLevels, modelThinkingLevelMaps, toolPreset, thinkingLevel,
     retryInfo, contextUsage, forkingEntryId,
     isCompacting, compactError, compactResult, displayModel: displayModelValue, sessionStats,
     isAutoModelSelection,
-    agentPhase,
+    finalOutputStarted,
     isNew,
     messagesEndRef, scrollContainerRef,
     lastUserMsgRef,
@@ -172,21 +171,62 @@ export function ChatWindow({ session, newSessionCwd, onAgentEnd, onSessionCreate
   }, [ctxKey, onContextUsageChange]);
   useEffect(() => () => { onContextUsageChange?.(null); }, [onContextUsageChange]);
 
+
+
   const onDrop = useCallback((files: File[]) => {
     chatInputRef?.current?.addImages(files);
   }, [chatInputRef]);
 
   const { isDragOver, handleDragEnter, handleDragOver, handleDragLeave, handleDrop } = useDragDrop(onDrop);
 
-  const renderMessages = [...messages, ...externalMessages];
+  const renderMessages = useMemo(
+    () => [...messages, ...externalMessages].filter((message) => !isCollaborationProgressMessage(message)),
+    [messages, externalMessages],
+  );
+
+  // ponytail: accumulate thinking/toolCall steps across the current agent run (since last user message)
+  const { runSteps, lastAssistantIdxInRun } = useMemo(() => {
+    let lastUserIdx = -1;
+    for (let i = renderMessages.length - 1; i >= 0; i--) {
+      if (renderMessages[i].role === "user") { lastUserIdx = i; break; }
+    }
+    if (lastUserIdx === -1) return { runSteps: [] as Step[], lastAssistantIdxInRun: -1 };
+    const toolResultsMap = new Map<string, ToolResultMessage>();
+    for (const m of renderMessages) {
+      if (m.role === "toolResult") {
+        toolResultsMap.set((m as ToolResultMessage).toolCallId, m as ToolResultMessage);
+      }
+    }
+    const steps: Step[] = [];
+    let lastAssistantIdx = -1;
+    for (let i = lastUserIdx + 1; i < renderMessages.length; i++) {
+      const msg = renderMessages[i];
+      if (msg.role === "assistant") {
+        lastAssistantIdx = i;
+        steps.push(...deriveSteps((msg as AssistantMessage).content ?? [], toolResultsMap));
+      }
+    }
+    return { runSteps: steps, lastAssistantIdxInRun: lastAssistantIdx };
+  }, [renderMessages]);
+
+  const isStreamingMsg = (m: AgentMessage) => (m as AgentMessage & { _streamId?: string })._streamId === currentStreamingMessageId;
+  const hasVisibleStreamingContent = (m: AgentMessage) => {
+    if (m.role !== "assistant") return true;
+    const content = m.content;
+    if (!Array.isArray(content)) return true;
+    return content.some((b) => b.type === "thinking" || b.type === "text");
+  };
   const visibleMessages = renderMessages.filter((m, idx) =>
     m.role === "user"
-    || (m.role === "assistant" && !isToolOnlyAssistantMessage(m) && isFinalAssistantMessageInTurn(renderMessages, idx))
+    || (m.role === "assistant" && (
+      (isStreamingMsg(m) && hasVisibleStreamingContent(m))
+      || isFinalTextAssistantMessageInTurn(renderMessages, idx)
+    ))
     || (m.role === "custom" && m.display !== false)
   );
   const messageRefs = useMessageRefs(visibleMessages.length);
 
-  const isEmptyNew = isNew && renderMessages.length === 0 && !streamState.isStreaming && !agentRunning;
+  const isEmptyNew = isNew && renderMessages.length === 0 && !isStreaming && !agentRunning;
 
   const availableThinkingLevels = displayModelValue
     ? (modelThinkingLevels[`${displayModelValue.provider}:${displayModelValue.modelId}`] ?? null)
@@ -230,7 +270,7 @@ export function ChatWindow({ session, newSessionCwd, onAgentEnd, onSessionCreate
 
   if (loading) {
     return (
-      <div className="flex h-full items-center justify-center text-text-muted">
+      <div className="flex h-full items-center justify-center text-text-muted codex-card" style={{ margin: 18, borderRadius: 24 }}>
         Loading session...
       </div>
     );
@@ -238,7 +278,7 @@ export function ChatWindow({ session, newSessionCwd, onAgentEnd, onSessionCreate
 
   if (error) {
     return (
-      <div className="flex h-full items-center justify-center text-red-400">
+      <div className="flex h-full items-center justify-center text-red-400 codex-card" style={{ margin: 18, borderRadius: 24 }}>
         {error}
       </div>
     );
@@ -247,6 +287,7 @@ export function ChatWindow({ session, newSessionCwd, onAgentEnd, onSessionCreate
   return (
     <div
       className="relative flex h-full flex-col overflow-hidden"
+      style={{ padding: "16px 16px 10px" }}
       onDragEnter={handleDragEnter}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
@@ -288,15 +329,17 @@ export function ChatWindow({ session, newSessionCwd, onAgentEnd, onSessionCreate
         <div className="flex flex-1 flex-col items-center justify-center overflow-y-auto px-4 py-8">
           <div className="w-full max-w-[820px]">
             <div
-              className="mb-3"
+              className="mb-3 codex-card"
               style={{
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "space-between",
                 gap: 12,
-                marginLeft: 16,
-                marginRight: 52,
+                marginLeft: 4,
+                marginRight: 40,
                 fontFamily: "var(--font-mono)",
+                borderRadius: 24,
+                padding: "18px 20px",
               }}
             >
               <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0, flex: 1, lineHeight: 1.4, overflow: "hidden" }}>
@@ -319,9 +362,22 @@ export function ChatWindow({ session, newSessionCwd, onAgentEnd, onSessionCreate
         </div>
       ) : (
       <>
-      <div className="relative flex flex-1 overflow-hidden">
-        <div ref={scrollContainerRef} className="flex-1 overflow-y-auto pt-4 [scrollbar-width:none]">
-          <div className="mx-auto max-w-[820px] px-4">
+      <div className="relative flex flex-1 overflow-hidden" style={{ minHeight: 0 }}>
+        <div ref={scrollContainerRef} className="flex-1 overflow-y-auto pt-2 [scrollbar-width:none] codex-scroll-column">
+          <div style={{ width: "100%", padding: "0 28px 0 24px" }}>
+            {session && (
+              <div className="chat-session-hover-info" style={{ marginBottom: 12, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "0 4px" }}>
+                <div>
+                  <div style={{ fontSize: 12, fontWeight: 750, color: "var(--text)", letterSpacing: "-0.01em" }}>
+                    {session.name || session.firstMessage || "Current Session"}
+                  </div>
+                </div>
+                <div style={{ fontSize: 11, color: "var(--text-muted)", textAlign: "right" }}>
+                  <div>{session.messageCount} messages</div>
+                  <div>{session.cwd}</div>
+                </div>
+              </div>
+            )}
 
             {(() => {
               const toolResultsMap = new Map<string, import("@/lib/types").ToolResultMessage>();
@@ -343,7 +399,7 @@ export function ChatWindow({ session, newSessionCwd, onAgentEnd, onSessionCreate
               let i = 0;
               while (i < renderMessages.length) {
                 const msg = renderMessages[i];
-                if (isToolOnlyAssistantMessage(msg) && !streamState.isStreaming) {
+                if (isToolOnlyAssistantMessage(msg) && !isStreaming) {
                   const groupMsgs: import("@/lib/types").AssistantMessage[] = [msg as import("@/lib/types").AssistantMessage];
                   let j = i + 1;
                   while (j < renderMessages.length) {
@@ -369,14 +425,15 @@ export function ChatWindow({ session, newSessionCwd, onAgentEnd, onSessionCreate
 
                 const msg = item.msg;
                 const idx = item.idx;
-                if (msg.role === "assistant" && !isFinalAssistantMessageInTurn(renderMessages, idx)) {
+                const streamingHere = isStreamingMsg(msg);
+                if (msg.role === "assistant" && !streamingHere && !isFinalTextAssistantMessageInTurn(renderMessages, idx)) {
                   return null;
                 }
                 const prevAssistantEntryId =
                   (msg as import("@/lib/types").AgentMessage).role === "user" && idx > 0 && renderMessages[idx - 1].role === "assistant"
                     ? entryIds[idx - 1]
                     : undefined;
-                const isVisible = msg.role === "user" || (msg.role === "assistant" && isFinalAssistantMessageInTurn(renderMessages, idx));
+                const isVisible = msg.role === "user" || (msg.role === "assistant" && (streamingHere || isFinalTextAssistantMessageInTurn(renderMessages, idx)));
                 const currentRefIdx = isVisible ? refIdx++ : -1;
                 let showTimestamp = false;
                 if (msg.role === "assistant") {
@@ -386,7 +443,7 @@ export function ChatWindow({ session, newSessionCwd, onAgentEnd, onSessionCreate
                     if (r === "user") break;
                     if (r === "assistant") { showTimestamp = false; break; }
                   }
-                  if (showTimestamp && streamState.isStreaming && idx === renderMessages.length - 1) {
+                  if (showTimestamp && isStreaming && idx === renderMessages.length - 1) {
                     showTimestamp = false;
                   }
                 }
@@ -394,8 +451,10 @@ export function ChatWindow({ session, newSessionCwd, onAgentEnd, onSessionCreate
                   <MessageView
                     key={idx}
                     message={msg}
+                    isStreaming={(msg as import("@/lib/types").AgentMessage & { _streamId?: string })._streamId === currentStreamingMessageId}
+                    agentRunning={agentRunning}
+                    finalOutputStarted={finalOutputStarted}
                     toolResults={toolResultsMap}
-                    modelNames={modelNames}
                     entryId={entryIds[idx]}
                     onFork={agentRunning || isNew || (idx === 0 && msg.role === "user") ? undefined : handleFork}
                     forking={forkingEntryId === entryIds[idx]}
@@ -403,7 +462,7 @@ export function ChatWindow({ session, newSessionCwd, onAgentEnd, onSessionCreate
                     prevAssistantEntryId={agentRunning ? undefined : prevAssistantEntryId}
                     onEditContent={(content) => chatInputRef?.current?.insertIfEmpty(content)}
                     showTimestamp={showTimestamp}
-                    prevTimestamp={idx > 0 ? (renderMessages[idx - 1] as import("@/lib/types").AgentMessage & { timestamp?: number }).timestamp : undefined}
+                    runSteps={msg.role === "assistant" && idx === lastAssistantIdxInRun ? runSteps : undefined}
                   />
                 );
                 if (!isVisible) return view;
@@ -418,26 +477,37 @@ export function ChatWindow({ session, newSessionCwd, onAgentEnd, onSessionCreate
               });
             })()}
 
-            {streamState.isStreaming && streamState.streamingMessage && (
-              <MessageView message={streamState.streamingMessage as AgentMessage} isStreaming modelNames={modelNames} />
-            )}
 
-            {agentRunning && !streamState.streamingMessage && (
-              <div className="py-2 text-[13px] text-text-muted">
-                <span className="animate-[pulse_1.5s_infinite]">{phaseLabel(agentPhase)}</span>
+            {/* Standalone status line before the first streaming message arrives */}
+            {agentRunning && !currentStreamingMessageId && (
+              <ThinkingStatusLine
+                steps={[]}
+                runSteps={undefined}
+                isStreaming={false}
+                agentRunning={true}
+                finalOutputStarted={false}
+              />
+            )}
+            {agentRunning && renderMessages.some((message) => message.role === "user") && !renderMessages.some((message) => message.role === "assistant") && (
+              <div style={{ marginBottom: 18, display: "flex", alignItems: "center" }}>
+                <div
+                  style={{
+                    maxWidth: 420,
+                    color: "var(--text-muted)",
+                    fontSize: 13,
+                    lineHeight: 1.5,
+                  }}
+                >
+                  正在整理上下文并准备回应…
+                </div>
               </div>
             )}
-
-            {agentRunning && (
-              <div style={{ height: scrollContainerRef.current ? scrollContainerRef.current.clientHeight : "80vh" }} />
-            )}
-
             <div ref={messagesEndRef} />
           </div>
         </div>
         <ChatMinimap
           messages={renderMessages}
-          streamingMessage={streamState.streamingMessage}
+          streamingMessage={null}
           scrollContainer={scrollContainerRef}
           messageRefs={messageRefs}
         />
@@ -450,4 +520,6 @@ export function ChatWindow({ session, newSessionCwd, onAgentEnd, onSessionCreate
       )}
     </div>
   );
-}
+});
+
+export { ChatWindow };

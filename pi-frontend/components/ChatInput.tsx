@@ -63,13 +63,13 @@ function compareModelOptions(a: ModelOption, b: ModelOption): number {
 
 const THINKING_LEVELS = ["auto", "off", "minimal", "low", "medium", "high", "xhigh"] as const;
 const THINKING_LEVEL_DESC: Record<typeof THINKING_LEVELS[number], string> = {
-  auto: "沿用 pi 默认设置",
-  off: "关闭推理",
-  minimal: "最少推理",
-  low: "低强度推理",
-  medium: "中等推理",
-  high: "高强度推理",
-  xhigh: "最高强度推理",
+  auto: "Auto (pi default)",
+  off: "Off",
+  minimal: "Minimal",
+  low: "Low",
+  medium: "Medium",
+  high: "High",
+  xhigh: "Maximum",
 };
 
 function formatTokenCount(tokens: number): string {
@@ -367,7 +367,7 @@ export const ChatInput = forwardRef<ChatInputHandle, Props>(function ChatInput({
       style={{
         flexShrink: 0,
         background: "transparent",
-        padding: "0 16px 8px",
+        padding: "10px 4px 6px",
         paddingRight: 52, // 16px base + 36px for ChatMinimap alignment
       }}
     >
@@ -388,12 +388,12 @@ export const ChatInput = forwardRef<ChatInputHandle, Props>(function ChatInput({
         {accessory && (
           <div style={{
             marginBottom: 0,
-            padding: "8px 14px 6px",
-            background: "color-mix(in srgb, var(--bg) 92%, var(--bg-panel))",
-            border: "1px solid color-mix(in srgb, var(--border) 75%, transparent)",
+            padding: "11px 16px 9px",
+            background: "linear-gradient(180deg, color-mix(in srgb, var(--bg) 94%, rgba(10,132,255,0.08)) 0%, color-mix(in srgb, var(--bg) 96%, var(--bg-panel)) 100%)",
+            border: "1px solid color-mix(in srgb, var(--shell-edge) 80%, rgba(10,132,255,0.28))",
             borderBottom: "none",
-            borderRadius: "22px 22px 0 0",
-            boxShadow: "0 1px 2px rgba(15,23,42,0.04), 0 8px 24px -12px rgba(15,23,42,0.10)",
+            borderRadius: "26px 26px 0 0",
+            boxShadow: "var(--shell-shadow-sm)",
           }}>
             {accessory}
           </div>
@@ -466,17 +466,17 @@ export const ChatInput = forwardRef<ChatInputHandle, Props>(function ChatInput({
             display: "flex",
             gap: 8,
             alignItems: "center",
-            background: "var(--bg)",
+            background: "linear-gradient(180deg, color-mix(in srgb, var(--bg) 96%, transparent) 0%, color-mix(in srgb, var(--bg-panel) 92%, transparent) 100%)",
             border: `1px solid ${isDragOver
               ? "rgba(59,130,246,0.75)"
               : isStreaming && (onSteer || onFollowUp)
                 ? "rgba(234,179,8,0.4)"
-                : "color-mix(in srgb, var(--border) 70%, transparent)"}`,
-            borderRadius: accessory ? "0 0 22px 22px" : 14,
-            padding: "10px 10px 10px 14px",
+                : "color-mix(in srgb, var(--shell-edge) 80%, transparent)"}`,
+            borderRadius: accessory ? "0 0 26px 26px" : 24,
+            padding: "12px 12px 12px 16px",
             boxShadow: isDragOver
-              ? "0 0 0 3px rgba(59,130,246,0.12), 0 8px 24px -12px rgba(15,23,42,0.10)"
-              : "0 1px 2px rgba(15,23,42,0.04), 0 8px 24px -12px rgba(15,23,42,0.10)",
+              ? "0 0 0 3px rgba(59,130,246,0.12), var(--shell-shadow-md)"
+              : "var(--shell-shadow-md)",
             marginTop: accessory ? -1 : 0,
             position: "relative",
             transition: "border-color 0.15s, background 0.15s, box-shadow 0.15s",
@@ -484,7 +484,7 @@ export const ChatInput = forwardRef<ChatInputHandle, Props>(function ChatInput({
         >
           {isDragOver && (
             <div style={{ position: "absolute", inset: 4, borderRadius: 10, background: "rgba(59,130,246,0.08)", color: "#3b82f6", fontSize: 12, display: "flex", alignItems: "center", justifyContent: "center", pointerEvents: "none", zIndex: 2 }}>
-              松开以插入文件路径；图片会同时作为附件
+              Drop to insert file path; images attach as well
             </div>
           )}
           <textarea
@@ -503,7 +503,7 @@ export const ChatInput = forwardRef<ChatInputHandle, Props>(function ChatInput({
             onPaste={handlePaste}
             placeholder={
               isStreaming && (onSteer || onFollowUp)
-                ? "Steer 立即注入 / Follow-up 排队…"
+                ? "Steer (inject now) / Follow-up (queue)"
                 : isStreaming ? "Agent is running…"
                 : placeholder || "Message…"
             }
@@ -530,7 +530,7 @@ export const ChatInput = forwardRef<ChatInputHandle, Props>(function ChatInput({
                 <button
                   onClick={() => sendQueued("steer")}
                   disabled={!value.trim() && !attachedImages.length}
-                  title="打断 Agent 当前运行，立即注入消息"
+                  title="Interrupt agent and inject message now"
                   style={{
                     display: "flex", alignItems: "center", gap: 5,
                     padding: "7px 12px",
@@ -553,7 +553,7 @@ export const ChatInput = forwardRef<ChatInputHandle, Props>(function ChatInput({
                 <button
                   onClick={() => sendQueued("followup")}
                   disabled={!value.trim() && !attachedImages.length}
-                  title="在 Agent 完成后排队发送"
+                  title="Queue to send after agent finishes"
                   style={{
                     display: "flex", alignItems: "center", gap: 5,
                     padding: "7px 12px",
@@ -582,16 +582,16 @@ export const ChatInput = forwardRef<ChatInputHandle, Props>(function ChatInput({
                 flexShrink: 0,
                 alignSelf: "flex-end",
                 display: "flex", alignItems: "center", gap: 6,
-                padding: "7px 14px",
+                padding: "9px 16px",
                 background: (value.trim() || attachedImages.length) ? "var(--accent)" : "var(--bg-panel)",
                 border: "none",
-                borderRadius: 8,
+                borderRadius: 14,
                 color: (value.trim() || attachedImages.length) ? "#fff" : "var(--text-dim)",
                 cursor: (value.trim() || attachedImages.length) ? "pointer" : "not-allowed",
                 fontSize: 13,
                 fontWeight: 600,
                 letterSpacing: "-0.01em",
-                boxShadow: (value.trim() || attachedImages.length) ? "0 1px 3px rgba(37,99,235,0.25)" : "none",
+                boxShadow: (value.trim() || attachedImages.length) ? "0 10px 24px rgba(37,99,235,0.22)" : "none",
                 transition: "background 0.15s, box-shadow 0.15s",
               }}
             >
@@ -692,8 +692,8 @@ export const ChatInput = forwardRef<ChatInputHandle, Props>(function ChatInput({
                         <div style={{ padding: 10, borderBottom: "1px solid var(--border)", background: "var(--bg-panel)" }}>
                           <input autoFocus value={modelSearch} onChange={(e) => setModelSearch(e.target.value)} placeholder="搜索模型..." style={{ width: "100%", boxSizing: "border-box", padding: "8px 10px", borderRadius: 8, border: "1px solid var(--border)", background: "var(--bg)", color: "var(--text)", fontSize: 12 }} />
                           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginTop: 8, fontSize: 11, color: "var(--text-muted)" }}>
-                            <span>{availableModelOptions.length} 个可用模型{hiddenModelOptions.length > 0 ? `，${hiddenModelOptions.length} 个未接入` : ""}</span>
-                            {hiddenModelOptions.length > 0 && <button onClick={() => setShowAllModels((v) => !v)} style={{ border: "none", background: "none", color: "var(--accent)", cursor: "pointer", fontSize: 11, padding: 0 }}>{showAllModels ? "只看可用" : "显示全部"}</button>}
+                            <span>{availableModelOptions.length} available{hiddenModelOptions.length > 0 ? `, ${hiddenModelOptions.length} not connected` : ""}</span>
+                            {hiddenModelOptions.length > 0 && <button onClick={() => setShowAllModels((v) => !v)} style={{ border: "none", background: "none", color: "var(--accent)", cursor: "pointer", fontSize: 11, padding: 0 }}>{showAllModels ? "Available only" : "Show all"}</button>}
                           </div>
                         </div>
                         <div style={{ overflowY: "auto", maxHeight: maxH - 72 }}>
@@ -707,12 +707,12 @@ export const ChatInput = forwardRef<ChatInputHandle, Props>(function ChatInput({
                                   <button key={`${opt.provider}:${opt.modelId}`} onClick={() => { setModelDropdownOpen(false); setModelSearch(""); if (!isActive || isAutoModelSelection) onModelChange(opt.provider, opt.modelId); }} style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", padding: "8px 12px", background: isActive ? "var(--bg-selected)" : "none", border: "none", color: isActive ? "var(--text)" : "var(--text-muted)", cursor: "pointer", fontSize: 12, textAlign: "left", fontWeight: isActive ? 650 : 400 }} onMouseEnter={(e) => { if (!isActive) e.currentTarget.style.background = "var(--bg-hover)"; }} onMouseLeave={(e) => { if (!isActive) e.currentTarget.style.background = "none"; }}>
                                     {isActive ? <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><polyline points="1.5 5 4 7.5 8.5 2.5" /></svg> : <span style={{ width: 10, flexShrink: 0 }} />}
                                     <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{opt.name}</span>
-                                    <span style={{ fontSize: 10, color: isHidden ? "#f59e0b" : "#22c55e" }}>{isHidden ? "未接入" : "可用"}</span>
+                                    <span style={{ fontSize: 10, color: isHidden ? "#f59e0b" : "#22c55e" }}>{isHidden ? "Offline" : "Online"}</span>
                                   </button>
                                 );
                               })}
                             </div>
-                          )) : <div style={{ padding: 14, color: "var(--text-muted)", fontSize: 12 }}>没有匹配的模型</div>}
+                          )) : <div style={{ padding: 14, color: "var(--text-muted)", fontSize: 12 }}>No matching models</div>}
                         </div>
                       </div>
                     );
@@ -731,7 +731,7 @@ export const ChatInput = forwardRef<ChatInputHandle, Props>(function ChatInput({
                 <button
                   onClick={() => !isStreaming && setThinkingDropdownOpen((v) => !v)}
                   disabled={isStreaming}
-                  title="切换推理强度"
+                  title="Reasoning level"
                   style={{
                     display: "flex", alignItems: "center", gap: 5,
                     padding: "8px 12px",
@@ -821,7 +821,7 @@ export const ChatInput = forwardRef<ChatInputHandle, Props>(function ChatInput({
                 <button
                   onClick={() => !isStreaming && setToolDropdownOpen((v) => !v)}
                   disabled={isStreaming}
-                  title="切换工具预设"
+                  title="Tool preset"
                   style={{
                     display: "flex", alignItems: "center", gap: 5,
                     padding: "8px 12px",
@@ -860,7 +860,7 @@ export const ChatInput = forwardRef<ChatInputHandle, Props>(function ChatInput({
                     {TOOL_PRESETS.map((lvl) => {
                       const preset = TOOL_PRESET_MAP[lvl];
                       const isActive = (toolPreset ?? "default") === preset;
-                      const desc = lvl === "off" ? "无工具，纯聊天" : lvl === "default" ? "4 项内置工具" : "全部内置工具";
+                      const desc = lvl === "off" ? "No tools, chat only" : lvl === "default" ? "4 built-in tools" : "All built-in tools";
                       return (
                         <button
                           key={lvl}
@@ -928,7 +928,7 @@ export const ChatInput = forwardRef<ChatInputHandle, Props>(function ChatInput({
                     e.currentTarget.style.background = isCompacting ? "rgba(239,68,68,0.08)" : "none";
                     e.currentTarget.style.color = isCompacting ? "#ef4444" : "var(--text-muted)";
                   }}
-                  title={isCompacting ? "停止压缩" : "压缩上下文"}
+                  title={isCompacting ? "Stop compacting" : "Compact context"}
                 >
                   {isCompacting ? (
                     <><svg width="10" height="10" viewBox="0 0 10 10" fill="none"><rect x="2" y="2" width="6" height="6" rx="1" fill="currentColor" /></svg>Compacting…</>
@@ -945,7 +945,7 @@ export const ChatInput = forwardRef<ChatInputHandle, Props>(function ChatInput({
             {isStreaming && (
               <button
                 onClick={onAbort}
-                title="停止 Agent"
+                title="Stop agent"
                 style={{
                   display: "flex", alignItems: "center", gap: 6,
                   padding: "8px 14px",
@@ -972,7 +972,7 @@ export const ChatInput = forwardRef<ChatInputHandle, Props>(function ChatInput({
             {onSoundToggle !== undefined && (
               <button
                 onClick={onSoundToggle}
-                title={soundEnabled ? "关闭完成提示音" : "开启完成提示音"}
+                title={soundEnabled ? "Disable sound" : "Enable sound"}
                 style={{
                   display: "flex", alignItems: "center", justifyContent: "center",
                   width: 32, height: 32, padding: 0,

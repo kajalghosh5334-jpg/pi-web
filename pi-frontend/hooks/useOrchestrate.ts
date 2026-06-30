@@ -10,7 +10,7 @@ export interface AgentTask {
   modelSource?: string;
   modelReason?: string;
   prompt?: string;
-  status: "pending" | "waiting_for_dependency" | "waiting_confirmation" | "running" | "completed" | "error" | "aborted" | "paused";
+  status: "pending" | "queued" | "waiting_for_dependency" | "waiting_confirmation" | "running" | "completed" | "incomplete" | "blocked" | "error" | "aborted" | "paused";
   output: string;
   delta: string; // streaming partial
   deps?: string[];
@@ -29,10 +29,124 @@ export interface AgentTask {
   needsPlanDiscussion?: boolean;
   needsDebugging?: boolean;
   collaborationStatus?: string;
+  definitionOfDone?: string;
+  acceptanceCriteria?: string[];
+  budget?: { maxRetries?: number; timeoutMs?: number; progressTimeoutMs?: number; maxOutputChars?: number };
+  heartbeat?: TaskHeartbeat | null;
+  lastProgressAt?: number;
+  lastProgressStage?: string;
+  completionGate?: CompletionGate;
+  handoff?: HandoffPacket;
+  memoryDiff?: string;
   leadDecision?: string;
   leadDecisionReason?: string;
   nextAction?: string;
   error?: string;
+}
+
+export interface TaskHeartbeat {
+  phase?: "waiting_model_response" | "receiving_model_output" | string;
+  message?: string;
+  startedAt?: number;
+  updatedAt?: number;
+  elapsedMs?: number;
+  model?: string;
+}
+
+export interface CompletionGate {
+  taskId: string;
+  status: "passed" | "failed";
+  artifactId?: string;
+  qualityStatus?: string;
+  issues?: string[];
+  checkedAt?: number;
+}
+
+export interface HandoffPacket {
+  found?: boolean;
+  completionStatus?: "completed" | "incomplete" | "blocked" | "unknown" | string;
+  rawCompletionStatus?: string;
+  acceptanceMapping?: string;
+  downstreamDeliverable?: string;
+  blockingReason?: string;
+  nextStep?: string;
+  memoryDiff?: string;
+  issues?: string[];
+}
+
+export interface LedgerEvent {
+  id: string;
+  ts: number;
+  isoTime?: string;
+  sessionId: string;
+  type: string;
+  taskId?: string;
+  stage?: string;
+  status?: string;
+  payload?: Record<string, unknown>;
+}
+
+export interface TrainSuggestion {
+  target_file: string;
+  target_section: string;
+  change_type: "add" | "modify" | "remove" | string;
+  before: string | null;
+  after: string | null;
+  rationale: string;
+}
+
+export interface TrainAlignment {
+  score: number;
+  similar?: boolean;
+  improved?: boolean;
+  reason?: string;
+  remaining_gap?: string;
+}
+
+export interface TrainRound {
+  round: number;
+  status: "in_progress" | "done" | "discarded" | string;
+  challenger_output?: string;
+  challengerOutput?: string;
+  challengerOutputRef?: string;
+  detailRef?: string;
+  suggestion?: TrainSuggestion | null;
+  alignment?: TrainAlignment | null;
+  summary?: string;
+  challengerPreview?: string;
+  baseBeforePreview?: string;
+  baseAfterPreview?: string;
+  challengerChars?: number;
+  baseBeforeChars?: number;
+  baseAfterChars?: number;
+  base_output_before?: string;
+  base_output_after?: string;
+  timestamp?: number;
+}
+
+export interface TrainingState {
+  sessionId?: string;
+  status: "idle" | "running" | "error" | "saved" | string;
+  phase: string;
+  currentRound: number;
+  maxRounds: number;
+  hasChallengerOutput?: boolean;
+  challengerOutputRef?: string;
+  appliedPatches?: TrainSuggestion[];
+  rounds: TrainRound[];
+  activeTaskId?: string;
+  lastError?: string;
+  savedProfileId?: string;
+  updatedAt?: number;
+}
+
+interface AgentProfilePayload {
+  id?: string;
+  name?: string;
+  skills?: string[];
+  availableSkills?: string[];
+  projectConfig?: Record<string, unknown>;
+  savedExperiences?: Array<{ lesson?: string; taskName?: string; savedAt?: number }>;
 }
 
 export interface ArtifactInfo {
@@ -43,6 +157,9 @@ export interface ArtifactInfo {
   producerTaskId: string;
   producerTaskName?: string;
   consumers?: string[];
+  consumerContracts?: Array<{ consumerTaskId?: string; consumedAt?: number; expectedUse?: string; observedStatus?: string; knownIssues?: string[] }>;
+  handoff?: HandoffPacket;
+  producerContract?: Record<string, unknown>;
   size?: number;
   summary?: string;
 }
@@ -74,9 +191,11 @@ export interface OrchestrateState {
   mainOutput: string; // final/streaming synthesis
   error: string | null;
   pendingConfirmation: PendingConfirmation | null;
-  flowState?: any;
+  flowState?: unknown;
   projectMemory?: ProjectMemorySnapshot | null;
   progressUpdates: CollaborationProgress[];
+  ledgerEvents: LedgerEvent[];
+  training?: TrainingState | null;
 }
 
 const INITIAL: OrchestrateState = {
@@ -90,11 +209,37 @@ const INITIAL: OrchestrateState = {
   flowState: null,
   projectMemory: null,
   progressUpdates: [],
+  ledgerEvents: [],
+  training: null,
 };
 
 export function useOrchestrate() {
   const [state, setState] = useState<OrchestrateState>(INITIAL);
   const wsRef = useRef<WebSocket | null>(null);
+
+  // ponytail: rAF-batched delta buffer for task_delta events
+  const deltaBufferRef = useRef<Map<string, string>>(new Map());
+  const rafIdRef = useRef<number | null>(null);
+
+  const flushDeltas = useCallback(() => {
+    rafIdRef.current = null;
+    const buf = deltaBufferRef.current;
+    if (buf.size === 0) return;
+    deltaBufferRef.current = new Map();
+    setState((s) => ({
+      ...s,
+      tasks: s.tasks.map((t) => {
+        const delta = buf.get(t.id);
+        return delta ? { ...t, delta: t.delta + delta } : t;
+      }),
+    }));
+  }, []);
+
+  const scheduleFlush = useCallback(() => {
+    if (rafIdRef.current === null) {
+      rafIdRef.current = requestAnimationFrame(flushDeltas);
+    }
+  }, [flushDeltas]);
 
   const refreshProjectMemory = useCallback(async (sessionId: string) => {
     try {
@@ -105,9 +250,21 @@ export function useOrchestrate() {
     } catch {}
   }, []);
 
+  const refreshLedger = useCallback(async (sessionId: string) => {
+    try {
+      const res = await fetch(`/api/ledger/${encodeURIComponent(sessionId)}?limit=200`);
+      if (!res.ok) return;
+      const data = await res.json() as { events?: LedgerEvent[] };
+      setState((s) => ({ ...s, ledgerEvents: Array.isArray(data.events) ? data.events : s.ledgerEvents }));
+    } catch {}
+  }, []);
+
   useEffect(() => {
-    if (state.sessionId) void refreshProjectMemory(state.sessionId);
-  }, [state.sessionId, refreshProjectMemory]);
+    if (state.sessionId) {
+      void refreshProjectMemory(state.sessionId);
+      void refreshLedger(state.sessionId);
+    }
+  }, [state.sessionId, refreshProjectMemory, refreshLedger]);
 
   // Connect WebSocket once
   useEffect(() => {
@@ -119,13 +276,18 @@ export function useOrchestrate() {
       handleEvent(msg);
     };
 
-    return () => ws.close();
-  }, []);
+    return () => {
+      ws.close();
+      if (rafIdRef.current !== null) cancelAnimationFrame(rafIdRef.current);
+      // Flush any remaining deltas synchronously
+      flushDeltas();
+    };
+  }, [flushDeltas]);
 
   function handleEvent(msg: Record<string, unknown>) {
     switch (msg.type) {
       case "session_start":
-        setState({ sessionId: msg.sessionId as string, phase: "guardian", tasks: [], artifacts: [], mainOutput: "", error: null, pendingConfirmation: null, progressUpdates: [] });
+        setState({ sessionId: msg.sessionId as string, phase: "guardian", tasks: [], artifacts: [], mainOutput: "", error: null, pendingConfirmation: null, progressUpdates: [], ledgerEvents: [] });
         break;
 
       case "guardian_thinking":
@@ -152,6 +314,7 @@ export function useOrchestrate() {
         break;
 
       case "task_start":
+        const profile = msg.profile as AgentProfilePayload | undefined;
         setState((s) => ({
           ...s,
           tasks: s.tasks.map((t) =>
@@ -164,31 +327,98 @@ export function useOrchestrate() {
               modelReason: (msg.modelReason as string) || t.modelReason,
               skills: (msg.equippedSkills as string[]) || t.skills,
               skillScope: (msg.skillScope as string) || t.skillScope,
-              profileId: (msg.profile as any)?.id || t.profileId,
-              profileName: (msg.profile as any)?.name || t.profileName,
-              profileSkills: (msg.profile as any)?.skills || t.profileSkills,
-              profileAvailableSkills: (msg.profile as any)?.availableSkills || t.profileAvailableSkills,
-              profileProjectConfig: (msg.profile as any)?.projectConfig || t.profileProjectConfig,
-              profileSavedExperiences: (msg.profile as any)?.savedExperiences || t.profileSavedExperiences,
+              definitionOfDone: ((msg.task as AgentTask | undefined)?.definitionOfDone) || t.definitionOfDone,
+              acceptanceCriteria: ((msg.task as AgentTask | undefined)?.acceptanceCriteria) || t.acceptanceCriteria,
+              budget: ((msg.task as AgentTask | undefined)?.budget) || t.budget,
+              profileId: profile?.id || t.profileId,
+              profileName: profile?.name || t.profileName,
+              profileSkills: profile?.skills || t.profileSkills,
+              profileAvailableSkills: profile?.availableSkills || t.profileAvailableSkills,
+              profileProjectConfig: profile?.projectConfig || t.profileProjectConfig,
+              profileSavedExperiences: profile?.savedExperiences || t.profileSavedExperiences,
             } : t
           ),
         }));
         break;
 
-      case "task_delta":
-        setState((s) => ({
-          ...s,
-          tasks: s.tasks.map((t) =>
-            t.id === msg.taskId ? { ...t, delta: t.delta + (msg.delta as string) } : t
-          ),
-        }));
+      case "task_delta": {
+        const id = msg.taskId as string;
+        const text = msg.delta as string;
+        if (id && text) {
+          const buf = deltaBufferRef.current;
+          buf.set(id, (buf.get(id) ?? "") + text);
+          scheduleFlush();
+        }
         break;
+      }
 
       case "task_done":
         setState((s) => ({
           ...s,
           tasks: s.tasks.map((t) =>
-            t.id === msg.taskId ? { ...t, status: "completed", output: msg.output as string, delta: "", artifactId: (msg.artifactId as string) || t.artifactId } : t
+            t.id === msg.taskId ? { ...t, status: "completed", output: msg.output as string, delta: "", artifactId: (msg.artifactId as string) || t.artifactId, handoff: (msg.handoff as HandoffPacket) || t.handoff } : t
+          ),
+        }));
+        break;
+
+      case "ledger_event":
+        setState((s) => ({
+          ...s,
+          ledgerEvents: [...s.ledgerEvents, msg.event as LedgerEvent].slice(-100),
+        }));
+        break;
+
+      case "train_state":
+        setState((s) => ({ ...s, training: (msg.training as TrainingState) || s.training }));
+        break;
+
+      case "train_round_update":
+        setState((s) => ({ ...s, training: (msg.training as TrainingState) || s.training }));
+        break;
+
+      case "train_saved":
+        setState((s) => ({ ...s, training: (msg.training as TrainingState) || s.training }));
+        break;
+
+      case "train_error":
+        setState((s) => ({
+          ...s,
+          training: (msg.training as TrainingState) || (s.training ? { ...s.training, status: "error", lastError: msg.error as string } : s.training),
+        }));
+        break;
+
+      case "progress_reported":
+        setState((s) => ({
+          ...s,
+          tasks: s.tasks.map((t) =>
+            t.id === msg.taskId ? {
+              ...t,
+              lastProgressAt: Date.now(),
+              lastProgressStage: msg.milestone as string,
+              collaborationStatus: ((msg.payload as { collaborationStatus?: string } | undefined)?.collaborationStatus) || t.collaborationStatus,
+            } : t
+          ),
+        }));
+        break;
+
+      case "task_heartbeat":
+        setState((s) => ({
+          ...s,
+          tasks: s.tasks.map((t) =>
+            t.id === msg.taskId ? { ...t, heartbeat: (msg.heartbeat as TaskHeartbeat | null) || null } : t
+          ),
+        }));
+        break;
+
+      case "task_completion_gate":
+        setState((s) => ({
+          ...s,
+          tasks: s.tasks.map((t) =>
+            t.id === msg.taskId ? {
+              ...t,
+              completionGate: msg.gate as CompletionGate,
+              collaborationStatus: (msg.gate as CompletionGate | undefined)?.status === "passed" ? "ready_for_review" : "needs_revision",
+            } : t
           ),
         }));
         break;
@@ -214,6 +444,15 @@ export function useOrchestrate() {
           ...s,
           tasks: s.tasks.map((t) =>
             t.id === msg.taskId ? { ...t, status: "error", error: msg.error as string } : t
+          ),
+        }));
+        break;
+
+      case "task_incomplete":
+        setState((s) => ({
+          ...s,
+          tasks: s.tasks.map((t) =>
+            t.id === msg.taskId ? { ...t, status: "incomplete", error: msg.error as string, completionGate: (msg.gate as CompletionGate) || t.completionGate } : t
           ),
         }));
         break;
@@ -360,6 +599,38 @@ export function useOrchestrate() {
     });
   }, [state.sessionId]);
 
+  const startTrain = useCallback(async (options: { taskId?: string } = {}) => {
+    if (!state.sessionId) return { ok: false, error: "sessionId required" };
+    const res = await fetch(`/api/train/${encodeURIComponent(state.sessionId)}/start`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(options),
+    });
+    const data = await res.json().catch(() => ({ ok: res.ok }));
+    if (data?.training) setState((s) => ({ ...s, training: data.training as TrainingState }));
+    return data;
+  }, [state.sessionId]);
+
+  const cancelTrain = useCallback(async () => {
+    if (!state.sessionId) return { ok: false, error: "sessionId required" };
+    const res = await fetch(`/api/train/${encodeURIComponent(state.sessionId)}/cancel`, { method: "POST" });
+    const data = await res.json().catch(() => ({ ok: res.ok }));
+    if (data?.training) setState((s) => ({ ...s, training: data.training as TrainingState }));
+    return data;
+  }, [state.sessionId]);
+
+  const saveTrain = useCallback(async (options: { name?: string; description?: string } = {}) => {
+    if (!state.sessionId) return { ok: false, error: "sessionId required" };
+    const res = await fetch(`/api/train/${encodeURIComponent(state.sessionId)}/save`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(options),
+    });
+    const data = await res.json().catch(() => ({ ok: res.ok }));
+    if (data?.training) setState((s) => ({ ...s, training: data.training as TrainingState }));
+    return data;
+  }, [state.sessionId]);
+
   const clearProjectSummaries = useCallback(async () => {
     if (!state.sessionId) return;
     await fetch(`/api/project-memory/${encodeURIComponent(state.sessionId)}/clear-summaries`, { method: "POST" });
@@ -435,5 +706,5 @@ export function useOrchestrate() {
     });
   }, [state.sessionId]);
 
-  return { state, run, reset, switchModel, abortTask, pauseTask, resumeTask, rerunTask, promoteProfile, promoteTaskSkills, confirm, coach, clearProjectSummaries, refreshProjectMemory };
+  return { state, run, reset, switchModel, abortTask, pauseTask, resumeTask, rerunTask, promoteProfile, promoteTaskSkills, confirm, coach, startTrain, cancelTrain, saveTrain, clearProjectSummaries, refreshProjectMemory };
 }

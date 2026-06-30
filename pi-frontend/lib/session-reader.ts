@@ -1,35 +1,153 @@
 import { SessionManager, buildSessionContext as piBuildSessionContext, getAgentDir } from "@earendil-works/pi-coding-agent";
-import type { SessionEntry, SessionInfo, SessionContext, SessionTreeNode, AssistantMessage } from "./types";
-import type { SessionEntry as PiSessionEntry, SessionInfo as PiSessionInfo } from "@earendil-works/pi-coding-agent";
+import type { SessionEntry, SessionInfo, SessionContext, SessionTreeNode, AssistantMessage, AgentMessage } from "./types";
+import type { SessionEntry as PiSessionEntry } from "@earendil-works/pi-coding-agent";
 import { normalizeToolCalls } from "./normalize";
+import { createReadStream } from "node:fs";
+import { readdir, stat } from "node:fs/promises";
+import { join } from "node:path";
+import { createInterface } from "node:readline";
 
 export { getAgentDir };
+
+const SESSION_LIST_TTL_MS = 5_000;
+const SESSION_PREVIEW_MAX_CHARS = 180;
+const SESSION_LIST_SCAN_LINE_LIMIT = 200;
+const RECENT_CONTEXT_MAX_BYTES = 512 * 1024;
+const RECENT_CONTEXT_MAX_MESSAGES = 80;
 
 export function getSessionsDir(): string {
   return `${getAgentDir()}/sessions`;
 }
 
 export async function listAllSessions(): Promise<SessionInfo[]> {
-  const piSessions: PiSessionInfo[] = await SessionManager.listAll();
-  const pathToId = new Map<string, string>();
-  for (const s of piSessions) pathToId.set(s.path, s.id);
+  const now = Date.now();
+  const cached = globalThis.__piSessionListCache;
+  if (cached && cached.expiresAt > now) return cached.sessions;
 
+  const sessions = await listAllSessionsFast();
+  const pathToId = new Map<string, string>();
+  for (const session of sessions) pathToId.set(session.path, session.id);
   const cache = getPathCache();
-  return piSessions.map((s) => {
-    // Populate path cache so resolveSessionPath works without a full scan
-    cache.set(s.id, s.path);
-    return {
-      path: s.path,
-      id: s.id,
-      cwd: s.cwd,
-      name: s.name,
-      created: s.created instanceof Date ? s.created.toISOString() : String(s.created),
-      modified: s.modified instanceof Date ? s.modified.toISOString() : String(s.modified),
-      messageCount: s.messageCount,
-      firstMessage: s.firstMessage || "(no messages)",
-      parentSessionId: s.parentSessionPath ? pathToId.get(s.parentSessionPath) : undefined,
-    };
+  for (const session of sessions) {
+    cache.set(session.id, session.path);
+    session.parentSessionId = session.parentSessionPath ? pathToId.get(session.parentSessionPath) : undefined;
+    delete session.parentSessionPath;
+  }
+
+  globalThis.__piSessionListCache = {
+    expiresAt: now + SESSION_LIST_TTL_MS,
+    sessions,
+  };
+  return sessions;
+}
+
+async function listAllSessionsFast(): Promise<Array<SessionInfo & { parentSessionPath?: string }>> {
+  const sessionsDir = getSessionsDir();
+  const entries = await readdir(sessionsDir, { withFileTypes: true }).catch(() => []);
+  const files: string[] = [];
+  for (const entry of entries) {
+    if (!entry.isDirectory()) continue;
+    const dir = join(sessionsDir, entry.name);
+    const names = await readdir(dir).catch(() => []);
+    for (const name of names) {
+      if (name.endsWith(".jsonl")) files.push(join(dir, name));
+    }
+  }
+
+  const sessions = (await Promise.all(files.map(readSessionInfoFast))).filter((session): session is SessionInfo & { parentSessionPath?: string } => Boolean(session));
+  sessions.sort((a, b) => b.modified.localeCompare(a.modified));
+  return sessions;
+}
+
+async function readSessionInfoFast(filePath: string): Promise<(SessionInfo & { parentSessionPath?: string }) | null> {
+  const fileStats = await stat(filePath).catch(() => null);
+  if (!fileStats) return null;
+  const rl = createInterface({
+    input: createReadStream(filePath, { encoding: "utf8" }),
+    crlfDelay: Infinity,
   });
+
+  let header: { id?: string; cwd?: string; timestamp?: string; parentSession?: string } | null = null;
+  let firstMessage = "";
+  let name: string | undefined;
+  let messageCount = 0;
+  let lastTimestamp = "";
+  let scanned = 0;
+
+  try {
+    for await (const line of rl) {
+      scanned++;
+      const entry = parseJsonLine(line);
+      if (!entry) continue;
+      if (!header) {
+        if (entry.type !== "session") return null;
+        header = entry;
+        lastTimestamp = String(entry.timestamp || "");
+        continue;
+      }
+      if (entry.timestamp) lastTimestamp = String(entry.timestamp);
+      if (entry.type === "session_info") name = typeof entry.name === "string" && entry.name.trim() ? entry.name.trim() : undefined;
+      if (entry.type === "message") {
+        messageCount++;
+        if (!firstMessage && entry.message?.role === "user") firstMessage = extractMessageText(entry.message);
+      }
+      if (scanned >= SESSION_LIST_SCAN_LINE_LIMIT && firstMessage) break;
+    }
+  } finally {
+    rl.close();
+  }
+
+  if (!header?.id) return null;
+  const created = typeof header.timestamp === "string" ? header.timestamp : fileStats.birthtime.toISOString();
+  const modified = lastTimestamp || fileStats.mtime.toISOString();
+  return {
+    path: filePath,
+    id: header.id,
+    cwd: typeof header.cwd === "string" ? header.cwd : "",
+    name,
+    created,
+    modified,
+    messageCount,
+    firstMessage: summarizeSessionPreview(firstMessage || "(no messages)"),
+    parentSessionPath: typeof header.parentSession === "string" ? header.parentSession : undefined,
+  };
+}
+
+type ParsedSessionLine = Record<string, unknown> & {
+  type?: string;
+  id?: string;
+  timestamp?: string;
+  cwd?: string;
+  parentSession?: string;
+  name?: string;
+  message?: { role?: string; content?: unknown };
+};
+
+function parseJsonLine(line: string): ParsedSessionLine | null {
+  if (!line.trim()) return null;
+  try {
+    return JSON.parse(line);
+  } catch {
+    return null;
+  }
+}
+
+function extractMessageText(message: { content?: unknown }): string {
+  const content = message.content;
+  if (typeof content === "string") return content;
+  if (!Array.isArray(content)) return "";
+  return content.map((block) => {
+    if (block && typeof block === "object" && "text" in block) return String((block as { text?: unknown }).text || "");
+    return "";
+  }).filter(Boolean).join(" ");
+}
+
+function summarizeSessionPreview(firstMessage: string | null | undefined): string {
+  const compact = String(firstMessage || "(no messages)")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (compact.length <= SESSION_PREVIEW_MAX_CHARS) return compact;
+  return `${compact.slice(0, SESSION_PREVIEW_MAX_CHARS - 1)}…`;
 }
 
 // ============================================================================
@@ -38,6 +156,7 @@ export async function listAllSessions(): Promise<SessionInfo[]> {
 // ============================================================================
 declare global {
   var __piSessionPathCache: Map<string, string> | undefined;
+  var __piSessionListCache: { sessions: SessionInfo[]; expiresAt: number } | undefined;
 }
 
 function getPathCache(): Map<string, string> {
@@ -60,6 +179,10 @@ export function cacheSessionPath(sessionId: string, filePath: string): void {
 
 export function invalidateSessionPathCache(sessionId: string): void {
   getPathCache().delete(sessionId);
+}
+
+export function invalidateSessionListCache(): void {
+  globalThis.__piSessionListCache = undefined;
 }
 
 export function getSessionEntries(filePath: string): SessionEntry[] {
@@ -183,10 +306,105 @@ export function buildSessionContext(entries: SessionEntry[], leafId?: string | n
   };
 }
 
+export async function buildRecentSessionContext(filePath: string, maxMessages = RECENT_CONTEXT_MAX_MESSAGES): Promise<SessionContext & { leafId: string | null }> {
+  const fileStats = await stat(filePath).catch(() => null);
+  if (!fileStats || fileStats.size === 0) {
+    return { messages: [], entryIds: [], thinkingLevel: "off", model: null, leafId: null };
+  }
+
+  const start = Math.max(0, fileStats.size - RECENT_CONTEXT_MAX_BYTES);
+  const chunks: Buffer[] = [];
+  await new Promise<void>((resolve, reject) => {
+    const stream = createReadStream(filePath, { start });
+    stream.on("data", (chunk) => chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk)));
+    stream.on("error", reject);
+    stream.on("end", resolve);
+  });
+
+  const text = Buffer.concat(chunks).toString("utf8");
+  const rawLines = text.split("\n");
+  const lines = start > 0 ? rawLines.slice(1) : rawLines;
+  const entries: SessionEntry[] = [];
+  for (const line of lines) {
+    const parsed = parseJsonLine(line);
+    if (!parsed || parsed.type === "session" || typeof parsed.id !== "string") continue;
+    entries.push(parsed as unknown as SessionEntry);
+  }
+
+  if (entries.length === 0) {
+    return { messages: [], entryIds: [], thinkingLevel: "off", model: null, leafId: null };
+  }
+
+  const byId = new Map<string, SessionEntry>();
+  for (const entry of entries) byId.set(entry.id, entry);
+
+  const leaf = [...entries].reverse().find((entry) => entry.type !== "label" && entry.type !== "session_info") ?? entries[entries.length - 1];
+  const path: SessionEntry[] = [];
+  let current: SessionEntry | undefined = leaf;
+  while (current) {
+    path.unshift(current);
+    current = current.parentId ? byId.get(current.parentId) : undefined;
+  }
+
+  let thinkingLevel = "off";
+  let model: { provider: string; modelId: string } | null = null;
+  const messages: AgentMessage[] = [];
+  const entryIds: string[] = [];
+
+  for (const entry of path) {
+    if (entry.type === "thinking_level_change") {
+      thinkingLevel = entry.thinkingLevel;
+    } else if (entry.type === "model_change") {
+      model = { provider: entry.provider, modelId: entry.modelId };
+    } else if (entry.type === "message") {
+      const message = normalizeToolCalls(entry.message);
+      if (message.role === "assistant") model = { provider: message.provider, modelId: message.model };
+      messages.push(message);
+      entryIds.push(entry.id);
+    } else if (entry.type === "custom_message") {
+      messages.push({
+        role: "custom",
+        customType: entry.customType,
+        content: entry.content,
+        display: entry.display,
+        details: entry.details,
+        timestamp: Date.parse(entry.timestamp),
+      });
+      entryIds.push(entry.id);
+    } else if (entry.type === "branch_summary" && entry.summary) {
+      messages.push({
+        role: "custom",
+        customType: "branch_summary",
+        content: entry.summary,
+        display: true,
+        details: { fromId: entry.fromId },
+        timestamp: Date.parse(entry.timestamp),
+      });
+      entryIds.push(entry.id);
+    } else if (entry.type === "compaction") {
+      messages.push({
+        role: "user",
+        content: `*The conversation history before this point was compacted into the following summary:*\n\n${entry.summary}`,
+        timestamp: Date.parse(entry.timestamp),
+      });
+      entryIds.push(entry.id);
+    }
+  }
+
+  if (messages.length > maxMessages) {
+    return {
+      messages: messages.slice(-maxMessages),
+      entryIds: entryIds.slice(-maxMessages),
+      thinkingLevel,
+      model,
+      leafId: leaf.id,
+    };
+  }
+
+  return { messages, entryIds, thinkingLevel, model, leafId: leaf.id };
+}
+
 export function getLeafId(entries: SessionEntry[]): string | null {
   if (entries.length === 0) return null;
   return entries[entries.length - 1].id;
 }
-
-
-
