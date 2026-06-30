@@ -131,6 +131,7 @@ interface ProviderEntry {
   baseUrl?: string;
   api?: string;
   apiKey?: string;
+  apiKeyConfigured?: boolean;
   headers?: Record<string, string>;
   compat?: Record<string, unknown>;
   models?: ModelEntry[];
@@ -590,6 +591,18 @@ function findModelInConfig(draft: ModelsJson, key: string): { providerName: stri
   return null;
 }
 
+function scrubClientSecrets(draft: ModelsJson): ModelsJson {
+  const providers = Object.fromEntries(Object.entries(draft.providers ?? {}).map(([providerName, provider]) => {
+    const apiKey = provider.apiKey?.trim();
+    if (!apiKey) return [providerName, provider];
+    const next = { ...provider };
+    delete next.apiKey;
+    next.apiKeyConfigured = true;
+    return [providerName, next];
+  }));
+  return { ...draft, providers };
+}
+
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return <div style={{ fontSize: 11, fontWeight: 600, color: "var(--text-dim)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 2 }}>{children}</div>;
 }
@@ -615,6 +628,7 @@ function ProviderDetail({ name, provider, onChange, onRename, onDelete, onAddMod
   useEffect(() => setEditingName(name), [name]);
   const set = <K extends keyof ProviderEntry>(k: K, v: ProviderEntry[K]) => onChange({ ...provider, [k]: v });
   const models = provider.models ?? [];
+  const savedApiKeyHidden = Boolean(provider.apiKeyConfigured && !provider.apiKey);
   const configuredModelIds = new Set(models.map((model) => model.id).filter(Boolean));
   const catalogQuery = catalogSearch.trim().toLowerCase();
   const visibleCatalogModels = catalogModels
@@ -641,7 +655,7 @@ function ProviderDetail({ name, provider, onChange, onRename, onDelete, onAddMod
       const res = await fetch("/api/models-config/catalog", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ baseUrl: provider.baseUrl, apiKey: provider.apiKey, headers: provider.headers }),
+        body: JSON.stringify({ providerName: name, baseUrl: provider.baseUrl, apiKey: provider.apiKey, headers: provider.headers }),
       });
       const d = await res.json() as { ok?: boolean; models?: CatalogModel[]; error?: string };
       if (!res.ok || !d.ok) {
@@ -654,7 +668,7 @@ function ProviderDetail({ name, provider, onChange, onRename, onDelete, onAddMod
     } finally {
       setCatalogLoading(false);
     }
-  }, [catalogLoading, provider.apiKey, provider.baseUrl, provider.headers]);
+  }, [catalogLoading, name, provider.apiKey, provider.baseUrl, provider.headers]);
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
@@ -683,9 +697,11 @@ function ProviderDetail({ name, provider, onChange, onRename, onDelete, onAddMod
 
       <Field label="API Key">
         <SecretTextInput value={provider.apiKey ?? ""} onChange={(v) => set("apiKey", v || undefined)}
-          placeholder="ENV_VAR_NAME, !shell-command, or literal key" mono />
+          placeholder={savedApiKeyHidden ? "Saved API key is hidden; enter a new value to replace it" : "ENV_VAR_NAME, !shell-command, or literal key"} mono />
         <span style={{ fontSize: 10, color: "var(--text-dim)", marginTop: 2 }}>
-          Prefix with <code style={{ fontFamily: "var(--font-mono)" }}>!</code> to run a shell command, or use an env var name
+          {savedApiKeyHidden ? "A key is configured on disk and is not exposed to the browser." : (
+            <>Prefix with <code style={{ fontFamily: "var(--font-mono)" }}>!</code> to run a shell command, or use an env var name</>
+          )}
         </span>
       </Field>
 
@@ -2597,8 +2613,9 @@ export function ModelsConfig({ onClose }: { onClose: () => void }) {
       });
       const d = await res.json() as { success?: boolean; error?: string };
       if (!res.ok || d.error) throw new Error(d.error ?? `HTTP ${res.status}`);
-      setConfig(nextConfig);
-      setSavedSnapshot(JSON.stringify(nextConfig));
+      const clientConfig = scrubClientSecrets(nextConfig);
+      setConfig(clientConfig);
+      setSavedSnapshot(JSON.stringify(clientConfig));
       await triggerCapabilityProbe(key, dimensions);
     } catch (error) {
       setSaveError(error instanceof Error ? error.message : String(error));
@@ -2623,7 +2640,9 @@ export function ModelsConfig({ onClose }: { onClose: () => void }) {
       const d = await res.json() as { success?: boolean; error?: string };
       if (!res.ok || d.error) setSaveError(d.error ?? `HTTP ${res.status}`);
       else {
-        setSavedSnapshot(JSON.stringify(nextConfig));
+        const clientConfig = scrubClientSecrets(nextConfig);
+        setConfig(clientConfig);
+        setSavedSnapshot(JSON.stringify(clientConfig));
         setSavedOk(true);
         setTimeout(() => setSavedOk(false), 2000);
         for (const key of weakProbeKeys) {

@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
-import { mkdtempSync, rmSync, writeFileSync } from "fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "fs";
 import { tmpdir } from "os";
 import { join } from "path";
 import { completeSimple, type AssistantMessage } from "@earendil-works/pi-ai/compat";
-import { AuthStorage, ModelRegistry } from "@earendil-works/pi-coding-agent";
+import { AuthStorage, getAgentDir, ModelRegistry } from "@earendil-works/pi-coding-agent";
 
 export const dynamic = "force-dynamic";
 
@@ -15,6 +15,33 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
+}
+
+function readSavedProvider(providerName: string): Record<string, unknown> {
+  const path = join(getAgentDir(), "models.json");
+  if (!existsSync(path)) return {};
+  try {
+    const data = JSON.parse(readFileSync(path, "utf8")) as { providers?: unknown };
+    const providers = isRecord(data.providers) ? data.providers : {};
+    const provider = providers[providerName];
+    return isRecord(provider) ? provider : {};
+  } catch {
+    return {};
+  }
+}
+
+function mergeProviderSecrets(providerName: string, provider: Record<string, unknown>): Record<string, unknown> {
+  const saved = readSavedProvider(providerName);
+  const apiKey = typeof provider.apiKey === "string" && provider.apiKey.trim()
+    ? provider.apiKey
+    : typeof saved.apiKey === "string"
+      ? saved.apiKey
+      : undefined;
+  const next = { ...provider };
+  delete next.apiKeyConfigured;
+  if (apiKey) next.apiKey = apiKey;
+  else delete next.apiKey;
+  return next;
 }
 
 function getAssistantText(message: AssistantMessage): string {
@@ -42,7 +69,7 @@ export async function POST(req: Request) {
     writeFileSync(modelsPath, JSON.stringify({
       providers: {
         [providerName]: {
-          ...body.provider,
+          ...mergeProviderSecrets(providerName, body.provider),
           models: [{ ...body.model, id: modelId }],
         },
       },

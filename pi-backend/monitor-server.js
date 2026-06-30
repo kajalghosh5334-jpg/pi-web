@@ -24,12 +24,13 @@ const PORT = Number(process.env.PI_MONITOR_PORT) || 3000;
 const PI_BIN = process.env.PI_BIN_PATH || "/usr/local/bin/pi";
 const PI_ENV = { ...process.env, PATH: (process.env.PI_PATH_PREFIX || "/usr/local/bin:") + process.env.PATH };
 const WORKSPACE = process.env.PI_WORKSPACE_DIR || "/tmp/pi-multi-agent";
+const PI_AGENT_DIR = process.env.PI_AGENT_DIR || join(homedir(), ".pi", "agent");
 const LEAD_TASK_ID = "lead-agent";
 const ARTIFACT_REVIEWER_TASK_ID = "artifact-reviewer-agent";
 const LEAD_MODEL = "opencode-go/deepseek-v4-pro";
 const PROFILE_STORE = join(REPO_ROOT, "agent-profiles.json");
 const WORKFLOW_STORE = join(REPO_ROOT, "workflows.json");
-const MODELS_CONFIG_PATH = process.env.PI_MODELS_CONFIG_PATH || join(process.env.PI_AGENT_DIR || join(homedir(), ".pi", "agent"), "models.json");
+const MODELS_CONFIG_PATH = process.env.PI_MODELS_CONFIG_PATH || join(PI_AGENT_DIR, "models.json");
 const LEAD_POLICY_PATH = join(REPO_ROOT, "lead-agent.md");
 const SUBAGENT_DEFAULTS_PATH = join(REPO_ROOT, "sub-agent-defaults.md");
 const SKILL_ROOT = process.env.PI_MULTI_AGENT_SKILL_ROOT || join(REPO_ROOT, "skills");
@@ -1645,6 +1646,149 @@ function getTrainState(sessionId) {
   return state;
 }
 
+function getSessionStoreDir() {
+  return join(PI_AGENT_DIR, "sessions");
+}
+
+function parseJsonLineSafe(line) {
+  if (!String(line || "").trim()) return null;
+  try {
+    return JSON.parse(line);
+  } catch {
+    return null;
+  }
+}
+
+function extractSessionMessageText(message) {
+  if (!message) return "";
+  if (message.role === "assistant") return extractAssistantText(message);
+  const content = message.content;
+  if (typeof content === "string") return content.trim();
+  if (!Array.isArray(content)) return "";
+  return content
+    .filter((block) => block?.type === "text" && typeof block.text === "string")
+    .map((block) => block.text)
+    .join("\n")
+    .trim();
+}
+
+function findSessionFileById(sessionId) {
+  const root = getSessionStoreDir();
+  if (!existsSync(root)) return "";
+  const stack = [root];
+  while (stack.length > 0) {
+    const dir = stack.pop();
+    let entries = [];
+    try {
+      entries = readdirSync(dir, { withFileTypes: true });
+    } catch {
+      continue;
+    }
+    for (const entry of entries) {
+      const path = join(dir, entry.name);
+      if (entry.isDirectory()) {
+        stack.push(path);
+        continue;
+      }
+      if (!entry.isFile() || !entry.name.endsWith(".jsonl")) continue;
+      if (entry.name.includes(sessionId)) return path;
+      try {
+        const firstLine = readFileSync(path, "utf8").split("\n", 1)[0];
+        const header = parseJsonLineSafe(firstLine);
+        if (header?.type === "session" && header.id === sessionId) return path;
+      } catch {
+        // Ignore unreadable session files.
+      }
+    }
+  }
+  return "";
+}
+
+function buildTrainableSessionFromJsonl(sessionId, filePath) {
+  const text = readFileSync(filePath, "utf8");
+  const lines = text.split("\n");
+  let header = null;
+  let currentUser = "";
+  let latestPair = null;
+  let latestModel = "";
+  let latestProvider = "";
+
+  for (const line of lines) {
+    const entry = parseJsonLineSafe(line);
+    if (!entry) continue;
+    if (!header && entry.type === "session") {
+      header = entry;
+      continue;
+    }
+    if (entry.type === "model_change") {
+      latestProvider = entry.provider || latestProvider;
+      latestModel = entry.modelId || latestModel;
+      continue;
+    }
+    if (entry.type !== "message") continue;
+    const message = entry.message || {};
+    const body = extractSessionMessageText(message);
+    if (!body) continue;
+    if (message.role === "user") {
+      currentUser = body;
+      continue;
+    }
+    if (message.role === "assistant" && currentUser) {
+      latestPair = {
+        prompt: currentUser,
+        output: body,
+        timestamp: entry.timestamp || Date.now(),
+        provider: message.provider || latestProvider,
+        model: message.model || latestModel,
+      };
+    }
+  }
+
+  if (!header?.id || header.id !== sessionId || !latestPair?.output) return null;
+  const cwd = normalizeProjectCwd(header.cwd || dirname(filePath));
+  const task = {
+    id: "restored-session-output",
+    name: "历史 Session 最终回答",
+    status: "completed",
+    output: latestPair.output,
+    delta: "",
+    prompt: latestPair.prompt,
+    model: [latestPair.provider, latestPair.model].filter(Boolean).join("/") || "restored-session",
+    noTools: true,
+    completedAt: Date.parse(latestPair.timestamp) || Date.now(),
+    restoredFromSession: true,
+  };
+  return {
+    input: latestPair.prompt,
+    cwd,
+    projectId: projectIdFromCwd(cwd),
+    status: "restored_for_train",
+    output: latestPair.output,
+    finalOutput: latestPair.output,
+    tasks: [task],
+    restoredForTrain: true,
+    restoredFromSessionFile: filePath,
+    startedAt: Date.now(),
+    updatedAt: Date.now(),
+  };
+}
+
+function ensureTrainableSession(sessionId) {
+  const existing = activeSessions.get(sessionId);
+  if (existing) return existing;
+  const filePath = findSessionFileById(sessionId);
+  if (!filePath) return null;
+  try {
+    const restored = buildTrainableSessionFromJsonl(sessionId, filePath);
+    if (!restored) return null;
+    activeSessions.set(sessionId, restored);
+    return restored;
+  } catch (error) {
+    console.warn(`[train] failed to restore session ${sessionId}:`, error.message);
+    return null;
+  }
+}
+
 function getLatestTrainBaseOutput(state) {
   const rounds = [...(state?.rounds || [])].reverse();
   for (const round of rounds) {
@@ -1892,7 +2036,7 @@ ${baseOutputAfter || "无"}`,
 }
 
 async function runTrainRound(sessionId, options = {}) {
-  const session = activeSessions.get(sessionId);
+  const session = ensureTrainableSession(sessionId);
   if (!session) throw new Error("session not found");
   let state = getTrainState(sessionId);
   if (state.status === "running" && !options.fromStartEndpoint) throw new Error("train already running");
@@ -4732,13 +4876,13 @@ app.post("/api/orchestrate/:sessionId/abort", (req, res) => {
 
 // ── Train / Save profile loop ─────────────────────────────────────────────
 app.get("/api/train/:sessionId", (req, res) => {
-  const session = activeSessions.get(req.params.sessionId);
+  const session = ensureTrainableSession(req.params.sessionId);
   if (!session) return res.status(404).json({ error: "session not found" });
-  res.json({ ok: true, training: summarizeTrainState(getTrainState(req.params.sessionId)) });
+  res.json({ ok: true, restoredForTrain: Boolean(session.restoredForTrain), training: summarizeTrainState(getTrainState(req.params.sessionId)) });
 });
 
 app.get("/api/train/:sessionId/round/:round", (req, res) => {
-  const session = activeSessions.get(req.params.sessionId);
+  const session = ensureTrainableSession(req.params.sessionId);
   if (!session) return res.status(404).json({ error: "session not found" });
   const round = Number(req.params.round);
   if (!Number.isInteger(round) || round < 1 || round > TRAIN_MAX_ROUNDS) return res.status(400).json({ error: "invalid round" });
@@ -4748,7 +4892,7 @@ app.get("/api/train/:sessionId/round/:round", (req, res) => {
 });
 
 app.post("/api/train/:sessionId/start", (req, res) => {
-  const session = activeSessions.get(req.params.sessionId);
+  const session = ensureTrainableSession(req.params.sessionId);
   if (!session) return res.status(404).json({ error: "session not found" });
   try {
     const state = getTrainState(req.params.sessionId);
@@ -4757,7 +4901,7 @@ app.post("/api/train/:sessionId/start", (req, res) => {
     const task = getTrainingTargetTask(session, req.body?.taskId || state.activeTaskId);
     if (!task) return res.status(400).json({ error: "no task available for training", training: summarizeTrainState(state) });
     publishTrainState(req.params.sessionId, { status: "running", phase: state.challengerOutput ? "EVALUATING" : "DISPATCH_CHALLENGER" });
-    res.json({ ok: true, sessionId: req.params.sessionId, training: summarizeTrainState(getTrainState(req.params.sessionId)) });
+    res.json({ ok: true, sessionId: req.params.sessionId, restoredForTrain: Boolean(session.restoredForTrain), training: summarizeTrainState(getTrainState(req.params.sessionId)) });
     runTrainRound(req.params.sessionId, { taskId: req.body?.taskId, fromStartEndpoint: true }).catch((error) => {
       console.error("[train] failed:", error.message);
     });
@@ -4767,7 +4911,7 @@ app.post("/api/train/:sessionId/start", (req, res) => {
 });
 
 app.post("/api/train/:sessionId/cancel", (req, res) => {
-  const session = activeSessions.get(req.params.sessionId);
+  const session = ensureTrainableSession(req.params.sessionId);
   if (!session) return res.status(404).json({ error: "session not found" });
   cancelTrainRound(req.params.sessionId);
   res.json({ ok: true, training: summarizeTrainState(getTrainState(req.params.sessionId)) });
@@ -4775,6 +4919,8 @@ app.post("/api/train/:sessionId/cancel", (req, res) => {
 
 app.post("/api/train/:sessionId/save", (req, res) => {
   try {
+    const session = ensureTrainableSession(req.params.sessionId);
+    if (!session) return res.status(404).json({ error: "session not found" });
     const profile = saveTrainProfile(req.params.sessionId, req.body || {});
     res.json({ ok: true, profile, training: summarizeTrainState(getTrainState(req.params.sessionId)) });
   } catch (error) {

@@ -366,10 +366,13 @@ export function AppShell() {
   const [focusedAgentTaskId, setFocusedAgentTaskId] = useState<string | null>(null);
   const [openTrainRounds, setOpenTrainRounds] = useState<Record<number, boolean>>({});
   const [trainRoundDetails, setTrainRoundDetails] = useState<Record<number, TrainRoundDetailState>>({});
+  const [trainNotice, setTrainNotice] = useState<string | null>(null);
+  const [trainBusy, setTrainBusy] = useState(false);
   const trainRoundDetailsRef = useRef<Record<number, TrainRoundDetailState>>({});
   const persistedMultiAgentOutputRef = useRef<string | null>(null);
   const activeMultiAgentSessionRef = useRef<string | null>(null);
-  const { state: orchestrateState, run: runOrchestrate, switchModel, abortTask, pauseTask, resumeTask, rerunTask, promoteProfile, promoteTaskSkills, confirm: confirmOrchestrate, startTrain, cancelTrain, saveTrain, clearProjectSummaries, refreshProjectMemory } = useOrchestrate();
+  const { state: orchestrateState, run: runOrchestrate, switchModel, abortTask, pauseTask, resumeTask, rerunTask, promoteProfile, promoteTaskSkills, confirm: confirmOrchestrate, refreshTrain, startTrain, cancelTrain, saveTrain, clearProjectSummaries, refreshProjectMemory } = useOrchestrate();
+  const activeTrainSessionId = orchestrateState.training?.sessionId || orchestrateState.sessionId || selectedSession?.id || null;
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -877,18 +880,65 @@ export function AppShell() {
     }
   }, []);
 
+  useEffect(() => {
+    setTrainNotice(null);
+    setOpenTrainRounds({});
+    trainRoundDetailsRef.current = {};
+    setTrainRoundDetails({});
+    if (!selectedSession?.id) return;
+    void refreshTrain({ sessionId: selectedSession.id })
+      .then((result) => {
+        const restored = result as { restoredForTrain?: boolean; error?: string };
+        if (restored?.restoredForTrain) {
+          setTrainNotice("已从历史 Session 恢复最近一组用户问题和最终回答，可用于 Train；这不是完整 Multi-Agent 运行态恢复。");
+        }
+      })
+      .catch(() => {});
+  }, [refreshTrain, selectedSession?.id]);
+
+  const trainErrorText = useCallback((error: unknown) => {
+    const message = error instanceof Error ? error.message : String(error || "Train request failed");
+    if (message.includes("session not found")) {
+      return "Train 需要当前会话仍在后端活动状态；请先在该 Session 里发起一次 Multi-Agent/Workflow 运行，再开始训练。";
+    }
+    if (message.includes("no task available for training")) {
+      return "当前 Session 还没有可训练的 Agent 任务；请先完成一次 Multi-Agent/Workflow 任务。";
+    }
+    if (message.includes("timed out")) {
+      return "Train 后端请求超时；当前训练服务没有在 15 秒内返回，请稍后重试或重启 monitor server。";
+    }
+    if (message.includes("fetch failed") || message.includes("Backend not available")) {
+      return "Train 后端暂时不可用；请确认 monitor server 正在运行后重试。";
+    }
+    return message;
+  }, []);
+
   const handleTrainClick = useCallback(async () => {
+    if (trainBusy) return;
     const training = orchestrateState.training;
-    if (training?.status === "running") {
-      if (!training.hasChallengerOutput && training.phase === "CHALLENGER_RUNNING") {
-        const ok = window.confirm("挑战者高端调用仍在运行，取消会丢弃本轮且下次需要重新派生。确认取消？");
-        if (!ok) return;
-      }
-      await cancelTrain();
+    const sessionId = activeTrainSessionId;
+    setTrainNotice(null);
+    if (!sessionId) {
+      setTrainNotice("请先打开或创建一个 Session，再开始 Train。");
       return;
     }
-    await startTrain({ taskId: focusedAgentTaskId || undefined });
-  }, [cancelTrain, focusedAgentTaskId, orchestrateState.training, startTrain]);
+    setTrainBusy(true);
+    try {
+      if (training?.status === "running") {
+        if (!training.hasChallengerOutput && training.phase === "CHALLENGER_RUNNING") {
+          const ok = window.confirm("挑战者高端调用仍在运行，取消会丢弃本轮且下次需要重新派生。确认取消？");
+          if (!ok) return;
+        }
+        const result = await cancelTrain({ sessionId }) as { ok?: boolean; error?: string };
+        if (result?.error || result?.ok === false) setTrainNotice(trainErrorText(result.error));
+        return;
+      }
+      const result = await startTrain({ taskId: focusedAgentTaskId || undefined, sessionId }) as { ok?: boolean; error?: string };
+      if (result?.error || result?.ok === false) setTrainNotice(trainErrorText(result.error));
+    } finally {
+      setTrainBusy(false);
+    }
+  }, [activeTrainSessionId, cancelTrain, focusedAgentTaskId, orchestrateState.training, startTrain, trainBusy, trainErrorText]);
 
   const openTrainSave = useCallback(() => {
     setTrainSaveName(`${selectedSession?.name || selectedSession?.id || "Trained"} Profile`);
@@ -900,20 +950,27 @@ export function AppShell() {
     if (!name) return;
     setTrainSaveBusy(true);
     try {
-      await saveTrain({ name });
-      setTrainSaveOpen(false);
+      setTrainNotice(null);
+      const result = await saveTrain({ name, sessionId: activeTrainSessionId || undefined }) as { ok?: boolean; error?: string };
+      if (result?.error || result?.ok === false) {
+        setTrainNotice(trainErrorText(result.error));
+      } else {
+        setTrainSaveOpen(false);
+      }
     } finally {
       setTrainSaveBusy(false);
     }
-  }, [saveTrain, trainSaveName]);
+  }, [activeTrainSessionId, saveTrain, trainErrorText, trainSaveName]);
 
   const loadTrainRoundDetail = useCallback((round: number) => {
-    if (!orchestrateState.sessionId) return;
+    if (!activeTrainSessionId) return;
     const current = trainRoundDetailsRef.current[round];
     if (current?.status === "loaded" || current?.status === "loading") return;
     trainRoundDetailsRef.current = { ...trainRoundDetailsRef.current, [round]: { status: "loading" } };
     setTrainRoundDetails(trainRoundDetailsRef.current);
-    void fetch(`/api/train/${encodeURIComponent(orchestrateState.sessionId)}/round/${round}`)
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 17_000);
+    void fetch(`/api/train/${encodeURIComponent(activeTrainSessionId)}/round/${round}`, { signal: controller.signal })
       .then((res) => res.json().then((data) => ({ ok: res.ok, data })))
       .then(({ ok, data }) => {
         if (!ok) throw new Error(data?.error || "round detail load failed");
@@ -921,10 +978,16 @@ export function AppShell() {
         setTrainRoundDetails(trainRoundDetailsRef.current);
       })
       .catch((error) => {
-        trainRoundDetailsRef.current = { ...trainRoundDetailsRef.current, [round]: { status: "error", error: error instanceof Error ? error.message : String(error) } };
+        const message = error instanceof Error && error.name === "AbortError"
+          ? "Train request timed out"
+          : error instanceof Error ? error.message : String(error);
+        trainRoundDetailsRef.current = { ...trainRoundDetailsRef.current, [round]: { status: "error", error: message } };
         setTrainRoundDetails(trainRoundDetailsRef.current);
+      })
+      .finally(() => {
+        clearTimeout(timeout);
       });
-  }, [orchestrateState.sessionId]);
+  }, [activeTrainSessionId]);
 
   useEffect(() => {
     const rounds = orchestrateState.training?.rounds?.filter((round) => round.status !== "discarded") || [];
@@ -1243,7 +1306,7 @@ export function AppShell() {
         return (
           <TrainRoundCard
             key={`${round.round}-${round.timestamp || index}`}
-            sessionId={orchestrateState.sessionId}
+            sessionId={activeTrainSessionId}
             round={round}
             open={open}
             detailState={trainRoundDetails[round.round]}
@@ -1256,10 +1319,16 @@ export function AppShell() {
       })}
     </div>
   ) : null;
+  const trainNoticePanel = showChat && trainNotice ? (
+    <div style={{ padding: "8px 12px", borderBottom: "1px solid rgba(245,158,11,0.28)", background: "rgba(245,158,11,0.08)", color: "#b45309", fontSize: 12, lineHeight: 1.5 }}>
+      {trainNotice}
+    </div>
+  ) : null;
   const trainCurrentRound = orchestrateState.training?.currentRound ?? 0;
   const trainMaxRounds = orchestrateState.training?.maxRounds ?? 5;
   const trainRunning = orchestrateState.training?.status === "running";
   const trainAtLimit = trainCurrentRound >= trainMaxRounds && !trainRunning;
+  const trainDisabled = trainAtLimit || trainBusy;
   const trainCanSave = Boolean(orchestrateState.training) && trainCurrentRound >= 1 && !trainRunning;
 
   const sidebarContent = (
@@ -1417,10 +1486,10 @@ export function AppShell() {
           </button>
           <div style={{ minWidth: 0, flex: 1 }} />
           {mainView === "chat" && showChat && selectedSession?.id && (
-            <div className="codex-top-reveal codex-segmented" style={{ marginLeft: "auto" }}>
+            <div className="codex-top-reveal codex-top-actions codex-segmented" style={{ marginLeft: "auto" }}>
               <button
                 onClick={() => void handleTrainClick()}
-                disabled={trainAtLimit}
+                disabled={trainDisabled}
                 title="Train current task against a high-end challenger"
                 style={{
                   display: "flex",
@@ -1430,8 +1499,8 @@ export function AppShell() {
                   padding: "0 12px",
                   border: "none",
                   color: "var(--text-muted)",
-                  cursor: trainAtLimit ? "not-allowed" : "pointer",
-                  opacity: trainAtLimit ? 0.45 : 1,
+                  cursor: trainDisabled ? "not-allowed" : "pointer",
+                  opacity: trainDisabled ? 0.45 : 1,
                   flexShrink: 0,
                   fontSize: 11,
                   whiteSpace: "nowrap",
@@ -1440,7 +1509,7 @@ export function AppShell() {
                 onMouseEnter={(e) => { e.currentTarget.style.color = "var(--text)"; e.currentTarget.style.background = "color-mix(in srgb, var(--bg-hover) 80%, var(--bg))"; }}
                 onMouseLeave={(e) => { e.currentTarget.style.color = "var(--text-muted)"; e.currentTarget.style.background = "none"; }}
               >
-                <span>{trainRunning ? trainStatusText(orchestrateState.training?.phase) : "Train"}</span>
+                <span>{trainBusy ? "处理中" : trainRunning ? trainStatusText(orchestrateState.training?.phase) : "Train"}</span>
                 <span style={{ color: "var(--text-dim)" }}>第 {Math.min(trainCurrentRound + (trainRunning ? 1 : 0), trainMaxRounds)}/{trainMaxRounds} 轮</span>
               </button>
               <button
@@ -1727,6 +1796,7 @@ export function AppShell() {
                 {showChat ? (
                   <div style={{ display: "flex", flexDirection: "column", height: "100%", minHeight: 0 }}>
                     {trainRoundsPanel}
+                    {trainNoticePanel}
                     <ChatWindow
                       session={selectedSession}
                       newSessionCwd={effectiveNewSessionCwd}
@@ -1786,6 +1856,7 @@ export function AppShell() {
           ) : showChat ? (
             <div style={{ display: "flex", flexDirection: "column", height: "100%", minHeight: 0 }}>
               {trainRoundsPanel}
+              {trainNoticePanel}
               <ChatWindow
                 session={selectedSession}
                 newSessionCwd={effectiveNewSessionCwd}

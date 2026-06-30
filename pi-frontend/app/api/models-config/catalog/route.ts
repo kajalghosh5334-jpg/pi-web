@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { execSync } from "child_process";
+import { existsSync, readFileSync } from "fs";
+import { join } from "path";
 
 export const dynamic = "force-dynamic";
 
@@ -11,6 +13,25 @@ interface CatalogModel {
 
 function normalizeBaseUrl(baseUrl: string): string {
   return baseUrl.replace(/\/+$/, "");
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+async function readSavedProviderApiKey(providerName: string): Promise<string> {
+  if (!providerName) return "";
+  const { getAgentDir } = await import("@earendil-works/pi-coding-agent");
+  const path = join(getAgentDir(), "models.json");
+  if (!existsSync(path)) return "";
+  try {
+    const data = JSON.parse(readFileSync(path, "utf8")) as { providers?: unknown };
+    const providers = isRecord(data.providers) ? data.providers : {};
+    const provider = providers[providerName];
+    return isRecord(provider) && typeof provider.apiKey === "string" ? provider.apiKey : "";
+  } catch {
+    return "";
+  }
 }
 
 function resolveApiKey(apiKey?: string): string {
@@ -76,9 +97,12 @@ function normalizeModels(payload: unknown): CatalogModel[] {
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json() as { baseUrl?: unknown; apiKey?: unknown; headers?: unknown };
+    const body = await req.json() as { providerName?: unknown; baseUrl?: unknown; apiKey?: unknown; headers?: unknown };
+    const providerName = typeof body.providerName === "string" ? body.providerName.trim() : "";
     const baseUrl = typeof body.baseUrl === "string" ? body.baseUrl.trim() : "";
-    const apiKey = typeof body.apiKey === "string" ? body.apiKey.trim() : "";
+    const apiKey = typeof body.apiKey === "string" && body.apiKey.trim()
+      ? body.apiKey.trim()
+      : await readSavedProviderApiKey(providerName);
     if (!baseUrl) return NextResponse.json({ ok: false, error: "baseUrl is required" }, { status: 400 });
 
     const controller = new AbortController();

@@ -1,7 +1,7 @@
 import { readdirSync } from "fs";
 import { homedir } from "os";
 import path from "path";
-import { listAllSessions } from "./session-reader";
+import { listAllSessions } from "./session-list";
 
 // Short-TTL cache for the allowed-roots set. Without this, every file list/read
 // request re-scans every pi session on disk just to check access. 5s is short

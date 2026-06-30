@@ -213,6 +213,20 @@ const INITIAL: OrchestrateState = {
   training: null,
 };
 
+async function fetchJsonWithTimeout(url: string, init: RequestInit = {}, timeoutMs = 17_000): Promise<Record<string, unknown>> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(url, { ...init, signal: controller.signal });
+    return await res.json().catch(() => ({ ok: res.ok }));
+  } catch (error) {
+    if (error instanceof Error && error.name === "AbortError") return { ok: false, error: "Train request timed out" };
+    return { ok: false, error: error instanceof Error ? error.message : String(error) };
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 export function useOrchestrate() {
   const [state, setState] = useState<OrchestrateState>(INITIAL);
   const wsRef = useRef<WebSocket | null>(null);
@@ -599,35 +613,45 @@ export function useOrchestrate() {
     });
   }, [state.sessionId]);
 
-  const startTrain = useCallback(async (options: { taskId?: string } = {}) => {
-    if (!state.sessionId) return { ok: false, error: "sessionId required" };
-    const res = await fetch(`/api/train/${encodeURIComponent(state.sessionId)}/start`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(options),
-    });
-    const data = await res.json().catch(() => ({ ok: res.ok }));
-    if (data?.training) setState((s) => ({ ...s, training: data.training as TrainingState }));
+  const refreshTrain = useCallback(async (options: { sessionId?: string } = {}) => {
+    const sessionId = options.sessionId || state.sessionId;
+    if (!sessionId) return { ok: false, error: "sessionId required" };
+    const data = await fetchJsonWithTimeout(`/api/train/${encodeURIComponent(sessionId)}`, { cache: "no-store" });
+    if (data?.training) setState((s) => ({ ...s, sessionId: sessionId || s.sessionId, training: data.training as TrainingState }));
     return data;
   }, [state.sessionId]);
 
-  const cancelTrain = useCallback(async () => {
-    if (!state.sessionId) return { ok: false, error: "sessionId required" };
-    const res = await fetch(`/api/train/${encodeURIComponent(state.sessionId)}/cancel`, { method: "POST" });
-    const data = await res.json().catch(() => ({ ok: res.ok }));
-    if (data?.training) setState((s) => ({ ...s, training: data.training as TrainingState }));
+  const startTrain = useCallback(async (options: { taskId?: string; sessionId?: string } = {}) => {
+    const sessionId = options.sessionId || state.sessionId;
+    if (!sessionId) return { ok: false, error: "sessionId required" };
+    const body = { taskId: options.taskId };
+    const data = await fetchJsonWithTimeout(`/api/train/${encodeURIComponent(sessionId)}/start`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    if (data?.training) setState((s) => ({ ...s, sessionId: sessionId || s.sessionId, training: data.training as TrainingState }));
     return data;
   }, [state.sessionId]);
 
-  const saveTrain = useCallback(async (options: { name?: string; description?: string } = {}) => {
-    if (!state.sessionId) return { ok: false, error: "sessionId required" };
-    const res = await fetch(`/api/train/${encodeURIComponent(state.sessionId)}/save`, {
+  const cancelTrain = useCallback(async (options: { sessionId?: string } = {}) => {
+    const sessionId = options.sessionId || state.sessionId;
+    if (!sessionId) return { ok: false, error: "sessionId required" };
+    const data = await fetchJsonWithTimeout(`/api/train/${encodeURIComponent(sessionId)}/cancel`, { method: "POST" });
+    if (data?.training) setState((s) => ({ ...s, sessionId: sessionId || s.sessionId, training: data.training as TrainingState }));
+    return data;
+  }, [state.sessionId]);
+
+  const saveTrain = useCallback(async (options: { name?: string; description?: string; sessionId?: string } = {}) => {
+    const sessionId = options.sessionId || state.sessionId;
+    if (!sessionId) return { ok: false, error: "sessionId required" };
+    const body = { name: options.name, description: options.description };
+    const data = await fetchJsonWithTimeout(`/api/train/${encodeURIComponent(sessionId)}/save`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(options),
+      body: JSON.stringify(body),
     });
-    const data = await res.json().catch(() => ({ ok: res.ok }));
-    if (data?.training) setState((s) => ({ ...s, training: data.training as TrainingState }));
+    if (data?.training) setState((s) => ({ ...s, sessionId: sessionId || s.sessionId, training: data.training as TrainingState }));
     return data;
   }, [state.sessionId]);
 
@@ -706,5 +730,5 @@ export function useOrchestrate() {
     });
   }, [state.sessionId]);
 
-  return { state, run, reset, switchModel, abortTask, pauseTask, resumeTask, rerunTask, promoteProfile, promoteTaskSkills, confirm, coach, startTrain, cancelTrain, saveTrain, clearProjectSummaries, refreshProjectMemory };
+  return { state, run, reset, switchModel, abortTask, pauseTask, resumeTask, rerunTask, promoteProfile, promoteTaskSkills, confirm, coach, refreshTrain, startTrain, cancelTrain, saveTrain, clearProjectSummaries, refreshProjectMemory };
 }

@@ -11,7 +11,7 @@ function timeoutResult(): Promise<never> {
 export async function GET() {
   try {
     const sessions = await Promise.race([
-      import("@/lib/session-reader").then((mod) => mod.listAllSessions()),
+      import("@/lib/session-list").then((mod) => mod.listAllSessions({ allowStale: true })),
       timeoutResult(),
     ]);
     return NextResponse.json({ sessions });

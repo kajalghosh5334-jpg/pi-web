@@ -348,6 +348,12 @@ pre, code {
   pointer-events: auto;
 }
 
+.codex-top-actions {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
 .chat-session-hover-info {
   opacity: 0;
   transform: translateY(-4px);
