@@ -135,6 +135,8 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
   const sessionLoadTokenRef = useRef(0);
   const fullSessionLoadTokenRef = useRef(-1);
   const fullSessionRefreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingStreamingMessageRef = useRef<AgentMessage | null>(null);
+  const streamingMessageFlushTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const agentRunningRef = useRef(false);
   const handleAgentEventRef = useRef<((event: AgentEvent) => void) | null>(null);
   const initialScrollDoneRef = useRef(false);
@@ -267,6 +269,32 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
     agentRunningRef.current = agentRunning;
   }, [agentRunning]);
 
+  const flushStreamingMessageUpdate = useCallback(() => {
+    if (streamingMessageFlushTimerRef.current) {
+      clearTimeout(streamingMessageFlushTimerRef.current);
+      streamingMessageFlushTimerRef.current = null;
+    }
+
+    const normalized = pendingStreamingMessageRef.current;
+    pendingStreamingMessageRef.current = null;
+    if (!normalized) return;
+
+    setMessages((prev) => {
+      if (prev.length === 0) {
+        return [{ ...normalized, role: "assistant", _streamId: String(++streamingIdCounter.current) } as unknown as AgentMessage];
+      }
+      const last = { ...prev[prev.length - 1] };
+      return [...prev.slice(0, -1), { ...last, ...normalized, content: normalized.content?.length ? normalized.content : last.content } as AgentMessage];
+    });
+    setAgentPhase(null);
+  }, []);
+
+  const queueStreamingMessageUpdate = useCallback((message: AgentMessage) => {
+    pendingStreamingMessageRef.current = normalizeToolCalls(message);
+    if (streamingMessageFlushTimerRef.current) return;
+    streamingMessageFlushTimerRef.current = setTimeout(flushStreamingMessageUpdate, 80);
+  }, [flushStreamingMessageUpdate]);
+
   const handleAgentEvent = useCallback((event: AgentEvent) => {
     switch (event.type) {
       case "agent_start":
@@ -280,6 +308,7 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
         setFinalOutputStarted(true);
         break;
       case "agent_end":
+        flushStreamingMessageUpdate();
         agentRunningRef.current = false;
         setAgentRunning(false);
         setAgentPhase(null);
@@ -313,16 +342,11 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
       case "message_update": {
         const updMsg = event.message as Partial<AgentMessage> | undefined;
         if (updMsg?.role === "user" || !updMsg) break;
-        const normalized = normalizeToolCalls(updMsg as AgentMessage);
-        setMessages((prev) => {
-          if (prev.length === 0) return [{ ...normalized, role: "assistant", _streamId: String(++streamingIdCounter.current) } as unknown as AgentMessage];
-          const last = { ...prev[prev.length - 1] };
-          return [...prev.slice(0, -1), { ...last, ...normalized, content: normalized.content?.length ? normalized.content : last.content } as AgentMessage];
-        });
-        setAgentPhase(null);
+        queueStreamingMessageUpdate(updMsg as AgentMessage);
         break;
       }
       case "message_end": {
+        flushStreamingMessageUpdate();
         setCurrentStreamingMessageId(null);
         setAgentPhase({ kind: "waiting_model" });
         break;
@@ -371,7 +395,7 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
         }
         break;
     }
-  }, [loadSession, onAgentEnd]);
+  }, [flushStreamingMessageUpdate, loadSession, onAgentEnd, queueStreamingMessageUpdate]);
   handleAgentEventRef.current = handleAgentEvent;
 
   const handleSend = useCallback(async (message: string, images?: AttachedImage[]) => {
@@ -644,6 +668,11 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
     completionScrollAllowedRef.current = true;
 
     if (session) {
+      pendingStreamingMessageRef.current = null;
+      if (streamingMessageFlushTimerRef.current) {
+        clearTimeout(streamingMessageFlushTimerRef.current);
+        streamingMessageFlushTimerRef.current = null;
+      }
       const loadToken = sessionLoadTokenRef.current + 1;
       sessionLoadTokenRef.current = loadToken;
       fullSessionLoadTokenRef.current = -1;
@@ -686,6 +715,11 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
         })
         .catch(() => {});
     } else {
+      pendingStreamingMessageRef.current = null;
+      if (streamingMessageFlushTimerRef.current) {
+        clearTimeout(streamingMessageFlushTimerRef.current);
+        streamingMessageFlushTimerRef.current = null;
+      }
       sessionLoadTokenRef.current += 1;
       fullSessionLoadTokenRef.current = -1;
       if (fullSessionRefreshTimerRef.current) {
@@ -701,6 +735,11 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
       setError(null);
     }
     return () => {
+      pendingStreamingMessageRef.current = null;
+      if (streamingMessageFlushTimerRef.current) {
+        clearTimeout(streamingMessageFlushTimerRef.current);
+        streamingMessageFlushTimerRef.current = null;
+      }
       if (fullSessionRefreshTimerRef.current) {
         clearTimeout(fullSessionRefreshTimerRef.current);
         fullSessionRefreshTimerRef.current = null;
@@ -843,7 +882,7 @@ function mergeOptimisticMessages(
   persistedMessages: AgentMessage[],
 ): AgentMessage[] {
   const optimistic = previousMessages.filter((message) => (message as OptimisticAgentMessage)._optimistic);
-  if (optimistic.length === 0) return persistedMessages;
+  if (optimistic.length === 0) return preserveStableMessageReferences(previousMessages, persistedMessages);
 
   const persistedKeys = new Set(persistedMessages.map(getOptimisticMatchKey).filter(Boolean) as string[]);
   const unresolved = optimistic.filter((message) => {
@@ -855,7 +894,44 @@ function mergeOptimisticMessages(
     return next as AgentMessage;
   });
 
-  return unresolved.length > 0 ? [...unresolved, ...persistedMessages] : persistedMessages;
+  const merged = unresolved.length > 0 ? [...unresolved, ...persistedMessages] : persistedMessages;
+  return preserveStableMessageReferences(previousMessages, merged);
+}
+
+function preserveStableMessageReferences(
+  previousMessages: AgentMessage[],
+  nextMessages: AgentMessage[],
+): AgentMessage[] {
+  if (previousMessages.length === 0 || nextMessages.length === 0) return nextMessages;
+
+  let changed = previousMessages.length !== nextMessages.length;
+  const reconciled = nextMessages.map((message, index) => {
+    const previous = previousMessages[index];
+    if (previous && getMessageStableSignature(previous) === getMessageStableSignature(message)) {
+      return previous;
+    }
+    changed = true;
+    return message;
+  });
+
+  return changed ? reconciled : previousMessages;
+}
+
+function getMessageStableSignature(message: AgentMessage): string {
+  const raw = message as unknown as Record<string, unknown>;
+  return JSON.stringify({
+    role: message.role,
+    content: message.content,
+    customType: raw.customType,
+    display: raw.display,
+    timestamp: raw.timestamp,
+    provider: raw.provider,
+    model: raw.model,
+    stopReason: raw.stopReason,
+    usage: raw.usage,
+    toolCallId: raw.toolCallId,
+    isError: raw.isError,
+  });
 }
 
 function getOptimisticMatchKey(message: AgentMessage): string | null {

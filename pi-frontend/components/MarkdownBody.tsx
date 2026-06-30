@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { memo, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import ReactMarkdown from "react-markdown";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { vs } from "react-syntax-highlighter/dist/cjs/styles/prism";
@@ -33,7 +33,7 @@ function copyText(text: string): Promise<void> {
   }
 }
 
-export function MarkdownBody({ children, className, isStreaming }: MarkdownBodyProps) {
+function MarkdownBodyImpl({ children, className, isStreaming }: MarkdownBodyProps) {
   // ponytail: throttle streaming re-renders — avoid re-parsing markdown + syntax highlight every token
   const [throttled, setThrottled] = useState(children);
   const lastRenderRef = useRef(0);
@@ -111,6 +111,8 @@ export function MarkdownBody({ children, className, isStreaming }: MarkdownBodyP
     </div>
   );
 }
+
+export const MarkdownBody = memo(MarkdownBodyImpl);
 
 function normalizeDisplayMath(markdown: string): string {
   const lineBreak = markdown.includes("\r\n") ? "\r\n" : "\n";

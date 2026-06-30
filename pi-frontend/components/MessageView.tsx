@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo, useRef } from "react";
+import { memo, useState, useEffect, useMemo, useRef } from "react";
 import { MarkdownBody } from "./MarkdownBody";
 import type {
   AgentMessage,
@@ -67,7 +67,7 @@ function copyText(text: string): Promise<void> {
   }
 }
 
-export function MessageView({ message, isStreaming, toolResults, entryId, onFork, forking, onNavigate, prevAssistantEntryId, onEditContent, showTimestamp, agentRunning, finalOutputStarted, runSteps }: Props) {
+function MessageViewImpl({ message, isStreaming, toolResults, entryId, onFork, forking, onNavigate, prevAssistantEntryId, onEditContent, showTimestamp, agentRunning, finalOutputStarted, runSteps }: Props) {
   if (message.role === "user") {
     return <UserMessageView message={message as UserMessage} entryId={entryId} onFork={onFork} forking={forking} onNavigate={onNavigate} prevAssistantEntryId={prevAssistantEntryId} onEditContent={onEditContent} />;
   }
@@ -83,6 +83,20 @@ export function MessageView({ message, isStreaming, toolResults, entryId, onFork
   }
   return null;
 }
+
+export const MessageView = memo(MessageViewImpl, (prev, next) => (
+  prev.message === next.message
+  && prev.isStreaming === next.isStreaming
+  && prev.toolResults === next.toolResults
+  && prev.modelNames === next.modelNames
+  && prev.entryId === next.entryId
+  && prev.forking === next.forking
+  && prev.prevAssistantEntryId === next.prevAssistantEntryId
+  && prev.showTimestamp === next.showTimestamp
+  && prev.agentRunning === next.agentRunning
+  && prev.finalOutputStarted === next.finalOutputStarted
+  && prev.runSteps === next.runSteps
+));
 
 function UserMessageView({ message, entryId, onFork, forking, onNavigate, prevAssistantEntryId, onEditContent }: {
   message: UserMessage;

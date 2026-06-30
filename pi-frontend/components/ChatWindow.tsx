@@ -46,17 +46,6 @@ function hasAssistantText(msg: AgentMessage): boolean {
   return msg.content.some((block) => block.type === "text" && String(block.text || "").trim());
 }
 
-function isFinalTextAssistantMessageInTurn(messages: AgentMessage[], idx: number): boolean {
-  const msg = messages[idx];
-  if (!hasAssistantText(msg)) return false;
-  for (let i = idx + 1; i < messages.length; i++) {
-    const next = messages[i];
-    if (next.role === "user") break;
-    if (hasAssistantText(next)) return false;
-  }
-  return true;
-}
-
 const TYPEWRITER_PHRASES = [
   "ready when you are.",
   "ask me anything.",
@@ -209,22 +198,98 @@ const ChatWindow = memo(function ChatWindow({ session, newSessionCwd, onAgentEnd
     return { runSteps: steps, lastAssistantIdxInRun: lastAssistantIdx };
   }, [renderMessages]);
 
-  const isStreamingMsg = (m: AgentMessage) => (m as AgentMessage & { _streamId?: string })._streamId === currentStreamingMessageId;
-  const hasVisibleStreamingContent = (m: AgentMessage) => {
+  const isStreamingMsg = useCallback((m: AgentMessage) => (m as AgentMessage & { _streamId?: string })._streamId === currentStreamingMessageId, [currentStreamingMessageId]);
+  const hasVisibleStreamingContent = useCallback((m: AgentMessage) => {
     if (m.role !== "assistant") return true;
     const content = m.content;
     if (!Array.isArray(content)) return true;
     return content.some((b) => b.type === "thinking" || b.type === "text");
-  };
-  const visibleMessages = renderMessages.filter((m, idx) =>
-    m.role === "user"
-    || (m.role === "assistant" && (
-      (isStreamingMsg(m) && hasVisibleStreamingContent(m))
-      || isFinalTextAssistantMessageInTurn(renderMessages, idx)
-    ))
-    || (m.role === "custom" && m.display !== false)
-  );
+  }, []);
+  const { visibleMessages, finalTextAssistantIndexes } = useMemo(() => {
+    const finalTextAssistantIndexes = new Set<number>();
+    let seenAssistantTextInTurn = false;
+
+    for (let i = renderMessages.length - 1; i >= 0; i--) {
+      const msg = renderMessages[i];
+      if (msg.role === "user") {
+        seenAssistantTextInTurn = false;
+        continue;
+      }
+      if (hasAssistantText(msg)) {
+        if (!seenAssistantTextInTurn) finalTextAssistantIndexes.add(i);
+        seenAssistantTextInTurn = true;
+      }
+    }
+
+    const visibleMessages = renderMessages.filter((m, idx) =>
+      m.role === "user"
+      || (m.role === "assistant" && (
+        (isStreamingMsg(m) && hasVisibleStreamingContent(m))
+        || finalTextAssistantIndexes.has(idx)
+      ))
+      || (m.role === "custom" && m.display !== false)
+    );
+    return { visibleMessages, finalTextAssistantIndexes };
+  }, [hasVisibleStreamingContent, isStreamingMsg, renderMessages]);
   const messageRefs = useMessageRefs(visibleMessages.length);
+  const toolResultsCacheRef = useRef<{ key: string; map: Map<string, ToolResultMessage> }>({
+    key: "",
+    map: new Map(),
+  });
+
+  const toolResultsMap = useMemo(() => {
+    const toolResults: ToolResultMessage[] = [];
+    for (const msg of renderMessages) {
+      if (msg.role === "toolResult") toolResults.push(msg as ToolResultMessage);
+    }
+    const key = toolResults
+      .map((msg) => `${msg.toolCallId}:${msg.isError ? "1" : "0"}:${String(msg.content ?? "").length}`)
+      .join("|");
+    if (toolResultsCacheRef.current.key === key) {
+      return toolResultsCacheRef.current.map;
+    }
+    const map = new Map<string, ToolResultMessage>();
+    for (const msg of toolResults) {
+      map.set(msg.toolCallId, msg);
+    }
+    toolResultsCacheRef.current = { key, map };
+    return map;
+  }, [renderMessages]);
+
+  const renderItems = useMemo(() => {
+    type RenderItem =
+      | { type: "message"; msg: AgentMessage; idx: number }
+      | { type: "toolGroup"; msgs: AssistantMessage[]; startIdx: number };
+
+    const items: RenderItem[] = [];
+    let i = 0;
+    while (i < renderMessages.length) {
+      const msg = renderMessages[i];
+      if (isToolOnlyAssistantMessage(msg) && !isStreaming) {
+        const groupMsgs: AssistantMessage[] = [msg as AssistantMessage];
+        let j = i + 1;
+        while (j < renderMessages.length) {
+          const next = renderMessages[j];
+          if (next.role === "toolResult") { j++; continue; }
+          if (isToolOnlyAssistantMessage(next)) { groupMsgs.push(next as AssistantMessage); j++; continue; }
+          break;
+        }
+        items.push({ type: "toolGroup", msgs: groupMsgs, startIdx: i });
+        i = j;
+      } else {
+        items.push({ type: "message", msg, idx: i });
+        i++;
+      }
+    }
+    return items;
+  }, [isStreaming, renderMessages]);
+
+  const lastUserIdx = useMemo(() => {
+    for (let i = renderMessages.length - 1; i >= 0; i--) {
+      if (renderMessages[i].role === "user") return i;
+    }
+    return -1;
+  }, [renderMessages]);
 
   const isEmptyNew = isNew && renderMessages.length === 0 && !isStreaming && !agentRunning;
 
@@ -236,10 +301,14 @@ const ChatWindow = memo(function ChatWindow({ session, newSessionCwd, onAgentEnd
     ? (modelThinkingLevelMaps[`${displayModelValue.provider}:${displayModelValue.modelId}`] ?? null)
     : null;
 
-  const chatInputElement = (
+  const handleChatSend = useCallback((message: string, images?: AttachedImage[]) => {
+    return onSendOverride ? onSendOverride(message, images, handleSend) : handleSend(message, images);
+  }, [handleSend, onSendOverride]);
+
+  const chatInputElement = useMemo(() => (
     <ChatInput
       ref={chatInputRef}
-      onSend={(message, images) => onSendOverride ? onSendOverride(message, images, handleSend) : handleSend(message, images)}
+      onSend={handleChatSend}
       onAbort={handleAbort}
       onSteer={agentRunning ? handleSteer : undefined}
       onFollowUp={agentRunning ? handleFollowUp : undefined}
@@ -266,7 +335,13 @@ const ChatWindow = memo(function ChatWindow({ session, newSessionCwd, onAgentEnd
       placeholder={inputPlaceholder}
       accessory={inputAccessory}
     />
-  );
+  ), [
+    agentRunning, availableThinkingLevels, chatInputRef, compactError, compactResult, currentThinkingLevelMap,
+    displayModelValue, handleAbort, handleAbortCompaction, handleChatSend, handleCompact, handleFollowUp,
+    handleModelChange, handleSteer, handleThinkingLevelChange, handleToolPresetChange, inputAccessory,
+    inputPlaceholder, isAutoModelSelection, isCompacting, isNew, modelList, modelNames, onSoundToggle,
+    retryInfo, session, soundEnabled, thinkingLevel, toolPreset,
+  ]);
 
   if (loading) {
     return (
@@ -380,45 +455,8 @@ const ChatWindow = memo(function ChatWindow({ session, newSessionCwd, onAgentEnd
             )}
 
             {(() => {
-              const toolResultsMap = new Map<string, import("@/lib/types").ToolResultMessage>();
-              for (const msg of renderMessages) {
-                if (msg.role === "toolResult") {
-                  toolResultsMap.set((msg as import("@/lib/types").ToolResultMessage).toolCallId, msg as import("@/lib/types").ToolResultMessage);
-                }
-              }
-              let lastUserIdx = -1;
-              for (let i = renderMessages.length - 1; i >= 0; i--) {
-                if (renderMessages[i].role === "user") { lastUserIdx = i; break; }
-              }
-
-              type RenderItem =
-                | { type: "message"; msg: AgentMessage; idx: number }
-                | { type: "toolGroup"; msgs: import("@/lib/types").AssistantMessage[]; startIdx: number };
-
-              const items: RenderItem[] = [];
-              let i = 0;
-              while (i < renderMessages.length) {
-                const msg = renderMessages[i];
-                if (isToolOnlyAssistantMessage(msg) && !isStreaming) {
-                  const groupMsgs: import("@/lib/types").AssistantMessage[] = [msg as import("@/lib/types").AssistantMessage];
-                  let j = i + 1;
-                  while (j < renderMessages.length) {
-                    const next = renderMessages[j];
-                    // ponytail: toolResult messages sit between assistant messages — skip, don't break the group
-                    if (next.role === "toolResult") { j++; continue; }
-                    if (isToolOnlyAssistantMessage(next)) { groupMsgs.push(next as import("@/lib/types").AssistantMessage); j++; continue; }
-                    break;
-                  }
-                  items.push({ type: "toolGroup", msgs: groupMsgs, startIdx: i });
-                  i = j;
-                } else {
-                  items.push({ type: "message", msg, idx: i });
-                  i++;
-                }
-              }
-
               let refIdx = 0;
-              return items.map((item) => {
+              return renderItems.map((item) => {
                 if (item.type === "toolGroup") {
                   return null;
                 }
@@ -426,14 +464,15 @@ const ChatWindow = memo(function ChatWindow({ session, newSessionCwd, onAgentEnd
                 const msg = item.msg;
                 const idx = item.idx;
                 const streamingHere = isStreamingMsg(msg);
-                if (msg.role === "assistant" && !streamingHere && !isFinalTextAssistantMessageInTurn(renderMessages, idx)) {
+                const finalTextHere = finalTextAssistantIndexes.has(idx);
+                if (msg.role === "assistant" && !streamingHere && !finalTextHere) {
                   return null;
                 }
                 const prevAssistantEntryId =
                   (msg as import("@/lib/types").AgentMessage).role === "user" && idx > 0 && renderMessages[idx - 1].role === "assistant"
                     ? entryIds[idx - 1]
                     : undefined;
-                const isVisible = msg.role === "user" || (msg.role === "assistant" && (streamingHere || isFinalTextAssistantMessageInTurn(renderMessages, idx)));
+                const isVisible = msg.role === "user" || (msg.role === "assistant" && (streamingHere || finalTextHere));
                 const currentRefIdx = isVisible ? refIdx++ : -1;
                 let showTimestamp = false;
                 if (msg.role === "assistant") {
@@ -506,7 +545,7 @@ const ChatWindow = memo(function ChatWindow({ session, newSessionCwd, onAgentEnd
           </div>
         </div>
         <ChatMinimap
-          messages={renderMessages}
+          messages={visibleMessages}
           streamingMessage={null}
           scrollContainer={scrollContainerRef}
           messageRefs={messageRefs}

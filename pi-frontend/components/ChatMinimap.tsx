@@ -73,6 +73,8 @@ export function ChatMinimap({ messages, scrollContainer, messageRefs }: Props) {
   const [mouseYRatio, setMouseYRatio] = useState<number | null>(null);
   const draggingRef = useRef(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const updateRafRef = useRef<number | null>(null);
+  const nodesKeyRef = useRef("");
 
   const allMessages = useMemo(() => messages as (AgentMessage | Partial<AgentMessage>)[], [messages]);
   const allMessagesRef = useRef(allMessages);
@@ -124,10 +126,22 @@ export function ChatMinimap({ messages, scrollContainer, messageRefs }: Props) {
         });
       }
     }
-    setNodes(newNodes);
+    const nodesKey = newNodes
+      .map((node) => `${node.index}:${Math.round(node.topRatio * 10000)}:${Math.round(node.heightRatio * 10000)}`)
+      .join("|");
+    if (nodesKey !== nodesKeyRef.current) {
+      nodesKeyRef.current = nodesKey;
+      setNodes(newNodes);
+    }
   };
 
-  const updatePositions = useCallback(() => updatePositionsRef.current(), []);
+  const updatePositions = useCallback(() => {
+    if (updateRafRef.current !== null) return;
+    updateRafRef.current = requestAnimationFrame(() => {
+      updateRafRef.current = null;
+      updatePositionsRef.current();
+    });
+  }, []);
 
   useEffect(() => {
     const el = scrollContainer.current;
@@ -139,6 +153,10 @@ export function ChatMinimap({ messages, scrollContainer, messageRefs }: Props) {
     if (el.firstElementChild) ro.observe(el.firstElementChild);
     updatePositions();
     return () => {
+      if (updateRafRef.current !== null) {
+        cancelAnimationFrame(updateRafRef.current);
+        updateRafRef.current = null;
+      }
       el.removeEventListener("scroll", updatePositions);
       ro.disconnect();
     };
