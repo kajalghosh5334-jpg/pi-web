@@ -417,7 +417,10 @@
     ],
     "status": "active",
     "domain": "self-media",
-    "templateType": "generate-variants"
+    "templateType": "generate-variants",
+    "debugStatus": "polished",
+    "debuggedAt": 1782842017491,
+    "debugSource": "user:self-media-bulk-polish"
   },
   "ecommerce-listing-optimization": {
     "id": "ecommerce-listing-optimization",
@@ -1062,7 +1065,10 @@
     ],
     "status": "active",
     "domain": "self-media",
-    "templateType": "classify-route"
+    "templateType": "classify-route",
+    "debugStatus": "polished",
+    "debuggedAt": 1782842017491,
+    "debugSource": "user:self-media-bulk-polish"
   },
   "sales-call-crm-writeback": {
     "id": "sales-call-crm-writeback",
@@ -1145,7 +1151,10 @@
     ],
     "status": "active",
     "domain": "sales",
-    "templateType": "extract-writeback"
+    "templateType": "extract-writeback",
+    "debugStatus": "polished",
+    "debuggedAt": 1782842017491,
+    "debugSource": "docs/workflow-debugging-playbook.md"
   },
   "self-media-topic-mining": {
     "id": "self-media-topic-mining",
@@ -1161,6 +1170,9 @@
     "status": "active",
     "domain": "self-media",
     "templateType": "fetch-summarize",
+    "debugStatus": "polished",
+    "debuggedAt": 1782842017491,
+    "debugSource": "user:self-media-bulk-polish",
     "tasks": [
       {
         "id": "topic-sources",
@@ -1224,6 +1236,9 @@
     "status": "active",
     "domain": "self-media",
     "templateType": "fetch-summarize",
+    "debugStatus": "polished",
+    "debuggedAt": 1782842017491,
+    "debugSource": "user:self-media-bulk-polish",
     "tasks": [
       {
         "id": "ai-topic-source-pack",
@@ -1332,6 +1347,9 @@
     "status": "active",
     "domain": "self-media",
     "templateType": "generate-variants",
+    "debugStatus": "polished",
+    "debuggedAt": 1782842017491,
+    "debugSource": "user:self-media-bulk-polish",
     "tasks": [
       {
         "id": "tc-brief",
@@ -1395,6 +1413,9 @@
     "status": "active",
     "domain": "self-media",
     "templateType": "fetch-summarize",
+    "debugStatus": "polished",
+    "debuggedAt": 1782842017491,
+    "debugSource": "user:self-media-bulk-polish",
     "tasks": [
       {
         "id": "dr-normalize",
@@ -1458,6 +1479,9 @@
     "status": "active",
     "domain": "research",
     "templateType": "fetch-summarize",
+    "debugStatus": "polished",
+    "debuggedAt": 1782842017491,
+    "debugSource": "docs/workflow-debugging-playbook.md",
     "tasks": [
       {
         "id": "is-fetch",
@@ -1623,7 +1647,7 @@
         "name": "访谈洞察抽取",
         "profileId": "structured-writeback-operator",
         "model": "opencode-go/deepseek-v4-flash",
-      "prompt": "按 schema 字段抽取关键观点、原文引述、需求/痛点、反例和待验证假设；保留 source_spans，输出 validation_errors、write_payload 草案和人工复核标记。",
+        "prompt": "按 schema 字段抽取关键观点、原文引述、需求/痛点、反例和待验证假设；保留 source_spans，输出 validation_errors、write_payload 草案和人工复核标记。",
         "deps": [
           "iv-clean"
         ],
@@ -1631,10 +1655,10 @@
           "包含关键观点",
           "包含原文引述",
           "包含痛点",
-        "包含待验证假设",
-        "包含字段校验结果",
-        "包含回写 payload",
-        "包含人工复核标记"
+          "包含待验证假设",
+          "包含字段校验结果",
+          "包含回写 payload",
+          "包含人工复核标记"
         ]
       },
       {
@@ -1642,7 +1666,7 @@
         "name": "研究假设与验证路径",
         "profileId": "research-report-analyst",
         "model": "opencode-go/deepseek-v4-pro",
-      "prompt": "合成访谈摘要，区分事实、观点、假设和下一步验证；审查字段校验、回写 payload 和原文锚点，不确定项必须转人工复核。",
+        "prompt": "合成访谈摘要，区分事实、观点、假设和下一步验证；审查字段校验、回写 payload 和原文锚点，不确定项必须转人工复核。",
         "deps": [
           "iv-extract"
         ],
@@ -1650,8 +1674,8 @@
           "区分事实和观点",
           "包含假设",
           "包含验证路径",
-        "包含证据缺口",
-        "包含人工复核清单"
+          "包含证据缺口",
+          "包含人工复核清单"
         ]
       }
     ]
@@ -2275,14 +2299,14 @@
         "name": "客户历史整理",
         "profileId": "weak-research-extractor",
         "model": "opencode-go/deepseek-v4-flash",
-      "prompt": "整理客户背景、历史交互、上次沟通要点、已知异议和未解决问题；每条结论保留来源、证据锚点或原文片段。",
+        "prompt": "整理客户背景、历史交互、上次沟通要点、已知异议和未解决问题；每条结论保留来源、证据锚点或原文片段。",
         "deps": [],
         "acceptanceCriteria": [
           "包含客户背景",
           "包含历史交互",
           "包含上次要点",
-        "包含已知异议",
-        "包含来源证据"
+          "包含已知异议",
+          "包含来源证据"
         ]
       },
       {
@@ -2304,9 +2328,9 @@
       {
         "id": "pb-brief",
         "name": "一页通话简报",
-      "profileId": "sales-call-analyst",
-      "model": "opencode-go/deepseek-v4-pro",
-      "prompt": "生成一页通话简报最终版，方便销售会前阅读；强模型复核来源证据、切入话术风险和人工确认项。",
+        "profileId": "sales-call-analyst",
+        "model": "opencode-go/deepseek-v4-pro",
+        "prompt": "生成一页通话简报最终版，方便销售会前阅读；强模型复核来源证据、切入话术风险和人工确认项。",
         "deps": [
           "pb-angle"
         ],
@@ -2314,9 +2338,9 @@
           "包含背景",
           "包含话术切入",
           "包含问题清单",
-        "包含下一步建议",
-        "包含来源证据",
-        "包含人工确认项"
+          "包含下一步建议",
+          "包含来源证据",
+          "包含人工确认项"
         ]
       }
     ]
@@ -2341,15 +2365,15 @@
         "name": "异议类型识别",
         "profileId": "classification-router",
         "model": "opencode-go/deepseek-v4-flash",
-      "prompt": "把客户异议分类为价格、竞品、时机、决策权、预算、信任等标签，输出置信度、路由分支和人工审核触发条件。",
+        "prompt": "把客户异议分类为价格、竞品、时机、决策权、预算、信任等标签，输出置信度、路由分支和人工审核触发条件。",
         "deps": [],
         "acceptanceCriteria": [
           "包含异议类型",
           "包含置信度",
           "包含原文依据",
-        "包含新类型判断",
-        "包含路由分支",
-        "包含人工审核条件"
+          "包含新类型判断",
+          "包含路由分支",
+          "包含人工审核条件"
         ]
       },
       {
@@ -2368,38 +2392,38 @@
           "包含风险提示"
         ]
       },
-    {
-      "id": "oc-kb",
-      "name": "话术库迭代项",
-      "profileId": "structured-writeback-operator",
+      {
+        "id": "oc-kb",
+        "name": "话术库迭代项",
+        "profileId": "structured-writeback-operator",
         "model": "opencode-go/deepseek-v4-flash",
         "prompt": "生成话术库新增/更新 payload，保留原文锚点和审核状态。",
         "deps": [
           "oc-response"
         ],
-      "acceptanceCriteria": [
-        "包含更新 payload",
-        "包含原文锚点",
-        "包含审核状态",
-        "包含幂等键"
-      ]
-    },
-    {
-      "id": "oc-review",
-      "name": "话术建议最终复核",
-      "profileId": "sales-call-analyst",
-      "model": "opencode-go/deepseek-v4-pro",
-      "prompt": "复核异议标签、路由、应对话术和话术库 payload，输出可用/需人工/返工结论；高风险客户或低置信度必须转人工。",
-      "deps": [
-        "oc-kb"
-      ],
-      "acceptanceCriteria": [
-        "包含最终可用结论",
-        "包含标签与路由复核",
-        "包含人工升级条件",
-        "包含返工建议"
-      ]
-    }
+        "acceptanceCriteria": [
+          "包含更新 payload",
+          "包含原文锚点",
+          "包含审核状态",
+          "包含幂等键"
+        ]
+      },
+      {
+        "id": "oc-review",
+        "name": "话术建议最终复核",
+        "profileId": "sales-call-analyst",
+        "model": "opencode-go/deepseek-v4-pro",
+        "prompt": "复核异议标签、路由、应对话术和话术库 payload，输出可用/需人工/返工结论；高风险客户或低置信度必须转人工。",
+        "deps": [
+          "oc-kb"
+        ],
+        "acceptanceCriteria": [
+          "包含最终可用结论",
+          "包含标签与路由复核",
+          "包含人工升级条件",
+          "包含返工建议"
+        ]
+      }
     ]
   },
   "sales-followup-cadence": {
@@ -2450,9 +2474,9 @@
       {
         "id": "fc-draft",
         "name": "跟进话术草稿",
-      "profileId": "sales-followup-draft-producer",
-      "model": "opencode-go/deepseek-v4-flash",
-      "prompt": "生成短信、微信、电话开场白三种跟进文案版本/变体，可包含标题式开场和可替换字段，保持销售语气专业克制。",
+        "profileId": "sales-followup-draft-producer",
+        "model": "opencode-go/deepseek-v4-flash",
+        "prompt": "生成短信、微信、电话开场白三种跟进文案版本/变体，可包含标题式开场和可替换字段，保持销售语气专业克制。",
         "deps": [
           "fc-plan"
         ],
@@ -2460,26 +2484,26 @@
           "包含短信草稿",
           "包含微信草稿",
           "包含电话话术",
-        "包含可替换字段",
-        "包含多版本变体"
-      ]
-    },
-    {
-      "id": "fc-review",
-      "name": "跟进方案最终复核",
-      "profileId": "sales-call-analyst",
-      "model": "opencode-go/deepseek-v4-pro",
-      "prompt": "复核跟进时间、触发条件和多版本文案，输出最终推荐版本、人工确认项和风险提醒。",
-      "deps": [
-        "fc-draft"
-      ],
-      "acceptanceCriteria": [
-        "包含最终推荐版本",
-        "包含人工确认项",
-        "包含风险提醒",
-        "包含下一步动作"
-      ]
-    }
+          "包含可替换字段",
+          "包含多版本变体"
+        ]
+      },
+      {
+        "id": "fc-review",
+        "name": "跟进方案最终复核",
+        "profileId": "sales-call-analyst",
+        "model": "opencode-go/deepseek-v4-pro",
+        "prompt": "复核跟进时间、触发条件和多版本文案，输出最终推荐版本、人工确认项和风险提醒。",
+        "deps": [
+          "fc-draft"
+        ],
+        "acceptanceCriteria": [
+          "包含最终推荐版本",
+          "包含人工确认项",
+          "包含风险提醒",
+          "包含下一步动作"
+        ]
+      }
     ]
   },
   "new-workflow": {

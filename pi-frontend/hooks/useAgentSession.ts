@@ -53,6 +53,7 @@ export interface UseAgentSessionOptions {
   modelsRefreshKey?: number;
   chatInputRef?: React.RefObject<ChatInputHandle | null>;
   onBranchDataChange?: (tree: SessionTreeNode[], activeLeafId: string | null, onLeafChange: (leafId: string | null) => void) => void;
+  loadBranchTree?: boolean;
   onSystemPromptChange?: (prompt: string | null) => void;
   setToolPreset?: (preset: "none" | "default" | "full") => void;
 }
@@ -95,7 +96,7 @@ type ModelsResponse = {
 export function useAgentSession(opts: UseAgentSessionOptions) {
   const {
     session, newSessionCwd, onAgentEnd, onSessionCreated, onSessionForked,
-    modelsRefreshKey, onBranchDataChange, onSystemPromptChange,
+    modelsRefreshKey, onBranchDataChange, loadBranchTree, onSystemPromptChange,
   } = opts;
 
   const isNew = session === null && newSessionCwd !== null;
@@ -134,7 +135,7 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
   const sessionIdRef = useRef<string | null>(session?.id ?? null);
   const sessionLoadTokenRef = useRef(0);
   const fullSessionLoadTokenRef = useRef(-1);
-  const fullSessionRefreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const branchTreeLoadedForRef = useRef<string | null>(null);
   const pendingStreamingMessageRef = useRef<AgentMessage | null>(null);
   const streamingMessageFlushTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const agentRunningRef = useRef(false);
@@ -194,7 +195,13 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
       if (sessionIdRef.current !== sid || sessionLoadTokenRef.current !== token) return null;
       if (mode === "light" && fullSessionLoadTokenRef.current === token) return d.agentState ?? null;
       if (mode === "tree") {
-        setData((prev) => prev ? { ...prev, tree: d.tree ?? [], leafId: d.leafId ?? null } : prev);
+        setData((prev) => prev ? { ...prev, tree: d.tree ?? [], leafId: d.leafId ?? null } : {
+          sessionId: d.sessionId,
+          filePath: d.filePath,
+          tree: d.tree ?? [],
+          leafId: d.leafId ?? null,
+          context: { messages: [], entryIds: [], thinkingLevel: "off", model: null },
+        });
         setActiveLeafId(d.leafId ?? null);
         return d.agentState ?? null;
       }
@@ -709,10 +716,7 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
       const loadToken = sessionLoadTokenRef.current + 1;
       sessionLoadTokenRef.current = loadToken;
       fullSessionLoadTokenRef.current = -1;
-      if (fullSessionRefreshTimerRef.current) {
-        clearTimeout(fullSessionRefreshTimerRef.current);
-        fullSessionRefreshTimerRef.current = null;
-      }
+      branchTreeLoadedForRef.current = null;
       sessionIdRef.current = session.id;
       setData(null);
       setActiveLeafId(null);
@@ -721,10 +725,6 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
       setLoading(false);
       setError(null);
       void loadSession(session.id, false, false, "light", loadToken);
-      fullSessionRefreshTimerRef.current = setTimeout(() => {
-        fullSessionRefreshTimerRef.current = null;
-        void loadSession(session.id, false, false, "tree", loadToken);
-      }, 800);
 
       // Load live agent state in the background so the chat UI doesn't block on get_state.
       void fetch(`/api/agent/${encodeURIComponent(session.id)}`)
@@ -755,10 +755,7 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
       }
       sessionLoadTokenRef.current += 1;
       fullSessionLoadTokenRef.current = -1;
-      if (fullSessionRefreshTimerRef.current) {
-        clearTimeout(fullSessionRefreshTimerRef.current);
-        fullSessionRefreshTimerRef.current = null;
-      }
+      branchTreeLoadedForRef.current = null;
       sessionIdRef.current = null;
       setData(null);
       setActiveLeafId(null);
@@ -773,14 +770,18 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
         clearTimeout(streamingMessageFlushTimerRef.current);
         streamingMessageFlushTimerRef.current = null;
       }
-      if (fullSessionRefreshTimerRef.current) {
-        clearTimeout(fullSessionRefreshTimerRef.current);
-        fullSessionRefreshTimerRef.current = null;
-      }
       eventSourceRef.current?.close();
       eventSourceRef.current = null;
     };
   }, [session?.id, newSessionCwd, loadSession, loadTools, connectEvents]);
+
+  useEffect(() => {
+    if (!loadBranchTree || !session?.id) return;
+    if (branchTreeLoadedForRef.current === session.id) return;
+    const token = sessionLoadTokenRef.current;
+    branchTreeLoadedForRef.current = session.id;
+    void loadSession(session.id, false, false, "tree", token);
+  }, [loadBranchTree, loadSession, session?.id]);
 
   useEffect(() => {
     onSystemPromptChange?.(systemPrompt);

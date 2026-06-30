@@ -233,7 +233,30 @@ Useful profile boundaries:
 - `structured-writeback-operator`: field validation, payload mapping, idempotency, retry policy.
 - `strong-quality-reviewer`: final hidden-risk review, only after the artifacts are already compact.
 
-## 4. Standard Debugging Procedure
+## 4. Debug Metadata Rules
+
+When a workflow has passed a realistic debug/retest run, update its metadata in `pi-backend/workflows.json`.
+
+Required fields:
+
+```json
+{
+  "debugStatus": "polished",
+  "debuggedAt": 1782827100000,
+  "debugSource": "docs/workflow-debugging-playbook.md"
+}
+```
+
+Rules for AI agents and maintainers:
+- Never set `debugStatus: "polished"` without `debuggedAt`.
+- `debuggedAt` must be a millisecond timestamp from the actual completion or marking time.
+- Set `debugSource` to the evidence path or action source, for example `docs/workflow-debugging-playbook.md`, `workflow-inspector`, or `user:<reason>`.
+- Do not mark seed/template/generated workflows as polished just because they were created successfully. Mark them only after a real run passes, or when the user explicitly asks for a category-level bulk promotion.
+- If the user asks to bulk-mark a category, update every active workflow in that category with the same `debugStatus`, `debuggedAt`, and `debugSource`.
+
+The sidebar treats a workflow as "today debugged" only when it is active, `debugStatus` is `polished`, and `debuggedAt` falls on today's local date.
+
+## 5. Standard Debugging Procedure
 
 ### Step 1: Inspect the workflow
 
@@ -356,7 +379,7 @@ From repo root, also check stale provider names:
 rg -n "opencore-go" pi-backend pi-frontend || true
 ```
 
-## 5. Acceptance Criteria For A Usable Workflow
+## 6. Acceptance Criteria For A Usable Workflow
 
 A workflow is usable only when:
 - it completes with a realistic task input
@@ -375,7 +398,7 @@ For high-risk workflows, add:
 - original evidence quote or source link
 - rollback or human escalation path
 
-## 6. Recommended Debug Queue
+## 7. Recommended Debug Queue
 
 Continue in this order:
 
@@ -392,7 +415,7 @@ Continue in this order:
 6. `sales-call-crm-writeback`
    - Business run passed, but retest once after backend restart to verify `noTools` and effective model propagation.
 
-## 7. Template For Future Debug Notes
+## 8. Template For Future Debug Notes
 
 Use this format after each workflow is tested:
 

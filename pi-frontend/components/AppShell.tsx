@@ -679,6 +679,8 @@ export function AppShell() {
     setMainView("chat");
     setSelectedSession(session);
     setSessionKey((k) => k + 1);
+    setBranchTree([]);
+    setBranchActiveLeafId(null);
     setSystemPrompt(null);
     setInitialSessionRestored(true);
     if (isRestore) {
@@ -1963,6 +1965,7 @@ export function AppShell() {
                       modelsRefreshKey={modelsRefreshKey}
                       chatInputRef={chatInputRef}
                       onBranchDataChange={handleBranchDataChange}
+                      loadBranchTree={activeTopPanel === "branches"}
                       onSystemPromptChange={handleSystemPromptChange}
                       onSessionStatsChange={handleSessionStatsChange}
                       onContextUsageChange={handleContextUsageChange}
@@ -2025,6 +2028,7 @@ export function AppShell() {
                 modelsRefreshKey={modelsRefreshKey}
                 chatInputRef={chatInputRef}
                 onBranchDataChange={handleBranchDataChange}
+                loadBranchTree={activeTopPanel === "branches"}
                 onSystemPromptChange={handleSystemPromptChange}
                 onSessionStatsChange={handleSessionStatsChange}
                 onContextUsageChange={handleContextUsageChange}

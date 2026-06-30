@@ -19,6 +19,7 @@ interface Props {
   modelsRefreshKey?: number;
   chatInputRef?: React.RefObject<ChatInputHandle | null>;
   onBranchDataChange?: (tree: SessionTreeNode[], activeLeafId: string | null, onLeafChange: (leafId: string | null) => void) => void;
+  loadBranchTree?: boolean;
   onSystemPromptChange?: (prompt: string | null) => void;
   onSessionStatsChange?: (stats: { tokens: { input: number; output: number; cacheRead: number; cacheWrite: number }; cost?: number } | null) => void;
   onContextUsageChange?: (usage: { percent: number | null; contextWindow: number; tokens: number | null } | null) => void;
@@ -101,7 +102,7 @@ function Typewriter({ phrases }: { phrases: string[] }) {
   );
 }
 
-const ChatWindow = memo(function ChatWindow({ session, newSessionCwd, onAgentEnd, onSessionCreated, onSessionForked, modelsRefreshKey, chatInputRef, onBranchDataChange, onSystemPromptChange, onSessionStatsChange, onContextUsageChange, onSendOverride, externalMessages = [], inputPlaceholder, inputAccessory }: Props) {
+const ChatWindow = memo(function ChatWindow({ session, newSessionCwd, onAgentEnd, onSessionCreated, onSessionForked, modelsRefreshKey, chatInputRef, onBranchDataChange, loadBranchTree, onSystemPromptChange, onSessionStatsChange, onContextUsageChange, onSendOverride, externalMessages = [], inputPlaceholder, inputAccessory }: Props) {
   const {
     loading, error, messages, entryIds, isStreaming, currentStreamingMessageId,
     agentRunning, modelNames, modelList, modelThinkingLevels, modelThinkingLevelMaps, toolPreset, thinkingLevel,
@@ -117,7 +118,7 @@ const ChatWindow = memo(function ChatWindow({ session, newSessionCwd, onAgentEnd
     handleToolPresetChange, handleThinkingLevelChange, handleAgentEventRef,
   } = useAgentSession({
     session, newSessionCwd, onAgentEnd, onSessionCreated, onSessionForked,
-    modelsRefreshKey, onBranchDataChange, onSystemPromptChange,
+    modelsRefreshKey, onBranchDataChange, loadBranchTree, onSystemPromptChange,
   });
 
   const { soundEnabled, onSoundToggle, playDoneSound } = useAudio();
@@ -486,9 +487,13 @@ const ChatWindow = memo(function ChatWindow({ session, newSessionCwd, onAgentEnd
                     showTimestamp = false;
                   }
                 }
+                const rawMsg = msg as import("@/lib/types").AgentMessage & { _streamId?: string; timestamp?: number; customType?: string };
+                const messageKey = entryIds[idx]
+                  ?? rawMsg._streamId
+                  ?? `${msg.role}:${rawMsg.customType ?? ""}:${rawMsg.timestamp ?? ""}:${idx}`;
                 const view = (
                   <MessageView
-                    key={idx}
+                    key={messageKey}
                     message={msg}
                     isStreaming={(msg as import("@/lib/types").AgentMessage & { _streamId?: string })._streamId === currentStreamingMessageId}
                     agentRunning={agentRunning}
@@ -506,7 +511,7 @@ const ChatWindow = memo(function ChatWindow({ session, newSessionCwd, onAgentEnd
                 );
                 if (!isVisible) return view;
                 return (
-                  <div key={idx} ref={(el) => {
+                  <div key={messageKey} ref={(el) => {
                     messageRefs.current[currentRefIdx] = el;
                     if (idx === lastUserIdx) { (lastUserMsgRef as { current: HTMLDivElement | null }).current = el; }
                   }}>
