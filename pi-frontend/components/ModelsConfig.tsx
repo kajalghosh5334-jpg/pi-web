@@ -1060,7 +1060,6 @@ function ModelDetail({
 }) {
   const [testState, setTestState] = useState<ModelTestState>({ phase: "idle" });
   const set = <K extends keyof ModelEntry>(k: K, v: ModelEntry[K]) => onChange({ ...model, [k]: v });
-  const canBeGuide = isStrongEligibleModel(providerName, model.id);
   const costVal = (k: keyof NonNullable<ModelEntry["cost"]>) => model.cost?.[k] !== undefined ? String(model.cost[k]) : "";
   const setCost = (k: keyof NonNullable<ModelEntry["cost"]>, v: string) => {
     const n = parseFloat(v);
@@ -1176,16 +1175,16 @@ function ModelDetail({
           </button>
           <button
             onClick={onSetGuide}
-            disabled={!model.id.trim() || isGuide || !canBeGuide}
-            title={isGuide ? "Current guide model" : canBeGuide ? "Set as guide model" : "Only GPT and Claude models can be guide models"}
+            disabled={!model.id.trim() || isGuide}
+            title={isGuide ? "Current guide model" : "Set as guide model"}
             style={{
               height: 24,
               padding: "0 8px",
               background: isGuide ? "#0a84ff" : "none",
               border: `1px solid ${isGuide ? "#0a84ff" : "var(--border)"}`,
               borderRadius: 4,
-              color: isGuide ? "#fff" : (!model.id.trim() || !canBeGuide) ? "var(--text-dim)" : "var(--text-muted)",
-              cursor: (!model.id.trim() || isGuide || !canBeGuide) ? "default" : "pointer",
+              color: isGuide ? "#fff" : !model.id.trim() ? "var(--text-dim)" : "var(--text-muted)",
+              cursor: (!model.id.trim() || isGuide) ? "default" : "pointer",
               fontSize: 11,
               boxSizing: "border-box",
             }}
@@ -1288,9 +1287,9 @@ function ModelDetail({
               <div style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 6 }}>Model tier</div>
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                 <TogglePill label="Weak worker" active={model.role === "weak"} onClick={() => set("role", model.role === "weak" ? undefined : "weak")} />
-                <TogglePill label="Strong guide" active={model.role === "strong"} onClick={() => {
+                <TogglePill label="Strong" active={model.role === "strong"} disabled={!isStrongEligibleModel(providerName, model.id)} title={isStrongEligibleModel(providerName, model.id) ? undefined : "Only GPT and Claude models can be strong"} onClick={() => {
+                  if (!isStrongEligibleModel(providerName, model.id)) return;
                   set("role", model.role === "strong" ? undefined : "strong");
-                  if (model.role !== "strong" && model.id.trim()) onSetGuide();
                 }} />
               </div>
             </div>
@@ -2187,7 +2186,7 @@ function ModelRoleSetupPanel({
   guideLabel: string | null;
   availability: AvailabilityState;
   onSelectModel: (providerName: string, index: number) => void;
-  onSetGuide: (providerName: string, index: number) => void;
+  onSetGuide: (providerName: string, index: number) => void | Promise<void>;
   onUpdateModel: (providerName: string, index: number, model: ModelEntry) => void;
   onOpenCapabilitySummary: () => void;
 }) {
@@ -2233,8 +2232,10 @@ function ModelRoleSetupPanel({
                 <TogglePill label="Weak" active={item.model.role === "weak"} onClick={() => setModel({ role: item.model.role === "weak" ? undefined : "weak" })} />
                 <TogglePill label="Strong" active={item.model.role === "strong"} disabled={!canBeStrong} title={canBeStrong ? undefined : "Only GPT and Claude models can be strong"} onClick={() => {
                   if (!canBeStrong) return;
-                  setModel({ role: item.model.role === "strong" && !isGuide ? undefined : "strong" });
-                  if (!isGuide) onSetGuide(item.providerName, item.index);
+                  setModel({ role: item.model.role === "strong" ? undefined : "strong" });
+                }} />
+                <TogglePill label="Guide" active={isGuide} disabled={isGuide} title={isGuide ? "Current guide model" : "Set as guide model"} onClick={() => {
+                  if (!isGuide) void onSetGuide(item.providerName, item.index);
                 }} />
               </div>
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
@@ -2513,27 +2514,6 @@ export function ModelsConfig({ cwd, onClose, onOpenGuide }: { cwd?: string | nul
     setSelection({ type: "provider", name: providerName });
   }, [config.providers, config.modelSetup?.guideModel]);
 
-  const setGuideModel = useCallback((providerName: string, index: number) => {
-    setConfig((prev) => {
-      const provider = prev.providers?.[providerName];
-      const model = provider?.models?.[index];
-      if (!provider || !model?.id) return prev;
-      if (!isStrongEligibleModel(providerName, model.id)) return prev;
-      const models = [...(provider.models ?? [])];
-      models[index] = { ...model, role: "strong" };
-      return {
-        ...prev,
-        providers: { ...(prev.providers ?? {}), [providerName]: { ...provider, models } },
-        modelSetup: {
-          ...(prev.modelSetup ?? {}),
-          guideModel: modelKey(providerName, model.id),
-          testSuiteVersion: CAPABILITY_TEST_SUITE_VERSION,
-          capabilityProfiles: prev.modelSetup?.capabilityProfiles ?? {},
-        },
-      };
-    });
-  }, []);
-
   const normalizeForSave = useCallback((draft: ModelsJson): ModelsJson => {
     const providers = { ...(draft.providers ?? {}) };
     const entries = Object.entries(providers).flatMap(([providerName, provider]) => (provider.models ?? [])
@@ -2542,11 +2522,8 @@ export function ModelsConfig({ cwd, onClose, onOpenGuide }: { cwd?: string | nul
     let guideModel = draft.modelSetup?.guideModel;
     const capabilityProfiles = { ...(draft.modelSetup?.capabilityProfiles ?? {}) };
 
-    if (guideModel) {
-      const [guideProvider, guideModelId] = guideModel.split("/", 2);
-      if (!guideProvider || !guideModelId || !isStrongEligibleModel(guideProvider, guideModelId)) {
-        guideModel = undefined;
-      }
+    if (guideModel && !entries.some(({ providerName, model }) => modelKey(providerName, model.id) === guideModel)) {
+      guideModel = undefined;
     }
 
     for (const { providerName, model } of entries) {
@@ -2567,6 +2544,49 @@ export function ModelsConfig({ cwd, onClose, onOpenGuide }: { cwd?: string | nul
       },
     };
   }, []);
+
+  const setGuideModel = useCallback(async (providerName: string, index: number) => {
+    setSaveError(null);
+    setSavedOk(false);
+    const currentProvider = config.providers?.[providerName];
+    const currentModel = currentProvider?.models?.[index];
+    if (!currentProvider || !currentModel?.id.trim()) return;
+
+    const nextConfig = normalizeForSave({
+      ...config,
+      modelSetup: {
+        ...(config.modelSetup ?? {}),
+        guideModel: modelKey(providerName, currentModel.id),
+        testSuiteVersion: CAPABILITY_TEST_SUITE_VERSION,
+        capabilityProfiles: config.modelSetup?.capabilityProfiles ?? {},
+      },
+    });
+
+    setConfig(nextConfig);
+    setSaving(true);
+    try {
+      const res = await fetch("/api/models-config", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(nextConfig),
+      });
+      const d = await res.json() as { success?: boolean; error?: string };
+      if (!res.ok || d.error) {
+        setSaveError(d.error ?? `HTTP ${res.status}`);
+        return;
+      }
+      const clientConfig = scrubClientSecrets(nextConfig);
+      setConfig(clientConfig);
+      setSavedSnapshot(JSON.stringify(clientConfig));
+      setSavedOk(true);
+      loadAvailableModels();
+      setTimeout(() => setSavedOk(false), 2000);
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : String(error));
+    } finally {
+      setSaving(false);
+    }
+  }, [config, loadAvailableModels, normalizeForSave]);
 
   const handleSave = useCallback(async () => {
     setSaving(true);
@@ -2728,7 +2748,7 @@ export function ModelsConfig({ cwd, onClose, onOpenGuide }: { cwd?: string | nul
         ledgerEvents={[]}
         isProbing={false}
         onChange={(m) => updateModel(selection.providerName, selection.index, m)}
-        onSetGuide={() => setGuideModel(selection.providerName, selection.index)}
+        onSetGuide={() => void setGuideModel(selection.providerName, selection.index)}
         onDelete={() => removeModel(selection.providerName, selection.index)}
       />
     );

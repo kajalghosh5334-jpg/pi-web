@@ -2054,7 +2054,7 @@ async function generateModels() {
 			provider: "openai-codex",
 			baseUrl: CODEX_BASE_URL,
 			reasoning: true,
-			input: ["text"],
+			input: ["text", "image"],
 			cost: { input: 1.75, output: 14, cacheRead: 0.175, cacheWrite: 0 },
 			contextWindow: CODEX_SPARK_CONTEXT,
 			maxTokens: CODEX_MAX_TOKENS,

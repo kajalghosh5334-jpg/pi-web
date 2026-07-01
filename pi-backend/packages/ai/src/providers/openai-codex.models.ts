@@ -12,7 +12,7 @@ export const OPENAI_CODEX_MODELS = {
 		baseUrl: "https://chatgpt.com/backend-api",
 		reasoning: true,
 		thinkingLevelMap: {"xhigh":"xhigh","minimal":"low"},
-		input: ["text"],
+		input: ["text", "image"],
 		cost: {
 			input: 1.75,
 			output: 14,

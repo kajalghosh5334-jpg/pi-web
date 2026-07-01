@@ -31,6 +31,9 @@ describe("builtin providers", () => {
 		const anthropic = models.getModel("anthropic", "claude-haiku-4-5");
 		expect(anthropic?.api).toBe("anthropic-messages");
 
+		const codexSpark = models.getModel("openai-codex", "gpt-5.3-codex-spark");
+		expect(codexSpark?.input).toEqual(["text", "image"]);
+
 		const all = models.getModels();
 		expect(all.length).toBeGreaterThan(500);
 
