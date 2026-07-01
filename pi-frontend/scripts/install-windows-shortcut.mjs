@@ -13,6 +13,7 @@ const nodeExe = process.execPath;
 const shortcutDir = process.env.PI_WEB_SHORTCUT_DIR
   || join(homedir(), "Desktop");
 const iconPath = resolve(projectDir, "public", "favicon.ico");
+const browserPreference = process.env.PI_WEB_BROWSER || "auto";
 const startMenuDir = join(
   process.env.APPDATA || join(homedir(), "AppData", "Roaming"),
   "Microsoft",
@@ -51,7 +52,7 @@ async function main() {
       'Set shell = CreateObject("WScript.Shell")',
       `Set shortcut = shell.CreateShortcut("${finalShortcutPath.replaceAll("\\", "\\\\")}")`,
       `shortcut.TargetPath = "${nodeExe.replaceAll("\\", "\\\\")}"`,
-      `shortcut.Arguments = "${launcherScript.replaceAll("\\", "\\\\")}"`,
+      `shortcut.Arguments = "${launcherScript.replaceAll("\\", "\\\\")} --browser=${browserPreference}"`,
       `shortcut.WorkingDirectory = "${projectDir.replaceAll("\\", "\\\\")}"`,
       `shortcut.IconLocation = "${iconPath.replaceAll("\\", "\\\\")},0"`,
       'shortcut.Description = "Pi Web"',

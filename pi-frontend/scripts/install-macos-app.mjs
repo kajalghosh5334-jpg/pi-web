@@ -1,16 +1,18 @@
 #!/usr/bin/env node
-import { chmodSync, copyFileSync, existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
-import { mkdtemp, rm } from "node:fs/promises";
-import { homedir, tmpdir } from "node:os";
+import { copyFileSync, existsSync, mkdirSync, rmSync, writeFileSync, chmodSync } from "node:fs";
+import { homedir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { execPath } from "node:process";
 import { spawnSync } from "node:child_process";
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 const projectDir = resolve(scriptDir, "..");
-const launchScript = resolve(projectDir, "scripts", "launch-local-app.sh");
-const appPath = resolve(process.env.PI_WEB_APP_PATH || join(homedir(), "Applications", "Pi Web.app"));
+const launchScript = resolve(projectDir, "scripts", "launch-local-app.mjs");
+const appPath = resolve(process.env.PI_WEB_APP_PATH || join(homedir(), "Desktop", "Pi Web.app"));
 const icnsPath = resolve(projectDir, "assets", "generated", "PiWeb.icns");
+const executableName = "PiWeb";
+const browserPreference = process.env.PI_WEB_BROWSER || "auto";
 
 function run(command, args) {
   const result = spawnSync(command, args, { stdio: "inherit" });
@@ -18,10 +20,6 @@ function run(command, args) {
   if (result.status !== 0) {
     throw new Error(`${command} ${args.join(" ")} failed with exit ${result.status}`);
   }
-}
-
-function quoteAppleScriptString(value) {
-  return value.replaceAll("\\", "\\\\").replaceAll("\"", "\\\"");
 }
 
 function plistBuddySetOrAdd(plist, key, value) {
@@ -42,35 +40,69 @@ async function main() {
   }
 
   run("node", [resolve(projectDir, "scripts", "generate-icons.mjs")]);
-  chmodSync(launchScript, 0o755);
 
-  const tmp = await mkdtemp(join(tmpdir(), "pi-web-app-"));
-  try {
-    const appleScriptPath = join(tmp, "PiWeb.applescript");
-    writeFileSync(appleScriptPath, [
-      "on run",
-      `  do shell script "\\"${quoteAppleScriptString(launchScript)}\\" >/tmp/pi-web-launcher.log 2>&1 &"`,
-      "end run",
-      "",
-    ].join("\n"));
+  mkdirSync(dirname(appPath), { recursive: true });
+  rmSync(appPath, { recursive: true, force: true });
+  const contentsDir = join(appPath, "Contents");
+  const macosDir = join(contentsDir, "MacOS");
+  const resourcesDir = join(contentsDir, "Resources");
+  mkdirSync(macosDir, { recursive: true });
+  mkdirSync(resourcesDir, { recursive: true });
 
-    mkdirSync(dirname(appPath), { recursive: true });
-    rmSync(appPath, { recursive: true, force: true });
-    run("osacompile", ["-o", appPath, appleScriptPath]);
+  const executablePath = join(macosDir, executableName);
+  writeFileSync(executablePath, [
+    "#!/bin/sh",
+    "set -eu",
+    `NODE_BIN=${JSON.stringify(process.env.PI_WEB_NODE || execPath)}`,
+    `LAUNCHER=${JSON.stringify(launchScript)}`,
+    `BROWSER_ARG=${JSON.stringify(`--browser=${browserPreference}`)}`,
+    'LOG_DIR="${PI_WEB_LOG_DIR:-$HOME/Library/Logs/Pi Web}"',
+    'mkdir -p "$LOG_DIR"',
+    'LOG_FILE="$LOG_DIR/pi-web-launcher.log"',
+    '"$NODE_BIN" "$LAUNCHER" "$BROWSER_ARG" >>"$LOG_FILE" 2>&1 &',
+    "exit 0",
+    "",
+  ].join("\n"));
+  chmodSync(executablePath, 0o755);
 
-    const resourcesDir = join(appPath, "Contents", "Resources");
-    copyFileSync(icnsPath, join(resourcesDir, "applet.icns"));
+  writeFileSync(join(contentsDir, "Info.plist"), `<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>CFBundleName</key>
+  <string>Pi Web</string>
+  <key>CFBundleDisplayName</key>
+  <string>Pi Web</string>
+  <key>CFBundleIdentifier</key>
+  <string>com.pi.web</string>
+  <key>CFBundleExecutable</key>
+  <string>${executableName}</string>
+  <key>CFBundleIconFile</key>
+  <string>applet</string>
+  <key>CFBundlePackageType</key>
+  <string>APPL</string>
+  <key>CFBundleSignature</key>
+  <string>PiWB</string>
+  <key>CFBundleInfoDictionaryVersion</key>
+  <string>6.0</string>
+  <key>LSMinimumSystemVersion</key>
+  <string>10.15</string>
+  <key>NSHighResolutionCapable</key>
+  <true/>
+</dict>
+</plist>
+`);
+  writeFileSync(join(contentsDir, "PkgInfo"), "APPLPiWB");
 
-    const plist = join(appPath, "Contents", "Info.plist");
-    plistBuddySetOrAdd(plist, "CFBundleName", "Pi Web");
-    plistBuddySetOrAdd(plist, "CFBundleDisplayName", "Pi Web");
-    plistBuddySetOrAdd(plist, "CFBundleIconFile", "applet");
+  copyFileSync(icnsPath, join(resourcesDir, "applet.icns"));
 
-    console.log(`Installed launcher: ${appPath}`);
-    console.log("Click it to start Pi Web locally and open it in Chrome app mode.");
-  } finally {
-    await rm(tmp, { recursive: true, force: true });
-  }
+  const plist = join(appPath, "Contents", "Info.plist");
+  plistBuddySetOrAdd(plist, "CFBundleName", "Pi Web");
+  plistBuddySetOrAdd(plist, "CFBundleDisplayName", "Pi Web");
+  plistBuddySetOrAdd(plist, "CFBundleIconFile", "applet");
+
+  console.log(`Installed launcher: ${appPath}`);
+  console.log("Click it to start Pi Web locally and open it in your browser.");
 }
 
 main().catch((error) => {

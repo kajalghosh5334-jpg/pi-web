@@ -31,11 +31,13 @@ npm run dev   # port 30141
 
 ## Local Launcher
 
+After `npm install`, Pi Web automatically creates a desktop launcher on macOS or Windows.
+
 ```bash
 npm run app:install
 ```
 
-This creates a clickable launcher for your platform. On macOS it makes a `.app`; on Windows it makes a shortcut. Clicking it starts Pi Web locally and opens it in the browser.
+Run this command to regenerate it. Clicking the launcher starts Pi Web locally and opens it as an app window. It supports Chrome and Quark Browser; use `PI_WEB_BROWSER=quark npm run app:install` to force Quark.
 
 ### With Multi-Agent Backend
 

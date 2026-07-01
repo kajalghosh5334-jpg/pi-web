@@ -24,6 +24,7 @@
     "dev:turbo": "next dev -p 30141 --turbopack",
     "build": "next build --webpack",
     "start": "next start -p 30141",
+    "postinstall": "node scripts/postinstall-local-app.mjs",
     "app:install": "node scripts/install-app.mjs",
     "icons:generate": "node scripts/generate-icons.mjs",
     "app:install:mac": "node scripts/install-macos-app.mjs",

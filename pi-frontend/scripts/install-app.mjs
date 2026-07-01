@@ -12,6 +12,16 @@ function run(script) {
   if (result.status !== 0) process.exit(result.status ?? 1);
 }
 
+function buildApp() {
+  if (process.env.PI_WEB_SKIP_BUILD === "1") return;
+  const npmCommand = process.platform === "win32" ? "npm.cmd" : "npm";
+  const result = spawnSync(npmCommand, ["run", "build"], { cwd: projectDir, stdio: "inherit" });
+  if (result.error) throw result.error;
+  if (result.status !== 0) process.exit(result.status ?? 1);
+}
+
+buildApp();
+
 if (process.platform === "darwin") {
   run("install-macos-app.mjs");
 } else if (process.platform === "win32") {

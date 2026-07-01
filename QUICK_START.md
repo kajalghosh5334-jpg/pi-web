@@ -30,6 +30,8 @@ cd pi-frontend
 npm install
 ```
 
+安装完成后会自动在桌面生成 **Pi Web** 启动图标；双击图标会启动前端并以应用窗口打开。
+
 ### 2. 配置环境变量（可选）
 
 如果要使用 DeepSeek 官方 API 备用：
