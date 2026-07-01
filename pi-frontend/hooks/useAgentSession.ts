@@ -195,7 +195,7 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
         return null;
       }
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const d = await res.json() as Partial<SessionData> & { sessionId: string; filePath: string; tree: SessionTreeNode[]; leafId: string | null; context?: SessionData["context"]; agentState?: { running: boolean; state?: { isStreaming?: boolean; isCompacting?: boolean; contextUsage?: { percent: number | null; contextWindow: number; tokens: number | null } | null; systemPrompt?: string; thinkingLevel?: string } } };
+      const d = await res.json() as Partial<SessionData> & { sessionId: string; filePath: string; tree: SessionTreeNode[]; leafId: string | null; partial?: boolean; context?: SessionData["context"]; agentState?: { running: boolean; state?: { isStreaming?: boolean; isCompacting?: boolean; contextUsage?: { percent: number | null; contextWindow: number; tokens: number | null } | null; systemPrompt?: string; thinkingLevel?: string } } };
       if (sessionIdRef.current !== sid || sessionLoadTokenRef.current !== token) return null;
       if (mode === "light" && fullSessionLoadTokenRef.current === token) return d.agentState ?? null;
       if (mode === "tree") {
@@ -217,7 +217,11 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
       } else if (mode === "light") {
         setHasMoreHistory(Boolean(d.partial));
       }
-      setData({ ...d, context } as SessionData);
+      setData((prev) => ({
+        ...(d as SessionData),
+        tree: mode === "light" ? (prev?.tree ?? d.tree ?? []) : (d.tree ?? []),
+        context,
+      }));
       setActiveLeafId(d.leafId ?? null);
       setMessages((prev) => mergeOptimisticMessages(prev, context.messages));
       setEntryIds(context.entryIds ?? []);
@@ -357,7 +361,7 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
         setIsStreaming(false);
         setFinalOutputStarted(true);
         if (sessionIdRef.current) {
-          loadSession(sessionIdRef.current);
+          loadSession(sessionIdRef.current, false, false, "light");
           fetch(`/api/agent/${encodeURIComponent(sessionIdRef.current)}`)
             .then((r) => r.json())
             .then((d: { state?: { contextUsage?: { percent: number | null; contextWindow: number; tokens: number | null } | null; systemPrompt?: string } }) => {
@@ -431,7 +435,7 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
           setCompactResult(null);
         } else if (!event.aborted) {
           setCompactResult(readCompactResult(event.result, (event.reason as string | undefined) ?? "auto"));
-          if (sessionIdRef.current) loadSession(sessionIdRef.current);
+          if (sessionIdRef.current) loadSession(sessionIdRef.current, false, false, "light");
         }
         break;
     }

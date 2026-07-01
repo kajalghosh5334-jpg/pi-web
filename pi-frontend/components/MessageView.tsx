@@ -146,7 +146,7 @@ function UserMessageView({ message, entryId, onFork, forking, onNavigate, prevAs
             flex: 1,
             minWidth: 0,
             fontSize: 13,
-            lineHeight: 1,
+            lineHeight: 1.2,
             color: "var(--text)",
             wordBreak: "break-word",
           }}
@@ -313,7 +313,7 @@ function CustomMessageView({ message, showTimestamp }: { message: Extract<AgentM
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
           <span style={{ fontSize: 12, fontWeight: 700, color: isProgress ? "#f59e0b" : "var(--text)" }}>{isProgress ? "协作进展" : "系统消息"}</span>
         </div>
-        <div style={{ fontSize: 13, lineHeight: 1, color: "var(--text)" }}>
+        <div style={{ fontSize: 13, lineHeight: 1.2, color: "var(--text)" }}>
           <MarkdownBody>{text}</MarkdownBody>
         </div>
       </div>
