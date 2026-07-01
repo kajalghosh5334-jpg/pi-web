@@ -1,0 +1,137 @@
+# 公司调研资料搬运
+
+- Case ID: `job-company-gather-001`
+- Workflow: `WF-3`
+- Node Type: `Gather/Fetch`
+- Target Profile: `weak-research-extractor`
+- Model: `opencode-go/deepseek-v4-flash`
+- Score: `100`
+- Pass: `true`
+- Elapsed: `49099ms`
+- Conversation Isolation: `fresh pi --print process with --no-session and --no-context-files`
+- Depends On: none
+
+## Input
+
+目标公司：星河智造。给定来源材料：1）官网片段：公司为制造业客户做质检自动化和设备数据采集，技术关键词包含 Python、OpenCV、PLC、轻量化模型部署。2）招聘 JD 片段：初级 AI 工具开发助理，薪资 5-7k，要求 Python 基础、能读懂接口文档，学历写的是大专及以上优先。3）面经摘录：面试会问 Python 文件处理、接口调用、是否做过项目 demo。请只基于这些材料搬运事实。
+
+## Rubric
+
+1. 只抽取给定来源中出现的业务、技术栈、学历门槛、薪资和面经
+2. 每条事实标注来源片段
+3. 未出现的信息输出 unknown 或 missing
+4. 不判断候选人是否适合
+5. 给出证据缺口和复核建议
+
+## Node Output
+
+```json
+{
+  "node_output": {
+    "_node_type": "weak-research-extractor",
+    "_workflow": "WF-3",
+    "_target": "星河智造"
+  },
+  "extracted_facts": [
+    {
+      "fact": "公司为制造业客户提供质检自动化和设备数据采集服务。",
+      "source": "官网片段",
+      "source_status": "显性陈述，直接引用"
+    },
+    {
+      "fact": "技术关键词涉及 Python、OpenCV、PLC、轻量化模型部署。",
+      "source": "官网片段",
+      "source_status": "显性陈述"
+    },
+    {
+      "fact": "招聘职位为初级 AI 工具开发助理。",
+      "source": "招聘 JD 片段",
+      "source_status": "显性陈述"
+    },
+    {
+      "fact": "薪资区间为 5-7k。",
+      "source": "招聘 JD 片段",
+      "source_status": "显性陈述"
+    },
+    {
+      "fact": "职位要求：Python 基础、能读懂接口文档。",
+      "source": "招聘 JD 片段",
+      "source_status": "显性陈述"
+    },
+    {
+      "fact": "学历要求为“大专及以上优先”（优先条件）。",
+      "source": "招聘 JD 片段",
+      "source_status": "显性陈述（已标注优先属性，非硬性门槛）"
+    },
+    {
+      "fact": "面试提问包括 Python 文件处理、接口调用、是否做过项目 demo。",
+      "source": "面经摘录",
+      "source_status": "候选人口述，非官方面试大纲，存在个体偏差可能"
+    }
+  ],
+  "unknown_fields": [
+    "公司全称、注册地址、成立时间、注册资本",
+    "员工规模、组织架构",
+    "具体产品名称、平台名称、客户案例",
+    "融资历史、估值",
+    "公司愿景、文化、价值观",
+    "该职位的具体 KPI、汇报线、团队构成",
+    "薪资完整结构（绩效、奖金、五险一金基数等）",
+    "面试轮次、面试官角色、面试形式（机试/白板/口答）"
+  ],
+  "evidence_gaps": [
+    {
+      "gap": "公司业务细节仅有一个方向概述，缺乏产品形态、客户案例、技术部署量级等具体信息。",
+      "suggestion": "建议补源：完整官网页面、行业报告公司简介、企业信用信息公示系统数据。"
+    },
+    {
+      "gap": "JD 片段较短，未明确职责细节（如具体开发什么工具、使用何种框架、接口协议类型等）。",
+      "suggestion": "建议补源：完整 JD 文本、同公司同类岗位 JD、招聘平台其他在招岗位。"
+    },
+    {
+      "gap": "面经仅一份，代表性不足，无法判断面试侧重点在不同面试官间的稳定性。",
+      "suggestion": "建议补源：牛客网、看准网、脉脉等多平台面经交叉验证。"
+    },
+    {
+      "gap": "“大专及以上优先”的权重未量化，无法判断在候选人评估中实际加分力度。",
+      "suggestion": "建议补源：查阅该职位或同公司其他职位历史反馈，确认实际筛选阈值。"
+    }
+  ],
+  "red_line_review": [
+    "[PASS] 红线1：未补造公司新闻、融资、员工规模或文化。全量信息来自给定来源。",
+    "[PASS] 红线2：技术栈完全抽取自官网片段，未凭公司名推断。",
+    "[PASS] 红线3：“大专及以上优先”已按“优先条件”标记，未改写成硬性门槛。"
+  ],
+  "handoff_summary": "[向下游 profile-builder / matching-engine] 星河智造完成事实抽取。覆盖：业务方向（质检自动化+数采）、技术栈（Python/OpenCV/PLC/轻量模型）、岗位画像（初级 AI 工具开发助理，5-7k，大专及以上优先，需 Python+接口文档阅读）、面试侧重（文件处理/接口调用/项目 demo）。缺失：公司注册信息、规模、产品名、案例、薪资结构细化。面经归类为单方口述，学历门槛已确认为优先属性。"
+}
+```
+
+## Judge
+
+### Rubric Hits
+
+- 只抽取给定来源中出现的业务、技术栈、学历门槛、薪资和面经
+- 每条事实标注来源片段
+- 未出现的信息输出 unknown 或 missing
+- 不判断候选人是否适合
+- 给出证据缺口和复核建议
+
+### Missing
+
+- 无
+
+### Hallucination
+
+- 无
+
+### Red Line Violations
+
+- 无
+
+### Profile Lessons
+
+- 无
+
+### Prompt Patch Suggestions
+
+- 无

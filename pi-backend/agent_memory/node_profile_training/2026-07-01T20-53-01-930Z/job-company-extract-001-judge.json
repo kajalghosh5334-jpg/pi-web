@@ -1,0 +1,25 @@
+{
+  "model": "opencode-go/deepseek-v4-pro",
+  "code": 0,
+  "text": "```json\n{\n  \"score\": 95,\n  \"score_scale\": \"0-100\",\n  \"pass\": true,\n  \"rubric_hits\": [\n    \"抽取指定字段并保留 source_anchor: 所有字段均带原文锚点\",\n    \"未出现字段放入 unknown_fields: 已将公司规模、融资、文化等缺失字段汇入 unknown_fields\",\n    \"不新增公司规模、融资、文化等未出现信息: 未编造任何材料外内容\",\n    \"salary_range 和 education_requirement 不得改写含义: 保留原文含义，仅追加澄清性注释\",\n    \"输出可供公司档案渲染使用: 提供结构化字段与 source_anchor 及渲染提示\"\n  ],\n  \"missing\": [],\n  \"hallucination\": [],\n  \"red_line_violations\": [],\n  \"profile_lessons\": [\n    \"unknown_fields 作为 extracted_fields 的一项非标准结构，建议作为顶层数组字段以提高下游兼容性\"\n  ],\n  \"prompt_patch_suggestions\": []\n}\n```",
+  "usage": {
+    "input": 3101,
+    "output": 1488,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "reasoning": 1264,
+    "totalTokens": 4589,
+    "cost": {
+      "input": 0.00539574,
+      "output": 0.005178240000000001,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "total": 0.01057398
+    }
+  },
+  "stderr": "",
+  "elapsedMs": 35285,
+  "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+  "workDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-53-01-930Z/job-company-extract-001-judge",
+  "isolatedSessionDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-53-01-930Z/job-company-extract-001-judge/.pi-sessions"
+}

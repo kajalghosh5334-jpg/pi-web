@@ -1,0 +1,25 @@
+{
+  "model": "opencode-go/deepseek-v4-pro",
+  "code": 0,
+  "text": "{\n  \"score\": 100,\n  \"score_scale\": \"0-100\",\n  \"pass\": true,\n  \"rubric_hits\": [\n    \"给出明确 revise 裁决\",\n    \"检查标题和素材证据一致，确认无来源数字\",\n    \"检查 CTA 并标记为缺失，给出明确修复要求\",\n    \"识别轻微夸张措辞风险\",\n    \"未重写长内容，仅给出短裁决与返工任务\",\n    \"decision 与最高 severity 一致，无 high/critical 问题时不阻塞\",\n    \"评论路由决策审查通过，交易/法律风险均已正确转人工\",\n    \"未违反任何红线\"\n  ],\n  \"missing\": [],\n  \"hallucination\": [],\n  \"red_line_violations\": [],\n  \"profile_lessons\": [\n    \"输出完美遵循 gate 节点契约，结构完整，裁决清晰，可作为高质量样例\"\n  ],\n  \"prompt_patch_suggestions\": []\n}",
+  "usage": {
+    "input": 5738,
+    "output": 3317,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "reasoning": 3111,
+    "totalTokens": 9055,
+    "cost": {
+      "input": 0.00998412,
+      "output": 0.01154316,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "total": 0.021527280000000003
+    }
+  },
+  "stderr": "",
+  "elapsedMs": 76598,
+  "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+  "workDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T22-27-25-228Z/media-content-review-001-judge",
+  "isolatedSessionDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T22-27-25-228Z/media-content-review-001-judge/.pi-sessions"
+}

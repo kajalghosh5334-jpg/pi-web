@@ -1,0 +1,25 @@
+{
+  "model": "opencode-go/deepseek-v4-pro",
+  "code": 0,
+  "text": "{\n  \"score\": 75,\n  \"score_scale\": \"0-100\",\n  \"pass\": true,\n  \"rubric_hits\": [\n    \"为各平台生成 action_payloads\",\n    \"包含 idempotency_key\",\n    \"缺少字段标记 blocked 或 missing\",\n    \"不得声称已发布或已写入\",\n    \"高风险或缺审稿通过时转人工（已检查审稿状态且无违规）\"\n  ],\n  \"missing\": [\n    \"每个平台 action_payload 缺少 source_artifact 字段\",\n    \"每个平台 action_payload 缺少显式的 status 字段（如 pending_schedule），当前仅通过 blocked: true 暗含状态\",\n    \"小红书和知乎的 payload 中未包含 scheduled_time 字段，即使值缺失也应设为 'missing'\",\n    \"content_fields 未作为独立字段呈现，而是隐藏在 parameters 下，建议标准化\"\n  ],\n  \"hallucination\": [],\n  \"red_line_violations\": [],\n  \"profile_lessons\": [\n    \"结构化 action_payload 必须包含标准字段：platform, status, source_artifact, scheduled_time, content_fields；即使缺失也应用 'missing' 占位，确保下游解析一致。\"\n  ],\n  \"prompt_patch_suggestions\": [\n    \"在任务提示中显式要求每个 action_payload 必须携带 status（默认为 pending_schedule）、source_artifact 和 scheduled_time 字段，缺失时使用 'missing' 字符串。\"\n  ]\n}",
+  "usage": {
+    "input": 3213,
+    "output": 2287,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "reasoning": 1965,
+    "totalTokens": 5500,
+    "cost": {
+      "input": 0.00559062,
+      "output": 0.00795876,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "total": 0.01354938
+    }
+  },
+  "stderr": "",
+  "elapsedMs": 38564,
+  "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+  "workDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-53-01-930Z/media-distribution-action-001-judge",
+  "isolatedSessionDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-53-01-930Z/media-distribution-action-001-judge/.pi-sessions"
+}

@@ -1,0 +1,141 @@
+你是严格训练裁判。请对一个 Workflow 节点输出评分，只返回 JSON，不要 markdown。
+
+节点类型：Action/Writeback
+任务：多平台分发排期 payload
+
+当前输入：
+定稿内容已通过审稿。平台要求：抖音需要标题、口播脚本、发布时间；小红书需要标题、封面文案、正文；知乎需要长标题和回答摘要。请生成排期队列 payload，不要声称已经发布。
+
+Rubric：
+[
+  "为各平台生成 action_payloads",
+  "包含 idempotency_key",
+  "缺少字段标记 blocked 或 missing",
+  "不得声称已发布或已写入",
+  "高风险或缺审稿通过时转人工"
+]
+
+标准答案/关键要点：
+应输出三个平台的待执行 payload，包含 platform、title、content_fields、scheduled_time 或 missing、source_artifact、idempotency_key。若发布时间未给，应 blocked 或 missing，不得默认当前时间。状态应是 pending_write 或 pending_schedule，不是 published。
+
+红线：
+[
+  "不得声称已经发布",
+  "不得给缺失发布时间填默认值",
+  "不得绕过审稿状态"
+]
+
+节点通用契约：
+{
+  "purpose": "生成系统动作 payload 或队列项，不声称已经执行真实外部动作。",
+  "output": [
+    "action_payloads: 待执行 payload 列表；每项必须含 platform/action_type/status/source_artifact/content_fields/scheduled_time",
+    "idempotency_key",
+    "validation_result",
+    "blocked_items",
+    "retry_or_manual_review_advice"
+  ],
+  "redLines": [
+    "不得声称已写入、已发布、已执行，除非工具真实返回成功",
+    "必填项缺失必须 blocked，不得默认为 0 或空",
+    "缺少 scheduled_time/source_artifact/content_fields 时必须显式写 missing 或 blocked",
+    "高风险动作必须 manual_review"
+  ]
+}
+
+本样本标签/路由 schema：
+null
+
+本样本生成/审查专项约束：
+{
+  "generationGuardrails": null,
+  "reviewChecklist": null,
+  "calculationRules": null
+}
+
+裁判注意：
+1. 当前输入中明确出现的实体、公司名、数字或事实，不应判为编造。
+2. 只有输出新增了当前输入、上游输出、标准答案都未支持的信息，才算 hallucination。
+3. red_line_violations 如果没有，请返回空数组 []，不要返回 ["无"]。
+
+待评分输出：
+```json
+{
+  "action_payloads": [
+    {
+      "platform": "douyin",
+      "action_type": "schedule_post",
+      "status": "missing_info",
+      "source_artifact": {
+        "variant_set": ["TECH-01", "TECH-02"],
+        "upstream_nodes": ["media-title-draft-001", "media-content-review-001"]
+      },
+      "content_fields": {
+        "title": "missing — 请求体生成节点提供",
+        "script": "missing — 口播脚本未生成",
+        "scheduled_time": "missing — 未指定"
+      }
+    },
+    {
+      "platform": "xiaohongshu",
+      "action_type": "schedule_note",
+      "status": "missing_info",
+      "source_artifact": {
+        "variant_set": ["ENT-01", "ENT-02"],
+        "upstream_nodes": ["media-title-draft-001", "media-content-review-001"]
+      },
+      "content_fields": {
+        "title": "missing — 标题可复用上游 variant headline",
+        "cover_copy": "missing — 封面文案未生成",
+        "body": "missing — 正文未生成"
+      }
+    },
+    {
+      "platform": "zhihu",
+      "action_type": "schedule_answer",
+      "status": "missing_info",
+      "source_artifact": {
+        "variant_set": ["MIX-01"],
+        "upstream_nodes": ["media-title-draft-001", "media-content-review-001"]
+      },
+      "content_fields": {
+        "long_title": "missing — 长标题可基于 MIX-01 headline 扩展",
+        "answer_summary": "missing — 回答摘要未生成"
+      }
+    }
+  ],
+  "idempotency_key": "WF-15/schedule/20260702T000000Z/001",
+  "validation_result": {
+    "overall": "blocked",
+    "reasons": [
+      "所有 action_payloads 的 content_fields 均缺少必填项",
+      "所有 action_payloads 缺少 scheduled_time",
+      "平台分发实际内容未生成（仅存在标题封面草案）",
+      "无法自动填充缺项"
+    ]
+  },
+  "blocked_items": [
+    "douyin: 缺少脚本和时间",
+    "xiaohongshu: 缺少封面文案和正文",
+    "zhihu: 缺少回答摘要",
+    "required content generation nodes (content-body-generator, etc.) 尚未执行"
+  ],
+  "retry_or_manual_review_advice": [
+    "待 content-body-generator 实际产出各平台适配正文、口播脚本、摘要后再重新提交此排期 payload",
+    "scheduled_time 确认后可填入具体时间戳；如平台有锁定发布时段需单独传参"
+  ]
+}
+```
+
+返回 JSON。score 必须是 0-100 的整数，不要使用 0-1 小数制或 0-10 十分制：
+{
+  "score": 0,
+  "score_scale": "0-100",
+  "pass": true,
+  "rubric_hits": [""],
+  "missing": [""],
+  "hallucination": [""],
+  "red_line_violations": [""],
+  "profile_lessons": [""],
+  "prompt_patch_suggestions": [""]
+}

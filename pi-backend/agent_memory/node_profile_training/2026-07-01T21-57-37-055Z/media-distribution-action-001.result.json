@@ -1,0 +1,116 @@
+{
+  "testCase": {
+    "id": "media-distribution-action-001",
+    "nodeType": "Action/Writeback",
+    "profileTarget": "structured-writeback-operator",
+    "workflowId": "WF-15",
+    "title": "多平台分发排期 payload",
+    "model": "opencode-go/deepseek-v4-flash",
+    "tools": "none",
+    "dependsOn": [
+      "media-title-draft-001",
+      "media-content-review-001"
+    ],
+    "input": "定稿内容已通过审稿。平台要求：抖音需要标题、口播脚本、发布时间；小红书需要标题、封面文案、正文；知乎需要长标题和回答摘要。请生成排期队列 payload，不要声称已经发布。",
+    "expectedRubric": [
+      "为各平台生成 action_payloads",
+      "包含 idempotency_key",
+      "缺少字段标记 blocked 或 missing",
+      "不得声称已发布或已写入",
+      "高风险或缺审稿通过时转人工"
+    ],
+    "standardAnswer": "应输出三个平台的待执行 payload，包含 platform、title、content_fields、scheduled_time 或 missing、source_artifact、idempotency_key。若发布时间未给，应 blocked 或 missing，不得默认当前时间。状态应是 pending_write 或 pending_schedule，不是 published。",
+    "redLines": [
+      "不得声称已经发布",
+      "不得给缺失发布时间填默认值",
+      "不得绕过审稿状态"
+    ]
+  },
+  "output": {
+    "model": "opencode-go/deepseek-v4-flash",
+    "code": 0,
+    "text": "```json\n{\n  \"action_payloads\": [\n    {\n      \"platform\": \"douyin\",\n      \"action_type\": \"schedule_post\",\n      \"status\": \"missing_info\",\n      \"source_artifact\": {\n        \"variant_set\": [\"TECH-01\", \"TECH-02\"],\n        \"upstream_nodes\": [\"media-title-draft-001\", \"media-content-review-001\"]\n      },\n      \"content_fields\": {\n        \"title\": \"missing — 请求体生成节点提供\",\n        \"script\": \"missing — 口播脚本未生成\",\n        \"scheduled_time\": \"missing — 未指定\"\n      }\n    },\n    {\n      \"platform\": \"xiaohongshu\",\n      \"action_type\": \"schedule_note\",\n      \"status\": \"missing_info\",\n      \"source_artifact\": {\n        \"variant_set\": [\"ENT-01\", \"ENT-02\"],\n        \"upstream_nodes\": [\"media-title-draft-001\", \"media-content-review-001\"]\n      },\n      \"content_fields\": {\n        \"title\": \"missing — 标题可复用上游 variant headline\",\n        \"cover_copy\": \"missing — 封面文案未生成\",\n        \"body\": \"missing — 正文未生成\"\n      }\n    },\n    {\n      \"platform\": \"zhihu\",\n      \"action_type\": \"schedule_answer\",\n      \"status\": \"missing_info\",\n      \"source_artifact\": {\n        \"variant_set\": [\"MIX-01\"],\n        \"upstream_nodes\": [\"media-title-draft-001\", \"media-content-review-001\"]\n      },\n      \"content_fields\": {\n        \"long_title\": \"missing — 长标题可基于 MIX-01 headline 扩展\",\n        \"answer_summary\": \"missing — 回答摘要未生成\"\n      }\n    }\n  ],\n  \"idempotency_key\": \"WF-15/schedule/20260702T000000Z/001\",\n  \"validation_result\": {\n    \"overall\": \"blocked\",\n    \"reasons\": [\n      \"所有 action_payloads 的 content_fields 均缺少必填项\",\n      \"所有 action_payloads 缺少 scheduled_time\",\n      \"平台分发实际内容未生成（仅存在标题封面草案）\",\n      \"无法自动填充缺项\"\n    ]\n  },\n  \"blocked_items\": [\n    \"douyin: 缺少脚本和时间\",\n    \"xiaohongshu: 缺少封面文案和正文\",\n    \"zhihu: 缺少回答摘要\",\n    \"required content generation nodes (content-body-generator, etc.) 尚未执行\"\n  ],\n  \"retry_or_manual_review_advice\": [\n    \"待 content-body-generator 实际产出各平台适配正文、口播脚本、摘要后再重新提交此排期 payload\",\n    \"scheduled_time 确认后可填入具体时间戳；如平台有锁定发布时段需单独传参\"\n  ]\n}\n```",
+    "usage": {
+      "input": 5592,
+      "output": 1766,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "reasoning": 1146,
+      "totalTokens": 7358,
+      "cost": {
+        "input": 0.00078288,
+        "output": 0.00049448,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "total": 0.00127736
+      }
+    },
+    "stderr": "",
+    "elapsedMs": 20108,
+    "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+    "workDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T21-57-37-055Z/media-distribution-action-001-output",
+    "isolatedSessionDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T21-57-37-055Z/media-distribution-action-001-output/.pi-sessions"
+  },
+  "judgeOutput": {
+    "model": "opencode-go/deepseek-v4-pro",
+    "code": 0,
+    "text": "{\n  \"score\": 80,\n  \"score_scale\": \"0-100\",\n  \"pass\": true,\n  \"rubric_hits\": [\n    \"为各平台生成 action_payloads\",\n    \"包含 idempotency_key\",\n    \"缺少字段标记 blocked 或 missing（内容字段缺失已标记）\",\n    \"不得声称已发布或已写入\",\n    \"高风险或缺审稿通过时转人工（无高风险，无需转人工，未违反）\"\n  ],\n  \"missing\": [\n    \"scheduled_time 字段未在每个 action_payload 中显式出现并标记为 missing/blocked（仅在 douyin 的 content_fields 内部提及，其余平台未标注）\",\n    \"payload 的 status 应使用 pending_write 或 pending_schedule，而非 missing_info\",\n    \"scheduled_time 的缺失处理不够规范，未满足标准答案要求\"\n  ],\n  \"hallucination\": [\n    \"凭空生成 variant_set 具体标识（TECH-01、ENT-02、MIX-01 等），输入和上游输出均未提供相关信息\"\n  ],\n  \"red_line_violations\": [],\n  \"profile_lessons\": [\n    \"调度 payload 的必填字段（如 scheduled_time）即使缺失也应显式占位并标注 blocked/missing，不能只靠全局 validation_result 说明\",\n    \"状态值应使用标准、语义明确的术语（pending_write/pending_schedule），避免自定义词（missing_info）\",\n    \"引用上游产出时应使用输入中已出现的标识，避免假设具体 artifact 名称\"\n  ],\n  \"prompt_patch_suggestions\": [\n    \"要求每个 action_payload 必须包含 scheduled_time 顶层字段，值为具体时间或 missing/blocked\",\n    \"明确 payload 状态枚举为 pending_write 或 pending_schedule，禁止使用其他自定义状态\",\n    \"强调引用上游 artifact 时必须基于输入上下文，不得编造具体名称\"\n  ]\n}",
+    "usage": {
+      "input": 3225,
+      "output": 3981,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "reasoning": 3563,
+      "totalTokens": 7206,
+      "cost": {
+        "input": 0.0056115,
+        "output": 0.01385388,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "total": 0.01946538
+      }
+    },
+    "stderr": "",
+    "elapsedMs": 60533,
+    "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+    "workDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T21-57-37-055Z/media-distribution-action-001-judge",
+    "isolatedSessionDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T21-57-37-055Z/media-distribution-action-001-judge/.pi-sessions"
+  },
+  "judge": {
+    "score": 80,
+    "score_scale": "0-100",
+    "pass": false,
+    "rubric_hits": [
+      "为各平台生成 action_payloads",
+      "包含 idempotency_key",
+      "缺少字段标记 blocked 或 missing（内容字段缺失已标记）",
+      "不得声称已发布或已写入",
+      "高风险或缺审稿通过时转人工（无高风险，无需转人工，未违反）"
+    ],
+    "missing": [
+      "scheduled_time 字段未在每个 action_payload 中显式出现并标记为 missing/blocked（仅在 douyin 的 content_fields 内部提及，其余平台未标注）",
+      "payload 的 status 应使用 pending_write 或 pending_schedule，而非 missing_info",
+      "scheduled_time 的缺失处理不够规范，未满足标准答案要求"
+    ],
+    "hallucination": [
+      "凭空生成 variant_set 具体标识（TECH-01、ENT-02、MIX-01 等），输入和上游输出均未提供相关信息"
+    ],
+    "red_line_violations": [],
+    "profile_lessons": [
+      "调度 payload 的必填字段（如 scheduled_time）即使缺失也应显式占位并标注 blocked/missing，不能只靠全局 validation_result 说明",
+      "状态值应使用标准、语义明确的术语（pending_write/pending_schedule），避免自定义词（missing_info）",
+      "引用上游产出时应使用输入中已出现的标识，避免假设具体 artifact 名称"
+    ],
+    "prompt_patch_suggestions": [
+      "要求每个 action_payload 必须包含 scheduled_time 顶层字段，值为具体时间或 missing/blocked",
+      "明确 payload 状态枚举为 pending_write 或 pending_schedule，禁止使用其他自定义状态",
+      "强调引用上游 artifact 时必须基于输入上下文，不得编造具体名称"
+    ],
+    "raw_score": 80
+  },
+  "minScore": 82,
+  "nodeOutputArtifact": {
+    "markdownPath": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T21-57-37-055Z/node_outputs/12-media-distribution-action-001.md",
+    "jsonPath": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T21-57-37-055Z/node_outputs/12-media-distribution-action-001.json"
+  }
+}

@@ -1,0 +1,90 @@
+你是 Profile 提炼器。请根据同一 nodeType 的真实训练样本，总结一个可复用通用 Profile。
+只返回 JSON，不要 markdown。
+
+nodeType: Generate/Draft
+
+现有相关 profile：
+{
+  "content-draft-producer": {
+    "name": "自媒体初稿与多平台改写",
+    "defaultModel": "opencode-go/deepseek-v4-flash",
+    "collaborationProtocol": "负责按策略和素材生成初稿、标题备选、口播脚本和平台化改写；不自行改变核心观点和受众定位。",
+    "projectConfig": {
+      "modelTier": "weak",
+      "domain": "self-media",
+      "roleInWorkflow": "drafting",
+      "preferredTasks": [
+        "标题备选",
+        "短视频脚本",
+        "图文初稿",
+        "平台化改写",
+        "CTA 变体"
+      ],
+      "escalateWhen": [
+        "核心观点不清",
+        "素材不足以支撑结论",
+        "涉及医疗/金融/法律等高风险表达",
+        "需要判断品牌长期定位"
+      ],
+      "qualityBar": "必须遵守策略输入，输出标题、开头、正文结构、CTA、可替换素材位和待审风险。"
+    },
+    "systemPromptPatch": "你是自媒体内容初稿生产者。严格依据上游策略和素材写作，生成可编辑初稿，而不是最终定稿。输出要包含标题备选、开头钩子、正文结构、完整口播脚本、分镜/画面建议、字幕精简版、CTA 和待审风险。不得新增上游未支持的事实、案例、数字或来源；素材不足时用占位符或删去该表达。"
+  }
+}
+
+通过样本：
+[
+  {
+    "id": "job-resume-draft-001",
+    "title": "简历经历初稿",
+    "profileTarget": "content-draft-producer",
+    "score": 95,
+    "profile_lessons": [],
+    "prompt_patch_suggestions": [],
+    "node_output_artifact": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-28-40-414Z/node_outputs/04-job-resume-draft-001.md",
+    "output_excerpt": "```json\n{\n  \"_node_type\": \"content-draft-producer\",\n  \"_workflow\": \"WF-2\",\n  \"_target_profile\": \"content-draft-producer\",\n  \"draft_sections\": [\n    {\n      \"id\": \"exp_01_rag\",\n      \"title\": \"RAG 知识库问答系统（外包项目）\",\n      \"star_structure\": {\n        \"situation\": \"某企业客户存在内部文档资料查询效率低的问题，希望通过搭建知识库问答系统，使员工能基于自然语言快速检索技术手册和业务文档。 [可编辑场景细节]\",\n        \"task\": \"作为项目唯一技术人员，负责从零交付一个功能原型（Demo），涵盖文档清洗、RAG 后端搭建及简易 Web 查询界面开发。\",\n        \"action\": [\n          \"使用 Python 编写文档清洗脚本（数据提取、文本切片）。\",\n          \"接入 [向量数据库占位: Milvus/Chroma] 进行 Embedding 存储与相似度检索。\",\n          \"调用 LLM 的 RESTful API 进行答案生成，处理 Token 限制与重试逻辑。\",\n          \"搭建 [前端占位: Streamlit/Gradio/Flask] 简易 Web 查询入口。\",\n          \"直接与客户沟通需求，控制 Demo 边界，管理预期，确保交付物符合核心场景。\"\n        ],\n        \"result\": \"成功交付交互式 Demo，可作为面试作品集中展示 Python 基础、接口调用和 RAG 工程实践的核心案例。 [注意：Demo 完整性未经上游验证，面试时应如实描述为概念验证原型 PoC]\"\n      }\n    },\n    {\n      \"id\": \"exp_02_excel\",\n      \"title\": \"批量 Excel 数据处理脚本（项目）\",\n      \"star_structure\": {\n        \"situation\": \"朋友/客户的小型业务数据分散在多个 Excel 文件中，手动汇总耗时且易出错。\",\n        \"task\": \"编写自动化脚本，完成数据整合与清洗。\",\n        \"action\": [\n          \"使用 Python 的 pandas 库，编写脚本进行文件批量读取、数据标准化、去重与合并。\"\n        ],\n        \"result\": \"交付可复用的脚本工具，节省了 [时间数字占位: n] 小时/周 的重复劳动。"
+  },
+  {
+    "id": "media-title-draft-001",
+    "title": "标题封面 A/B 方案",
+    "profileTarget": "content-draft-producer",
+    "score": 100,
+    "profile_lessons": [
+      "通过复用有限上游素材（3条事实）可以组合出针对性较强的多角度标题，无需编造新数据。",
+      "使用疑问句和场景还原代替断言可降低标题党风险，同时保留吸引力。",
+      "在 draft 阶段用 risk_flags 标注表达歧义（如“风险地图”）比直接删除更能提示编辑阶段的人类注意。"
+    ],
+    "prompt_patch_suggestions": [],
+    "node_output_artifact": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-28-40-414Z/node_outputs/08-media-title-draft-001.md",
+    "output_excerpt": "```json\n{\n  \"draft_sections\": [\n    {\n      \"variant_id\": \"V1\",\n      \"title\": \"数据清洗、权限设计、评测与运维：LLM 落地的四道工程成本关\",\n      \"cover_copy\": \"一篇把那些「看不见的钱」拆开讲的清单式复盘——非标题党，只列你计划预算前就该知道的真实开销项。\",\n      \"target_audience\": \"技术者向（架构师/技术负责人/开发者）\",\n      \"click_motive\": \"清单式结构满足「检查清单」心理，技术决策者需要预判隐形成本\",\n      \"source_facts_used\": [\"LLM 项目常见成本来自数据清洗、权限设计、评测和运维（文章摘录，作者论述）\"]\n    },\n    {\n      \"variant_id\": \"V2\",\n      \"title\": \"客户只想要一个 demo，后续维护谁买单？\",\n      \"cover_copy\": \"开发者圈子里反复出现的焦虑：项目做完了，客户不想为持续迭代付费。这不是单方抱怨——我们拆一下双方的预期差。\",\n      \"target_audience\": \"企业主向（决策者/甲方项目经理）\",\n      \"click_motive\": \"痛点直击（预算与长期投入的冲突），企业主需要理解供应商的持续运维诉求\",\n      \"source_facts_used\": [\"开发者担心客户只想要 demo，不愿意为后续维护付费（评论摘录，开发者个人观点）\"]\n    },\n    {\n      \"variant_id\": \"V3\",\n      \"title\": \"资料太乱、没人维护：一个制造业 LLM 知识库的真实起点\",\n      \"cover_copy\": \"不是技术选型、不是模型能力，试过之后最大的坎是没人整理数据。这是从一个具体项目访谈里拎出来的场景。\",\n      \"target_audience\": \"混合向（技术者 + 企业主）\",\n      \"click_motive\": \"案例共鸣（制造业场景常见），展示落地前置条件而非成果，降低预期同时建立信任\",\n      \"source_facts_used\": [\"某制造企业在试过知识库问答时遇到的最大问题是资料太乱、没人维护（访谈摘录，单案例经验/观点）\"]\n    },\n    {\n      \"variant_id\": \"V4\",\n      \"title\": \"LLM 项目交付之后：那些开发者不敢写在合同里的风险\",\n      \"cover_copy\": \"demo 漂亮、验收通过、然后呢？从工程成本到商业模式，把三个不同 source 的坑拼成一张风险地图。\",\n      \""
+  }
+]
+
+请生成：
+{
+  "name": "",
+  "match": [""],
+  "collaborationProtocol": "",
+  "projectConfig": {
+    "modelTier": "weak|strong",
+    "roleInWorkflow": "",
+    "preferredTasks": [""],
+    "escalateWhen": [""],
+    "qualityBar": "",
+    "nodeContract": {
+      "input_scope": "",
+      "allowed_sources": [""],
+      "output_schema_note": "",
+      "max_input_chars": 0,
+      "escalation_rule": ""
+    }
+  },
+  "systemPromptPatch": ""
+}
+
+要求：
+1. 不要删除已有 profile 的关键红线。
+2. systemPromptPatch 要短、硬、可执行，适合弱模型稳定执行。
+3. 事实型节点必须强调不得编造来源。
+4. Review/Gate 必须输出短裁决，不重写长文。
+5. Analyze/Judge 必须区分事实/推断/建议/置信度/反证条件。

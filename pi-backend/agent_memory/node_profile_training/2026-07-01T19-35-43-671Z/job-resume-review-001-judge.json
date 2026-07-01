@@ -1,0 +1,25 @@
+{
+  "model": "opencode-go/deepseek-v4-pro",
+  "code": 0,
+  "text": "{\n  \"score\": 4,\n  \"pass\": true,\n  \"rubric_hits\": [\n    \"给出明确 pass 裁决，附带条件\",\n    \"检查学历、项目成果、职位真实性，正确标记推断无虚构风险\",\n    \"检查 JD 对齐，指出 API/Docker 缺失\",\n    \"指出具体返工位置和返工节点（下游定稿节点、job-resume-draft-001 等）\",\n    \"裁决简短，未展开长文重写\"\n  ],\n  \"missing\": [\n    \"未检查是否补充项目链接/demo 证明材料\",\n    \"未检查量化数据是否有真实支撑\"\n  ],\n  \"hallucination\": [],\n  \"red_line_violations\": [],\n  \"profile_lessons\": [\n    \"strong-quality-reviewer 在 JD 对齐检查中忽略了 demo 证明的可验证性\"\n  ],\n  \"prompt_patch_suggestions\": [\n    \"Review 节点 prompt 增加：强制验证简历中是否包含可访问的项目链接或 demo 证明\",\n    \"增加对量化指标来源和真实性的显式检查步骤\"\n  ]\n}",
+  "usage": {
+    "input": 2993,
+    "output": 1684,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "reasoning": 1446,
+    "totalTokens": 4677,
+    "cost": {
+      "input": 0.00520782,
+      "output": 0.0058603200000000005,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "total": 0.01106814
+    }
+  },
+  "stderr": "",
+  "elapsedMs": 33012,
+  "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+  "workDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T19-35-43-671Z/job-resume-review-001-judge",
+  "isolatedSessionDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T19-35-43-671Z/job-resume-review-001-judge/.pi-sessions"
+}

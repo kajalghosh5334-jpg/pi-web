@@ -1,0 +1,25 @@
+{
+  "model": "opencode-go/deepseek-v4-pro",
+  "code": 0,
+  "text": "{\n  \"score\": 95,\n  \"score_scale\": \"0-100\",\n  \"pass\": true,\n  \"rubric_hits\": [\n    \"逐条对照 JD 输出命中、缺漏、弱化\",\n    \"明确学历是优先项而非硬卡\",\n    \"把 RAG/脚本/外包项目映射到岗位需求\",\n    \"对不熟 Django、Docker 经验弱等问题给可补策略\",\n    \"区分事实、推断、建议和置信度\",\n    \"当上游背景诊断缺失或失败时，显式标记 upstream_missing，不得用标准答案或常识补齐候选人画像\"\n  ],\n  \"missing\": [],\n  \"hallucination\": [],\n  \"red_line_violations\": [],\n  \"profile_lessons\": [],\n  \"prompt_patch_suggestions\": []\n}",
+  "usage": {
+    "input": 6487,
+    "output": 4030,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "reasoning": 3853,
+    "totalTokens": 10517,
+    "cost": {
+      "input": 0.01128738,
+      "output": 0.014024400000000001,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "total": 0.02531178
+    }
+  },
+  "stderr": "",
+  "elapsedMs": 80742,
+  "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+  "workDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T22-27-25-228Z/job-jd-analyze-001-judge",
+  "isolatedSessionDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T22-27-25-228Z/job-jd-analyze-001-judge/.pi-sessions"
+}

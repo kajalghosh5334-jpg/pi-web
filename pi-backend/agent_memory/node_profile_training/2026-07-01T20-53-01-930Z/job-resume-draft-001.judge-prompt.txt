@@ -1,0 +1,145 @@
+你是严格训练裁判。请对一个 Workflow 节点输出评分，只返回 JSON，不要 markdown。
+
+节点类型：Generate/Draft
+任务：简历经历初稿
+
+Rubric：
+[
+  "使用 STAR 或类似结构写可编辑经历段落",
+  "突出 AI 编程、Python、RAG、客户需求沟通",
+  "不虚构量化成果、公司、学历或正式职位",
+  "技能标签区分直接相关和弱相关",
+  "素材不足时使用可替换占位符而不是编造"
+]
+
+标准答案/关键要点：
+应生成企业资料问答 RAG 项目和 Excel 自动化脚本两段经历。RAG 段突出资料清洗、向量库接入、查询入口、需求沟通；Excel 段突出 Python 批处理和效率提升但避免虚构具体百分比。技能标签应含 Python、文档清洗、RAG、向量库、接口/网页入口、沟通协作。不得写本科、正式 AI 工程师、大厂项目或夸张商业结果。
+
+红线：
+[
+  "不得虚构学历、公司、职位、项目规模或量化成绩",
+  "不得把 demo 写成生产级平台",
+  "不得生成最终不可修改定稿"
+]
+
+节点通用契约：
+{
+  "purpose": "依据上游事实和策略生成可编辑初稿，不承担最终事实责任。",
+  "output": [
+    "draft_sections: 草稿分段或变体列表",
+    "source_usage: 每个事实/数字对应的上游依据；无依据必须写 placeholder 或删除",
+    "unsupported_claims_removed: 删除或占位的无依据表达",
+    "unsupported_numbers_self_check: 扫描所有数字/百分比/金额；无上游依据必须替换为非数字表达或 placeholder",
+    "editable_notes: 需要人类补充或确认的占位项",
+    "risk_flags"
+  ],
+  "redLines": [
+    "不得新增上游未支持的数字、百分比、金额、案例、客户名、项目成果、学历、职位",
+    "生成标题/封面/广告语时，尤其禁止为了增强点击而添加 70%、80%、30 天、翻倍等无来源数字",
+    "不得把 demo 写成生产级成果",
+    "不得输出不可修改的最终定稿"
+  ]
+}
+
+本样本标签/路由 schema：
+null
+
+本样本生成/审查专项约束：
+{
+  "generationGuardrails": null,
+  "reviewChecklist": null
+}
+
+待评分输出：
+```json
+{
+  "node_id": "content-draft-producer",
+  "workflow": "WF-2",
+  "target_profile": "content-draft-producer",
+  "draft_sections": [
+    {
+      "section_type": "project_experience",
+      "project_name": "企业资料问答 RAG 系统（外包项目）",
+      "star_description": "为客户 [客户公司名称 placeholder] 构建内部知识库问答系统。独立负责从需求沟通、数据处理到系统开发交付的全流程。使用 Python 编写文档清洗脚本，整理企业资料；基于 LangChain 框架和 OpenAI Embedding/Chat API，结合 Chroma 向量数据库实现语义检索；开发 Flask Web 查询页面，支持文件上传和自然语言问答。最终交付一套可运行的 RAG 系统，客户可直接通过 Web 页面查询内部资料。",
+      "skills_tags": [
+        {"tag": "Python", "relevance": "direct"},
+        {"tag": "LangChain RAG 框架", "relevance": "direct"},
+        {"tag": "OpenAI API", "relevance": "direct"},
+        {"tag": "Chroma 向量数据库", "relevance": "direct"},
+        {"tag": "Flask Web 开发", "relevance": "direct"},
+        {"tag": "需求沟通与独立交付", "relevance": "direct"}
+      ],
+      "highlights": [
+        "独立完成从需求分析到交付的全栈开发",
+        "直接对接业务方，确保系统贴合实际场景",
+        "产出可公开演示的 Demo 项目（建议上传 GitHub）"
+      ]
+    },
+    {
+      "section_type": "project_experience",
+      "project_name": "批量 Excel 数据处理脚本",
+      "star_description": "朋友在处理大量 Excel 报表时重复性工作耗时，需自动化处理。使用 Python 的 pandas 和 openpyxl 编写自动化脚本，实现数据的批量读取、清洗、合并及格式转换。交付后朋友可直接运行脚本完成月报处理，大幅减少手动操作时间。",
+      "skills_tags": [
+        {"tag": "Python", "relevance": "direct"},
+        {"tag": "pandas / openpyxl", "relevance": "direct"},
+        {"tag": "自动化脚本设计", "relevance": "direct"},
+        {"tag": "数据处理", "relevance": "direct"}
+      ],
+      "highlights": [
+        "针对重复性数据处理问题提供自动化方案",
+        "与需求方直接沟通，交付即用工具"
+      ]
+    }
+  ],
+  "source_usage": {
+    "项目1-文档清洗脚本": "上游原始经历：「写 Python 文档清洗脚本」",
+    "项目1-向量数据库": "上游原始经历：「接入向量库」",
+    "项目1-Web查询页面": "上游原始经历：「做简单网页查询入口」",
+    "项目1-需求沟通": "上游原始经历：「能和客户沟通需求」+ upstream analysis claim_type inference",
+    "项目1-LangChain/OpenAI": "上游分析 inference（上游 analysis_items 中 RAG 知识库 Demo evidence 为「RAG 知识库 Demo（LangChain）」「必然调用大模型 API」）",
+    "项目2-Excel处理": "上游原始经历：「帮朋友做过批量 Excel 处理脚本」",
+    "项目2-pandas/openpyxl": "合理推断（无上游直接依据），需候选人确认",
+    "客户名称": "unverified / 需补充",
+    "朋友使用场景": "unverified / 需补充",
+    "所有数字性描述": "无数字性描述，使用非量化表述"
+  },
+  "unsupported_claims_removed": [
+    "未使用上游建议中的「累计 XX 行 Python 代码」「月报处理时间节省 XX%」等无依据数字",
+    "未写具体客户名称、公司名、职位头衔",
+    "未将 Demo 描述为生产级平台（仅写「交付可运行系统」）"
+  ],
+  "unsupported_numbers_self_check": {
+    "status": "clean",
+    "note": "两份经历草稿中未出现任何数字、百分比或金额，无需替换"
+  },
+  "editable_notes": [
+    "项目1 客户名称需候选人补充",
+    "项目1 是否确用 LangChain/OpenAI 需候选人确认（上游推断，非原始经历直接给出）",
+    "项目2 的朋友场景细节（如报表类型、数据量）可进一步丰富",
+    "项目1 的「独立负责全流程」描述可补充沟通案例细节",
+    "项目2 的脚本规模（约多少行/处理多少文件）可择机量化（若有真实数据）"
+  ],
+  "risk_flags": {
+    "redlines_violation": "none",
+    "notes": [
+      "未虚构学历、公司、职位、项目规模",
+      "未将 Demo 拔高为生产级系统",
+      "未使用无来源数字",
+      "输出为可修改初稿，非不可编辑定稿"
+    ]
+  }
+}
+```
+
+返回 JSON。score 必须是 0-100 的整数，不要使用 0-1 小数制或 0-10 十分制：
+{
+  "score": 0,
+  "score_scale": "0-100",
+  "pass": true,
+  "rubric_hits": [""],
+  "missing": [""],
+  "hallucination": [""],
+  "red_line_violations": [""],
+  "profile_lessons": [""],
+  "prompt_patch_suggestions": [""]
+}

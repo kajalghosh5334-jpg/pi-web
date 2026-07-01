@@ -1,0 +1,104 @@
+{
+  "id": "generated-classify-router-2026-07-01",
+  "name": "分类打标与条件路由",
+  "match": [
+    "generated:classify-router",
+    "training-run:2026-07-01T21-57-37-055Z",
+    "source-profile:classification-router",
+    "case:media-comment-classify-001",
+    "评论区分级和路由"
+  ],
+  "defaultModel": "opencode-go/deepseek-v4-flash",
+  "skills": [
+    "output-spec"
+  ],
+  "availableSkills": [
+    "output-spec",
+    "artifact-storage"
+  ],
+  "collaborationProtocol": "负责低成本分类、置信度、路由建议和人工升级条件；不处理高风险最终裁决。批量处理多个输入项，为每项独立打标和路由。",
+  "projectConfig": {
+    "modelTier": "weak",
+    "pattern": "classify-route",
+    "roleInWorkflow": "分类与路由节点",
+    "preferredTasks": [
+      "标签分类",
+      "置信度输出",
+      "情绪识别",
+      "路由分支建议",
+      "人工审核触发",
+      "风险标记"
+    ],
+    "escalateWhen": [
+      "confidence 低于0.7",
+      "标签互相冲突",
+      "涉及投诉/法务/赔偿/高价值客户",
+      "输入有讽刺或隐晦攻击",
+      "涉及具体预算/交易线索"
+    ],
+    "qualityBar": "必须输出 label、confidence、route、reason 和人工审核触发标记；根据场景可输出 emotion 和 risk_flags。低置信度或高风险内容必须转人工，不得自动执行高风险操作。risk_flags 需包含风险类型、级别和处置建议。",
+    "nodeContract": {
+      "input_scope": "待分类的文本项列表（如评论、工单、消息等），每项包含 id 和内容。",
+      "allowed_sources": [
+        "用户评论",
+        "客服消息",
+        "社交媒体内容",
+        "工单文本",
+        "分类任务"
+      ],
+      "output_schema_note": "输出为 JSON 对象，包含 items 数组，每项: {id, label, confidence (0-1), emotion(可选), route, reason, risk_flags(可选)}。risk_flags 子项: {risk, level(low|medium|high), action}。",
+      "max_input_chars": 10000,
+      "escalation_rule": "confidence < 0.7 或风险级别为 high 或触发红线规则时必须输出 manual_review 路由。"
+    },
+    "generated": true,
+    "generatedStatus": "trained",
+    "routingEnabled": false,
+    "sourceNodeType": "Classify/Router",
+    "sourceProfileTargets": [
+      "classification-router"
+    ],
+    "trainingRunId": "2026-07-01T21-57-37-055Z",
+    "trainingCases": [
+      "media-comment-classify-001"
+    ],
+    "trainingArtifactDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T21-57-37-055Z",
+    "nodeOutputArtifacts": [
+      "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T21-57-37-055Z/node_outputs/08-media-comment-classify-001.md"
+    ]
+  },
+  "systemPromptPatch": "你是分类与路由节点。为每个输入项输出 JSON: {id, label, confidence, route, reason, risk_flags}。低置信度(<0.7)或高风险必须转人工。不得编造信息，仅基于输入。输出严格 JSON，勿多发文字。",
+  "experience": 1,
+  "successes": 1,
+  "failures": 0,
+  "recentTasks": [
+    {
+      "name": "评论区分级和路由",
+      "taskId": "media-comment-classify-001",
+      "success": true,
+      "timestamp": 1782944639668,
+      "modelUsed": "opencode-go/deepseek-v4-flash",
+      "score": 100,
+      "status": "training_generated",
+      "outputArtifact": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T21-57-37-055Z/node_outputs/08-media-comment-classify-001.md"
+    }
+  ],
+  "runHistory": [],
+  "savedExperiences": [
+    {
+      "taskId": "media-comment-classify-001",
+      "taskName": "评论区分级和路由",
+      "lesson": "",
+      "skills": [
+        "output-spec"
+      ],
+      "model": "opencode-go/deepseek-v4-flash",
+      "artifactId": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T21-57-37-055Z/node_outputs/08-media-comment-classify-001.md",
+      "debugValidated": true,
+      "score": 100,
+      "savedAt": 1782944639668
+    }
+  ],
+  "sourceProfileId": "classification-router",
+  "generatedAt": 1782944639668,
+  "generatedBy": "node-profile-training"
+}

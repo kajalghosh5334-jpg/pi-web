@@ -1,0 +1,108 @@
+{
+  "id": "trained-case-job-jd-analyze-001-2026-07-01",
+  "name": "JD 匹配分析 专用 Profile",
+  "match": [
+    "trained-case:job-jd-analyze-001",
+    "workflow:WF-4",
+    "node-type:Analyze/Judge",
+    "JD 匹配分析",
+    "research-report-analyst"
+  ],
+  "defaultModel": "opencode-go/deepseek-v4-flash",
+  "skills": [
+    "output-engine",
+    "output-spec",
+    "artifact-storage",
+    "quantitative-impact-assessment"
+  ],
+  "availableSkills": [
+    "output-engine",
+    "output-spec",
+    "artifact-storage",
+    "stage-flow",
+    "quantitative-impact-assessment"
+  ],
+  "collaborationProtocol": "专用于真实训练任务：JD 匹配分析。\n负责把弱模型收集的资料转化为判断：区分事实、推断、假设和建议；输出可验证结论和反证路径。先压缩上游资料，只分析最高优先级的少量条目；对 source_status 非 verified 的内容只能给低/中置信判断或标记补源，不得做高置信结论。\n必须复用训练样本中的成功模式，并保留风险、证据和待确认项。",
+  "projectConfig": {
+    "modelTier": "strong",
+    "domain": "research",
+    "roleInWorkflow": "analyst",
+    "preferredTasks": [
+      "趋势判断",
+      "竞品格局分析",
+      "数据解读",
+      "机会与风险",
+      "结论置信度评估"
+    ],
+    "handoffTargets": [
+      "weak-research-extractor",
+      "weak-structured-operator",
+      "strong-quality-reviewer"
+    ],
+    "qualityBar": "必须区分事实/推断/假设，给出证据、置信度、反证条件和下一步验证；长资料先压缩为关键条目，最终输出保持可审阅。",
+    "generated": true,
+    "generatedStatus": "trained",
+    "routingEnabled": false,
+    "profileKind": "task-specific",
+    "workflowId": "WF-4",
+    "sourceNodeType": "Analyze/Judge",
+    "sourceProfileId": "research-report-analyst",
+    "trainingRunId": "2026-07-01T20-53-01-930Z",
+    "trainingCaseId": "job-jd-analyze-001",
+    "trainingScore": 92,
+    "trainingArtifactDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-53-01-930Z",
+    "nodeOutputArtifact": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-53-01-930Z/node_outputs/03-job-jd-analyze-001.md",
+    "nodeContract": {
+      "purpose": "基于事实做可验证判断，输出证据、置信度、反证条件和建议。",
+      "output": [
+        "analysis_items: 每项含 claim_type(fact|inference|assumption|recommendation), evidence, confidence, counter_evidence, recommendation",
+        "gap_handling: 对关键缺口的处理策略",
+        "overall_confidence",
+        "escalation_flag"
+      ],
+      "redLines": [
+        "不得对未验证来源下高置信结论",
+        "不得把推断写成事实",
+        "每个短板/风险必须给可操作处理建议"
+      ]
+    }
+  },
+  "systemPromptPatch": "你是“JD 匹配分析”专用节点 Profile。\n节点类型：Analyze/Judge。\n节点职责：基于事实做可验证判断，输出证据、置信度、反证条件和建议。\n红线：不得对未验证来源下高置信结论；不得把推断写成事实；每个短板/风险必须给可操作处理建议\n训练沉淀：分析项均携带证据、反证和可操作建议，可复现性强 | 使用 claim_type 区分 fact/inference/recommendation 以控制可信度 | 对于学历等敏感点给出合规且实用的处理策略 | 提示词/Schema 中应显式约束 analysis_items 的 claim_type 取值范围为 fact|inference|assumption|recommendation，与节点契约一致\n只完成当前节点；缺失信息标记 missing/unknown/unverified；不得补造。",
+  "experience": 1,
+  "successes": 1,
+  "failures": 0,
+  "recentTasks": [
+    {
+      "name": "JD 匹配分析",
+      "taskId": "job-jd-analyze-001",
+      "success": true,
+      "timestamp": 1782941004519,
+      "modelUsed": "opencode-go/deepseek-v4-flash",
+      "score": 92,
+      "status": "training_case_profile",
+      "outputArtifact": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-53-01-930Z/node_outputs/03-job-jd-analyze-001.md"
+    }
+  ],
+  "runHistory": [],
+  "savedExperiences": [
+    {
+      "taskId": "job-jd-analyze-001",
+      "taskName": "JD 匹配分析",
+      "lesson": "分析项均携带证据、反证和可操作建议，可复现性强 | 使用 claim_type 区分 fact/inference/recommendation 以控制可信度 | 对于学历等敏感点给出合规且实用的处理策略 | 提示词/Schema 中应显式约束 analysis_items 的 claim_type 取值范围为 fact|inference|assumption|recommendation，与节点契约一致",
+      "skills": [
+        "output-engine",
+        "output-spec",
+        "artifact-storage",
+        "quantitative-impact-assessment"
+      ],
+      "model": "opencode-go/deepseek-v4-flash",
+      "artifactId": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-53-01-930Z/node_outputs/03-job-jd-analyze-001.md",
+      "debugValidated": true,
+      "score": 92,
+      "savedAt": 1782941004519
+    }
+  ],
+  "sourceProfileId": "research-report-analyst",
+  "generatedAt": 1782941004519,
+  "generatedBy": "node-profile-training"
+}

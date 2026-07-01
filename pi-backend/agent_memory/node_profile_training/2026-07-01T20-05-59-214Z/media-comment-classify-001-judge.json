@@ -1,0 +1,25 @@
+{
+  "model": "opencode-go/deepseek-v4-pro",
+  "code": 0,
+  "text": "{\n  \"score\": 85,\n  \"score_scale\": \"0-100\",\n  \"pass\": true,\n  \"rubric_hits\": [\n    \"逐条输出固定标签，不发明新标签\",\n    \"对预算、交易需求和撮合纠纷类评论标记转人工\",\n    \"广告标记忽略或删除建议\",\n    \"黑粉和质疑要区分\",\n    \"输出置信度、原因和路由\"\n  ],\n  \"missing\": [\n    \"黑粉/强质疑评论（id3）宜建议人工处理或理性回应，而非直接忽略\"\n  ],\n  \"hallucination\": [],\n  \"red_line_violations\": [],\n  \"profile_lessons\": [\n    \"黑粉或强质疑评论路由应为 manual_review 或 auto_reply（理性回应），避免采用 ignore 导致舆情升级\"\n  ],\n  \"prompt_patch_suggestions\": [\n    \"在分类 prompt 中新增路由指引：黑粉/强质疑类评论应标记为 manual_review 或生成理性回应，仅广告/无关 spam 可用 ignore\"\n  ]\n}",
+  "usage": {
+    "input": 3244,
+    "output": 3090,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "reasoning": 2857,
+    "totalTokens": 6334,
+    "cost": {
+      "input": 0.00564456,
+      "output": 0.010753200000000001,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "total": 0.01639776
+    }
+  },
+  "stderr": "",
+  "elapsedMs": 50503,
+  "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+  "workDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-05-59-214Z/media-comment-classify-001-judge",
+  "isolatedSessionDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-05-59-214Z/media-comment-classify-001-judge/.pi-sessions"
+}

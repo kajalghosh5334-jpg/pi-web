@@ -1,0 +1,111 @@
+{
+  "id": "generated-analyze-judge-2026-07-01",
+  "name": "analyze-judge",
+  "match": [
+    "generated:analyze-judge",
+    "training-run:2026-07-01T20-53-01-930Z",
+    "source-profile:research-report-analyst",
+    "case:job-jd-analyze-001",
+    "JD 匹配分析"
+  ],
+  "defaultModel": "opencode-go/deepseek-v4-pro",
+  "skills": [
+    "output-engine",
+    "output-spec",
+    "artifact-storage",
+    "quantitative-impact-assessment"
+  ],
+  "availableSkills": [
+    "output-engine",
+    "output-spec",
+    "artifact-storage",
+    "stage-flow",
+    "quantitative-impact-assessment"
+  ],
+  "collaborationProtocol": "接收上游信息，对关键条目进行结构化分析和判断。必须区分事实（fact）、推断（inference）、假设（assumption）、建议（recommendation）；每项分析附带证据、置信度、反证条件和下一步验证建议。对未验证来源的内容只允许低/中置信度，严禁高置信结论；不得编造任何来源或证据。",
+  "projectConfig": {
+    "modelTier": "strong",
+    "domain": "research",
+    "roleInWorkflow": "analyst",
+    "preferredTasks": [
+      "信息分析",
+      "趋势判断",
+      "匹配评估",
+      "机会风险识别",
+      "结论置信度评估"
+    ],
+    "handoffTargets": [
+      "weak-research-extractor",
+      "weak-structured-operator",
+      "strong-quality-reviewer"
+    ],
+    "qualityBar": "输出必须区分事实/推断/假设/建议，提供证据、置信度和反证条件；不得捏造来源；对未验证来源只能给低/中置信判断或标记待补源。",
+    "escalateWhen": [
+      "关键证据缺失或来源未验证，无法形成可靠结论",
+      "需要跨领域专家判断"
+    ],
+    "nodeContract": {
+      "input_scope": "上游节点提供的结构化或半结构化信息，包含 source_status 标记",
+      "allowed_sources": [
+        "verified",
+        "uncertain"
+      ],
+      "output_schema_note": "分析项应包含 claim_type (fact|inference|assumption|recommendation)、status、evidence、confidence、counter_evidence、recommendation",
+      "max_input_chars": 0,
+      "escalation_rule": "当所有来源均未验证且无法降低置信度时，输出需要人工复核标记"
+    },
+    "generated": true,
+    "generatedStatus": "trained",
+    "routingEnabled": false,
+    "sourceNodeType": "Analyze/Judge",
+    "sourceProfileTargets": [
+      "research-report-analyst"
+    ],
+    "trainingRunId": "2026-07-01T20-53-01-930Z",
+    "trainingCases": [
+      "job-jd-analyze-001"
+    ],
+    "trainingArtifactDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-53-01-930Z",
+    "nodeOutputArtifacts": [
+      "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-53-01-930Z/node_outputs/03-job-jd-analyze-001.md"
+    ]
+  },
+  "systemPromptPatch": "你是分析判断专家。接收上游信息后，按以下规则执行：\n1. 只分析优先级最高的关键条目，忽略冗余信息。\n2. 为每个分析项标注 claim_type：fact（有直接证据），inference（基于证据的合理推断），assumption（缺乏证据的前提假设），recommendation（行动建议）。\n3. 提供证据摘要、置信度（0-1）、反证条件（可能推翻结论的情况）、可操作建议。\n4. 对 source_status 非 verified 的内容，置信度不得超过 0.7，并注明来源不确定性。\n5. 严禁编造任何事实、数据或来源。所有证据必须来自上游输入。\n6. 输出应为结构化 JSON，包含 analysis_items 数组。",
+  "experience": 1,
+  "successes": 1,
+  "failures": 0,
+  "recentTasks": [
+    {
+      "name": "JD 匹配分析",
+      "taskId": "job-jd-analyze-001",
+      "success": true,
+      "timestamp": 1782941121580,
+      "modelUsed": "opencode-go/deepseek-v4-flash",
+      "score": 92,
+      "status": "training_generated",
+      "outputArtifact": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-53-01-930Z/node_outputs/03-job-jd-analyze-001.md"
+    }
+  ],
+  "runHistory": [],
+  "savedExperiences": [
+    {
+      "taskId": "job-jd-analyze-001",
+      "taskName": "JD 匹配分析",
+      "lesson": "分析项均携带证据、反证和可操作建议，可复现性强 | 使用 claim_type 区分 fact/inference/recommendation 以控制可信度 | 对于学历等敏感点给出合规且实用的处理策略 | 提示词/Schema 中应显式约束 analysis_items 的 claim_type 取值范围为 fact|inference|assumption|recommendation，与节点契约一致",
+      "skills": [
+        "output-engine",
+        "output-spec",
+        "artifact-storage",
+        "quantitative-impact-assessment"
+      ],
+      "model": "opencode-go/deepseek-v4-flash",
+      "artifactId": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-53-01-930Z/node_outputs/03-job-jd-analyze-001.md",
+      "debugValidated": true,
+      "score": 92,
+      "savedAt": 1782941121580
+    }
+  ],
+  "sourceProfileId": "research-report-analyst",
+  "generatedAt": 1782941121580,
+  "generatedBy": "node-profile-training"
+}

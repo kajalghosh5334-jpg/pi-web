@@ -1,0 +1,28 @@
+{
+  "caseId": "job-background-strategy-001",
+  "title": "求职背景诊断",
+  "workflowId": "WF-1",
+  "nodeType": "Strategize/Plan",
+  "profileTarget": "strong-task-architect",
+  "model": "opencode-go/deepseek-v4-pro",
+  "score": 0,
+  "pass": false,
+  "elapsedMs": 0,
+  "conversationIsolation": "fresh_conversation_per_model_call",
+  "input": "求职者背景：高中学历，男，29 岁，性格开朗，有 Python/LLM/RAG 相关 AI 编程经验，接过小型 AI 工具和 RAG 外包项目，期望薪资 6k。请诊断真实竞争位置、目标岗位圈、不可逆短板和绕行策略。",
+  "output": "",
+  "judge": {
+    "score": 0,
+    "pass": false,
+    "rubric_hits": [],
+    "missing": [],
+    "hallucination": [],
+    "red_line_violations": [],
+    "profile_lessons": [
+      "case failed during execution: job-background-strategy-001-output timed out after 180000ms"
+    ],
+    "prompt_patch_suggestions": [],
+    "error": "job-background-strategy-001-output timed out after 180000ms"
+  },
+  "dependencies": []
+}

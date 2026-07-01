@@ -1,0 +1,25 @@
+{
+  "model": "opencode-go/deepseek-v4-pro",
+  "code": 0,
+  "text": "{\n  \"score\": 100,\n  \"score_scale\": \"0-100\",\n  \"pass\": true,\n  \"rubric_hits\": [\n    \"逐条提取事实并标注来源\",\n    \"保留资料混乱、维护、数据清洗、权限、评测、运维、demo付费问题\",\n    \"识别哪些claim只是访谈/评论观点并标注claim_level\",\n    \"输出evidence_gaps涵盖缺失的统计、成本数字、客户案例\",\n    \"未扩展外部新闻或行业数据\"\n  ],\n  \"missing\": [],\n  \"hallucination\": [],\n  \"red_line_violations\": [],\n  \"profile_lessons\": [\"已严格区分观点类型与信息来源，证据缺口总结精准，可直接复用为Gather节点标杆样本\"],\n  \"prompt_patch_suggestions\": []\n}",
+  "usage": {
+    "input": 3494,
+    "output": 1496,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "reasoning": 1324,
+    "totalTokens": 4990,
+    "cost": {
+      "input": 0.00607956,
+      "output": 0.00520608,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "total": 0.01128564
+    }
+  },
+  "stderr": "",
+  "elapsedMs": 31999,
+  "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+  "workDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T21-32-52-330Z/media-material-gather-001-judge",
+  "isolatedSessionDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T21-32-52-330Z/media-material-gather-001-judge/.pi-sessions"
+}

@@ -1,0 +1,25 @@
+{
+  "model": "opencode-go/deepseek-v4-pro",
+  "code": 0,
+  "text": "{\n  \"score\": 95,\n  \"score_scale\": \"0-100\",\n  \"pass\": true,\n  \"rubric_hits\": [\n    \"逐条提取事实并标注来源\",\n    \"保留资料混乱、维护、数据清洗、权限、评测、运维、demo付费问题\",\n    \"识别评论/观点并区分\",\n    \"输出证据缺口\",\n    \"未扩展外部新闻或行业数据\"\n  ],\n  \"missing\": [\n    \"证据缺口未明确指出缺少可公开客户案例，仅提及样本有限和缺乏代表性，但未强调案例不可公开这一关键信息缺失\"\n  ],\n  \"hallucination\": [],\n  \"red_line_violations\": [],\n  \"profile_lessons\": [\n    \"严格基于给定材料提取，无捏造；事实与观点区分清晰，未知字段识别全面。证据缺口分析合理但可进一步明确“可公开客户案例”缺失。\"\n  ],\n  \"prompt_patch_suggestions\": [\n    \"在节点提示中可增加“识别并列出缺乏可公开客户案例”作为证据缺口示例，提升对素材可信度评估的完整性。\"\n  ]\n}",
+  "usage": {
+    "input": 3334,
+    "output": 2619,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "reasoning": 2376,
+    "totalTokens": 5953,
+    "cost": {
+      "input": 0.0058011600000000005,
+      "output": 0.00911412,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "total": 0.01491528
+    }
+  },
+  "stderr": "",
+  "elapsedMs": 43944,
+  "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+  "workDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T21-57-37-055Z/media-material-gather-001-judge",
+  "isolatedSessionDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T21-57-37-055Z/media-material-gather-001-judge/.pi-sessions"
+}

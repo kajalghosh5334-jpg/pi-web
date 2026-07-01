@@ -1,0 +1,25 @@
+{
+  "model": "opencode-go/deepseek-v4-flash",
+  "code": 0,
+  "text": "```json\n{\n  \"workflow_node_id\": \"WF-3-gather-weak-research-extractor\",\n  \"node_type\": \"Gather/Fetch\",\n  \"target_profile\": \"weak-research-extractor\",\n  \"extracted_facts\": [\n    {\n      \"fact\": \"公司为制造业客户提供质检自动化和设备数据采集服务。\",\n      \"source\": \"官网片段\",\n      \"source_status\": \"available, explicit\",\n      \"category\": \"fact\"\n    },\n    {\n      \"fact\": \"技术关键词包含 Python、OpenCV、PLC、轻量化模型部署。\",\n      \"source\": \"官网片段\",\n      \"source_status\": \"available, explicit\",\n      \"category\": \"fact\"\n    },\n    {\n      \"fact\": \"招聘岗位名称为「初级 AI 工具开发助理」。\",\n      \"source\": \"招聘 JD 片段\",\n      \"source_status\": \"available, explicit\",\n      \"category\": \"fact\"\n    },\n    {\n      \"fact\": \"薪资范围为 5-7k（单位推测为月薪，具体币种为人民币）。\",\n      \"source\": \"招聘 JD 片段\",\n      \"source_status\": \"available, explicit\",\n      \"category\": \"fact\"\n    },\n    {\n      \"fact\": \"岗位要求包括 Python 基础和能读懂接口文档。\",\n      \"source\": \"招聘 JD 片段\",\n      \"source_status\": \"available, explicit\",\n      \"category\": \"fact\"\n    },\n    {\n      \"fact\": \"学历要求为「大专及以上优先」。此为优先条件，非硬性门槛。\",\n      \"source\": \"招聘 JD 片段\",\n      \"source_status\": \"available, explicit. [红线遵守] 未改写为硬性条件\",\n      \"category\": \"fact_with_nuance\"\n    },\n    {\n      \"fact\": \"面试会问 Python 文件处理、接口调用、是否做过项目 demo。\",\n      \"source\": \"面经摘录\",\n      \"source_status\": \"available, explicit\",\n      \"category\": \"fact\"\n    }\n  ],\n  \"unknown_fields\": [\n    \"公司全称与工商注册信息\",\n    \"公司员工规模与组织架构\",\n    \"融资情况与投资方\",\n    \"具体产品名称与客户案例\",\n    \"公司文化、使命愿景\",\n    \"具体薪资结构（五险一金、年终奖、期权等）\",\n    \"JD 中岗位职责的具体内容片段\",\n    \"面经的面试轮次、面试官背景和评分标准\",\n    \"轻量化模型部署的具体框架或方案（如 ONNX、TFLite、TensorRT 等）\",\n    \"PLC 的型号或厂家（如西门子、三菱等）\",\n    \"团队规模与扁平化程度\"\n  ],\n  \"evidence_gaps\": [\n    {\n      \"gap\": \"官网片段仅有方向性描述，缺少具体产品名称和核心客户信息。\",\n      \"suggestion\": \"建议下游搜索「星河智造」完整网站、公众号或行业报道，补全业务全貌。\"\n    },\n    {\n      \"gap\": \"JD 片段不完整，缺少岗位职责细节、汇报对象和团队规模。\",\n      \"suggestion\": \"如需精准匹配候选人，建议获取完整 JD 文本或联系招聘方补充信息。\"\n    },\n    {\n      \"gap\": \"面经仅列出面试话题，缺乏题目的具体形式、难度评估和面试官反馈。\",\n      \"suggestion\": \"面经样本代表性无法验证，下游应标记为「粗糙样本，仅供话题方向参考」，不宜据此做精确评分。\"\n    },\n    {\n      \"gap\": \"技术栈虽有提及，但未说明各技术模块的实际应用深度（例如 Python 用于后端服务还是算法原型）。\",\n      \"suggestion\": \"建议下游在构建能力模型时，按「官网提及」标注来源，而非自动推理熟练等级。\"\n    }\n  ],\n  \"inferences_and_risks\": [\n    {\n      \"type\": \"inference_template_risk\",\n      \"description\": \"如果下游自动将「大专及以上优先」改写为硬性筛选条件，则违反红线 3。请确保下游在传递此字段时保留「优先」语意。\",\n      \"mitigation\": \"在 fact 中已标注 prefer 而非 mandatory，传递时保持原有限定词。\"\n    },\n    {\n      \"type\": \"blocked_off_limit_risk\",\n      \"description\": \"未提供公司新闻、融资额、员工规模或文化，因此这些字段在输出中被列入 unknown。\",\n      \"status\": \"未触发，已安全处理为 unknown。\"\n    }\n  ],\n  \"red_line_compliance\": {\n    \"status\": \"全部通过\",\n    \"details\": [\n      \"未补造任何新闻、融资、员工规模或文化信息。\",\n      \"未凭公司名「星河智造」推断技术栈，技术栈仅来自官网片段。\",\n      \"未将优先条件（大专及以上优先）改写为硬性条件。\"\n    ]\n  },\n  \"handoff_summary\": \"已完成星河智造（Weak-Research-Extractor）的材料搬运。公司业务为制造业质检自动化和设备数据采集，技术栈含 Python、OpenCV、PLC 及轻量化模型部署。招初级 AI 工具开发助理（5-7k/月），要求 Python 基础 + 文档阅读能力，学历大专及以上优先。面试考 Python 文件处理、接口调用和项目 Demo。大量字段（规模、融资、具体产品等）缺失，来源均为碎片化公开信息，建议下游做匹配时严格标注来源局限性，信息完整度评分建议设为「低」。\"\n}\n```",
+  "usage": {
+    "input": 2472,
+    "output": 4393,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "reasoning": 3194,
+    "totalTokens": 6865,
+    "cost": {
+      "input": 0.00034608,
+      "output": 0.0012300400000000002,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "total": 0.0015761200000000003
+    }
+  },
+  "stderr": "",
+  "elapsedMs": 49350,
+  "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+  "workDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T21-32-52-330Z/job-company-gather-001-output",
+  "isolatedSessionDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T21-32-52-330Z/job-company-gather-001-output/.pi-sessions"
+}

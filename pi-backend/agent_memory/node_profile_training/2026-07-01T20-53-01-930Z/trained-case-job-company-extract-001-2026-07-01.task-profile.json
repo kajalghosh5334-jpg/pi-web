@@ -1,0 +1,100 @@
+{
+  "id": "trained-case-job-company-extract-001-2026-07-01",
+  "name": "公司字段抽取 专用 Profile",
+  "match": [
+    "trained-case:job-company-extract-001",
+    "workflow:WF-3",
+    "node-type:Extract",
+    "公司字段抽取",
+    "structured-writeback-operator"
+  ],
+  "defaultModel": "opencode-go/deepseek-v4-flash",
+  "skills": [
+    "output-spec"
+  ],
+  "availableSkills": [
+    "output-spec",
+    "artifact-storage"
+  ],
+  "collaborationProtocol": "专用于真实训练任务：公司字段抽取。\n负责把非结构化文本抽取为结构化字段、做格式校验和生成写回 payload；遇到必填字段缺失或高风险承诺时转人工。\n必须复用训练样本中的成功模式，并保留风险、证据和待确认项。",
+  "projectConfig": {
+    "modelTier": "weak",
+    "pattern": "extract-writeback",
+    "roleInWorkflow": "writeback-operator",
+    "preferredTasks": [
+      "结构化字段抽取",
+      "原文锚点保留",
+      "字段格式校验",
+      "写回 payload 生成",
+      "失败重试建议"
+    ],
+    "escalateWhen": [
+      "必填字段缺失",
+      "日期或枚举值非法",
+      "原文锚点不足",
+      "写回会覆盖已有高价值字段"
+    ],
+    "qualityBar": "必须输出 schema JSON、validation_errors、source_spans、write_payload 和 idempotency_key。",
+    "generated": true,
+    "generatedStatus": "trained",
+    "routingEnabled": false,
+    "profileKind": "task-specific",
+    "workflowId": "WF-3",
+    "sourceNodeType": "Extract",
+    "sourceProfileId": "structured-writeback-operator",
+    "trainingRunId": "2026-07-01T20-53-01-930Z",
+    "trainingCaseId": "job-company-extract-001",
+    "trainingScore": 95,
+    "trainingArtifactDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-53-01-930Z",
+    "nodeOutputArtifact": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-53-01-930Z/node_outputs/12-job-company-extract-001.md",
+    "nodeContract": {
+      "purpose": "从给定材料抽取字段并保留原文锚点。",
+      "output": [
+        "extracted_fields: 每项含 field, value, source_anchor, confidence",
+        "missing_required_fields",
+        "validation_errors",
+        "handoff_payload"
+      ],
+      "redLines": [
+        "不得无来源补字段",
+        "不确定字段必须标记 confidence=low 或 missing",
+        "必须保留原文锚点或来源位置"
+      ]
+    }
+  },
+  "systemPromptPatch": "你是“公司字段抽取”专用节点 Profile。\n节点类型：Extract。\n节点职责：从给定材料抽取字段并保留原文锚点。\n红线：不得无来源补字段；不确定字段必须标记 confidence=low 或 missing；必须保留原文锚点或来源位置\n训练沉淀：unknown_fields 作为 extracted_fields 的一项非标准结构，建议作为顶层数组字段以提高下游兼容性\n只完成当前节点；缺失信息标记 missing/unknown/unverified；不得补造。",
+  "experience": 1,
+  "successes": 1,
+  "failures": 0,
+  "recentTasks": [
+    {
+      "name": "公司字段抽取",
+      "taskId": "job-company-extract-001",
+      "success": true,
+      "timestamp": 1782941004553,
+      "modelUsed": "opencode-go/deepseek-v4-flash",
+      "score": 95,
+      "status": "training_case_profile",
+      "outputArtifact": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-53-01-930Z/node_outputs/12-job-company-extract-001.md"
+    }
+  ],
+  "runHistory": [],
+  "savedExperiences": [
+    {
+      "taskId": "job-company-extract-001",
+      "taskName": "公司字段抽取",
+      "lesson": "unknown_fields 作为 extracted_fields 的一项非标准结构，建议作为顶层数组字段以提高下游兼容性",
+      "skills": [
+        "output-spec"
+      ],
+      "model": "opencode-go/deepseek-v4-flash",
+      "artifactId": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-53-01-930Z/node_outputs/12-job-company-extract-001.md",
+      "debugValidated": true,
+      "score": 95,
+      "savedAt": 1782941004553
+    }
+  ],
+  "sourceProfileId": "structured-writeback-operator",
+  "generatedAt": 1782941004553,
+  "generatedBy": "node-profile-training"
+}

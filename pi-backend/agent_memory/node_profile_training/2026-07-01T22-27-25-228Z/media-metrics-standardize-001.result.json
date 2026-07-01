@@ -1,0 +1,111 @@
+{
+  "testCase": {
+    "id": "media-metrics-standardize-001",
+    "nodeType": "Standardize",
+    "profileTarget": "weak-structured-operator",
+    "workflowId": "WF-17",
+    "title": "自媒体指标标准化",
+    "model": "opencode-go/deepseek-v4-flash",
+    "tools": "none",
+    "dependsOn": [],
+    "input": "发布数据：视频 A 播放 12000，点赞 360，评论 96，转发 48，私信 12；视频 B 播放 3000，点赞 45，评论 9，转发 3，私信 0。请转换成互动率、评论率、转发率、私信转化率。",
+    "calculationRules": {
+      "interaction_rate": "(likes + comments + shares) / views",
+      "comment_rate": "comments / views",
+      "share_rate": "shares / views",
+      "dm_conversion_rate": "direct_messages / views",
+      "format": "保留原始分子分母，并输出百分比；不要估算缺失值"
+    },
+    "expectedRubric": [
+      "正确计算率值指标",
+      "保留原始分子分母",
+      "私信为 0 时不得补造",
+      "只做指标转换，不做波动归因",
+      "输出结构化表格或 JSON"
+    ],
+    "standardAnswer": "A：互动率=(360+96+48)/12000=4.2%，评论率=0.8%，转发率=0.4%，私信转化率=0.1%。B：互动率=(45+9+3)/3000=1.9%，评论率=0.3%，转发率=0.1%，私信转化率=0%。应保留播放、点赞、评论、转发、私信原始值。",
+    "redLines": [
+      "不得做原因分析",
+      "不得把 0 私信补成估计值",
+      "不得省略计算依据",
+      "互动率不得把私信计入分子；互动率只等于 (点赞 + 评论 + 转发) / 播放"
+    ]
+  },
+  "output": {
+    "model": "opencode-go/deepseek-v4-flash",
+    "code": 0,
+    "text": "```json\n{\n  \"node_type\": \"standardize\",\n  \"profile\": \"weak-structured-operator\",\n  \"workflow\": \"WF-17\",\n  \"task\": \"自媒体指标标准化\",\n  \"status\": \"completed\",\n  \"upstream\": \"none\",\n  \"details\": {\n    \"normalized_items\": [\n      {\n        \"item_id\": \"视频 A\",\n        \"raw_metrics\": {\n          \"views\": 12000,\n          \"likes\": 360,\n          \"comments\": 96,\n          \"shares\": 48,\n          \"direct_messages\": 12\n        },\n        \"standard_rates\": {\n          \"interaction_rate\": {\n            \"formula\": \"(likes + comments + shares) / views\",\n            \"numerator\": 504,\n            \"denominator\": 12000,\n            \"decimal\": 0.042,\n            \"percent\": \"4.2%\",\n            \"note\": \"分子不含私信\"\n          },\n          \"comment_rate\": {\n            \"formula\": \"comments / views\",\n            \"numerator\": 96,\n            \"denominator\": 12000,\n            \"decimal\": 0.008,\n            \"percent\": \"0.8%\"\n          },\n          \"share_rate\": {\n            \"formula\": \"shares / views\",\n            \"numerator\": 48,\n            \"denominator\": 12000,\n            \"decimal\": 0.004,\n            \"percent\": \"0.4%\"\n          },\n          \"dm_conversion_rate\": {\n            \"formula\": \"direct_messages / views\",\n            \"numerator\": 12,\n            \"denominator\": 12000,\n            \"decimal\": 0.001,\n            \"percent\": \"0.1%\"\n          }\n        },\n        \"source\": \"deterministic_precompute_reference\"\n      },\n      {\n        \"item_id\": \"视频 B\",\n        \"raw_metrics\": {\n          \"views\": 3000,\n          \"likes\": 45,\n          \"comments\": 9,\n          \"shares\": 3,\n          \"direct_messages\": 0\n        },\n        \"standard_rates\": {\n          \"interaction_rate\": {\n            \"formula\": \"(likes + comments + shares) / views\",\n            \"numerator\": 57,\n            \"denominator\": 3000,\n            \"decimal\": 0.019,\n            \"percent\": \"1.9%\",\n            \"note\": \"分子不含私信\"\n          },\n          \"comment_rate\": {\n            \"formula\": \"comments / views\",\n            \"numerator\": 9,\n            \"denominator\": 3000,\n            \"decimal\": 0.003,\n            \"percent\": \"0.3%\"\n          },\n          \"share_rate\": {\n            \"formula\": \"shares / views\",\n            \"numerator\": 3,\n            \"denominator\": 3000,\n            \"decimal\": 0.001,\n            \"percent\": \"0.1%\"\n          },\n          \"dm_conversion_rate\": {\n            \"formula\": \"direct_messages / views\",\n            \"numerator\": 0,\n            \"denominator\": 3000,\n            \"decimal\": 0,\n            \"percent\": \"0%\"\n          }\n        },\n        \"source\": \"deterministic_precompute_reference\"\n      }\n    ],\n    \"field_mapping\": {\n      \"播放\": \"views\",\n      \"点赞\": \"likes\",\n      \"评论\": \"comments\",\n      \"转发\": \"shares\",\n      \"私信\": \"direct_messages\"\n    },\n    \"missing_fields\": [],\n    \"format_warnings\": [\n      {\n        \"type\": \"info\",\n        \"item_id\": \"视频 B\",\n        \"field\": \"direct_messages\",\n        \"message\": \"原始值为 0，计算结果如实为 0%，未做任何估算。\"\n      }\n    ],\n    \"handoff_summary\": \"标准化完成：2 个视频条目（视频 A、视频 B）的原始播放/点赞/评论/转发/私信数据已按确定性预计算参考转换为互动率、评论率、转发率、私信转化率。互动率严格按 (likes+comments+shares)/views 计算，不含私信。视频 B 私信为 0，结果如实反映。未补造缺失值，未做业务归因或策略建议。\"\n  }\n}\n```",
+    "usage": {
+      "input": 3213,
+      "output": 4011,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "reasoning": 3065,
+      "totalTokens": 7224,
+      "cost": {
+        "input": 0.00044982,
+        "output": 0.00112308,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "total": 0.0015729000000000001
+      }
+    },
+    "stderr": "",
+    "elapsedMs": 32528,
+    "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+    "workDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T22-27-25-228Z/media-metrics-standardize-001-output",
+    "isolatedSessionDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T22-27-25-228Z/media-metrics-standardize-001-output/.pi-sessions"
+  },
+  "judgeOutput": {
+    "model": "opencode-go/deepseek-v4-pro",
+    "code": 0,
+    "text": "{\n  \"score\": 95,\n  \"score_scale\": \"0-100\",\n  \"pass\": true,\n  \"rubric_hits\": [\n    \"正确计算率值指标\",\n    \"保留原始分子分母\",\n    \"私信为 0 时不得补造\",\n    \"只做指标转换，不做波动归因\",\n    \"输出结构化表格或 JSON\"\n  ],\n  \"missing\": [],\n  \"hallucination\": [\n    \"声称数据来源为 'deterministic_precompute_reference'，该信息未在输入或上游中提供，属于新增未支持信息\"\n  ],\n  \"red_line_violations\": [],\n  \"profile_lessons\": [],\n  \"prompt_patch_suggestions\": [\n    \"移除 output 中未经验证的来源字段，如 normalized_items 内的 source 及 handoff_summary 中的参考名称\"\n  ]\n}",
+    "usage": {
+      "input": 4474,
+      "output": 2595,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "reasoning": 2405,
+      "totalTokens": 7069,
+      "cost": {
+        "input": 0.00778476,
+        "output": 0.0090306,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "total": 0.01681536
+      }
+    },
+    "stderr": "",
+    "elapsedMs": 62736,
+    "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+    "workDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T22-27-25-228Z/media-metrics-standardize-001-judge",
+    "isolatedSessionDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T22-27-25-228Z/media-metrics-standardize-001-judge/.pi-sessions"
+  },
+  "judge": {
+    "score": 95,
+    "score_scale": "0-100",
+    "pass": true,
+    "rubric_hits": [
+      "正确计算率值指标",
+      "保留原始分子分母",
+      "私信为 0 时不得补造",
+      "只做指标转换，不做波动归因",
+      "输出结构化表格或 JSON"
+    ],
+    "missing": [],
+    "hallucination": [
+      "声称数据来源为 'deterministic_precompute_reference'，该信息未在输入或上游中提供，属于新增未支持信息"
+    ],
+    "red_line_violations": [],
+    "profile_lessons": [],
+    "prompt_patch_suggestions": [
+      "移除 output 中未经验证的来源字段，如 normalized_items 内的 source 及 handoff_summary 中的参考名称"
+    ],
+    "raw_score": 95
+  },
+  "minScore": 82,
+  "nodeOutputArtifact": {
+    "markdownPath": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T22-27-25-228Z/node_outputs/09-media-metrics-standardize-001.md",
+    "jsonPath": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T22-27-25-228Z/node_outputs/09-media-metrics-standardize-001.json"
+  }
+}

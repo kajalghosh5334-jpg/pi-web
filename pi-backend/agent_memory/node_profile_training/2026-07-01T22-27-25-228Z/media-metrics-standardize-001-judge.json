@@ -1,0 +1,25 @@
+{
+  "model": "opencode-go/deepseek-v4-pro",
+  "code": 0,
+  "text": "{\n  \"score\": 95,\n  \"score_scale\": \"0-100\",\n  \"pass\": true,\n  \"rubric_hits\": [\n    \"正确计算率值指标\",\n    \"保留原始分子分母\",\n    \"私信为 0 时不得补造\",\n    \"只做指标转换，不做波动归因\",\n    \"输出结构化表格或 JSON\"\n  ],\n  \"missing\": [],\n  \"hallucination\": [\n    \"声称数据来源为 'deterministic_precompute_reference'，该信息未在输入或上游中提供，属于新增未支持信息\"\n  ],\n  \"red_line_violations\": [],\n  \"profile_lessons\": [],\n  \"prompt_patch_suggestions\": [\n    \"移除 output 中未经验证的来源字段，如 normalized_items 内的 source 及 handoff_summary 中的参考名称\"\n  ]\n}",
+  "usage": {
+    "input": 4474,
+    "output": 2595,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "reasoning": 2405,
+    "totalTokens": 7069,
+    "cost": {
+      "input": 0.00778476,
+      "output": 0.0090306,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "total": 0.01681536
+    }
+  },
+  "stderr": "",
+  "elapsedMs": 62736,
+  "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+  "workDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T22-27-25-228Z/media-metrics-standardize-001-judge",
+  "isolatedSessionDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T22-27-25-228Z/media-metrics-standardize-001-judge/.pi-sessions"
+}

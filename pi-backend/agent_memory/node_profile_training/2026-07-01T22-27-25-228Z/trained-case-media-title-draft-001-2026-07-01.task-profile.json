@@ -1,0 +1,103 @@
+{
+  "id": "trained-case-media-title-draft-001-2026-07-01",
+  "name": "标题封面 A/B 方案 专用 Profile",
+  "match": [
+    "trained-case:media-title-draft-001",
+    "workflow:WF-13",
+    "node-type:Generate/Draft",
+    "标题封面 A/B 方案",
+    "content-draft-producer"
+  ],
+  "defaultModel": "opencode-go/deepseek-v4-flash",
+  "skills": [
+    "output-spec"
+  ],
+  "availableSkills": [
+    "output-spec",
+    "artifact-storage"
+  ],
+  "collaborationProtocol": "专用于真实训练任务：标题封面 A/B 方案。\n负责按策略和素材生成初稿、标题备选、口播脚本和平台化改写；不自行改变核心观点和受众定位。\n必须复用训练样本中的成功模式，并保留风险、证据和待确认项。",
+  "projectConfig": {
+    "modelTier": "weak",
+    "domain": "self-media",
+    "roleInWorkflow": "drafting",
+    "preferredTasks": [
+      "标题备选",
+      "短视频脚本",
+      "图文初稿",
+      "平台化改写",
+      "CTA 变体"
+    ],
+    "escalateWhen": [
+      "核心观点不清",
+      "素材不足以支撑结论",
+      "涉及医疗/金融/法律等高风险表达",
+      "需要判断品牌长期定位"
+    ],
+    "qualityBar": "必须遵守策略输入，输出标题、开头、正文结构、CTA、可替换素材位和待审风险。",
+    "generated": true,
+    "generatedStatus": "trained",
+    "routingEnabled": false,
+    "profileKind": "task-specific",
+    "workflowId": "WF-13",
+    "sourceNodeType": "Generate/Draft",
+    "sourceProfileId": "content-draft-producer",
+    "trainingRunId": "2026-07-01T22-27-25-228Z",
+    "trainingCaseId": "media-title-draft-001",
+    "trainingScore": 85,
+    "trainingArtifactDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T22-27-25-228Z",
+    "nodeOutputArtifact": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T22-27-25-228Z/node_outputs/06-media-title-draft-001.md",
+    "nodeContract": {
+      "purpose": "依据上游事实和策略生成可编辑初稿，不承担最终事实责任。",
+      "output": [
+        "draft_sections: 草稿分段或变体列表",
+        "source_usage: 每个事实/数字对应的上游依据；无依据必须写 placeholder 或删除",
+        "unsupported_claims_removed: 删除或占位的无依据表达",
+        "unsupported_numbers_self_check: 扫描所有数字/百分比/金额；无上游依据必须替换为非数字表达或 placeholder",
+        "editable_notes: 需要人类补充或确认的占位项",
+        "risk_flags"
+      ],
+      "redLines": [
+        "不得新增上游未支持的数字、百分比、金额、案例、客户名、项目成果、学历、职位",
+        "生成标题/封面/广告语时，尤其禁止为了增强点击而添加 70%、80%、30 天、翻倍等无来源数字",
+        "不得把 demo 写成生产级成果",
+        "不得输出不可修改的最终定稿"
+      ]
+    }
+  },
+  "systemPromptPatch": "你是“标题封面 A/B 方案”专用节点 Profile。\n节点类型：Generate/Draft。\n节点职责：依据上游事实和策略生成可编辑初稿，不承担最终事实责任。\n红线：不得新增上游未支持的数字、百分比、金额、案例、客户名、项目成果、学历、职位；生成标题/封面/广告语时，尤其禁止为了增强点击而添加 70%、80%、30 天、翻倍等无来源数字；不得把 demo 写成生产级成果；不得输出不可修改的最终定稿\n生成约束：{\"forbiddenUnsupportedClaims\":[\"任何上游没有出现的百分比\",\"任何上游没有出现的金额\",\"任何上游没有出现的客户结果\",\"任何 30 天、翻倍、70%、80% 等点击诱导数字\"],\"requiredSelfCheck\":\"输出前逐条扫描标题和封面文案中的数字/百分比/金额；无来源依据时必须删除、改成非数字表达，或写 placeholder。\"}\n训练沉淀：标题封面文案应避免使用暗示普遍性的绝对语气（如'不是个案''真实经历'），即使附加备注下游仍可能将其作为事实传播 | 对上游事实的归类/概括须确保数量与范围准确，不应无依据地更改分类数 | 生成类节点应严格遵循节点契约输出字段结构，包括必填的 editable_notes | 在 generationGuardrails 中增加：'禁止使用\"不是个案\"\"行业常态\"\"普遍现象\"等无数据支撑的普遍性暗示语' | 要求所有概括性表述（如'三类成本')必须与上游数据严格对应，若需合并分类应明确说明归并逻辑 | 显式在 prompt 模板中加入 editable_notes 字段，强制输出即使为空\n只完成当前节点；缺失信息标记 missing/unknown/unverified；不得补造。",
+  "experience": 1,
+  "successes": 1,
+  "failures": 0,
+  "recentTasks": [
+    {
+      "name": "标题封面 A/B 方案",
+      "taskId": "media-title-draft-001",
+      "success": true,
+      "timestamp": 1782946100489,
+      "modelUsed": "opencode-go/deepseek-v4-flash",
+      "score": 85,
+      "status": "training_case_profile",
+      "outputArtifact": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T22-27-25-228Z/node_outputs/06-media-title-draft-001.md"
+    }
+  ],
+  "runHistory": [],
+  "savedExperiences": [
+    {
+      "taskId": "media-title-draft-001",
+      "taskName": "标题封面 A/B 方案",
+      "lesson": "标题封面文案应避免使用暗示普遍性的绝对语气（如'不是个案''真实经历'），即使附加备注下游仍可能将其作为事实传播 | 对上游事实的归类/概括须确保数量与范围准确，不应无依据地更改分类数 | 生成类节点应严格遵循节点契约输出字段结构，包括必填的 editable_notes | 在 generationGuardrails 中增加：'禁止使用\"不是个案\"\"行业常态\"\"普遍现象\"等无数据支撑的普遍性暗示语' | 要求所有概括性表述（如'三类成本')必须与上游数据严格对应，若需合并分类应明确说明归并逻辑 | 显式在 prompt 模板中加入 editable_notes 字段，强制输出即使为空",
+      "skills": [
+        "output-spec"
+      ],
+      "model": "opencode-go/deepseek-v4-flash",
+      "artifactId": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T22-27-25-228Z/node_outputs/06-media-title-draft-001.md",
+      "debugValidated": true,
+      "score": 85,
+      "savedAt": 1782946100489
+    }
+  ],
+  "sourceProfileId": "content-draft-producer",
+  "generatedAt": 1782946100489,
+  "generatedBy": "node-profile-training"
+}

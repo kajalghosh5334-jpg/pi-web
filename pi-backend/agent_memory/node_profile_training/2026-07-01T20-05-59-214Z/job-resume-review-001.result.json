@@ -1,0 +1,110 @@
+{
+  "testCase": {
+    "id": "job-resume-review-001",
+    "nodeType": "Review/Gate",
+    "profileTarget": "strong-quality-reviewer",
+    "workflowId": "WF-6",
+    "title": "简历终审裁决",
+    "model": "opencode-go/deepseek-v4-pro",
+    "tools": "none",
+    "dependsOn": [
+      "job-resume-draft-001"
+    ],
+    "input": "请审查上游生成的简历经历是否诚实、专业、针对星河智造初级 AI 工具开发助理 JD。必须给出 pass/revise/block 裁决、问题清单、返工节点和验收标准。不要重写整份简历。",
+    "expectedRubric": [
+      "给出明确 pass/revise/block 裁决",
+      "检查是否虚构学历、项目成果、职位或技能熟练度",
+      "检查是否对齐 JD 的 Python、接口调用、项目 demo 和沟通要求",
+      "指出具体返工位置和返工节点",
+      "输出短裁决，不展开长文重写"
+    ],
+    "standardAnswer": "如果上游没有虚构，通常应 revise 或 pass with minor issues。问题应聚焦：是否有未支撑量化、是否把 demo 写过头、学历呈现是否诚实但不过度突出、是否补充项目链接/demo 证明。返工节点应指向 Generate/Draft 或 Analyze/Judge。输出必须短而可执行。",
+    "redLines": [
+      "不得直接替弱模型重写整份长简历",
+      "不得只给建议不给裁决",
+      "不得允许虚构经历通过"
+    ]
+  },
+  "output": {
+    "model": "opencode-go/deepseek-v4-pro",
+    "code": 0,
+    "text": "```json\n{\n  \"node_type\": \"Review/Gate\",\n  \"profile\": \"strong-quality-reviewer\",\n  \"workflow\": \"WF-6\",\n  \"task\": \"简历终审裁决\",\n  \"decision\": \"revise\",\n  \"summary\": \"草稿合规但存在大量占位符和技能缺口，需返工填充后再审。\",\n  \"issues\": [\n    {\n      \"severity\": \"high\",\n      \"target_node\": \"job-resume-draft-001\",\n      \"location\": \"draft_sections[0].editable_notes, draft_sections[1].editable_notes, general_editable_notes\",\n      \"problem\": \"存在大量 [placeholder] 占位符（项目规模、客户名称、量化效果、具体技术选型等），简历不可直接输出含占位符文本。\",\n      \"action\": \"根据真实项目信息替换所有占位符；无法获取真实数据的，删除对应量化声明或改为定性描述。\",\n      \"acceptance_criteria\": \"所有 [placeholder] 文本消失，替换为真实、可验证的信息或移除声明；不得编造数据。\"\n    },\n    {\n      \"severity\": \"high\",\n      \"target_node\": \"job-resume-draft-001\",\n      \"location\": \"draft_sections[0].star.action, draft_sections[1].star.action\",\n      \"problem\": \"STAR 动作描述含 placeholder（文档格式、向量库、LLM API 等），动作要点不完整。\",\n      \"action\": \"准确填写实际使用的技术栈和工具名称，保持与项目事实一致。\",\n      \"acceptance_criteria\": \"STAR 中的技术栈均为实际使用过的明确技术，无虚构。\"\n    },\n    {\n      \"severity\": \"medium\",\n      \"target_node\": \"job-resume-draft-001\",\n      \"location\": \"全套风险标记\",\n      \"problem\": \"已识别的风险（如 RAG Demo 客户数据隐私、OpenCV 技能缺失）仅在 risk_flags 中提示，未在简历正文体现应对措施。\",\n      \"action\": \"隐私类风险必须确保简历正文不含任何敏感信息；技能缺失可在技能总结或补充说明中体现学习意愿。\",\n      \"acceptance_criteria\": \"简历正文不含隐私风险内容；对 JD 要求的加分项有明确回应（技能列表或补充说明）。\"\n    },\n    {\n      \"severity\": \"low\",\n      \"target_node\": \"job-resume-draft-001\",\n      \"location\": \"技能标签与 JD 对齐\",\n      \"problem\": \"针对『星河智造初级 AI 工具开发助理 JD』，OpenCV、Docker、Django 等未体现，弱相关标签未上升为直接技能。\",\n      \"action\": \"建议补充相关学习或简易实践经历；如无，需在技能总结中体现学习意愿。\",\n      \"acceptance_criteria\": \"简历技能列表与 JD 要求的主要技能有对应的陈述，差距明确。\"\n    }\n  ],\n  \"evidence_checks\": {\n    \"claimed_experience\": [\n      {\n        \"item\": \"企业资料智能问答 RAG 系统\",\n        \"status\": \"unverified\",\n        \"reason\": \"无项目链接、客户名称、交付证据；描述依赖占位符，事实无法验证。\"\n      },\n      {\n        \"item\": \"批量 Excel 数据处理自动化\",\n        \"status\": \"unverified\",\n        \"reason\": \"个人协助项目，无具体场景、频率、效果数据，均为占位符，无法验证实际价值。\"\n      }\n    ],\n    \"quantitative_claims\": \"none — 所有量化指标均被占位符替换，未声称具体数字。\",\n    \"source_traceability\": \"部分可追溯至原文，但原文未提供细节，因此细节为合理推断，准确性需人工确认。\"\n  },\n  \"rework_assignment\": {\n    \"primary_node\": \"job-resume-draft-001\",\n    \"action\": \"基于真实项目信息填充所有 [placeholder] 和 [Editable] 标记，删除无法填充的量化声明，确认无虚构内容，并重新提交审核。\",\n    \"secondary_human_review\": \"建议人工审核填充后的简历，确认技术栈准确性、隐私安全及经历归类。\"\n  },\n  \"red_line_review\": {\n    \"no_fabrication\": \"合规 — draft 中已移除虚构声明，但仍有 placeholder 未填充，并非虚构。\",\n    \"no_demo_as_production\": \"合规 — 始终标注为 Demo/原型。\",\n    \"not_final_immutable\": \"合规 — 大量 editable notes 和 placeholder，为可编辑草稿。\"\n  }\n}\n```",
+    "usage": {
+      "input": 4423,
+      "output": 3221,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "reasoning": 2206,
+      "totalTokens": 7644,
+      "cost": {
+        "input": 0.0076960200000000005,
+        "output": 0.01120908,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "total": 0.0189051
+      }
+    },
+    "stderr": "",
+    "elapsedMs": 48668,
+    "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+    "workDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-05-59-214Z/job-resume-review-001-output",
+    "isolatedSessionDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-05-59-214Z/job-resume-review-001-output/.pi-sessions"
+  },
+  "judgeOutput": {
+    "model": "opencode-go/deepseek-v4-pro",
+    "code": 0,
+    "text": "{\n  \"score\": 75,\n  \"score_scale\": \"0-100\",\n  \"pass\": false,\n  \"rubric_hits\": [\n    \"给出明确 pass/revise/block 裁决（revise）\",\n    \"指出具体返工位置和返工节点（issues 含 target_node 和具体 location）\",\n    \"输出短裁决，不展开长文重写（summary 简洁，无重写长文）\",\n    \"检查虚构项目成果（red_line_review 确认无虚构声明）\"\n  ],\n  \"missing\": [\n    \"未明确检查学历（教育背景）是否虚构或过度突出\",\n    \"未明确检查职位是否虚构或夸大\",\n    \"未明确检查技能熟练度是否有虚假宣称\",\n    \"未明确对齐 JD 的沟通能力要求\",\n    \"未明确检查接口调用（API 调用）相关要求是否对齐\"\n  ],\n  \"hallucination\": [],\n  \"red_line_violations\": [],\n  \"profile_lessons\": [\n    \"Review/Gate 节点应在 evidence_checks 和 issues 中逐项核实学历、职位、技能熟练度等关键点，并显式记录 JD 软技能（如沟通）的对齐情况。\"\n  ],\n  \"prompt_patch_suggestions\": [\n    \"在 Review/Gate 的 prompt 模板中增加强制检查项：学历真实性、职位真实性、技能熟练度真实性、JD 沟通要求对齐、接口调用经验对齐。\"\n  ]\n}",
+    "usage": {
+      "input": 3476,
+      "output": 3327,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "reasoning": 3007,
+      "totalTokens": 6803,
+      "cost": {
+        "input": 0.00604824,
+        "output": 0.01157796,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "total": 0.0176262
+      }
+    },
+    "stderr": "",
+    "elapsedMs": 54023,
+    "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+    "workDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-05-59-214Z/job-resume-review-001-judge",
+    "isolatedSessionDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-05-59-214Z/job-resume-review-001-judge/.pi-sessions"
+  },
+  "judge": {
+    "score": 75,
+    "score_scale": "0-100",
+    "pass": false,
+    "rubric_hits": [
+      "给出明确 pass/revise/block 裁决（revise）",
+      "指出具体返工位置和返工节点（issues 含 target_node 和具体 location）",
+      "输出短裁决，不展开长文重写（summary 简洁，无重写长文）",
+      "检查虚构项目成果（red_line_review 确认无虚构声明）"
+    ],
+    "missing": [
+      "未明确检查学历（教育背景）是否虚构或过度突出",
+      "未明确检查职位是否虚构或夸大",
+      "未明确检查技能熟练度是否有虚假宣称",
+      "未明确对齐 JD 的沟通能力要求",
+      "未明确检查接口调用（API 调用）相关要求是否对齐"
+    ],
+    "hallucination": [],
+    "red_line_violations": [],
+    "profile_lessons": [
+      "Review/Gate 节点应在 evidence_checks 和 issues 中逐项核实学历、职位、技能熟练度等关键点，并显式记录 JD 软技能（如沟通）的对齐情况。"
+    ],
+    "prompt_patch_suggestions": [
+      "在 Review/Gate 的 prompt 模板中增加强制检查项：学历真实性、职位真实性、技能熟练度真实性、JD 沟通要求对齐、接口调用经验对齐。"
+    ],
+    "raw_score": 75
+  },
+  "minScore": 82,
+  "nodeOutputArtifact": {
+    "markdownPath": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-05-59-214Z/node_outputs/05-job-resume-review-001.md",
+    "jsonPath": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-05-59-214Z/node_outputs/05-job-resume-review-001.json"
+  }
+}

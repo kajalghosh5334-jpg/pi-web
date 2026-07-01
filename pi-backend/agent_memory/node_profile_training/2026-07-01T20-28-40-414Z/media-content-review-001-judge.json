@@ -1,0 +1,25 @@
+{
+  "model": "opencode-go/deepseek-v4-pro",
+  "code": 0,
+  "text": "{\n  \"score\": 93,\n  \"score_scale\": \"0-100\",\n  \"pass\": true,\n  \"rubric_hits\": [\n    \"给出明确 publish/revise/block 裁决（decision: revise）\",\n    \"检查标题和素材证据是否一致（source_fact_checks）\",\n    \"检查 CTA 和撮合交易定位是否自然（cta_check）\",\n    \"识别交易、法律、夸张承诺风险（issues 标记风险地图、单方视角、样本局限；checklist 覆盖风险项）\",\n    \"只给短裁决和返工任务，不重写长文（issues 精炼，rework_assignment 为任务列表）\"\n  ],\n  \"missing\": [],\n  \"hallucination\": [],\n  \"red_line_violations\": [],\n  \"profile_lessons\": [\n    \"审查输出结构清晰，检查清单覆盖全面，可作为高质量门禁输出范例。\",\n    \"comment_routing_decision 字段超出通用契约 output 定义，未来可考虑移除或统一到 decision 字段以避免输出膨胀。\"\n  ],\n  \"prompt_patch_suggestions\": [\n    \"在节点提示中明确要求输出仅包含契约定义的字段，避免附加决策（如 comment_routing_decision），或将其纳入标准字段。\"\n  ]\n}",
+  "usage": {
+    "input": 3765,
+    "output": 3012,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "reasoning": 2729,
+    "totalTokens": 6777,
+    "cost": {
+      "input": 0.006551100000000001,
+      "output": 0.01048176,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "total": 0.01703286
+    }
+  },
+  "stderr": "",
+  "elapsedMs": 46690,
+  "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+  "workDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-28-40-414Z/media-content-review-001-judge",
+  "isolatedSessionDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-28-40-414Z/media-content-review-001-judge/.pi-sessions"
+}

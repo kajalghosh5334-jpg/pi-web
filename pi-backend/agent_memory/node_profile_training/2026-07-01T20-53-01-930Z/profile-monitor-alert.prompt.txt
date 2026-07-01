@@ -1,0 +1,80 @@
+你是 Profile 提炼器。请根据同一 nodeType 的真实训练样本，总结一个可复用通用 Profile。
+只返回 JSON，不要 markdown。
+
+nodeType: Monitor/Alert
+
+现有相关 profile：
+{
+  "monitor-alert-operator": {
+    "name": "监控告警与分级响应",
+    "defaultModel": "opencode-go/deepseek-v4-flash",
+    "collaborationProtocol": "负责持续监控结果的规则化判断、异常摘要和分级响应建议；重大风险必须交强模型或人工复核。",
+    "projectConfig": {
+      "modelTier": "weak",
+      "pattern": "monitor-alert",
+      "roleInWorkflow": "alert-operator",
+      "preferredTasks": [
+        "异常检测摘要",
+        "阈值触发判断",
+        "轻中重分级",
+        "告警内容生成",
+        "升级条件标注"
+      ],
+      "escalateWhen": [
+        "重度告警",
+        "可能造成资金/库存/品牌损失",
+        "阈值配置缺失",
+        "数据源互相矛盾"
+      ],
+      "qualityBar": "必须输出 event、severity、trigger_reason、evidence、recommended_action 和 escalation_required。"
+    },
+    "systemPromptPatch": "你是监控告警与分级响应 Agent。根据输入事件和阈值判断轻度/中度/重度，输出证据、触发原因、建议动作和是否升级。不要自行执行高风险动作。"
+  }
+}
+
+通过样本：
+[
+  {
+    "id": "media-monitor-alert-001",
+    "title": "内容数据异常告警",
+    "profileTarget": "monitor-alert-operator",
+    "score": 100,
+    "profile_lessons": [
+      "数据缺口场景通过显式阻塞器 + manual_review_required 降级处理，有效平衡了安全与可用性。"
+    ],
+    "prompt_patch_suggestions": [
+      "可考虑在 prompt 模板中显式鼓励：对于依赖上游字段的高级别规则，当字段缺失时，应生成数据质量告警而非静默跳过。"
+    ],
+    "node_output_artifact": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-53-01-930Z/node_outputs/14-media-monitor-alert-001.md",
+    "output_excerpt": "```json\n{\n  \"context\": {\n    \"workflow\": \"WF-17\",\n    \"node\": \"Monitor/Alert\",\n    \"profile\": \"monitor-alert-operator\",\n    \"upstream_node\": \"media-metrics-standardize-001\"\n  },\n  \"alerts\": [\n    {\n      \"item_id\": \"video_B\",\n      \"severity\": \"medium\",\n      \"trigger_reason\": \"[Rule 1] 互动率低于 2% 阈值。实际计算值 1.90%（0.019）。\",\n      \"evidence\": {\n        \"observed_metrics\": {\n          \"plays\": 3000,\n          \"total_interactions\": 57,\n          \"interaction_rate\": 0.019,\n          \"interaction_rate_percentage\": \"1.90%\"\n        },\n        \"threshold\": \"interaction_rate < 0.02\"\n      },\n      \"recommended_action\": \"人工核查视频内容质量、标题/封面吸引力及分发渠道；观察下一周期互动率是否回升。此为观察事实，具体原因需人工排查。\",\n      \"type\": \"threshold_alert\"\n    },\n    {\n      \"item_id\": \"video_B\",\n      \"severity\": \"medium\",\n      \"trigger_reason\": \"[Rule 2] 私信转化率为 0%，且播放量 3000 超过 2000 阈值。\",\n      \"evidence\": {\n        \"observed_metrics\": {\n          \"plays\": 3000,\n          \"direct_messages\": 0,\n          \"dm_conversion_rate\": 0.0,\n          \"dm_conversion_rate_percentage\": \"0.00%\"\n        },\n        \"threshold\": \"dm_conversion_rate == 0 AND plays > 2000\"\n      },\n      \"recommended_action\": \"检查视频内容是否缺乏私信引导 CTA；确认私信功能正常；分析用户转化路径是否存在摩擦。\",\n   "
+  }
+]
+
+请生成：
+{
+  "name": "",
+  "match": [""],
+  "collaborationProtocol": "",
+  "projectConfig": {
+    "modelTier": "weak|strong",
+    "roleInWorkflow": "",
+    "preferredTasks": [""],
+    "escalateWhen": [""],
+    "qualityBar": "",
+    "nodeContract": {
+      "input_scope": "",
+      "allowed_sources": [""],
+      "output_schema_note": "",
+      "max_input_chars": 0,
+      "escalation_rule": ""
+    }
+  },
+  "systemPromptPatch": ""
+}
+
+要求：
+1. 不要删除已有 profile 的关键红线。
+2. systemPromptPatch 要短、硬、可执行，适合弱模型稳定执行。
+3. 事实型节点必须强调不得编造来源。
+4. Review/Gate 必须输出短裁决，不重写长文。
+5. Analyze/Judge 必须区分事实/推断/建议/置信度/反证条件。

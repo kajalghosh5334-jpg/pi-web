@@ -1,0 +1,122 @@
+你是严格训练裁判。请对一个 Workflow 节点输出评分，只返回 JSON，不要 markdown。
+
+节点类型：Standardize
+任务：求职经历分段标准化
+
+Rubric：
+[
+  "拆成可独立处理的经历条目",
+  "每条保留原始事实，不添加成果数字",
+  "字段包含项目名称、任务、技术、角色、证据缺口",
+  "缺少时间、公司、成果时标记 missing",
+  "不做简历润色或岗位判断"
+]
+
+标准答案/关键要点：
+应拆出 Excel 自动处理、企业资料问答 RAG、库存提醒脚本三条。每条保留 Python/读表/合并/去重、文档清洗/向量库/网页入口、库存提醒脚本等事实。时间、正式客户名称、量化成果、维护周期等应标 missing。不能写成 STAR 简历段落。
+
+红线：
+[
+  "不得虚构公司、时间、收益或成果数字",
+  "不得把标准化步骤写成简历成稿",
+  "不得改变原始经历含义"
+]
+
+节点通用契约：
+{
+  "purpose": "把非结构化输入转换成统一 schema，不做业务判断。",
+  "output": [
+    "normalized_items: 标准化条目列表",
+    "field_mapping: 原始字段到标准字段的映射",
+    "missing_fields",
+    "format_warnings",
+    "handoff_summary"
+  ],
+  "redLines": [
+    "不得猜测缺失字段",
+    "不得改变原始事实含义",
+    "不得加入业务判断或策略建议"
+  ]
+}
+
+本样本标签/路由 schema：
+null
+
+本样本生成/审查专项约束：
+{
+  "generationGuardrails": null,
+  "reviewChecklist": null
+}
+
+待评分输出：
+```json
+{
+  "normalized_items": [
+    {
+      "project_name": "Excel 自动处理",
+      "task": "使用 Python 对 Excel 表格进行读取、合并、去重",
+      "technology": ["Python"],
+      "role": "开发者（帮朋友）",
+      "evidence_gap": "缺少代码仓库、项目具体耗時、实际效果截图等可验证材料",
+      "company": "missing",
+      "time_period": "missing",
+      "achievement": "missing"
+    },
+    {
+      "project_name": "企业资料问答小项目",
+      "task": "清洗客户提供的散乱文档，构建向量库，开发简单网页入口",
+      "technology": ["向量数据库技术", "网页开发技术"],
+      "role": "开发者",
+      "evidence_gap": "缺少客户名称、项目规模、部署链接、数据量等可验证材料",
+      "company": "missing（原文提及客户，未提供具体名称）",
+      "time_period": "missing",
+      "achievement": "missing"
+    },
+    {
+      "project_name": "库存提醒脚本",
+      "task": "为门店老板开发库存提醒脚本",
+      "technology": ["unverified（原文未指定技术栈）"],
+      "role": "开发者（无后续维护）",
+      "evidence_gap": "缺少脚本文件、运行截图、使用时长等可验证材料",
+      "company": "missing（原文提及门店老板，未提供门店名称）",
+      "time_period": "missing",
+      "achievement": "missing"
+    }
+  ],
+  "field_mapping": {
+    "项目名称": "project_name",
+    "任务描述": "task",
+    "技术栈": "technology",
+    "角色": "role",
+    "证据缺口": "evidence_gap",
+    "公司/雇佣方": "company",
+    "时间": "time_period",
+    "成果": "achievement"
+  },
+  "missing_fields": {
+    "Excel 自动处理": ["company", "time_period", "achievement"],
+    "企业资料问答小项目": ["company", "time_period", "achievement", "tech_stack_detail"],
+    "库存提醒脚本": ["company", "time_period", "achievement", "tech_stack"]
+  },
+  "format_warnings": [
+    "原文为散文叙事，时间线与雇佣关系模糊，无法拆分出具体日期或所属单位",
+    "第三条经历明确标注‘没有长期维护’，属于未完成/终止项目，角色字段已相应标注",
+    "第二条经历中‘向量库’的具体技术产品（如 FAISS / Pinecone / Milvus）未指定，technology 字段保留泛称",
+    "所有条目均无可量化成果描述，achievement 全部标记为 missing"
+  ],
+  "handoff_summary": "成功将散文式经历拆分为 3 个独立条目。所有条目均缺失公司名称、时间范围和可量化成果。角色根据上下文直接映射，未做业务判断或简历润色。建议下游节点基于证据缺口标记进行补充性信息收集，或按 weak-structured-operator 标签做匹配降级处理。"
+}
+```
+
+返回 JSON。score 必须是 0-100 的整数，不要使用 0-1 小数制或 0-10 十分制：
+{
+  "score": 0,
+  "score_scale": "0-100",
+  "pass": true,
+  "rubric_hits": [""],
+  "missing": [""],
+  "hallucination": [""],
+  "red_line_violations": [""],
+  "profile_lessons": [""],
+  "prompt_patch_suggestions": [""]
+}

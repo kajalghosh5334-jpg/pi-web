@@ -1,0 +1,25 @@
+{
+  "model": "opencode-go/deepseek-v4-flash",
+  "code": 0,
+  "text": "```json\n{\n  \"action_payloads\": [\n    {\n      \"platform\": \"douyin\",\n      \"action_type\": \"schedule_post\",\n      \"status\": \"missing_info\",\n      \"source_artifact\": {\n        \"variant_set\": [\"TECH-01\", \"TECH-02\"],\n        \"upstream_nodes\": [\"media-title-draft-001\", \"media-content-review-001\"]\n      },\n      \"content_fields\": {\n        \"title\": \"missing — 请求体生成节点提供\",\n        \"script\": \"missing — 口播脚本未生成\",\n        \"scheduled_time\": \"missing — 未指定\"\n      }\n    },\n    {\n      \"platform\": \"xiaohongshu\",\n      \"action_type\": \"schedule_note\",\n      \"status\": \"missing_info\",\n      \"source_artifact\": {\n        \"variant_set\": [\"ENT-01\", \"ENT-02\"],\n        \"upstream_nodes\": [\"media-title-draft-001\", \"media-content-review-001\"]\n      },\n      \"content_fields\": {\n        \"title\": \"missing — 标题可复用上游 variant headline\",\n        \"cover_copy\": \"missing — 封面文案未生成\",\n        \"body\": \"missing — 正文未生成\"\n      }\n    },\n    {\n      \"platform\": \"zhihu\",\n      \"action_type\": \"schedule_answer\",\n      \"status\": \"missing_info\",\n      \"source_artifact\": {\n        \"variant_set\": [\"MIX-01\"],\n        \"upstream_nodes\": [\"media-title-draft-001\", \"media-content-review-001\"]\n      },\n      \"content_fields\": {\n        \"long_title\": \"missing — 长标题可基于 MIX-01 headline 扩展\",\n        \"answer_summary\": \"missing — 回答摘要未生成\"\n      }\n    }\n  ],\n  \"idempotency_key\": \"WF-15/schedule/20260702T000000Z/001\",\n  \"validation_result\": {\n    \"overall\": \"blocked\",\n    \"reasons\": [\n      \"所有 action_payloads 的 content_fields 均缺少必填项\",\n      \"所有 action_payloads 缺少 scheduled_time\",\n      \"平台分发实际内容未生成（仅存在标题封面草案）\",\n      \"无法自动填充缺项\"\n    ]\n  },\n  \"blocked_items\": [\n    \"douyin: 缺少脚本和时间\",\n    \"xiaohongshu: 缺少封面文案和正文\",\n    \"zhihu: 缺少回答摘要\",\n    \"required content generation nodes (content-body-generator, etc.) 尚未执行\"\n  ],\n  \"retry_or_manual_review_advice\": [\n    \"待 content-body-generator 实际产出各平台适配正文、口播脚本、摘要后再重新提交此排期 payload\",\n    \"scheduled_time 确认后可填入具体时间戳；如平台有锁定发布时段需单独传参\"\n  ]\n}\n```",
+  "usage": {
+    "input": 5592,
+    "output": 1766,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "reasoning": 1146,
+    "totalTokens": 7358,
+    "cost": {
+      "input": 0.00078288,
+      "output": 0.00049448,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "total": 0.00127736
+    }
+  },
+  "stderr": "",
+  "elapsedMs": 20108,
+  "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+  "workDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T21-57-37-055Z/media-distribution-action-001-output",
+  "isolatedSessionDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T21-57-37-055Z/media-distribution-action-001-output/.pi-sessions"
+}

@@ -1,0 +1,25 @@
+{
+  "model": "opencode-go/deepseek-v4-flash",
+  "code": 0,
+  "text": "```json\n{\n  \"node_output\": {\n    \"_node_type\": \"weak-research-extractor\",\n    \"_workflow\": \"WF-3\",\n    \"_target\": \"星河智造\"\n  },\n  \"extracted_facts\": [\n    {\n      \"fact\": \"公司为制造业客户提供质检自动化和设备数据采集服务。\",\n      \"source\": \"官网片段\",\n      \"source_status\": \"显性陈述，直接引用\"\n    },\n    {\n      \"fact\": \"技术关键词涉及 Python、OpenCV、PLC、轻量化模型部署。\",\n      \"source\": \"官网片段\",\n      \"source_status\": \"显性陈述\"\n    },\n    {\n      \"fact\": \"招聘职位为初级 AI 工具开发助理。\",\n      \"source\": \"招聘 JD 片段\",\n      \"source_status\": \"显性陈述\"\n    },\n    {\n      \"fact\": \"薪资区间为 5-7k。\",\n      \"source\": \"招聘 JD 片段\",\n      \"source_status\": \"显性陈述\"\n    },\n    {\n      \"fact\": \"职位要求：Python 基础、能读懂接口文档。\",\n      \"source\": \"招聘 JD 片段\",\n      \"source_status\": \"显性陈述\"\n    },\n    {\n      \"fact\": \"学历要求为“大专及以上优先”（优先条件）。\",\n      \"source\": \"招聘 JD 片段\",\n      \"source_status\": \"显性陈述（已标注优先属性，非硬性门槛）\"\n    },\n    {\n      \"fact\": \"面试提问包括 Python 文件处理、接口调用、是否做过项目 demo。\",\n      \"source\": \"面经摘录\",\n      \"source_status\": \"候选人口述，非官方面试大纲，存在个体偏差可能\"\n    }\n  ],\n  \"unknown_fields\": [\n    \"公司全称、注册地址、成立时间、注册资本\",\n    \"员工规模、组织架构\",\n    \"具体产品名称、平台名称、客户案例\",\n    \"融资历史、估值\",\n    \"公司愿景、文化、价值观\",\n    \"该职位的具体 KPI、汇报线、团队构成\",\n    \"薪资完整结构（绩效、奖金、五险一金基数等）\",\n    \"面试轮次、面试官角色、面试形式（机试/白板/口答）\"\n  ],\n  \"evidence_gaps\": [\n    {\n      \"gap\": \"公司业务细节仅有一个方向概述，缺乏产品形态、客户案例、技术部署量级等具体信息。\",\n      \"suggestion\": \"建议补源：完整官网页面、行业报告公司简介、企业信用信息公示系统数据。\"\n    },\n    {\n      \"gap\": \"JD 片段较短，未明确职责细节（如具体开发什么工具、使用何种框架、接口协议类型等）。\",\n      \"suggestion\": \"建议补源：完整 JD 文本、同公司同类岗位 JD、招聘平台其他在招岗位。\"\n    },\n    {\n      \"gap\": \"面经仅一份，代表性不足，无法判断面试侧重点在不同面试官间的稳定性。\",\n      \"suggestion\": \"建议补源：牛客网、看准网、脉脉等多平台面经交叉验证。\"\n    },\n    {\n      \"gap\": \"“大专及以上优先”的权重未量化，无法判断在候选人评估中实际加分力度。\",\n      \"suggestion\": \"建议补源：查阅该职位或同公司其他职位历史反馈，确认实际筛选阈值。\"\n    }\n  ],\n  \"red_line_review\": [\n    \"[PASS] 红线1：未补造公司新闻、融资、员工规模或文化。全量信息来自给定来源。\",\n    \"[PASS] 红线2：技术栈完全抽取自官网片段，未凭公司名推断。\",\n    \"[PASS] 红线3：“大专及以上优先”已按“优先条件”标记，未改写成硬性门槛。\"\n  ],\n  \"handoff_summary\": \"[向下游 profile-builder / matching-engine] 星河智造完成事实抽取。覆盖：业务方向（质检自动化+数采）、技术栈（Python/OpenCV/PLC/轻量模型）、岗位画像（初级 AI 工具开发助理，5-7k，大专及以上优先，需 Python+接口文档阅读）、面试侧重（文件处理/接口调用/项目 demo）。缺失：公司注册信息、规模、产品名、案例、薪资结构细化。面经归类为单方口述，学历门槛已确认为优先属性。\"\n}\n```",
+  "usage": {
+    "input": 2472,
+    "output": 3933,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "reasoning": 2983,
+    "totalTokens": 6405,
+    "cost": {
+      "input": 0.00034608,
+      "output": 0.00110124,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "total": 0.0014473200000000002
+    }
+  },
+  "stderr": "",
+  "elapsedMs": 49099,
+  "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+  "workDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-28-40-414Z/job-company-gather-001-output",
+  "isolatedSessionDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-28-40-414Z/job-company-gather-001-output/.pi-sessions"
+}

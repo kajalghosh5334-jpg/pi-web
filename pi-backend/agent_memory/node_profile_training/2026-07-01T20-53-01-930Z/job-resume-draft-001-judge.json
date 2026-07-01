@@ -1,0 +1,25 @@
+{
+  "model": "opencode-go/deepseek-v4-pro",
+  "code": 0,
+  "text": "```json\n{\n  \"score\": 90,\n  \"score_scale\": \"0-100\",\n  \"pass\": true,\n  \"rubric_hits\": [\n    \"使用 STAR 结构描述经历，清晰可编辑\",\n    \"突出 AI 编程、LangChain/RAG、Python、客户需求沟通\",\n    \"未虚构量化成果、公司名称、学历、正式职位，使用占位符\",\n    \"技能标签区分相关性，全部标记为直接相关\",\n    \"素材不足时以 [placeholder] 替代编造内容\",\n    \"输出包含完整的 source_usage、unsupported_claims_removed、unsupported_numbers_self_check、editable_notes、risk_flags\"\n  ],\n  \"missing\": [\n    \"项目2 中 pandas/openpyxl 等具体库为合理推断但直接写入了草稿正文，虽在 source_usage 中标注“无上游直接依据”，仍未完全遵循“无依据即使用占位符或删除”的严格原则，建议在草稿中使用通用描述或占位符\"\n  ],\n  \"hallucination\": [\n    \"无严重虚构，仅存在上述推断性技术栈标记\"\n  ],\n  \"red_line_violations\": [\n    \"无\"\n  ],\n  \"profile_lessons\": [\n    \"当上游缺少技术栈细节时，草稿应在正文使用占位符（如“[具体数据处理库]”）而非直接写入推断内容，避免形成事实主张\",\n    \"source_usage 自我标记机制有效降低了无依据内容的风险\"\n  ],\n  \"prompt_patch_suggestions\": [\n    \"在节点提示中增加约束：任何非原始经历直接提供的信息（包括推断的技术栈、工具库）在草稿正文中必须使用可替换占位符，仅在 source_usage 中说明推断依据；未经候选人确认不得以事实形式呈现\",\n    \"技能标签 relevance 字段可增加 weak / indirect 示例，引导模型区分直接相关与弱相关技能，提升技能分区的可用性\"\n  ]\n}\n```",
+  "usage": {
+    "input": 3687,
+    "output": 2017,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "reasoning": 1584,
+    "totalTokens": 5704,
+    "cost": {
+      "input": 0.00641538,
+      "output": 0.00701916,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "total": 0.01343454
+    }
+  },
+  "stderr": "",
+  "elapsedMs": 49408,
+  "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+  "workDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-53-01-930Z/job-resume-draft-001-judge",
+  "isolatedSessionDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-53-01-930Z/job-resume-draft-001-judge/.pi-sessions"
+}

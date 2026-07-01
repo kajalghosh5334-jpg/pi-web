@@ -1,0 +1,25 @@
+{
+  "model": "opencode-go/deepseek-v4-pro",
+  "code": 0,
+  "text": "{\n  \"score\": 78,\n  \"score_scale\": \"0-100\",\n  \"pass\": true,\n  \"rubric_hits\": [\n    \"明确高中学历对 entry-level 技术岗的现实影响，但不做人格或能力价值判断\",\n    \"把 AI 编程经验转成可验证竞争力\",\n    \"输出方向性结论，不写简历正文\"\n  ],\n  \"missing\": [\n    \"圈定 6k 薪资对应的可投岗位类型时，未充分纳入低门槛执行型岗位（如 AI 助理、Python 脚本开发、爬虫、RAG 实施助理、测试开发边缘岗），给出的岗位 title 略高于能力水位\",\n    \"区分不可逆短板、可补短板和叙事绕行策略时，将不可缓解的‘学历证照缺失’放在了 reversible_gaps 中，导致区分度不够清晰\"\n  ],\n  \"hallucination\": [\n    \"在 constraints.irreversible 中编造了‘屏蔽约70%的标准化技术岗’的具体比例数据，无任何依据，违反了节点通用契约中‘不得编造案例、金额、转化率……’的要求\"\n  ],\n  \"red_line_violations\": [],\n  \"profile_lessons\": [\n    \"策略性输出整体合格，但在具体数据引用上需保持严谨，避免使用无依据的比例估计；岗位定位可更压低至执行/助理层级\"\n  ],\n  \"prompt_patch_suggestions\": [\n    \"在 rubric 或专项约束中增加对岗位类型更细粒度的要求（如明确列出‘AI 助理、脚本开发、爬虫等边缘岗’）\",\n    \"在节点通用契约或红线中明确禁止输出任何无事实依据的统计数字/比例\"\n  ]\n}",
+  "usage": {
+    "input": 4661,
+    "output": 4640,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "reasoning": 4264,
+    "totalTokens": 9301,
+    "cost": {
+      "input": 0.00811014,
+      "output": 0.0161472,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "total": 0.024257340000000002
+    }
+  },
+  "stderr": "",
+  "elapsedMs": 72356,
+  "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+  "workDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-28-40-414Z/job-background-strategy-001-judge",
+  "isolatedSessionDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-28-40-414Z/job-background-strategy-001-judge/.pi-sessions"
+}

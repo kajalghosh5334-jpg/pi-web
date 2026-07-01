@@ -1,0 +1,110 @@
+{
+  "id": "generated-strategize-plan-2026-07-01",
+  "name": "strategize-plan-generic",
+  "match": [
+    "generated:strategize-plan",
+    "training-run:2026-07-01T22-27-25-228Z",
+    "source-profile:content-strategy-director",
+    "case:media-account-strategy-001",
+    "AI 自媒体账号定位"
+  ],
+  "defaultModel": "opencode-go/deepseek-v4-pro",
+  "skills": [
+    "output-engine",
+    "stage-flow",
+    "output-spec"
+  ],
+  "availableSkills": [
+    "output-engine",
+    "stage-flow",
+    "output-spec",
+    "artifact-storage"
+  ],
+  "collaborationProtocol": "负责高判断环节：目标制定、方案设计、优先级排序、风险评估和成功指标定义；将资料搜集、细化和执行交给弱模型。",
+  "projectConfig": {
+    "modelTier": "strong",
+    "domain": "self-media",
+    "roleInWorkflow": "strategize",
+    "preferredTasks": [
+      "目标定义与范围界定",
+      "多方案设计与比较",
+      "优先级排序",
+      "风险识别与缓解",
+      "成功指标设定与验证假设"
+    ],
+    "handoffTargets": [
+      "content-researcher",
+      "content-draft-producer",
+      "content-editor-reviewer"
+    ],
+    "qualityBar": "必须输出：决策摘要、备选方案比较、推荐方案及理由、关键假设与置信度、验证指标及初始阈值、不可做清单。",
+    "escalateWhen": [
+      "目标或约束模糊导致无可行解",
+      "关键假设无法基于现有资料验证",
+      "方案超出节点领域知识"
+    ],
+    "nodeContract": {
+      "input_scope": "任务目标、背景资料、约束条件、已有资源、利益相关方需求",
+      "allowed_sources": [
+        "用户输入",
+        "上游节点结构化输出",
+        "已验证的外部数据（需标注来源与边界）"
+      ],
+      "output_schema_note": "decision_summary -> goal_decomposition -> options[with pros/cons] -> recommendation -> key_assumptions[with confidence] -> validation_metrics[with initial_thresholds] -> do_not_do_list -> downstream_tasks",
+      "max_input_chars": 8000,
+      "escalation_rule": "若关键假设无法验证，须标注 information_gap 并指派验证任务给下游节点，同时给出假设反证条件和替代方案。"
+    },
+    "generated": true,
+    "generatedStatus": "trained",
+    "routingEnabled": false,
+    "sourceNodeType": "Strategize/Plan",
+    "sourceProfileTargets": [
+      "content-strategy-director"
+    ],
+    "trainingRunId": "2026-07-01T22-27-25-228Z",
+    "trainingCases": [
+      "media-account-strategy-001"
+    ],
+    "trainingArtifactDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T22-27-25-228Z",
+    "nodeOutputArtifacts": [
+      "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T22-27-25-228Z/node_outputs/04-media-account-strategy-001.md"
+    ]
+  },
+  "systemPromptPatch": "你是策略与计划制定专家。三条红线：1) 禁止编造具体数据、案例来源、链接；2) 每个方案必须给出验证指标和基于行业经验的合理初值，不得推迟；3) 区分事实（标注来源）、推断（标注置信度）、建议（标注决策边界）。若无充分信息，须标注信息缺口和所需补充，不可假设填充。输出必须包含不可做清单。",
+  "experience": 1,
+  "successes": 1,
+  "failures": 0,
+  "recentTasks": [
+    {
+      "name": "AI 自媒体账号定位",
+      "taskId": "media-account-strategy-001",
+      "success": true,
+      "timestamp": 1782946296741,
+      "modelUsed": "opencode-go/deepseek-v4-pro",
+      "score": 95,
+      "status": "training_generated",
+      "outputArtifact": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T22-27-25-228Z/node_outputs/04-media-account-strategy-001.md"
+    }
+  ],
+  "runHistory": [],
+  "savedExperiences": [
+    {
+      "taskId": "media-account-strategy-001",
+      "taskName": "AI 自媒体账号定位",
+      "lesson": "内容矩阵宜补入项目报价/边界科普，强化企业主决策信心 | 策略节点的验证指标应尽可能给出可量化的初始阈值，而非纯占位符 | 在 prompt 中明确要求包含项目报价/边界科普类内容 | 建议 validation_metrics 必须给出基于行业经验的合理初值，而非推迟设定",
+      "skills": [
+        "output-engine",
+        "stage-flow",
+        "output-spec"
+      ],
+      "model": "opencode-go/deepseek-v4-pro",
+      "artifactId": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T22-27-25-228Z/node_outputs/04-media-account-strategy-001.md",
+      "debugValidated": true,
+      "score": 95,
+      "savedAt": 1782946296741
+    }
+  ],
+  "sourceProfileId": "content-strategy-director",
+  "generatedAt": 1782946296741,
+  "generatedBy": "node-profile-training"
+}

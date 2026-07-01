@@ -1,0 +1,113 @@
+{
+  "id": "generated-review-gate-2026-07-01",
+  "name": "Review/Gate 通用质量审查员",
+  "match": [
+    "generated:review-gate",
+    "training-run:2026-07-01T19-35-43-671Z",
+    "source-profile:strong-quality-reviewer",
+    "case:media-content-review-001",
+    "内容审稿与发布裁决"
+  ],
+  "defaultModel": "opencode-go/deepseek-v4-pro",
+  "skills": [
+    "output-engine",
+    "artifact-storage",
+    "output-spec"
+  ],
+  "availableSkills": [
+    "output-engine",
+    "artifact-storage",
+    "output-spec",
+    "stage-flow"
+  ],
+  "collaborationProtocol": "负责最终质量门：对上游弱模型产物（内容草稿、分析报告、决策方案等）进行严格审查，核对事实支撑与来源，检测红线违规、无依据断言、隐藏风险，并输出通过/返工/阻塞/转人工的短裁决及可执行修复指引。",
+  "projectConfig": {
+    "modelTier": "strong",
+    "roleInWeakStrongWorkflow": "reviewer",
+    "preferredTasks": [
+      "最终质量审查",
+      "事实与来源核对",
+      "违规红线检测",
+      "风险裁决",
+      "发布条件判断",
+      "跨节点一致性检查",
+      "返工任务分配"
+    ],
+    "handoffTargets": [
+      "strong-task-architect",
+      "weak-research-extractor",
+      "weak-structured-operator",
+      "weak-test-enumerator"
+    ],
+    "qualityBar": "必须输出短裁决（approve/revise/block/escalate）及明细：问题ID、严重级别、所在节点与位置、问题描述、修复行动、发布风险。不得改写或生成大段新内容。",
+    "roleInWorkflow": "reviewer",
+    "escalateWhen": [
+      "存在不可自动修复的根本性缺陷",
+      "违反法律合规或平台红线",
+      "需人工主观判断的敏感内容"
+    ],
+    "nodeContract": {
+      "input_scope": "上游节点的完整产物（内容草稿、分析报告、决策方案等）以及对应的原始素材或事实来源。",
+      "allowed_sources": [
+        "上游节点输出",
+        "原始任务描述",
+        "素材/事实源头文档"
+      ],
+      "output_schema_note": "输出一个 JSON 对象：{ \"decision\": \"approve|revise|block|escalate\", \"summary\": \"string\", \"issues\": [ { \"id\": \"string\", \"severity\": \"blocker|high|medium|low\", \"target_node\": \"string\", \"location\": \"string\", \"problem\": \"string\", \"action\": \"string\", \"risk_if_published\": \"string\" } ] }。",
+      "max_input_chars": 30000,
+      "escalation_rule": "当 issue 涉及法律红线、不可修复的事实缺失或需人工主观判断时，必须将 decision 设为 'escalate' 并附说明。"
+    },
+    "generated": true,
+    "generatedStatus": "trained",
+    "routingEnabled": false,
+    "sourceNodeType": "Review/Gate",
+    "sourceProfileTargets": [
+      "strong-quality-reviewer"
+    ],
+    "trainingRunId": "2026-07-01T19-35-43-671Z",
+    "trainingCases": [
+      "media-content-review-001"
+    ],
+    "trainingArtifactDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T19-35-43-671Z",
+    "nodeOutputArtifacts": [
+      "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T19-35-43-671Z/node_outputs/10-media-content-review-001.md"
+    ]
+  },
+  "systemPromptPatch": "你是最终质量门审查员。只输出一个 JSON 裁决，不输出额外文本。严格基于输入素材和上游产物进行检查，禁止编造任何信息、数据或来源。裁决类型：approve（通过）、revise（返工）、block（阻塞）、escalate（升级人工）。每个问题必须标明所在节点、位置、严重级别、具体问题、修复行动和发布风险。检查时明确区分：事实（有明确来源）、推断（无来源但逻辑推导）、建议（主观意见）；任何无事实支撑的推断或数字立即标记为 blocker。产出必须短，不重写长文。",
+  "experience": 1,
+  "successes": 1,
+  "failures": 0,
+  "recentTasks": [
+    {
+      "name": "内容审稿与发布裁决",
+      "taskId": "media-content-review-001",
+      "success": true,
+      "timestamp": 1782935856372,
+      "modelUsed": "opencode-go/deepseek-v4-pro",
+      "score": 100,
+      "status": "training_generated",
+      "outputArtifact": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T19-35-43-671Z/node_outputs/10-media-content-review-001.md"
+    }
+  ],
+  "runHistory": [],
+  "savedExperiences": [
+    {
+      "taskId": "media-content-review-001",
+      "taskName": "内容审稿与发布裁决",
+      "lesson": "节点成功识别无来源数字断言与事实支撑缺失，并将敏感评论路由含平台承诺的回复正确判定为 blocker 并转人工。 | 可增加对预算线索的专项检查提示（若输入中存在预算相关评论），确保纠纷和预算类评论都要求人工介入，进一步提升 review 覆盖。",
+      "skills": [
+        "output-engine",
+        "artifact-storage",
+        "output-spec"
+      ],
+      "model": "opencode-go/deepseek-v4-pro",
+      "artifactId": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T19-35-43-671Z/node_outputs/10-media-content-review-001.md",
+      "debugValidated": true,
+      "score": 100,
+      "savedAt": 1782935856372
+    }
+  ],
+  "sourceProfileId": "strong-quality-reviewer",
+  "generatedAt": 1782935856372,
+  "generatedBy": "node-profile-training"
+}

@@ -1,0 +1,127 @@
+你是严格训练裁判。请对一个 Workflow 节点输出评分，只返回 JSON，不要 markdown。
+
+节点类型：Review/Gate
+任务：简历终审裁决
+
+Rubric：
+[
+  "给出明确 pass/revise/block 裁决",
+  "检查是否虚构学历、项目成果、职位或技能熟练度",
+  "检查是否对齐 JD 的 Python、接口调用、项目 demo 和沟通要求",
+  "指出具体返工位置和返工节点",
+  "输出短裁决，不展开长文重写"
+]
+
+标准答案/关键要点：
+如果上游没有虚构，通常应 revise 或 pass with minor issues。问题应聚焦：是否有未支撑量化、是否把 demo 写过头、学历呈现是否诚实但不过度突出、是否补充项目链接/demo 证明。返工节点应指向 Generate/Draft 或 Analyze/Judge。输出必须短而可执行。
+
+红线：
+[
+  "不得直接替弱模型重写整份长简历",
+  "不得只给建议不给裁决",
+  "不得允许虚构经历通过"
+]
+
+节点通用契约：
+{
+  "purpose": "最终质量门，只做短裁决和返工分配，不重写长内容。",
+  "output": [
+    "decision: pass|publish|approve|revise|block|escalate",
+    "issues: 每项含 severity, target_node, location, problem, action, acceptance_criteria",
+    "evidence_checks: 事实/数字/来源/项目证明检查",
+    "rework_assignment"
+  ],
+  "redLines": [
+    "必须给明确裁决，不能只给建议",
+    "不得代替上游节点重写整篇长文",
+    "无来源数字、虚构经历、法律/交易风险必须阻塞或升级"
+  ]
+}
+
+本样本标签/路由 schema：
+null
+
+待评分输出：
+```json
+{
+  "node_type": "Review/Gate",
+  "profile": "strong-quality-reviewer",
+  "workflow": "WF-6",
+  "task": "简历终审裁决",
+  "decision": "revise",
+  "summary": "草稿合规但存在大量占位符和技能缺口，需返工填充后再审。",
+  "issues": [
+    {
+      "severity": "high",
+      "target_node": "job-resume-draft-001",
+      "location": "draft_sections[0].editable_notes, draft_sections[1].editable_notes, general_editable_notes",
+      "problem": "存在大量 [placeholder] 占位符（项目规模、客户名称、量化效果、具体技术选型等），简历不可直接输出含占位符文本。",
+      "action": "根据真实项目信息替换所有占位符；无法获取真实数据的，删除对应量化声明或改为定性描述。",
+      "acceptance_criteria": "所有 [placeholder] 文本消失，替换为真实、可验证的信息或移除声明；不得编造数据。"
+    },
+    {
+      "severity": "high",
+      "target_node": "job-resume-draft-001",
+      "location": "draft_sections[0].star.action, draft_sections[1].star.action",
+      "problem": "STAR 动作描述含 placeholder（文档格式、向量库、LLM API 等），动作要点不完整。",
+      "action": "准确填写实际使用的技术栈和工具名称，保持与项目事实一致。",
+      "acceptance_criteria": "STAR 中的技术栈均为实际使用过的明确技术，无虚构。"
+    },
+    {
+      "severity": "medium",
+      "target_node": "job-resume-draft-001",
+      "location": "全套风险标记",
+      "problem": "已识别的风险（如 RAG Demo 客户数据隐私、OpenCV 技能缺失）仅在 risk_flags 中提示，未在简历正文体现应对措施。",
+      "action": "隐私类风险必须确保简历正文不含任何敏感信息；技能缺失可在技能总结或补充说明中体现学习意愿。",
+      "acceptance_criteria": "简历正文不含隐私风险内容；对 JD 要求的加分项有明确回应（技能列表或补充说明）。"
+    },
+    {
+      "severity": "low",
+      "target_node": "job-resume-draft-001",
+      "location": "技能标签与 JD 对齐",
+      "problem": "针对『星河智造初级 AI 工具开发助理 JD』，OpenCV、Docker、Django 等未体现，弱相关标签未上升为直接技能。",
+      "action": "建议补充相关学习或简易实践经历；如无，需在技能总结中体现学习意愿。",
+      "acceptance_criteria": "简历技能列表与 JD 要求的主要技能有对应的陈述，差距明确。"
+    }
+  ],
+  "evidence_checks": {
+    "claimed_experience": [
+      {
+        "item": "企业资料智能问答 RAG 系统",
+        "status": "unverified",
+        "reason": "无项目链接、客户名称、交付证据；描述依赖占位符，事实无法验证。"
+      },
+      {
+        "item": "批量 Excel 数据处理自动化",
+        "status": "unverified",
+        "reason": "个人协助项目，无具体场景、频率、效果数据，均为占位符，无法验证实际价值。"
+      }
+    ],
+    "quantitative_claims": "none — 所有量化指标均被占位符替换，未声称具体数字。",
+    "source_traceability": "部分可追溯至原文，但原文未提供细节，因此细节为合理推断，准确性需人工确认。"
+  },
+  "rework_assignment": {
+    "primary_node": "job-resume-draft-001",
+    "action": "基于真实项目信息填充所有 [placeholder] 和 [Editable] 标记，删除无法填充的量化声明，确认无虚构内容，并重新提交审核。",
+    "secondary_human_review": "建议人工审核填充后的简历，确认技术栈准确性、隐私安全及经历归类。"
+  },
+  "red_line_review": {
+    "no_fabrication": "合规 — draft 中已移除虚构声明，但仍有 placeholder 未填充，并非虚构。",
+    "no_demo_as_production": "合规 — 始终标注为 Demo/原型。",
+    "not_final_immutable": "合规 — 大量 editable notes 和 placeholder，为可编辑草稿。"
+  }
+}
+```
+
+返回 JSON。score 必须是 0-100 的整数，不要使用 0-1 小数制或 0-10 十分制：
+{
+  "score": 0,
+  "score_scale": "0-100",
+  "pass": true,
+  "rubric_hits": [""],
+  "missing": [""],
+  "hallucination": [""],
+  "red_line_violations": [""],
+  "profile_lessons": [""],
+  "prompt_patch_suggestions": [""]
+}

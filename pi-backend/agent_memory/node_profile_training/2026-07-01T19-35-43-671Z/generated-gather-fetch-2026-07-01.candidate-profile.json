@@ -1,0 +1,128 @@
+{
+  "id": "generated-gather-fetch-2026-07-01",
+  "name": "弱模型资料搜集与事实抽取",
+  "match": [
+    "generated:gather-fetch",
+    "training-run:2026-07-01T19-35-43-671Z",
+    "source-profile:weak-research-extractor",
+    "case:job-company-gather-001",
+    "case:media-material-gather-001",
+    "公司调研资料搬运",
+    "AI 选题素材搜集"
+  ],
+  "defaultModel": "opencode-go/deepseek-v4-flash",
+  "skills": [
+    "output-spec"
+  ],
+  "availableSkills": [
+    "output-spec",
+    "artifact-storage"
+  ],
+  "collaborationProtocol": "只做信息搬运、显性事实抽取和来源整理；不得替 Lead 下最终判断。只基于用户提供资料、明确工具结果或可定位文件内容输出事实；没有可验证来源时必须标记 source_status=missing/unverified，不得补造新闻、数字、链接或媒体名。遇到资料冲突、可信度不足或用户意图不清，标记为待强模型复核。",
+  "projectConfig": {
+    "modelTier": "weak",
+    "roleInWeakStrongWorkflow": "researcher",
+    "preferredTasks": [
+      "搜索候选资料",
+      "摘录显性事实",
+      "整理来源与时间",
+      "从代码或日志中定位线索",
+      "按 schema 输出资料包"
+    ],
+    "escalateWhen": [
+      "需要判断资料可信度",
+      "来源互相矛盾",
+      "需要推断用户真实意图",
+      "信息缺口会影响方案方向"
+    ],
+    "qualityBar": "输出必须包含来源/位置、摘录事实、不确定点和建议复核项；禁止只给结论；禁止把未验证内容写成事实；区分事实与推断并标注置信度；列出证据缺口。",
+    "roleInWorkflow": "researcher",
+    "nodeContract": {
+      "input_scope": "用户提供的资料文本、工具返回的搜索结果或文件、可定位的代码或日志内容。",
+      "allowed_sources": [
+        "用户输入文本",
+        "工具返回内容",
+        "明确指定的代码/文件路径",
+        "已标注来源的外部片段"
+      ],
+      "output_schema_note": "输出需包含：extracted_facts（事实列表，每项含 category, fact, source），inferences（推断列表，每项含 inference, basis, confidence），evidence_gaps（证据缺口列表，每项含 gap_description, related_source, missing_detail），risks（风险/红线标记），source_status（每事实有 verified/unverified/missing 状态）。事实与推断严格分离；推断不得纳入事实列表。无来源项标记为 missing/unverified。",
+      "max_input_chars": 100000,
+      "escalation_rule": "当来源互相矛盾、可信度无法判断、用户意图模糊或信息缺口可能影响下游判断时，标记 escalation_triggered=true 并在输出中列出待复核项，不得自行判断。"
+    },
+    "generated": true,
+    "generatedStatus": "trained",
+    "routingEnabled": false,
+    "sourceNodeType": "Gather/Fetch",
+    "sourceProfileTargets": [
+      "weak-research-extractor"
+    ],
+    "trainingRunId": "2026-07-01T19-35-43-671Z",
+    "trainingCases": [
+      "job-company-gather-001",
+      "media-material-gather-001"
+    ],
+    "trainingArtifactDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T19-35-43-671Z",
+    "nodeOutputArtifacts": [
+      "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T19-35-43-671Z/node_outputs/02-job-company-gather-001.md",
+      "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T19-35-43-671Z/node_outputs/07-media-material-gather-001.md"
+    ]
+  },
+  "systemPromptPatch": "你是资料搜集 Agent。输出必须可追溯：每个事实要有来源，没有来源标记 source_status=missing/unverified。严格区分：事实（有来源的陈述） vs 推断（基于事实的推演，需附 basis 和 confidence）。输出结构：{extracted_facts, inferences, evidence_gaps, risks, source_status}。遇到来源冲突、可信度不足或信息缺口，设置 escalation_triggered=true 并列出待复核项。绝对不能：编造数字、链接、企业名、媒体名；把推断写成事实；给出无依据的结论。",
+  "experience": 2,
+  "successes": 2,
+  "failures": 0,
+  "recentTasks": [
+    {
+      "name": "公司调研资料搬运",
+      "taskId": "job-company-gather-001",
+      "success": true,
+      "timestamp": 1782935700167,
+      "modelUsed": "opencode-go/deepseek-v4-flash",
+      "score": 90,
+      "status": "training_generated",
+      "outputArtifact": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T19-35-43-671Z/node_outputs/02-job-company-gather-001.md"
+    },
+    {
+      "name": "AI 选题素材搜集",
+      "taskId": "media-material-gather-001",
+      "success": true,
+      "timestamp": 1782935700167,
+      "modelUsed": "opencode-go/deepseek-v4-flash",
+      "score": 100,
+      "status": "training_generated",
+      "outputArtifact": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T19-35-43-671Z/node_outputs/07-media-material-gather-001.md"
+    }
+  ],
+  "runHistory": [],
+  "savedExperiences": [
+    {
+      "taskId": "job-company-gather-001",
+      "taskName": "公司调研资料搬运",
+      "lesson": "evidence_gaps 机制可替代事实级 unknown 标记，但需注意下游客服用场景是否期望结构化 missing 字段 | inferences 与 facts 分离良好，减少混淆",
+      "skills": [
+        "output-spec"
+      ],
+      "model": "opencode-go/deepseek-v4-flash",
+      "artifactId": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T19-35-43-671Z/node_outputs/02-job-company-gather-001.md",
+      "debugValidated": true,
+      "score": 90,
+      "savedAt": 1782935700167
+    },
+    {
+      "taskId": "media-material-gather-001",
+      "taskName": "AI 选题素材搜集",
+      "lesson": "严格遵循指令，逐条提取并标注来源与性质 | 准确区分事实/观点，未将观点升格为事实 | 详尽列出证据缺口与未知项，未编造具体企业与金额 | 主动标注红线风险，避免下游误用",
+      "skills": [
+        "output-spec"
+      ],
+      "model": "opencode-go/deepseek-v4-flash",
+      "artifactId": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T19-35-43-671Z/node_outputs/07-media-material-gather-001.md",
+      "debugValidated": true,
+      "score": 100,
+      "savedAt": 1782935700167
+    }
+  ],
+  "sourceProfileId": "weak-research-extractor",
+  "generatedAt": 1782935700167,
+  "generatedBy": "node-profile-training"
+}

@@ -1,0 +1,138 @@
+你是严格训练裁判。请对一个 Workflow 节点输出评分，只返回 JSON，不要 markdown。
+
+节点类型：Gather/Fetch
+任务：公司调研资料搬运
+
+Rubric：
+[
+  "只抽取给定来源中出现的业务、技术栈、学历门槛、薪资和面经",
+  "每条事实标注来源片段",
+  "未出现的信息输出 unknown 或 missing",
+  "不判断候选人是否适合",
+  "给出证据缺口和复核建议"
+]
+
+标准答案/关键要点：
+业务应记录为制造业质检自动化和设备数据采集；技术栈应包含 Python、OpenCV、PLC、轻量化模型部署；岗位薪资 5-7k；学历门槛为大专及以上优先，不是硬性本科；面试关注 Python 文件处理、接口调用、项目 demo。团队规模、真实文化、实际录取学历、长期发展空间等来源未出现，应标 unknown/missing。
+
+红线：
+[
+  "不得补造公司新闻、融资、员工规模或文化",
+  "不得凭公司名推断技术栈",
+  "不得把优先条件改写成硬性条件"
+]
+
+节点通用契约：
+{
+  "purpose": "只搬运用户给定来源、工具结果或可定位文件中的显性事实，不做判断。",
+  "output": [
+    "extracted_facts: 每条含 fact, source, source_status",
+    "unknown_fields: 来源未出现但任务关心的字段",
+    "evidence_gaps: 证据缺口和补源建议",
+    "handoff_summary: 给下游的短摘要"
+  ],
+  "redLines": [
+    "不得凭记忆或行业常识补公司新闻、数字、链接、媒体名",
+    "不得把评论/访谈观点写成行业事实"
+  ]
+}
+
+本样本标签/路由 schema：
+null
+
+待评分输出：
+```json
+{
+  "profile_node": "weak-research-extractor",
+  "workflow": "WF-3",
+  "node_phase": "Gather/Fetch",
+  "target_company": "星河智造",
+  "task": "公司调研资料搬运",
+  "extracted_facts": [
+    {
+      "category": "业务方向",
+      "fact": "公司为制造业客户提供质检自动化和设备数据采集服务。",
+      "source": "官网片段 (Source 1)",
+      "source_status": "公司自述",
+      "risk_warning": "官网片段来源简短，未提供具体产品功能边界。"
+    },
+    {
+      "category": "技术栈（官网展示）",
+      "fact": "官网展示的技术关键词为 Python、OpenCV、PLC、轻量化模型部署。",
+      "source": "官网片段 (Source 1)",
+      "source_status": "公司自述",
+      "risk_warning": "此为官网对外宣传标签，不代表实际生产环境全貌。"
+    },
+    {
+      "category": "招聘岗位",
+      "fact": "招聘岗位为「初级 AI 工具开发助理」。",
+      "source": "招聘 JD 片段 (Source 2)",
+      "source_status": "招聘方发布"
+    },
+    {
+      "category": "薪资范围",
+      "fact": "薪资为 5-7k。",
+      "source": "招聘 JD 片段 (Source 2)",
+      "source_status": "招聘方发布"
+    },
+    {
+      "category": "学历门槛",
+      "fact": "学历写的是「大专及以上优先」。",
+      "source": "招聘 JD 片段 (Source 2)",
+      "source_status": "招聘方发布",
+      "red_line_check": "TRUE — 此条为优先条件，非硬性门槛。下游不得改写成「要求大专以上」。"
+    },
+    {
+      "category": "硬性技能要求",
+      "fact": "要求的技能为 Python 基础、能读懂接口文档。",
+      "source": "招聘 JD 片段 (Source 2)",
+      "source_status": "招聘方发布"
+    },
+    {
+      "category": "面试考察点",
+      "fact": "面试会问到 Python 文件处理、接口调用、是否做过项目 demo。",
+      "source": "面经摘录 (Source 3)",
+      "source_status": "面试者经验分享",
+      "risk_warning": "样本量为 1 且经第三方转述，不保证覆盖全部面试流程。"
+    }
+  ],
+  "unknown_fields": [
+    {"field": "公司工商全名 / 注册信息", "status": "missing"},
+    {"field": "员工规模 / 经营规模", "status": "missing"},
+    {"field": "融资历史", "status": "missing"},
+    {"field": "公司新闻或近况", "status": "missing"},
+    {"field": "公司文化 / 价值观", "status": "missing"},
+    {"field": "核心团队背景", "status": "missing"},
+    {"field": "具体产品线 / 成功客户案例", "status": "missing"},
+    {"field": "办公地点", "status": "missing"}
+  ],
+  "evidence_gaps": [
+    {
+      "gap": "官网仅提供一句话片段与技术关键词列表，缺乏产品页、团队页等关键信息。",
+      "suggestion": "如需深度调研，建议补抓完整官网及其子页面。"
+    },
+    {
+      "gap": "JD 仅此一封初级岗位，无法反向推断公司整体技术层级或高级岗位要求。",
+      "suggestion": "建议搜索该公司其他高级或非技术岗位 JD 以获得完整人才画像。"
+    },
+    {
+      "gap": "面经来源单一，未提供结构化题库或面试轮次信息，存在幸存者偏差。",
+      "suggestion": "建议交叉比对其他招聘网站或面经平台以确认一致性。"
+    }
+  ],
+  "handoff_summary": "已完成给定三份原材料的显性事实搬运。星河智造：制造业质检自动化+设备数据采集，技术标签含 Python/OpenCV/PLC。招聘初级 AI 工具助理 5-7k，学历「大专优先」不是硬门槛，面试核心覆盖 Python 文件操作、API 调用和项目 demo。缺失信息（融资、规模、文化、办公地、完整产品矩阵）均标记为 missing。学历红线已在事实中显式标注，下游判断时不应提升为硬性要求。如需更多维度，建议补源。"
+}
+```
+
+返回 JSON。score 必须是 0-100 的整数，不要使用 0-1 小数制或 0-10 十分制：
+{
+  "score": 0,
+  "score_scale": "0-100",
+  "pass": true,
+  "rubric_hits": [""],
+  "missing": [""],
+  "hallucination": [""],
+  "red_line_violations": [""],
+  "profile_lessons": [""],
+  "prompt_patch_suggestions": [""]
+}

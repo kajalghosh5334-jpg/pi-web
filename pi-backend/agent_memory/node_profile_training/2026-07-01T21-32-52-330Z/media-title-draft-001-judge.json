@@ -1,0 +1,25 @@
+{
+  "model": "opencode-go/deepseek-v4-pro",
+  "code": 0,
+  "text": "{\n  \"score\": 100,\n  \"score_scale\": \"0-100\",\n  \"pass\": true,\n  \"rubric_hits\": [\n    \"输出 5 组标题和封面文案\",\n    \"每组标注适用受众和点击动机\",\n    \"至少覆盖技术者向、企业主向、混合向\",\n    \"不新增上游没有支撑的案例、数字或结果\",\n    \"避免夸张承诺和标题党\"\n  ],\n  \"missing\": [],\n  \"hallucination\": [],\n  \"red_line_violations\": [],\n  \"profile_lessons\": [\n    \"用问题导向代替承诺数字，并严格基于上游事实限定范围（如“一位开发者的担忧”），可有效避免标题党和编造。\",\n    \"主动进行数字自检（unsupported_numbers_self_check）、标注来源使用（source_usage）并给出编辑笔记（editable_notes）和风险标识（risk_flags），是优秀的安全草稿生产范本。\"\n  ],\n  \"prompt_patch_suggestions\": []\n}",
+  "usage": {
+    "input": 4124,
+    "output": 3214,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "reasoning": 2990,
+    "totalTokens": 7338,
+    "cost": {
+      "input": 0.007175760000000001,
+      "output": 0.01118472,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "total": 0.018360480000000002
+    }
+  },
+  "stderr": "",
+  "elapsedMs": 57268,
+  "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+  "workDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T21-32-52-330Z/media-title-draft-001-judge",
+  "isolatedSessionDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T21-32-52-330Z/media-title-draft-001-judge/.pi-sessions"
+}

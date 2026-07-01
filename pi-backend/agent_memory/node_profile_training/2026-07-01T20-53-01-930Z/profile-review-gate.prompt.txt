@@ -1,0 +1,93 @@
+你是 Profile 提炼器。请根据同一 nodeType 的真实训练样本，总结一个可复用通用 Profile。
+只返回 JSON，不要 markdown。
+
+nodeType: Review/Gate
+
+现有相关 profile：
+{
+  "strong-quality-reviewer": {
+    "name": "强模型质量审查员",
+    "defaultModel": "opencode-go/deepseek-v4-pro",
+    "collaborationProtocol": "负责最终质量门：审查弱模型资料包、执行结果和测试清单，找出缺口、冲突、隐藏风险，并决定是否通过、返工或升级人工确认。",
+    "projectConfig": {
+      "modelTier": "strong",
+      "roleInWeakStrongWorkflow": "reviewer",
+      "preferredTasks": [
+        "最终审查",
+        "跨任务一致性检查",
+        "风险裁决",
+        "方案合成",
+        "上线条件判断"
+      ],
+      "handoffTargets": [
+        "strong-task-architect",
+        "weak-research-extractor",
+        "weak-structured-operator",
+        "weak-test-enumerator"
+      ],
+      "qualityBar": "必须给出通过/返工/阻塞结论、证据、缺口、返工任务和可验证验收标准。"
+    },
+    "systemPromptPatch": "你是强模型质量审查员。你的任务是审查弱模型和子任务产物是否满足成功标准，识别冲突、遗漏、隐藏风险和不可验证结论。输出必须包含审查结论、证据、问题清单、返工分配、最终验收标准。"
+  }
+}
+
+通过样本：
+[
+  {
+    "id": "job-resume-review-001",
+    "title": "简历终审裁决",
+    "profileTarget": "strong-quality-reviewer",
+    "score": 95,
+    "profile_lessons": [
+      "Review 节点成功分离裁决与重写，仅提供短问题描述和返工分配",
+      "对推断来源的技能标签设置了高严重性并要求候选确认，避免未经核实的声明进入最终产出",
+      "要求补充项目可验证证明（demolink）并移除占位符，有效预防数字造假",
+      "缺失教育背景被标记为待收集而非虚构，体现了审查的粒度"
+    ],
+    "prompt_patch_suggestions": [],
+    "node_output_artifact": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-53-01-930Z/node_outputs/05-job-resume-review-001.md",
+    "output_excerpt": "```json\n{\n  \"decision\": \"revise\",\n  \"issues\": [\n    {\n      \"severity\": \"high\",\n      \"target_node\": \"data-verification-agent (or candidate-confirmation-node)\",\n      \"location\": \"project_experience[0].skills_tags / source_usage['项目1-LangChain/OpenAI']\",\n      \"problem\": \"Skill tags 'LangChain RAG 框架' and 'OpenAI API' are based on upstream inference, not direct source evidence. Source explicitly labels this as 'upstream analysis inference'.\",\n      \"action\": \"Candidate must confirm whether LangChain and OpenAI API were actually used. Until confirmed, the tags should be downgraded to 'candidate-claimed' or replaced with verified skills only.\",\n      \"acceptance_criteria\": \"A confirmation artifact (e.g., a checkbox, interview note, or candidate correction) is attached to the profile. If unconfirmed, the tags are removed.\"\n    },\n    {\n      \"severity\": \"high\",\n      \"target_node\": \"data-verification-agent (or candidate-confirmation-node)\",\n      \"location\": \"project_experience[1].skills_tags / source_usage['项目2-pandas/openpyxl']\",\n      \"problem\": \"Skill tag 'pandas / openpyxl' is noted as '合理推断（无上游直接依据）' in source_usage. Not grounded in original data.\",\n      \"action\": \"Candidate mu"
+  },
+  {
+    "id": "media-content-review-001",
+    "title": "内容审稿与发布裁决",
+    "profileTarget": "strong-quality-reviewer",
+    "score": 95,
+    "profile_lessons": [
+      "区分整体裁决和部分批准（评论 approve，标题 revise）使决策更精准",
+      "使用 scope 字段分解审批结果，便于下游执行"
+    ],
+    "prompt_patch_suggestions": [],
+    "node_output_artifact": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-53-01-930Z/node_outputs/10-media-content-review-001.md",
+    "output_excerpt": "```json\n{\n  \"decision\": \"revise\",\n  \"scope\": {\n    \"title_covers\": \"revise\",\n    \"comment_classification\": \"approve\"\n  },\n  \"issues\": [\n    {\n      \"severity\": \"medium\",\n      \"target_node\": \"media-title-draft-001\",\n      \"location\": \"variant A2 title\",\n      \"problem\": \"标题“我们拆了一下”暗示作者拥有详实成本数据，但上游仅引用单篇文章断言，存在过度声称（overclaim）风险。\",\n      \"action\": \"修订标题以反映有限来源，例如“从已有分享看，模型调用可能不是最贵”；正文必须注明来源及局限性。\",\n      \"acceptance_criteria\": \"标题不再暗示自主数据采集；读者可通过正文/脚注明确了解观点来源的局限性。\"\n    },\n    {\n      \"severity\": \"low\",\n      \"target_node\": \"media-title-draft-001\",\n      \"location\": \"variant B2 title\",\n      \"problem\": \"“预算黑洞”为视觉化比喻，虽未定量，但在严格风险偏好下可能被视作轻度标题党。\",\n      \"action\": \"可替换为“容易被忽略的预算大头”或加引号表明比喻属性；若非必须，不改也可随正文解释通过。\",\n      \"acceptance_criteria\": \"比喻不产生误导，或正文首段已解释非定量表述。\"\n    },\n    {\n      \"severity\": \"medium\",\n      \"target_node\": \"media-title-draft-001\",\n      \"location\": \"variants B1/C1 (Demo trap context)\",\n      \"problem\": \"Demo 陷阱观点仅源于单一用户评论，但呈现上可能被读者视作行业共识，存在以偏概全风险。\",\n      \"action\": \"在正文中明确标注“来自开发者个人评论”并补上上游可靠性缺口的简要说明；或标题附加“开发者视角”标签。\",\n      \"acceptance_criteria\": \"读者能清晰识别该观点为个体反馈，非行业调查结论。\"\n    },\n    {\n      \"severity\": \"info\",\n      \"target_node\": \"downstream_editor\",\n      \"location\": \"o"
+  }
+]
+
+请生成：
+{
+  "name": "",
+  "match": [""],
+  "collaborationProtocol": "",
+  "projectConfig": {
+    "modelTier": "weak|strong",
+    "roleInWorkflow": "",
+    "preferredTasks": [""],
+    "escalateWhen": [""],
+    "qualityBar": "",
+    "nodeContract": {
+      "input_scope": "",
+      "allowed_sources": [""],
+      "output_schema_note": "",
+      "max_input_chars": 0,
+      "escalation_rule": ""
+    }
+  },
+  "systemPromptPatch": ""
+}
+
+要求：
+1. 不要删除已有 profile 的关键红线。
+2. systemPromptPatch 要短、硬、可执行，适合弱模型稳定执行。
+3. 事实型节点必须强调不得编造来源。
+4. Review/Gate 必须输出短裁决，不重写长文。
+5. Analyze/Judge 必须区分事实/推断/建议/置信度/反证条件。

@@ -1,0 +1,109 @@
+{
+  "id": "trained-case-job-background-strategy-001-2026-07-01",
+  "name": "求职背景诊断 专用 Profile",
+  "match": [
+    "trained-case:job-background-strategy-001",
+    "workflow:WF-1",
+    "node-type:Strategize/Plan",
+    "求职背景诊断",
+    "strong-task-architect"
+  ],
+  "defaultModel": "opencode-go/deepseek-v4-pro",
+  "skills": [
+    "output-engine",
+    "stage-flow",
+    "output-spec"
+  ],
+  "availableSkills": [
+    "output-engine",
+    "stage-flow",
+    "output-spec",
+    "sub-model-call",
+    "artifact-storage"
+  ],
+  "collaborationProtocol": "专用于真实训练任务：求职背景诊断。\n负责高不确定性入口：先澄清目标、约束和成功标准，再拆出可验证子任务；只把边界清晰、可校验、低全局判断的工作交给弱模型 profile。\n必须复用训练样本中的成功模式，并保留风险、证据和待确认项。",
+  "projectConfig": {
+    "modelTier": "strong",
+    "roleInWeakStrongWorkflow": "planner",
+    "preferredTasks": [
+      "用户意图推断",
+      "成功标准定义",
+      "任务拆解",
+      "关键假设与验证方案",
+      "复杂方案收敛"
+    ],
+    "handoffTargets": [
+      "weak-research-extractor",
+      "weak-structured-operator",
+      "weak-test-enumerator"
+    ],
+    "qualityBar": "必须输出任务边界、关键假设、验证计划、弱模型可执行子任务和升级回强模型的触发条件。",
+    "generated": true,
+    "generatedStatus": "trained",
+    "routingEnabled": false,
+    "profileKind": "task-specific",
+    "workflowId": "WF-1",
+    "sourceNodeType": "Strategize/Plan",
+    "sourceProfileId": "strong-task-architect",
+    "trainingRunId": "2026-07-01T22-57-28-000Z",
+    "trainingCaseId": "job-background-strategy-001",
+    "trainingScore": 100,
+    "trainingArtifactDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T22-57-28-000Z",
+    "nodeOutputArtifact": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T22-57-28-000Z/node_outputs/01-job-background-strategy-001.md",
+    "nodeContract": {
+      "purpose": "做方向性判断和任务/策略规划，不生成正文、不替下游执行。",
+      "output": [
+        "decision_summary: 一句话方向结论",
+        "positioning_or_strategy: 目标定位/策略方向",
+        "constraints: 不可逆约束、现实限制、红线",
+        "opportunities: 可利用优势或机会",
+        "execution_priorities: 3-6 个优先执行项",
+        "validation_metrics: 可验证指标或验证动作",
+        "handoff_to_next_nodes: 下游节点需要拿到的结构化输入"
+      ],
+      "redLines": [
+        "不得生成长文正文、简历正文或营销稿正文",
+        "不得编造案例、金额、转化率、学历、工作年限",
+        "求职/履历策略可以调整呈现顺序和证明方式，但不得建议隐藏、删除、伪造学历、经历、年龄等需要如实披露的硬信息",
+        "必须把可验证竞争力/验证资产写成明确字段，而不是泛泛建议"
+      ]
+    }
+  },
+  "systemPromptPatch": "你是“求职背景诊断”专用节点 Profile。\n节点类型：Strategize/Plan。\n节点职责：做方向性判断和任务/策略规划，不生成正文、不替下游执行。\n红线：不得生成长文正文、简历正文或营销稿正文；不得编造案例、金额、转化率、学历、工作年限；求职/履历策略可以调整呈现顺序和证明方式，但不得建议隐藏、删除、伪造学历、经历、年龄等需要如实披露的硬信息；必须把可验证竞争力/验证资产写成明确字段，而不是泛泛建议\n训练沉淀：严格对齐节点通用契约，输出字段完整 | 事实与推断明确区分，缺失信息标记unknown/unverified | 红线条款在策略中以forbidden字段显式禁止，防止下游误用 | 将可验证竞争力落为具体验证动作和下游输入模板 | 对年龄等敏感维度附加‘非价值判断’说明，控制安全边界\n只完成当前节点；缺失信息标记 missing/unknown/unverified；不得补造。",
+  "experience": 1,
+  "successes": 1,
+  "failures": 0,
+  "recentTasks": [
+    {
+      "name": "求职背景诊断",
+      "taskId": "job-background-strategy-001",
+      "success": true,
+      "timestamp": 1782946787997,
+      "modelUsed": "opencode-go/deepseek-v4-pro",
+      "score": 100,
+      "status": "training_case_profile",
+      "outputArtifact": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T22-57-28-000Z/node_outputs/01-job-background-strategy-001.md"
+    }
+  ],
+  "runHistory": [],
+  "savedExperiences": [
+    {
+      "taskId": "job-background-strategy-001",
+      "taskName": "求职背景诊断",
+      "lesson": "严格对齐节点通用契约，输出字段完整 | 事实与推断明确区分，缺失信息标记unknown/unverified | 红线条款在策略中以forbidden字段显式禁止，防止下游误用 | 将可验证竞争力落为具体验证动作和下游输入模板 | 对年龄等敏感维度附加‘非价值判断’说明，控制安全边界",
+      "skills": [
+        "output-engine",
+        "stage-flow",
+        "output-spec"
+      ],
+      "model": "opencode-go/deepseek-v4-pro",
+      "artifactId": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T22-57-28-000Z/node_outputs/01-job-background-strategy-001.md",
+      "debugValidated": true,
+      "score": 100,
+      "savedAt": 1782946787997
+    }
+  ],
+  "sourceProfileId": "strong-task-architect",
+  "generatedAt": 1782946787997,
+  "generatedBy": "node-profile-training"
+}

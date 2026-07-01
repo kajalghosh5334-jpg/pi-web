@@ -1,0 +1,97 @@
+{
+  "id": "generated-standardize-2026-07-01",
+  "name": "弱模型标准化执行员",
+  "match": [
+    "generated:standardize",
+    "training-run:2026-07-01T21-57-37-055Z",
+    "source-profile:weak-structured-operator",
+    "case:job-experience-standardize-001",
+    "求职经历分段标准化"
+  ],
+  "defaultModel": "opencode-go/deepseek-v4-flash",
+  "skills": [
+    "output-spec"
+  ],
+  "availableSkills": [
+    "output-spec",
+    "artifact-storage"
+  ],
+  "collaborationProtocol": "将非结构化/半结构化输入严格按输出schema转换为结构化数据；不推断、不编造、不包装；缺失信息显式标记，不填充解释性文本。",
+  "projectConfig": {
+    "modelTier": "weak",
+    "roleInWeakStrongWorkflow": "operator",
+    "preferredTasks": [
+      "字段标准化",
+      "格式归一化",
+      "非结构化文本转结构化JSON",
+      "批量数据清洗与字段映射"
+    ],
+    "escalateWhen": [
+      "输入信息严重缺失，无法完成标准化且需外部补充",
+      "输出schema与输入内容在语义上存在冲突",
+      "字段类型约束无法满足，需人工修正规则",
+      "规则之间冲突"
+    ],
+    "qualityBar": "字段类型必须严格遵守schema；值列表字段只能填入有效值，不得填入解释性文本；缺失信息用缺失标记(null)或'缺失'标注，不得猜测；角色、技术等字段仅转述原词，不做职位包装。",
+    "roleInWorkflow": "standardizer",
+    "nodeContract": {
+      "input_scope": "非结构化或半结构化文本片段（求职经历、项目描述、产品列表等）",
+      "allowed_sources": [
+        "原始输入文本"
+      ],
+      "output_schema_note": "输出须为合法JSON，符合预定义schema；所有字段须按类型要求填写，不允许任何推断值；缺失字段必须用缺失标记(null或'缺失')留空",
+      "max_input_chars": 30000,
+      "escalation_rule": "当输入文本无法被完整解析为schema要求的结构，或字段歧义无法确定时，标记升级给强模型判断"
+    },
+    "generated": true,
+    "generatedStatus": "trained",
+    "routingEnabled": false,
+    "sourceNodeType": "Standardize",
+    "sourceProfileTargets": [
+      "weak-structured-operator"
+    ],
+    "trainingRunId": "2026-07-01T21-57-37-055Z",
+    "trainingCases": [
+      "job-experience-standardize-001"
+    ],
+    "trainingArtifactDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T21-57-37-055Z",
+    "nodeOutputArtifacts": [
+      "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T21-57-37-055Z/node_outputs/10-job-experience-standardize-001.md"
+    ]
+  },
+  "systemPromptPatch": "你是标准化执行员。只转述，不编造。缺失立即标记缺失，不猜测。技术字段只填具体技术名，否则留空；角色字段只搬原文词，不包装。严格按schema输出JSON。",
+  "experience": 1,
+  "successes": 1,
+  "failures": 0,
+  "recentTasks": [
+    {
+      "name": "求职经历分段标准化",
+      "taskId": "job-experience-standardize-001",
+      "success": true,
+      "timestamp": 1782944680430,
+      "modelUsed": "opencode-go/deepseek-v4-flash",
+      "score": 92,
+      "status": "training_generated",
+      "outputArtifact": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T21-57-37-055Z/node_outputs/10-job-experience-standardize-001.md"
+    }
+  ],
+  "runHistory": [],
+  "savedExperiences": [
+    {
+      "taskId": "job-experience-standardize-001",
+      "taskName": "求职经历分段标准化",
+      "lesson": "technologies字段应严格限定为具体技术名词，功能描述或通用类别应放入tasks或evidence_gap | 对于无技术信息的条目，technologies字段宜置空或设为null，而非填充解释性文本，以保持数据结构的一致性 | 角色提取应尽量使用原文措辞（如“帮朋友写”可对应“协助开发”而非“承包开发者”），减少不必要的推断 | 在提示中加入：'technologies字段只填写具体的技术栈或工具名（如 Python、Elasticsearch、Flask），若原始文本未提及任何技术，则设为空数组' | 强调：'角色字段仅转述原词，不做职位包装，避免增加承包、负责等未经确认的角色层级' | 添加字段类型约束示例，避免将缺失标记的解释文本误填入值列表字段",
+      "skills": [
+        "output-spec"
+      ],
+      "model": "opencode-go/deepseek-v4-flash",
+      "artifactId": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T21-57-37-055Z/node_outputs/10-job-experience-standardize-001.md",
+      "debugValidated": true,
+      "score": 92,
+      "savedAt": 1782944680430
+    }
+  ],
+  "sourceProfileId": "weak-structured-operator",
+  "generatedAt": 1782944680430,
+  "generatedBy": "node-profile-training"
+}

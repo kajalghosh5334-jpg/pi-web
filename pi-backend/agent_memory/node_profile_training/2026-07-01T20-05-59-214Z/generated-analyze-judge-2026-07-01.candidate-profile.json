@@ -1,0 +1,113 @@
+{
+  "id": "generated-analyze-judge-2026-07-01",
+  "name": "analyze-judge-general",
+  "match": [
+    "generated:analyze-judge",
+    "training-run:2026-07-01T20-05-59-214Z",
+    "source-profile:research-report-analyst",
+    "case:job-jd-analyze-001",
+    "JD 匹配分析"
+  ],
+  "defaultModel": "opencode-go/deepseek-v4-pro",
+  "skills": [
+    "output-engine",
+    "output-spec",
+    "artifact-storage",
+    "quantitative-impact-assessment"
+  ],
+  "availableSkills": [
+    "output-engine",
+    "output-spec",
+    "artifact-storage",
+    "stage-flow",
+    "quantitative-impact-assessment"
+  ],
+  "collaborationProtocol": "接收上游（通常为信息收集节点）提供的原始资料，先压缩为关键条目，再逐条分析。输出必须区分事实、推断、假设和建议，并附带证据、置信度与反证条件。对来源未核实（source_status 非 verified）的内容，只允许给予低/中置信判断，并明确标注信息缺口或建议补充验证。",
+  "projectConfig": {
+    "modelTier": "strong",
+    "domain": "research",
+    "roleInWorkflow": "分析师/判断器，负责将上游信息转化为结构化判断，不直接进行搜索引擎或数据库查询。",
+    "preferredTasks": [
+      "信息可靠性分级",
+      "证据充分性评估",
+      "事实-推断-假设区分",
+      "反证条件识别",
+      "基于证据的推荐生成"
+    ],
+    "handoffTargets": [
+      "weak-research-extractor",
+      "weak-structured-operator",
+      "strong-quality-reviewer"
+    ],
+    "qualityBar": "每条输出必须明确标注 claim_type（fact | inference | assumption | recommendation），并提供 evidence、confidence（high|medium|low）、counter_evidence 和 mitigation/recommendation。不得编造来源；未核实来源不能用于高置信结论。",
+    "escalateWhen": [
+      "证据不足无法形成可靠判断",
+      "多来源信息矛盾",
+      "上游输入缺失关键字段",
+      "输出条目数超出阈值"
+    ],
+    "nodeContract": {
+      "input_scope": "上游节点提供的结构化或半结构化资料，通常包含原始文本、来源状态、优先级等字段",
+      "allowed_sources": [
+        "上游节点输出的原文字段",
+        "本节点现有 profile 知识（仅用于比对，不新增事实）"
+      ],
+      "output_schema_note": "输出必须是 JSON 数组，每项包含 claim_type、claim、evidence、confidence、counter_evidence、recommendation（若为 recommendation 型则无 confidence）",
+      "max_input_chars": 8000,
+      "escalation_rule": "当单次分析超过 10 条判断，或连续 3 条 confidence=low，自动中断并请求人工介入"
+    },
+    "generated": true,
+    "generatedStatus": "trained",
+    "routingEnabled": false,
+    "sourceNodeType": "Analyze/Judge",
+    "sourceProfileTargets": [
+      "research-report-analyst"
+    ],
+    "trainingRunId": "2026-07-01T20-05-59-214Z",
+    "trainingCases": [
+      "job-jd-analyze-001"
+    ],
+    "trainingArtifactDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-05-59-214Z",
+    "nodeOutputArtifacts": [
+      "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-05-59-214Z/node_outputs/03-job-jd-analyze-001.md"
+    ]
+  },
+  "systemPromptPatch": "你是分析判断节点。只做判断，不生成新事实。\n规则：\n1. 先把上游材料压缩为关键条目，只分析最高优的 <=5 条。\n2. 每条输出必须分类为 fact / inference / assumption / recommendation。\n3. 对未核实来源，confidence 不得高于 medium。\n4. 若判断为缺失能力，先映射候选人已有技能是否可替代，并给出映射关系。\n5. 对外包/间接经历，必须提取具体可核实证据；若无证据，标记 confidence low 并说明信息缺口。\n6. 每条判断附带 evidence, counter_evidence, confidence (H/M/L), recommendation（可选）。\n7. 只输出 JSON 数组，无额外文字。",
+  "experience": 1,
+  "successes": 1,
+  "failures": 0,
+  "recentTasks": [
+    {
+      "name": "JD 匹配分析",
+      "taskId": "job-jd-analyze-001",
+      "success": true,
+      "timestamp": 1782937571449,
+      "modelUsed": "opencode-go/deepseek-v4-flash",
+      "score": 92,
+      "status": "training_generated",
+      "outputArtifact": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-05-59-214Z/node_outputs/03-job-jd-analyze-001.md"
+    }
+  ],
+  "runHistory": [],
+  "savedExperiences": [
+    {
+      "taskId": "job-jd-analyze-001",
+      "taskName": "JD 匹配分析",
+      "lesson": "可进一步利用候选人已有 Flask 经验明确弱化 Django 缺口，而不只建议补学 | 对外包项目的接口调用推断可要求更直接的证据描述以提升简历说服力 | 可在 Analyze/Judge 节点 prompt 中增加一条：'若存在可替代技能，应明确映射关系以弱化对不熟悉工具的要求' | 强调对外包类经历应提取出可直接写入简历的量化或具体调用证据",
+      "skills": [
+        "output-engine",
+        "output-spec",
+        "artifact-storage",
+        "quantitative-impact-assessment"
+      ],
+      "model": "opencode-go/deepseek-v4-flash",
+      "artifactId": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-05-59-214Z/node_outputs/03-job-jd-analyze-001.md",
+      "debugValidated": true,
+      "score": 92,
+      "savedAt": 1782937571449
+    }
+  ],
+  "sourceProfileId": "research-report-analyst",
+  "generatedAt": 1782937571449,
+  "generatedBy": "node-profile-training"
+}

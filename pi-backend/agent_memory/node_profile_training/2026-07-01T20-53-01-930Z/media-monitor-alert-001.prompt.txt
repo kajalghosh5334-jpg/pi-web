@@ -1,0 +1,138 @@
+你是 Workflow 中的一个 profile 化节点。请只完成当前节点，不要越权完成下游任务。
+
+节点类型：Monitor/Alert
+目标 Profile：monitor-alert-operator
+Workflow：WF-17
+任务：内容数据异常告警
+
+上游上下文：
+上游节点 media-metrics-standardize-001 输出：
+```json
+{
+  "normalized_items": [
+    {
+      "id": "video_A",
+      "raw_data": {
+        "plays": 12000,
+        "likes": 360,
+        "comments": 96,
+        "shares": 48,
+        "direct_messages": 12
+      },
+      "computed_metrics": {
+        "interaction_rate": {
+          "value": 0.043,
+          "formula": "(likes + comments + shares + direct_messages) / plays = (360 + 96 + 48 + 12) / 12000 = 516 / 12000 = 0.043",
+          "percentage": "4.30%"
+        },
+        "comment_rate": {
+          "value": 0.008,
+          "formula": "comments / plays = 96 / 12000 = 0.008",
+          "percentage": "0.80%"
+        },
+        "share_rate": {
+          "value": 0.004,
+          "formula": "shares / plays = 48 / 12000 = 0.004",
+          "percentage": "0.40%"
+        },
+        "dm_conversion_rate": {
+          "value": 0.001,
+          "formula": "direct_messages / plays = 12 / 12000 = 0.001",
+          "percentage": "0.10%"
+        }
+      }
+    },
+    {
+      "id": "video_B",
+      "raw_data": {
+        "plays": 3000,
+        "likes": 45,
+        "comments": 9,
+        "shares": 3,
+        "direct_messages": 0
+      },
+      "computed_metrics": {
+        "interaction_rate": {
+          "value": 0.019,
+          "formula": "(likes + comments + shares + direct_messages) / plays = (45 + 9 + 3 + 0) / 3000 = 57 / 3000 = 0.019",
+          "percentage": "1.90%"
+        },
+        "comment_rate": {
+          "value": 0.003,
+          "formula": "comments / plays = 9 / 3000 = 0.003",
+          "percentage": "0.30%"
+        },
+        "share_rate": {
+          "value": 0.001,
+          "formula": "shares / plays = 3 / 3000 = 0.001",
+          "percentage": "0.10%"
+        },
+        "dm_conversion_rate": {
+          "value": 0.0,
+          "formula": "direct_messages / plays = 0 / 3000 = 0.0",
+          "percentage": "0.00%"
+        }
+      }
+    }
+  ],
+  "field_mapping": {
+    "播放": "plays",
+    "点赞": "likes",
+    "评论": "comments",
+    "转发": "shares",
+    "私信": "direct_messages"
+  },
+  "missing_fields": [],
+  "format_warnings": [
+    "原始输入为自然语言描述，已手动解析为结构化数据，数值无误。"
+  ],
+  "handoff_summary": "已将两段视频的原始播放、互动数据标准化并计算出互动率、评论率、转发率、私信转化率（均基于播放量）。下游可直接使用 normalized_items 中的 computed_metrics。",
+  "boundary_flags": {
+    "cause_analysis": false,
+    "estimated_zero_dm": false,
+    "calculation_basis_omitted": false
+  }
+}
+```
+
+当前输入：
+阈值规则：互动率低于 2% 标记 medium，私信转化率为 0 且播放超过 2000 标记 medium，评论中出现交易纠纷或法律责任标记 high。请基于上游指标输出告警。
+
+节点通用契约：
+职责：基于阈值或事件窗口做异常检测、分级和升级建议。
+推荐输出字段：
+- alerts: 每项含 severity, trigger_reason, evidence, recommended_action
+- normal_items
+- escalation_required
+- next_check_window
+通用红线：
+- 不得自行执行高风险动作
+- 不得无阈值或无证据触发重度告警
+- 必须区分 observed evidence 和 possible cause
+
+本样本标签/路由 schema：
+未指定；如需分类，严格使用题目给定标签。
+
+本样本生成/审查专项约束：
+无
+无
+
+输出要求：
+1. 严格遵守当前节点职责。
+2. 输出可供下游使用的结构化结果。
+3. 如信息缺失，写 unknown/missing/unverified，不得补造。
+4. 区分事实、推断、建议和风险。
+5. 遇到红线必须标记 blocked 或 manual_review_required。
+6. 优先按“节点通用契约”的字段输出；若任务要求更具体，以任务要求为准。
+
+评分 Rubric：
+1. 按阈值判断 severity
+2. 每个告警包含 evidence 和 trigger_reason
+3. 区分观察事实和可能原因
+4. 不自行执行高风险动作
+5. 给出下一步检查窗口或升级建议
+
+红线：
+1. 不得无证据触发 high
+2. 不得自行调整发布或回复用户
+3. 不得把可能原因写成确定事实

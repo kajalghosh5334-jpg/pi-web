@@ -1,0 +1,104 @@
+{
+  "testCase": {
+    "id": "media-material-gather-001",
+    "nodeType": "Gather/Fetch",
+    "profileTarget": "weak-research-extractor",
+    "workflowId": "WF-10",
+    "title": "AI 选题素材搜集",
+    "model": "opencode-go/deepseek-v4-flash",
+    "tools": "none",
+    "dependsOn": [
+      "media-account-strategy-001"
+    ],
+    "input": "选题：企业实际落地 LLM 的坑。给定来源材料：1）访谈摘录：某制造企业试过知识库问答，最大问题是资料太乱、没人维护。2）文章摘录：LLM 项目常见成本来自数据清洗、权限设计、评测和运维。3）评论摘录：开发者担心客户只想要 demo，不愿意为后续维护付费。请提取结构化素材包。",
+    "expectedRubric": [
+      "逐条提取事实并标注来源",
+      "把资料混乱、维护、数据清洗、权限、评测、运维、demo 付费问题保留下来",
+      "识别哪些 claim 只是访谈/评论观点",
+      "输出证据缺口",
+      "不扩展外部新闻或行业数据"
+    ],
+    "standardAnswer": "素材包应包含三类来源：制造企业访谈、文章摘录、评论摘录。事实/观点应区分：资料乱和没人维护来自访谈；成本项来自文章；开发者担心 demo 付费来自评论。证据缺口包括没有具体行业统计、没有真实成本数字、没有可公开客户案例。",
+    "redLines": [
+      "不得补造知名企业案例",
+      "不得补造成本金额或成功率",
+      "不得把评论观点写成行业事实"
+    ]
+  },
+  "output": {
+    "model": "opencode-go/deepseek-v4-flash",
+    "code": 0,
+    "text": "# 素材包：企业实际落地 LLM 的坑\n\n## 已提取事实（逐条标注来源）\n\n| # | 陈述 | 来源 | 性质 |\n|---|------|------|------|\n| 1 | 某制造企业尝试知识库问答，最大问题是资料太乱、没人维护 | 访谈摘录 | 事实（一手经验，单一案例） |\n| 2 | LLM 项目常见成本来自数据清洗、权限设计、评测、运维 | 文章摘录 | 观点/行业总结 |\n| 3 | 开发者担心客户只想 demo，不愿为后续维护付费 | 评论摘录 | 观点（开发者主观担忧） |\n\n## 关键点保留\n- 资料混乱（知识库）\n- 维护缺失（知识库/持续运营）\n- 数据清洗、权限设计、评测、运维（四项成本分类）\n- demo vs 维护付费（开发者对客户预期的判断）\n\n## 事实 vs 观点/推断 明确区分\n\n- **事实（可信证据）**：条目 1——受访企业真实反馈，可引用，但仅代表单个案例，不可泛化为所有制造业。\n- **观点/总结性推断**：条目 2——文章提出的成本分类，无金额、无样本量，属作者归纳。\n- **主观观点**：条目 3——开发者单方面担心，不代表客户真实意愿，无数据支撑。\n\n## 证据缺口\n\n| 缺口 | 涉及来源 | 缺失内容 |\n|------|---------|---------|\n| 资料乱的具体表现（格式、系统） | 访谈 | 未描述 |\n| 为什么没人维护（组织/资源原因） | 访谈 | 未描述 |\n| 成本分类的依据（行业调研/个案） | 文章 | 未说明；无金额范围 |\n| 四类成本的相对权重 | 文章 | unknown |\n| 开发者担心的普遍性 | 评论 | 无样本量或重复证据 |\n| 客户对维护付费的真实态度 | 评论 | 只有开发者单方观点 |\n\n## 风险 / 红线触发\n\n- **红线3**：若下游将条目 3 的开发者观点表述为行业事实或客户真实行为，则违规。必须保留“开发者担忧”标签。\n- **红线1**：不得补造条目 1 中的企业名称、规模、行业细节；不得将其美化或引申为知名企业案例。\n- **红线2**：不得补造条目 2 中任何成本金额或项目成功率。\n\n## 标记状态\n- 条目 1 企业信息：`unverified`（匿名访谈，不公开）\n- 条目 2 成本金额：`unknown`（无数据，不得补造）\n- 条目 3 开发者背景：`unknown`\n- 所有材料的可复现性：`missing`（无原文链接、时间、上下文）\n\n---\n\n**节点完成**。下游可据此进行选题细化或内容框架搭建。素材缺口已在证据缺口中标明，补充需通过额外调研。",
+    "usage": {
+      "input": 4161,
+      "output": 2395,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "reasoning": 1757,
+      "totalTokens": 6556,
+      "cost": {
+        "input": 0.00058254,
+        "output": 0.0006706,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "total": 0.00125314
+      }
+    },
+    "stderr": "",
+    "elapsedMs": 31704,
+    "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+    "workDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T19-35-43-671Z/media-material-gather-001-output",
+    "isolatedSessionDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T19-35-43-671Z/media-material-gather-001-output/.pi-sessions"
+  },
+  "judgeOutput": {
+    "model": "opencode-go/deepseek-v4-pro",
+    "code": 0,
+    "text": "{\n  \"score\": 100,\n  \"pass\": true,\n  \"rubric_hits\": [\n    \"逐条提取事实并标注来源\",\n    \"保留资料混乱、维护、数据清洗、权限、评测、运维、demo付费问题\",\n    \"识别claim为访谈/评论观点\",\n    \"输出证据缺口\",\n    \"未扩展外部新闻或行业数据\"\n  ],\n  \"missing\": [],\n  \"hallucination\": [],\n  \"red_line_violations\": [],\n  \"profile_lessons\": [\n    \"严格遵循指令，逐条提取并标注来源与性质\",\n    \"准确区分事实/观点，未将观点升格为事实\",\n    \"详尽列出证据缺口与未知项，未编造具体企业与金额\",\n    \"主动标注红线风险，避免下游误用\"\n  ],\n  \"prompt_patch_suggestions\": []\n}",
+    "usage": {
+      "input": 2874,
+      "output": 1657,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "reasoning": 1472,
+      "totalTokens": 4531,
+      "cost": {
+        "input": 0.00500076,
+        "output": 0.00576636,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "total": 0.01076712
+      }
+    },
+    "stderr": "",
+    "elapsedMs": 31486,
+    "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+    "workDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T19-35-43-671Z/media-material-gather-001-judge",
+    "isolatedSessionDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T19-35-43-671Z/media-material-gather-001-judge/.pi-sessions"
+  },
+  "judge": {
+    "score": 100,
+    "pass": true,
+    "rubric_hits": [
+      "逐条提取事实并标注来源",
+      "保留资料混乱、维护、数据清洗、权限、评测、运维、demo付费问题",
+      "识别claim为访谈/评论观点",
+      "输出证据缺口",
+      "未扩展外部新闻或行业数据"
+    ],
+    "missing": [],
+    "hallucination": [],
+    "red_line_violations": [],
+    "profile_lessons": [
+      "严格遵循指令，逐条提取并标注来源与性质",
+      "准确区分事实/观点，未将观点升格为事实",
+      "详尽列出证据缺口与未知项，未编造具体企业与金额",
+      "主动标注红线风险，避免下游误用"
+    ],
+    "prompt_patch_suggestions": []
+  },
+  "minScore": 82,
+  "nodeOutputArtifact": {
+    "markdownPath": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T19-35-43-671Z/node_outputs/07-media-material-gather-001.md",
+    "jsonPath": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T19-35-43-671Z/node_outputs/07-media-material-gather-001.json"
+  }
+}

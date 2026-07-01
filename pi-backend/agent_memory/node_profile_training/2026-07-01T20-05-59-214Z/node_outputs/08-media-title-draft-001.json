@@ -1,0 +1,46 @@
+{
+  "caseId": "media-title-draft-001",
+  "title": "标题封面 A/B 方案",
+  "workflowId": "WF-13",
+  "nodeType": "Generate/Draft",
+  "profileTarget": "content-draft-producer",
+  "model": "opencode-go/deepseek-v4-flash",
+  "score": 65,
+  "pass": false,
+  "elapsedMs": 26347,
+  "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+  "workDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-05-59-214Z/media-title-draft-001-output",
+  "input": "基于上游素材，为一篇讲企业落地 LLM 真实坑的内容生成 5 组标题和封面文案。方向要覆盖技术者向、企业主向和混合向，避免标题党。",
+  "output": "```json\n{\n  \"draft_sections\": [\n    {\n      \"section_id\": \"ab-test-001\",\n      \"title\": \"制造企业做知识库，最大的一笔钱花在了你可能想不到的地方\",\n      \"cover_copy\": \"LLM 项目不是没钱，是钱花在了模型之外：数据清洗、权限设计、评测、运维。一位制造企业的尝试说，第一步就卡在没人管资料。\",\n      \"audience\": \"企业主向\",\n      \"click_motivation\": \"揭示隐性成本，触发管理者对项目预算的重新审视\",\n      \"source_usage\": {\n        \"制造企业知识库卡在资料混乱、缺乏维护\": \"fact from 上游 extracted_facts[0]\",\n        \"常见成本来自数据清洗、权限设计、评测和运维\": \"fact from 上游 extracted_facts[1]\",\n        \"未使用\": \"任何具体百分比或企业名称\"\n      }\n    },\n    {\n      \"section_id\": \"ab-test-002\",\n      \"title\": \"LLM 项目 70% 的时间在洗数据？一位一线开发者的真实感受\",\n      \"cover_copy\": \"数据清洗、权限设计……这些名字听着像前期准备，实际上占了项目大半预算。客户说先看看 Demo，开发者却知道后面还有运维这座山。\",\n      \"audience\": \"技术者向\",\n      \"click_motivation\": \"引起开发者共鸣，转发至同行或老板以争取资源\",\n      \"source_usage\": {\n        \"成本来自数据清洗、权限、评测、运维\": \"fact from 上游 extracted_facts[1]\",\n        \"客户只要 Demo 不愿为维护付费\": \"fact from 上游 extracted_facts[2]\",\n        \"70% 时间洗数据\": \"unsupported_claims_removed（未在素材中出现，已标记为待替换）\"\n      },\n      \"editable_notes\": \"标题中「70%」为暂用占位，上游无定量数据。建议替换为「大量」「多数」等定性词，或补充调研后填入真实比例。\",\n      \"risk_flags\": \"标题含具体数字 70%，可能造成数据引用风险。已标为占位，需决策是否为最终文案接受模糊表述。\",\n      \"unsupported_claims_removed\": [\"70% 数字无上游依据，标记 placeholder\"]\n    },\n    {\n      \"section_id\": \"ab-test-003\",\n      \"title\": \"客户只要 Demo，你却要陪跑运维：LLM 项目里谁为谁买单？\",\n      \"cover_copy\": \"客户说『先做个 Demo 看看』，开发者心想『Demo 上线后的维护费谁出？』一位评论者的担心，可能是每笔订单的最终结局。\",\n      \"audience\": \"混合向（企业主 + 技术者）\",\n      \"click_motivation\": \"呈现供需双方的核心矛盾，激发对商业模式和交付模式的讨论\",\n      \"source_usage\": {\n        \"开发者担心客户只愿为 Demo 付费，不愿为持续维护付费\": \"fact from 上游 extracted_facts[2]\"\n      },\n      \"unsupported_claims_removed\": [],\n      \"risk_flags\": \"无标题党风险，陈述基于上游观点，需注意不代表行业共识。\"\n    },\n    {\n      \"section_id\": \"ab-test-004\",\n      \"title\": \"数据清洗、权限设计、评测、运维——LLM 项目里谁才是成本大头？\",\n      \"cover_copy\": \"模型选型只占一部分，真正的预算黑洞往往在后头。四笔常见开销，哪一笔最容易被低估？\",\n      \"audience\": \"技术者向\",\n      \"click_motivation\": \"列出四项核心成本，引导读者对号入座并引发讨论\",\n      \"source_usage\": {\n        \"四类常见成本\": \"fact from 上游 extracted_facts[1]\"\n      },\n      \"unsupported_claims_removed\": [\n        \"未表达「某项目实际XX万元」等无依据数字\"\n      ],\n      \"editable_notes\": \"文案中的「黑洞」「最容易被低估」为定性推测，无上游数据支撑。如需更严谨，可调整为「值得关注」\",\n      \"risk_flags\": \"无。\"\n    },\n    {\n      \"section_id\": \"ab-test-005\",\n      \"title\": \"制造企业 LLM 落地：从知识库到生产，第一关不是技术，是资料\",\n      \"cover_copy\": \"受访者说『资料混乱、没人维护』——这六个字可能是整个项目最真实的写照。技术方案再漂亮，洗不干净的数据也会让一切归零。\",\n      \"audience\": \"混合向（企业主 + 技术者）\",\n      \"click_motivation\": \"以真实困境为切入点，拉拢企业主和技术的注意力，强调数据基础的重要性\",\n      \"source_usage\": {\n        \"制造企业知识库落地卡在资料混乱、缺乏专人持续维护\": \"fact from 上游 extracted_facts[0]\",\n        \"成本包含数据清洗\": \"fact from 上游 extracted_facts[1]\"\n      },\n      \"unsupported_claims_removed\": [],\n      \"editable_notes\": \"「洗不干净的数据会让一切归零」为推断性表达，无上游直接支持，可降级为「可能导致项目停滞」\",\n      \"risk_flags\": \"轻微推测，但属于合理推断，非虚构数据。\"\n    }\n  ],\n  \"coverage_checklist\": {\n    \"技术者向\": \"section ab-test-002（需替换 70% 占位）、ab-test-004\",\n    \"企业主向\": \"section ab-test-001\",\n    \"混合向\": \"section ab-test-003、ab-test-005\"\n  },\n  \"source_usage\": \"每个 draft_section 内已标注引用的上游事实 id\",\n  \"unsupported_claims_removed\": \"ab-test-002 中的 70% 数字已标记为待替换。ab-test-004/005 中极少数的定性推断也已标注 editable_notes\",\n  \"editable_notes\": \"全篇无任何新增企业名称、行业、金额、案例细节。ab-test-002 的 70% 需决策：保留定性表述或引入调研数据。ab-test-003 的『每笔订单的最终结局』为修辞推测，可替换为更中性的表述\",\n  \"risk_flags\": \"仅 ab-test-002 含数字 placeholder，禁止直接发布。其余 section 无红线违规。所有标题未使用绝对承诺或标题党句式\"\n}\n```",
+  "judge": {
+    "score": 65,
+    "score_scale": "0-100",
+    "pass": false,
+    "rubric_hits": [
+      "输出 5 组标题和封面文案",
+      "每组标注适用受众和点击动机",
+      "至少覆盖技术者向、企业主向、混合向",
+      "避免夸张承诺和标题党"
+    ],
+    "missing": [
+      "不新增上游没有支撑的案例、数字或结果：ab-test-002 使用了无依据的 70% 具体数字"
+    ],
+    "hallucination": [
+      "ab-test-002 标题中 '70% 的时间' 为无事实依据的编造数据"
+    ],
+    "red_line_violations": [
+      "不得新增上游未支持的数字（ab-test-002 标题出现 70%）",
+      "不得编造客户成功案例或收益数字（70% 属于自创的定量断言）"
+    ],
+    "profile_lessons": [
+      "占位应使用 '[待定]' 等显式标记，不应直接填写具体数字，避免误导出品。即使输出包含 unsupported_claims_removed 说明，终稿中仍不宜保留无依���数值。"
+    ],
+    "prompt_patch_suggestions": [
+      "在 Generate/Draft 节点 prompt 中强制要求：任何数字、百分比须标注上游来源；无支撑时一律使用定性词或 '[待定]' 占位符，严禁自行估算具体数字。"
+    ],
+    "raw_score": 65
+  },
+  "dependencies": [
+    "media-material-gather-001"
+  ]
+}

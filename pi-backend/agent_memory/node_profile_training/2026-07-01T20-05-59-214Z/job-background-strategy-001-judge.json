@@ -1,0 +1,25 @@
+{
+  "model": "opencode-go/deepseek-v4-pro",
+  "code": 0,
+  "text": "{\n  \"score\": 88,\n  \"score_scale\": \"0-100\",\n  \"pass\": true,\n  \"rubric_hits\": [\n    \"明确高中学历对 entry-level 技术岗的现实影响，但不做人格或能力价值判断\",\n    \"圈定 6k 薪资对应的可投岗位类型\",\n    \"把 AI 编程经验转成可验证竞争力\",\n    \"区分不可逆短板、可补短板和叙事绕行策略\",\n    \"输出方向性结论，不写简历正文\"\n  ],\n  \"missing\": [\n    \"目标岗位圈定可进一步补充爬虫、测试开发边缘岗等低门槛方向，使覆盖更全面\",\n    \"年龄部分提到‘社会期望可能增加稳定性疑虑’，即便注明了不基于年龄做能力判断，仍可能被认为是基于年龄的负面暗示\",\n    \"可验证竞争力转化建议较泛，建议输出结构化的验证资产类型（如项目 demo、GitHub 指标、客户背调素材）\"\n  ],\n  \"hallucination\": [],\n  \"red_line_violations\": [],\n  \"profile_lessons\": [\n    \"对年龄、性别等受保护特征的任何关联表述都需绝对零风险，即使以‘社会期望’形式出现也应避免；只保留客观过滤事实\",\n    \"可验证竞争力应作为一级明确字段，而非嵌入在叙事建议中\"\n  ],\n  \"prompt_patch_suggestions\": [\n    \"在节点 prompt 中添加：禁止以任何形式暗示年龄、性别与工作表现、稳定性等特质相关的评价，即使是引用社会偏见也不允许\",\n    \"要求输出中‘opportunities’或‘可验证竞争力’字段使用结构化数组，每个元素包含 {类型, 具体材料, 获取方式}，避免笼统描述\"\n  ]\n}",
+  "usage": {
+    "input": 4306,
+    "output": 4185,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "reasoning": 3805,
+    "totalTokens": 8491,
+    "cost": {
+      "input": 0.00749244,
+      "output": 0.0145638,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "total": 0.02205624
+    }
+  },
+  "stderr": "",
+  "elapsedMs": 73006,
+  "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+  "workDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-05-59-214Z/job-background-strategy-001-judge",
+  "isolatedSessionDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-05-59-214Z/job-background-strategy-001-judge/.pi-sessions"
+}

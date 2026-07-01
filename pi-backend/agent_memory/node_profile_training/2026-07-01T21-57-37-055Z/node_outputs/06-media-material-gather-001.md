@@ -1,0 +1,126 @@
+# AI 选题素材搜集
+
+- Case ID: `media-material-gather-001`
+- Workflow: `WF-10`
+- Node Type: `Gather/Fetch`
+- Target Profile: `weak-research-extractor`
+- Model: `opencode-go/deepseek-v4-flash`
+- Score: `95`
+- Pass: `true`
+- Elapsed: `63035ms`
+- Conversation Isolation: `fresh pi --print process with --no-session and --no-context-files`
+- Depends On: `media-account-strategy-001`
+
+## Input
+
+选题：企业实际落地 LLM 的坑。给定来源材料：1）访谈摘录：某制造企业试过知识库问答，最大问题是资料太乱、没人维护。2）文章摘录：LLM 项目常见成本来自数据清洗、权限设计、评测和运维。3）评论摘录：开发者担心客户只想要 demo，不愿意为后续维护付费。请提取结构化素材包。
+
+## Rubric
+
+1. 逐条提取事实并标注来源
+2. 把资料混乱、维护、数据清洗、权限、评测、运维、demo 付费问题保留下来
+3. 识别哪些 claim 只是访谈/评论观点
+4. 输出证据缺口
+5. 不扩展外部新闻或行业数据
+
+## Node Output
+
+```json
+{
+  "extracted_facts": [
+    {
+      "fact": "某制造企业试过知识库问答，最大问题是资料太乱、没人维护。",
+      "source": "访谈摘录",
+      "source_status": "given_material_1_interview_excerpt",
+      "claim_type": "reported_individual_experience"
+    },
+    {
+      "fact": "LLM项目常见成本来自数据清洗、权限设计、评测和运维。",
+      "source": "文章摘录",
+      "source_status": "given_material_2_article_excerpt",
+      "claim_type": "article_observation"
+    },
+    {
+      "fact": "开发者担心客户只想要demo，不愿意为后续维护付费。",
+      "source": "评论摘录",
+      "source_status": "given_material_3_comment_excerpt",
+      "claim_type": "commenter_opinion"
+    }
+  ],
+  "unknown_fields": [
+    {
+      "field": "具体企业名称或更多行业案例",
+      "reason": "仅访谈摘录提到一家未具名制造企业，无其他行业或规模案例。"
+    },
+    {
+      "field": "具体成本金额或预算范围",
+      "reason": "文章仅列举成本类别，无任何数字。"
+    },
+    {
+      "field": "技术坑（如模型幻觉、延迟、评估方式）",
+      "reason": "材料未涉及模型自身问题。"
+    },
+    {
+      "field": "项目组织/管理坑（如团队技能、高层支持、迭代流程）",
+      "reason": "未提及。"
+    },
+    {
+      "field": "法律合规/数据隐私坑",
+      "reason": "未提及。"
+    },
+    {
+      "field": "企业主视角的动机、顾虑和决策过程",
+      "reason": "仅评论提供了开发者单方观点，缺乏企业主直接反馈。"
+    }
+  ],
+  "evidence_gaps": [
+    {
+      "gap": "访谈摘录仅基于单个制造企业，无法代表多数企业。",
+      "suggested_source": "更多不同行业、不同规模的访谈或调查。"
+    },
+    {
+      "gap": "文章摘录的‘常见成本’缺乏引用或数据支持，属作者主张。",
+      "suggested_source": "寻找引用实际项目调查或研究报告佐证。"
+    },
+    {
+      "gap": "评论摘录仅一个开发者观点，未反映开发者整体共识，也未包含企业主态度。",
+      "suggested_source": "收集更多开发者评论、论坛讨论或问卷调查；同时收集企业主对维护付费的意愿数据。"
+    },
+    {
+      "gap": "整体缺乏定量指标（出现频率、成本占比、项目失败率等）。",
+      "suggested_source": "使用行业报告或调查数据补充。"
+    }
+  ],
+  "handoff_summary": "从给定三份来源提取出三条与LLM落地坑相关的要素：①制造企业遇到资料混乱与维护问题（访谈）；②文章总结的四类主要成本（数据清洗、权限、评测、运维）；③开发者认为客户重demo轻维护（评论）。所有素材均来自单一来源且样本有限，缺乏定量数据和企业主视角。建议下游结合更系统的来源完善选题。"
+}
+```
+
+## Judge
+
+### Rubric Hits
+
+- 逐条提取事实并标注来源
+- 保留资料混乱、维护、数据清洗、权限、评测、运维、demo付费问题
+- 识别评论/观点并区分
+- 输出证据缺口
+- 未扩展外部新闻或行业数据
+
+### Missing
+
+- 证据缺口未明确指出缺少可公开客户案例，仅提及样本有限和缺乏代表性，但未强调案例不可公开这一关键信息缺失
+
+### Hallucination
+
+- 无
+
+### Red Line Violations
+
+- 无
+
+### Profile Lessons
+
+- 严格基于给定材料提取，无捏造；事实与观点区分清晰，未知字段识别全面。证据缺口分析合理但可进一步明确“可公开客户案例”缺失。
+
+### Prompt Patch Suggestions
+
+- 在节点提示中可增加“识别并列出缺乏可公开客户案例”作为证据缺口示例，提升对素材可信度评估的完整性。

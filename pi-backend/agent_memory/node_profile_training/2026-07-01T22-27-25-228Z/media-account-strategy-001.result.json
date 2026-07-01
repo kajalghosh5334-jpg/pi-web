@@ -1,0 +1,108 @@
+{
+  "testCase": {
+    "id": "media-account-strategy-001",
+    "nodeType": "Strategize/Plan",
+    "profileTarget": "content-strategy-director",
+    "workflowId": "WF-9",
+    "title": "AI 自媒体账号定位",
+    "model": "opencode-go/deepseek-v4-pro",
+    "tools": "none",
+    "dependsOn": [],
+    "input": "账号方向：AI 自媒体，目标是吸引技术开发者和有 AI 落地需求的企业主，商业模式是项目撮合交易。请输出一句话定位、双端受众画像、内容矩阵和季度规划。",
+    "expectedRubric": [
+      "一句话定位同时能让技术者和企业主理解",
+      "区分技术者和企业主的不同内容动机",
+      "内容矩阵包含干货、案例、需求拆解、转介信任建设",
+      "商业链路是内容到信任到撮合",
+      "不编造客户案例或成交数据"
+    ],
+    "standardAnswer": "定位应围绕 AI 落地需求和可交付技术者之间的连接。技术者需要真实需求、技术拆解、接单机会；企业主需要低风险案例、成本收益、方案边界。内容矩阵应包括落地坑、需求拆解、技术方案拆解、项目报价/边界科普、匿名案例复盘、供需撮合入口。",
+    "redLines": [
+      "不得编造成交案例、客户名称或收益",
+      "不得只做泛 AI 热点账号",
+      "不得忽略技术者和企业主的双端结构"
+    ]
+  },
+  "output": {
+    "model": "opencode-go/deepseek-v4-pro",
+    "code": 0,
+    "text": "```json\n{\n  \"decision_summary\": \"打造一个聚焦AI应用落地的产消两端桥梁型账号，以技术干货吸引开发者、以行业痛点解读吸引企业主，通过内容筛选双向意图，最终导向项目撮合交易。\",\n  \"positioning_or_strategy\": {\n    \"one_liner\": \"AI落地连接器：让技术有人用，让企业有方案。\",\n    \"dual_audience_profile\": {\n      \"developer\": {\n        \"label\": \"AI开发者/技术极客\",\n        \"interests\": [\"大模型微调与部署\", \"开源工具评测\", \"AI产品原型\", \"技术变现路径\"],\n        \"pain_points\": [\"能力无法转化为付费项目\", \"不理解企业真实需求\", \"接私单渠道匮乏\"],\n        \"content_motivation\": \"获取硬核技术干货、发现商业项目机会、展示个人技术品牌\"\n      },\n      \"business_owner\": {\n        \"label\": \"中小企业主/有AI落地需求的业务负责人\",\n        \"interests\": [\"AI降本增效实例\", \"行业应用场景\", \"落地成本与周期\", \"靠谱技术团队筛选\"],\n        \"pain_points\": [\"听不懂技术术语\", \"找不到匹配的技术团队\", \"担心被技术方忽悠\", \"投入产出比不明\"],\n        \"content_motivation\": \"看懂AI能解决什么具体问题、找到可信任的落地实施者\"\n      }\n    },\n    \"content_matrix\": [\n      {\n        \"type\": \"硬核干货\",\n        \"target\": \"developer\",\n        \"description\": \"模型部署教程、开源项目代码拆解、工具效率对比。建立技术可信度。\"\n      },\n      {\n        \"type\": \"行业案例拆解\",\n        \"target\": \"business_owner\",\n        \"description\": \"基于公开报道/论文提炼的AI落地场景（如零售库存预测、客服机器人），说明问题、方案逻辑、效果。严禁编造客户名与收益数据。\"\n      },\n      {\n        \"type\": \"需求拆解/招标模拟\",\n        \"target\": \"both\",\n        \"description\": \"将收集到的匿名化企业需求（如“电商公司想要一个自动回复邮件系统”）拆解为技术要求、人力预算、交付物，展示匹配逻辑。需注明需求来源。\"\n      },\n      {\n        \"type\": \"信任建设/转介设计\",\n        \"target\": \"both\",\n        \"description\": \"技术选型对比指南、AI落地避坑清单、开发者个人品牌访谈（若有）。设置钩子引导需求提交/能力登记。\"\n      }\n    ],\n    \"quarterly_plan\": {\n      \"overall_goal\": \"完成冷启动，验证双端内容模型与最小撮合闭环。\",\n      \"month_1_2\": [\n        \"发布≥12篇技术干货，侧重模型部署与工具实战，积累开发者首批关注。\",\n        \"发布≥3篇行业需求洞察（引用公开报告），测试企业主侧内容互动率。\",\n        \"建立内容发布SOP与素材复用流程，不追求日更，重质量。\"\n      ],\n      \"month_3\": [\n        \"启动首次撮合实验：匿名发布1个真实企业需求（已获授权），引导开发者提交方案意向。\",\n        \"开通需求收集通道（如私信关键词自动回复），沉淀第一批双边留资。\",\n        \"根据前两月数据调整内容比例，砍掉无效类型。\"\n      ],\n      \"data_measurement\": [\n        \"开发者图文均阅读量 / 企业主图文均阅读量\",\n        \"技术文章收藏率 vs 行业解读收藏率\",\n        \"需求帖子引发的方案提交数量\",\n        \"社群/私信需求登记数\"\n      ]\n    }\n  },\n  \"constraints\": {\n    \"factual_limits\": [\n      \"当前无任何真实客户案例、成交记录或过往撮合数据，所有案例类内容必须使用公开可查信息并注明来源。\",\n      \"冷启动期缺乏信任背书，无法依赖口碑推荐。\",\n      \"双端精准获客成本高，需通过内容自然过滤，不适合初期投放泛流量。\"\n    ],\n    \"red_lines\": [\n      \"严禁编造成交案例、客户名称、项目金额或收益数据。\",\n      \"严禁只做泛AI热点号（如单纯搬运AI新闻）、必须坚持落地与匹配定位。\",\n      \"内容矩阵必须同时服务于技术与商业两端，不得偏废。\"\n    ]\n  },\n  \"opportunities\": [\n    \"AI应用落地需求激增，供给侧（开发者）与需求侧（企业）之间存在严重信息不对称，中介价值明确。\",\n    \"现有AI自媒体多为纯技术或纯商业，横跨两端的账号稀缺，定位差异化明显。\",\n    \"平台算法可基于内容关键词精准触达“AI部署”“AI创业”等标签人群。\",\n    \"撮合模式初期轻资产，无需自建平台，可依托现有社交工具完成最小闭环。\"\n  ],\n  \"execution_priorities\": [\n    {\n      \"priority\": 1,\n      \"item\": \"构建技术干货内容库（至少10篇雏形），确立在开发者中的专业形象。\"\n    },\n    {\n      \"priority\": 2,\n      \"item\": \"产出面向企业主的行业痛点解读内容，测试需求端响应。\"\n    },\n    {\n      \"priority\": 3,\n      \"item\": \"搭建需求收集与能力登记的基础设施（关键词自动化回复+表单），形成双边管道。\"\n    },\n    {\n      \"priority\": 4,\n      \"item\": \"设计内容->信任->撮合的业务漏斗，并植入转化钩子。\"\n    },\n    {\n      \"priority\": 5,\n      \"item\": \"在Q1结束前完成至少一次匿名需求匹配实验，收集完整流程数据。\"\n    }\n  ],\n  \"validation_metrics\": [\n    {\n      \"metric\": \"开发者侧关注数\",\n      \"target\": \"达到可进行撮合实验的最低基数（具体数值视平台平均冷启数据定，暂设≥500）。\",\n      \"measurement\": \"平台后台关注增长曲线。\"\n    },\n    {\n      \"metric\": \"企业主侧留资数\",\n      \"target\": \"收到至少5个有效企业需求（非垃圾信息）。\",\n      \"measurement\": \"私信/表单提交量。\"\n    },\n    {\n      \"metric\": \"撮合意向转化\",\n      \"target\": \"首次需求帖子发出后，收到≥3份有效的开发者方案意向。\",\n      \"measurement\": \"评论/私信方案提交数。\"\n    },\n    {\n      \"metric\": \"内容互动差异化\",\n      \"target\": \"技术文章收藏率≥x %，商业解读分享率≥y %（基准待测试后设定）。\",\n      \"measurement\": \"平台分析后台。\"\n    }\n  ],\n  \"handoff_to_next_nodes\": {\n    \"content_brief\": {\n      \"target_profiles\": \"详见 positioning_or_strategy.dual_audience_profile\",\n      \"content_types_to_produce\": \"干货/行业拆解/需求模拟/信任建设，参考 positioning_or_strategy.content_matrix\",\n      \"first_batch_instruction\": \"Q1前两月优先生产技术干货与行业洞察，详见 quarterly_plan\",\n      \"tone_guideline\": \"对开发者：代码说话、直接、不装；对企业主：大白话、场景化、不炫技。\"\n    },\n    \"growth_instruction\": {\n      \"acquisition_channels\": \"技术社区SEO（掘金、知乎技术区）、行业管理类公众号互推、视频号工厂/仓库实景类内容\",\n      \"conversion_design\": \"内容中嵌入‘我可承接类似项目’（开发者）和‘有类似需求？聊一聊’（企业主）双路径CTA，初期全部引导至私域。\"\n    },\n    \"verification_assets_to_collect\": [\n      \"技术文章收藏转发数据包\",\n      \"企业需求留资表（脱敏）\",\n      \"撮合实验双方反馈纪要\"\n    ]\n  },\n  \"risk_flags\": [\n    \"冷启动期双边任一端的不足可能导致撮合实验失败，需预设备选内容方向。\",\n    \"若收集不到真实企业需求，整个撮合模式将停滞，需准备备用需求来源（如爬取公开招标信息仿写）但需注明虚构性质以免误导。\"\n  ]\n}\n```\n\n**Skipped:** 未生成任何正文内容或具体案例细节，严格维持策略节点边界。  \n**Add when:** 下游内容生产节点启动时，按 handoff_to_next_nodes 中的 brief 拆解为具体选题。",
+    "usage": {
+      "input": 2531,
+      "output": 3005,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "reasoning": 1171,
+      "totalTokens": 5536,
+      "cost": {
+        "input": 0.00440394,
+        "output": 0.0104574,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "total": 0.01486134
+      }
+    },
+    "stderr": "",
+    "elapsedMs": 79336,
+    "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+    "workDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T22-27-25-228Z/media-account-strategy-001-output",
+    "isolatedSessionDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T22-27-25-228Z/media-account-strategy-001-output/.pi-sessions"
+  },
+  "judgeOutput": {
+    "model": "opencode-go/deepseek-v4-pro",
+    "code": 0,
+    "text": "{\n  \"score\": 95,\n  \"score_scale\": \"0-100\",\n  \"pass\": true,\n  \"rubric_hits\": [\n    \"一句话定位同时能让技术者和企业主理解\",\n    \"区分技术者和企业主的不同内容动机\",\n    \"内容矩阵包含干货、案例、需求拆解、转介信任建设\",\n    \"商业链路是内容到信任到撮合\",\n    \"不编造客户案例或成交数据\"\n  ],\n  \"missing\": [\n    \"未明确覆盖项目报价/边界科普内容类型，可能影响企业主成本认知\",\n    \"validation_metrics 中存在待定占位符（x%, y%），未给出可即刻验证的基准值\"\n  ],\n  \"hallucination\": [],\n  \"red_line_violations\": [],\n  \"profile_lessons\": [\n    \"内容矩阵宜补入项目报价/边界科普，强化企业主决策信心\",\n    \"策略节点的验证指标应尽可能给出可量化的初始阈值，而非纯占位符\"\n  ],\n  \"prompt_patch_suggestions\": [\n    \"在 prompt 中明确要求包含项目报价/边界科普类内容\",\n    \"建议 validation_metrics 必须给出基于行业经验的合理初值，而非推迟设定\"\n  ]\n}",
+    "usage": {
+      "input": 4588,
+      "output": 3511,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "reasoning": 3240,
+      "totalTokens": 8099,
+      "cost": {
+        "input": 0.00798312,
+        "output": 0.01221828,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "total": 0.0202014
+      }
+    },
+    "stderr": "",
+    "elapsedMs": 70316,
+    "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+    "workDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T22-27-25-228Z/media-account-strategy-001-judge",
+    "isolatedSessionDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T22-27-25-228Z/media-account-strategy-001-judge/.pi-sessions"
+  },
+  "judge": {
+    "score": 95,
+    "score_scale": "0-100",
+    "pass": true,
+    "rubric_hits": [
+      "一句话定位同时能让技术者和企业主理解",
+      "区分技术者和企业主的不同内容动机",
+      "内容矩阵包含干货、案例、需求拆解、转介信任建设",
+      "商业链路是内容到信任到撮合",
+      "不编造客户案例或成交数据"
+    ],
+    "missing": [
+      "未明确覆盖项目报价/边界科普内容类型，可能影响企业主成本认知",
+      "validation_metrics 中存在待定占位符（x%, y%），未给出可即刻验证的基准值"
+    ],
+    "hallucination": [],
+    "red_line_violations": [],
+    "profile_lessons": [
+      "内容矩阵宜补入项目报价/边界科普，强化企业主决策信心",
+      "策略节点的验证指标应尽可能给出可量化的初始阈值，而非纯占位符"
+    ],
+    "prompt_patch_suggestions": [
+      "在 prompt 中明确要求包含项目报价/边界科普类内容",
+      "建议 validation_metrics 必须给出基于行业经验的合理初值，而非推迟设定"
+    ],
+    "raw_score": 95
+  },
+  "minScore": 82,
+  "nodeOutputArtifact": {
+    "markdownPath": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T22-27-25-228Z/node_outputs/04-media-account-strategy-001.md",
+    "jsonPath": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T22-27-25-228Z/node_outputs/04-media-account-strategy-001.json"
+  }
+}

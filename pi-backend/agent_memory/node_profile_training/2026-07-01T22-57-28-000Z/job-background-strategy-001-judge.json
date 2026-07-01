@@ -1,0 +1,25 @@
+{
+  "model": "opencode-go/deepseek-v4-pro",
+  "code": 0,
+  "text": "{\n  \"score\": 100,\n  \"score_scale\": \"0-100\",\n  \"pass\": true,\n  \"rubric_hits\": [\n    \"明确学历对entry-level技术岗影响，不做人格或能力价值判断\",\n    \"圈定6k对应的可投岗位类型\",\n    \"把AI编程经验转成可验证竞争力\",\n    \"区分不可逆短板、可补短板和叙事绕行策略\",\n    \"输出方向性结论，不写简历正文\",\n    \"学历绕行策略建立如实呈现基础上\"\n  ],\n  \"missing\": [],\n  \"hallucination\": [],\n  \"red_line_violations\": [],\n  \"profile_lessons\": [\n    \"严格对齐节点通用契约，输出字段完整\",\n    \"事实与推断明确区分，缺失信息标记unknown/unverified\",\n    \"红线条款在策略中以forbidden字段显式禁止，防止下游误用\",\n    \"将可验证竞争力落为具体验证动作和下游输入模板\",\n    \"对年龄等敏感维度附加‘非价值判断’说明，控制安全边界\"\n  ],\n  \"prompt_patch_suggestions\": []\n}",
+  "usage": {
+    "input": 5262,
+    "output": 3821,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "reasoning": 3580,
+    "totalTokens": 9083,
+    "cost": {
+      "input": 0.00915588,
+      "output": 0.013297080000000001,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "total": 0.02245296
+    }
+  },
+  "stderr": "",
+  "elapsedMs": 56391,
+  "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+  "workDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T22-57-28-000Z/job-background-strategy-001-judge",
+  "isolatedSessionDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T22-57-28-000Z/job-background-strategy-001-judge/.pi-sessions"
+}

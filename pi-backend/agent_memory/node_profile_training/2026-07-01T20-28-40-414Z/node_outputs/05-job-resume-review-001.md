@@ -1,0 +1,153 @@
+# 简历终审裁决
+
+- Case ID: `job-resume-review-001`
+- Workflow: `WF-6`
+- Node Type: `Review/Gate`
+- Target Profile: `strong-quality-reviewer`
+- Model: `opencode-go/deepseek-v4-pro`
+- Score: `88`
+- Pass: `true`
+- Elapsed: `51578ms`
+- Conversation Isolation: `fresh pi --print process with --no-session and --no-context-files`
+- Depends On: `job-resume-draft-001`
+
+## Input
+
+请审查上游生成的简历经历是否诚实、专业、针对星河智造初级 AI 工具开发助理 JD。必须给出 pass/revise/block 裁决、问题清单、返工节点和验收标准。不要重写整份简历。
+
+## Rubric
+
+1. 给出明确 pass/revise/block 裁决
+2. 检查是否虚构学历、项目成果、职位或技能熟练度
+3. 检查是否对齐 JD 的 Python、接口调用、项目 demo 和沟通要求
+4. 指出具体返工位置和返工节点
+5. 输出短裁决，不展开长文重写
+
+## Node Output
+
+```json
+{
+  "decision": "revise",
+  "issues": [
+    {
+      "severity": "error",
+      "target_node": "job-resume-draft-001",
+      "location": "exp_02_excel.star_structure.result",
+      "problem": "量化数据'[时间数字占位: n] 小时/周'使用了占位符，未提供真实支撑数据，违反诚实原则。",
+      "action": "删除占位符，替换为可核实的非数字描述（如'显著节省了数据整理时间'）或经本人确认的真实数字。",
+      "acceptance_criteria": "占位符已移除，结果描述不经由任何虚构数字支撑。"
+    },
+    {
+      "severity": "error",
+      "target_node": "job-resume-draft-001",
+      "location": "exp_01_rag.star_structure.action",
+      "problem": "向量数据库和前端框架使用'[向量数据库占位: Milvus/Chroma]'、'[前端占位: Streamlit/Gradio/Flask]'占位符，面试时缺少具体技术栈会造成扣分或追问破裂。",
+      "action": "填写候选人实际使用的具体工具名；若仅概念学习则注明'向量数据库（基本操作）'而非具体品牌。",
+      "acceptance_criteria": "技术栈具体且与候选人真实经验一致，无模糊占位符。"
+    },
+    {
+      "severity": "warning",
+      "target_node": "job-resume-draft-001",
+      "location": "exp_01_rag.star_structure.result",
+      "problem": "Demo 质量与完整性未经上游验证，标注为 PoC 但未要求提供任何可验证证据（链接/截图/仓库），面试官可能追问细节导致失信。",
+      "action": "补充 Demo 的可验证证据链接；若无公开访问，明确声明'概念验证原型，无线上演示地址'。",
+      "acceptance_criteria": "简历中包含 Demo 可验证证明或清晰声明无公开链接。"
+    },
+    {
+      "severity": "error",
+      "target_node": "job-resume-draft-001",
+      "location": "skill_tags.weak",
+      "problem": "Docker、OpenCV 等弱项技能在草稿正文中未出现其准确熟练度标注（仅技能标签列表体现），可能被面试官理解为具备实战能力。",
+      "action": "在技能描述或项目细节中按实际情况标注熟练度（如'Docker（基础/学习中）'），或移除不参与面试的技能。",
+      "acceptance_criteria": "所有声明的技术能力均与上游技能标签中的强弱标注一致，无放大。"
+    },
+    {
+      "severity": "info",
+      "target_node": "next: resume-formatting-node",
+      "location": "全局",
+      "problem": "简历未包含学历字段；JD 可能筛选学历，当前虽未虚构但缺失可能被 ATS 直接淘汰。",
+      "action": "评估 JD 学历要求，若硬性要求大专以上则如实保留高中可能被拒，但不得伪造。由格式化节点决定是否放置学历字段。",
+      "acceptance_criteria": "学历处理策略明确，无伪造。"
+    }
+  ],
+  "evidence_checks": {
+    "学历": {
+      "status": "missing",
+      "detail": "草稿未提及学历，上游明确为高中学历，未虚构。"
+    },
+    "项目证明": {
+      "status": "unverified",
+      "detail": "RAG Demo 无链接、截图或仓库地址，不可验证；Excel 脚本无可交付物证明。"
+    },
+    "量化数据": {
+      "status": "placeholder_invalid",
+      "detail": "存在 '[时间数字占位: n] 小时/周' 占位符，无真实支撑。"
+    },
+    "技能熟练度": {
+      "status": "partially_misaligned",
+      "detail": "弱项技能（Docker/OpenCV）未在正文中标注熟练度，易被误解为熟练。"
+    },
+    "JD对齐": {
+      "status": "superficially_aligned",
+      "detail": "Python、API、项目 demo、沟通能力均已覆盖，但细节可靠性不足，缺乏可验证支撑。"
+    },
+    "法律/诚信风险": {
+      "status": "none",
+      "detail": "未发现虚构学历、公司或品牌；风险仅存在于未验证信息的传达误导。"
+    }
+  },
+  "checklist_coverage": {
+    "checked": [
+      "学历是否虚构",
+      "职位/身份是否夸大（未出现）",
+      "AI 项目成果量化支撑",
+      "技能熟练度与素材一致性",
+      "JD 关键词对齐（Python/API/demo/沟通）",
+      "项目可验证证据要求"
+    ],
+    "unchecked": [
+      "简历格式规范性（ATF、排版）",
+      "语法与拼写（非本节点职责）",
+      "ATS 关键词密度优化",
+      "JD 年限/学历硬性门槛比对"
+    ]
+  },
+  "rework_assignment": {
+    "primary_node": "job-resume-draft-001",
+    "secondary_nodes": ["resume-formatting-node"],
+    "instructions": "请 content-draft-producer 节点删除所有占位符、补全可验证证据或诚实声明、调准弱技能表述。格式化节点后续决定学历字段策略。修订后重新提交 quality review。"
+  }
+}
+```
+
+## Judge
+
+### Rubric Hits
+
+- 给出明确 pass/revise/block 裁决
+- 检查是否虚构学历、项目成果、职位或技能熟练度
+- 检查是否对齐 JD 的 Python、接口调用、项目 demo 和沟通要求
+- 指出具体返工位置和返工节点
+- 输出短裁决，不展开长文重写
+
+### Missing
+
+- 无
+
+### Hallucination
+
+- 无
+
+### Red Line Violations
+
+- 无
+
+### Profile Lessons
+
+- rework_assignment 指令指向内容与格式节点，准确分割 revision 范围
+- issue #5 的 target_node 使用了非标准前缀 'next: resume-formatting-node'，但 rework_assignment 中正常引用，应在 issue 数组内统一为纯节点 ID
+
+### Prompt Patch Suggestions
+
+- 在 issue 中强制 target_node 仅使用节点 ID（不含 'next: ' 前缀）以保持一致性
+- 可在 evidence_checks 中补充 CTA/后续步骤的检查项（本案例中缺失相关检查）

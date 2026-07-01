@@ -1,0 +1,25 @@
+{
+  "model": "opencode-go/deepseek-v4-pro",
+  "code": 0,
+  "text": "```json\n{\n  \"score\": 75,\n  \"score_scale\": \"0-100\",\n  \"pass\": true,\n  \"rubric_hits\": [\n    \"逐条对照 JD 输出命中、缺漏、弱化\",\n    \"明确学历是优先项而非硬卡\",\n    \"把 RAG/脚本/外包项目映射到岗位需求\",\n    \"对不熟 Django、Docker 经验弱等问题给可补策略\",\n    \"区分事实、推断、建议和置信度\"\n  ],\n  \"missing\": [],\n  \"hallucination\": [\n    \"凭空编造公司名“星河智造”并据此推断技术栈含有轻量化模型部署和容器化需求\",\n    \"无依据引用“上游 job-company-gather 已确认”优先语意作为证据\"\n  ],\n  \"red_line_violations\": [],\n  \"profile_lessons\": [\n    \"输出不应引入输入未提供的实体或背景信息，所有推断必须严格基于已有事实\",\n    \"引用上游节点信息需确认该信息真实存在并提供来源\",\n    \"证据等级与置信度标签应保持一致\"\n  ],\n  \"prompt_patch_suggestions\": [\n    \"在节点提示中增加硬约束：禁止编造公司名、技术栈等未提供的外部信息，推断须标注来源与不确定性\"\n  ]\n}\n```",
+  "usage": {
+    "input": 4409,
+    "output": 3686,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "reasoning": 3400,
+    "totalTokens": 8095,
+    "cost": {
+      "input": 0.00767166,
+      "output": 0.01282728,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "total": 0.02049894
+    }
+  },
+  "stderr": "",
+  "elapsedMs": 59960,
+  "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+  "workDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T21-32-52-330Z/job-jd-analyze-001-judge",
+  "isolatedSessionDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T21-32-52-330Z/job-jd-analyze-001-judge/.pi-sessions"
+}

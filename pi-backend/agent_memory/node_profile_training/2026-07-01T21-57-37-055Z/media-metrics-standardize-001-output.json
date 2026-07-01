@@ -1,0 +1,25 @@
+{
+  "model": "opencode-go/deepseek-v4-flash",
+  "code": 0,
+  "text": "```json\n{\n  \"normalized_items\": [\n    {\n      \"video_id\": \"视频A\",\n      \"raw_metrics\": {\n        \"播放\": 12000,\n        \"点赞\": 360,\n        \"评论\": 96,\n        \"转发\": 48,\n        \"私信\": 12\n      },\n      \"computed_rates\": {\n        \"互动率\": {\n          \"value\": \"4.30%\",\n          \"formula\": \"(点赞+评论+转发+私信)/播放\"\n        },\n        \"评论率\": {\n          \"value\": \"0.80%\",\n          \"formula\": \"评论/播放\"\n        },\n        \"转发率\": {\n          \"value\": \"0.40%\",\n          \"formula\": \"转发/播放\"\n        },\n        \"私信转化率\": {\n          \"value\": \"0.10%\",\n          \"formula\": \"私信/播放\"\n        }\n      }\n    },\n    {\n      \"video_id\": \"视频B\",\n      \"raw_metrics\": {\n        \"播放\": 3000,\n        \"点赞\": 45,\n        \"评论\": 9,\n        \"转发\": 3,\n        \"私信\": 0\n      },\n      \"computed_rates\": {\n        \"互动率\": {\n          \"value\": \"1.90%\",\n          \"formula\": \"(点赞+评论+转发+私信)/播放\"\n        },\n        \"评论率\": {\n          \"value\": \"0.30%\",\n          \"formula\": \"评论/播放\"\n        },\n        \"转发率\": {\n          \"value\": \"0.10%\",\n          \"formula\": \"转发/播放\"\n        },\n        \"私信转化率\": {\n          \"value\": \"0.00%\",\n          \"formula\": \"私信/播放\"\n        }\n      }\n    }\n  ],\n  \"field_mapping\": {\n    \"播放\": \"play_count\",\n    \"点赞\": \"like_count\",\n    \"评论\": \"comment_count\",\n    \"转发\": \"share_count\",\n    \"私信\": \"dm_count\",\n    \"互动率\": \"engagement_rate\",\n    \"评论率\": \"comment_rate\",\n    \"转发率\": \"share_rate\",\n    \"私信转化率\": \"dm_conversion_rate\"\n  },\n  \"missing_fields\": [],\n  \"format_warnings\": [],\n  \"handoff_summary\": \"标准化完成：两个视频的原始播放/互动字段已提取并映射为标准字段，基于播放量计算互动率、评论率、转发率、私信转化率。视频B私信为0，私信转化率保持0，未补造。计算依据附在每条computed_rates中。无缺失字段。\"\n}\n```",
+  "usage": {
+    "input": 2387,
+    "output": 3080,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "reasoning": 2501,
+    "totalTokens": 5467,
+    "cost": {
+      "input": 0.00033418,
+      "output": 0.0008624,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "total": 0.00119658
+    }
+  },
+  "stderr": "",
+  "elapsedMs": 30997,
+  "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+  "workDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T21-57-37-055Z/media-metrics-standardize-001-output",
+  "isolatedSessionDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T21-57-37-055Z/media-metrics-standardize-001-output/.pi-sessions"
+}

@@ -1,0 +1,25 @@
+{
+  "model": "opencode-go/deepseek-v4-pro",
+  "code": 0,
+  "text": "{\n  \"score\": 65,\n  \"score_scale\": \"0-100\",\n  \"pass\": false,\n  \"rubric_hits\": [\n    \"输出 5 组标题和封面文案\",\n    \"每组标注适用受众和点击动机\",\n    \"至少覆盖技术者向、企业主向、混合向\",\n    \"避免夸张承诺和标题党\"\n  ],\n  \"missing\": [\n    \"不新增上游没有支撑的案例、数字或结果：ab-test-002 使用了无依据的 70% 具体数字\"\n  ],\n  \"hallucination\": [\n    \"ab-test-002 标题中 '70% 的时间' 为无事实依据的编造数据\"\n  ],\n  \"red_line_violations\": [\n    \"不得新增上游未支持的数字（ab-test-002 标题出现 70%）\",\n    \"不得编造客户成功案例或收益数字（70% 属于自创的定量断言）\"\n  ],\n  \"profile_lessons\": [\n    \"占位应使用 '[待定]' 等显式标记，不应直接填写具体数字，避免误导出品。即使输出包含 unsupported_claims_removed 说明，终稿中仍不宜保留无依���数值。\"\n  ],\n  \"prompt_patch_suggestions\": [\n    \"在 Generate/Draft 节点 prompt 中强制要求：任何数字、百分比须标注上游来源；无支撑时一律使用定性词或 '[待定]' 占位符，严禁自行估算具体数字。\"\n  ]\n}",
+  "usage": {
+    "input": 3882,
+    "output": 4373,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "reasoning": 4042,
+    "totalTokens": 8255,
+    "cost": {
+      "input": 0.00675468,
+      "output": 0.01521804,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "total": 0.02197272
+    }
+  },
+  "stderr": "",
+  "elapsedMs": 69243,
+  "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+  "workDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-05-59-214Z/media-title-draft-001-judge",
+  "isolatedSessionDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-05-59-214Z/media-title-draft-001-judge/.pi-sessions"
+}

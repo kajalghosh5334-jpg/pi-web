@@ -1,0 +1,25 @@
+{
+  "model": "opencode-go/deepseek-v4-flash",
+  "code": 0,
+  "text": "```json\n{\n  \"_node_type\": \"jd-match-analyzer\",\n  \"_workflow\": \"WF-4\",\n  \"_target_profile\": \"research-report-analyst\",\n  \"analysis_items\": [\n    {\n      \"jd_requirement\": \"Python 基础扎实\",\n      \"candidate_evidence\": \"自动化脚本、RAG demo\",\n      \"verdict\": \"命中\",\n      \"claim_type\": \"inference\",\n      \"confidence\": 0.8,\n      \"counter_evidence\": \"不熟 Django，Python 生态广度待验证\",\n      \"recommendation\": \"简历突出文件处理、网络请求、数据结构等 Python 基础题的准备；将 RAG demo 中的核心技术难点（Token 管理、相似度检索）写出深度以证明基础扎实。\"\n    },\n    {\n      \"jd_requirement\": \"熟悉接口调用\",\n      \"candidate_evidence\": \"RAG 调用 LLM API，企业问答外包必然涉及数据接口\",\n      \"verdict\": \"命中\",\n      \"claim_type\": \"inference\",\n      \"confidence\": 0.85,\n      \"counter_evidence\": \"未提供接口协议细节 (REST/WebSocket)\",\n      \"recommendation\": \"项目描述中明确写出调用的 API 名称、协议、认证方式、处理过的异常场景。\"\n    },\n    {\n      \"jd_requirement\": \"了解 OpenCV 加分\",\n      \"candidate_evidence\": \"未提及 CV/图像处理经验\",\n      \"verdict\": \"缺漏\",\n      \"claim_type\": \"fact\",\n      \"confidence\": 0.95,\n      \"counter_evidence\": \"简历未写不等于完全不懂，但当前输入无此信息\",\n      \"recommendation\": \"短期（3天）补一个极小项目（摄像头读取→处理→输出）写进简历；或面试时承认概念了解但无实战，强调 Python 学习迁移能力。\"\n    },\n    {\n      \"jd_requirement\": \"学历（大专及以上优先）\",\n      \"candidate_evidence\": \"高中学历\",\n      \"verdict\": \"屏障（弱化项）\",\n      \"claim_type\": \"fact + assumption\",\n      \"confidence\": 0.98,\n      \"counter_evidence\": \"JD 书写为 '优先'，并非 '必须'，有通过初筛的可能\",\n      \"recommendation\": \"① 简历弱化学历位置（置末）。② 面试准备 '自学驱动、项目验证的另类教育路径' 叙事。③ 投递前确认本岗位无硬性学历门槛。若投递后多日无回应（已读不回），说明被优先级规则过滤，需加大此类公司投递密度以对冲通过率。\",\n      \"red_line_check\": \"PASS - 未建议隐藏或伪造学历，仅建议弱化位置与叙事转化。\"\n    },\n    {\n      \"jd_requirement\": \"有项目 Demo 加分\",\n      \"candidate_evidence\": \"RAG 知识库 demo + 企业资料问答外包\",\n      \"verdict\": \"强命中（核心差异化优势）\",\n      \"claim_type\": \"fact\",\n      \"confidence\": 0.95,\n      \"counter_evidence\": \"Demo 质量和完整性未知（上游标记 '缺失数据'）\",\n      \"recommendation\": \"这是翻盘点。必须标准化为作品集（GitHub README + 截图 + 演示视频/部署链接）。面试必带，主动展示。\"\n    },\n    {\n      \"jd_requirement\": \"能和业务方沟通需求\",\n      \"candidate_evidence\": \"性格开朗 + 外包经验（本质上就是跟客户做需求对接）\",\n      \"verdict\": \"命中\",\n      \"claim_type\": \"inference\",\n      \"confidence\": 0.7,\n      \"counter_evidence\": \"未提供需求沟通的具体案例或冲突解决经历\",\n      \"recommendation\": \"准备 1 个沟通故事：'业务方说要 A 功能，我分析后建议 B 方案，最终上线验证 B 更优'。展示需求分析、预期管理和交付能力。\"\n    },\n    {\n      \"jd_requirement\": \"Docker/AI 工具部署（公司官网隐含技术栈）\",\n      \"candidate_evidence\": \"仅部署过一次\",\n      \"verdict\": \"弱化项\",\n      \"claim_type\": \"fact\",\n      \"confidence\": 0.95,\n      \"counter_evidence\": \"JD 未明确要求 Docker，但公司技术栈含 '轻量化模型部署'\",\n      \"recommendation\": \"把 RAG demo 容器化（写 Dockerfile + docker-compose.yml 并放到 GitHub）。半天工作量，工程化能力证明收益极高。\"\n    }\n  ],\n  \"gap_handling\": {\n    \"technical_gaps\": {\n      \"OpenCV\": \"短期突击项目 or 面试诚实补位说明\",\n      \"Docker\": \"立即容器化现有项目，成本低收益高\",\n      \"Django\": \"无需补，准备框架选择话术（Flask 敏捷 vs Django 全功能，表示愿意学）\"\n    },\n    \"structural_gaps\": {\n      \"学历\": \"弱化位置 + 叙事转化 + 高频投递对冲过滤\"\n    }\n  },\n  \"overall_confidence\": \"medium-low (JD 来源为片段/面经，公司研究为弱提取，候选人信息为摘要，核心假设依赖置信度低的数据层)\",\n  \"escalation_flag\": false\n}\n```\n→ Skipped: 简历正文/面试QA生成、公司注册信息推断、未验证项目细节补全。 Add when: 下游简历节点/面试准备节点接走本分析结果作为输入时。",
+  "usage": {
+    "input": 5520,
+    "output": 8857,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "reasoning": 7641,
+    "totalTokens": 14377,
+    "cost": {
+      "input": 0.0007728,
+      "output": 0.0024799600000000002,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "total": 0.0032527600000000004
+    }
+  },
+  "stderr": "",
+  "elapsedMs": 95985,
+  "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+  "workDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-28-40-414Z/job-jd-analyze-001-output",
+  "isolatedSessionDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-28-40-414Z/job-jd-analyze-001-output/.pi-sessions"
+}

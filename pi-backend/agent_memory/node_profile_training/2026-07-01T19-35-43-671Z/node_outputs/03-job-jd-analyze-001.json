@@ -1,0 +1,42 @@
+{
+  "caseId": "job-jd-analyze-001",
+  "title": "JD 匹配分析",
+  "workflowId": "WF-4",
+  "nodeType": "Analyze/Judge",
+  "profileTarget": "research-report-analyst",
+  "model": "opencode-go/deepseek-v4-flash",
+  "score": 90,
+  "pass": true,
+  "elapsedMs": 68766,
+  "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+  "workDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T19-35-43-671Z/job-jd-analyze-001-output",
+  "input": "候选人简历要点：高中学历；做过 Python 自动化脚本、RAG 知识库 demo、一个小型企业资料问答外包；会 Flask 基础，不熟 Django；Docker 只部署过一次。JD：Python 基础扎实，熟悉接口调用，了解 OpenCV 加分，大专及以上优先，有项目 demo 加分，能和业务方沟通需求。请输出命中项、缺漏项、弱化项、学历屏障和简历定制策略。",
+  "output": "```json\n{\n  \"node\": \"Analyze/Judge\",\n  \"profile\": \"research-report-analyst\",\n  \"workflow\": \"WF-4\",\n  \"task\": \"JD匹配分析\",\n  \"status\": \"completed\",\n  \"input_summary\": {\n    \"candidate_profile\": \"高中学历；Python自动化脚本；RAG知识库demo；小型企业资料问答外包；Flask基础；不熟Django；Docker仅部署一次\",\n    \"jd_requirements\": \"Python基础扎实；熟悉接口调用；了解OpenCV加分；大专及以上优先；有项目demo加分；能和业务方沟通需求\"\n  },\n  \"match_analysis\": {\n    \"hits\": [\n      {\n        \"jd_requirement\": \"Python 基础扎实\",\n        \"match_status\": \"likely hit\",\n        \"evidence\": \"候选人具有Python自动化脚本、RAG demo和外包项目的实践经验，表明已具备基础Python编程能力\",\n        \"confidence\": \"medium\",\n        \"notes\": \"深度需面试验证；目前无高级特性使用记录（如异步IO、性能优化）\"\n      },\n      {\n        \"jd_requirement\": \"熟悉接口调用\",\n        \"match_status\": \"partial hit\",\n        \"evidence\": \"候选人使用Flask基础（涉及HTTP路由），RAG外包项目可能涉及外部API调用（如LLM接口）\",\n        \"confidence\": \"low\",\n        \"notes\": \"未明确展示接口文档阅读或RESTful设计经验；面试宜考察接口调用情景题\"\n      },\n      {\n        \"jd_requirement\": \"有项目 demo 加分\",\n        \"match_status\": \"hit\",\n        \"evidence\": \"候选人拥有RAG知识库demo和企业资料问答外包项目，可直接作为演示作品\",\n        \"confidence\": \"high\",\n        \"notes\": \"建议提前整理项目演示，包含技术选型、难点与业务价值\"\n      },\n      {\n        \"jd_requirement\": \"能和业务方沟通需求\",\n        \"match_status\": \"likely hit\",\n        \"evidence\": \"候选人自述性格开朗；外包项目经验暗示存在客户沟通经历\",\n        \"confidence\": \"low\",\n        \"notes\": \"性格开朗为self-reported unverified（上游标记）；沟通能力需面试验证\"\n      }\n    ],\n    \"gaps\": [\n      {\n        \"jd_requirement\": \"了解 OpenCV 加分\",\n        \"match_status\": \"gap\",\n        \"evidence\": \"候选人简历及上游材料均未涉及OpenCV或计算机视觉经验\",\n        \"impact\": \"面试中若涉及视觉任务可能处于劣势；不构成硬性拒绝条件\",\n        \"mitigation\": \"面试前快速学习OpenCV基础（图像读取、处理、边缘检测），准备1-2个小案例展示学习能力\"\n      },\n      {\n        \"jd_requirement\": \"大专及以上优先\",\n        \"match_status\": \"education gap\",\n        \"evidence\": \"候选人最高学历为高中\",\n        \"impact\": \"可能造成简历筛选劣势，但JD明确为优先项而非硬性要求\",\n        \"mitigation\": \"简历前置项目经验、弱化教育板块；若正在进修可诚实说明\"\n      }\n    ],\n    \"weaknesses\": [\n      {\n        \"aspect\": \"Web框架经验偏窄\",\n        \"detail\": \"仅会Flask基础，不熟Django\",\n        \"severity\": \"low\",\n        \"note\": \"JD未指定框架，但通用Python岗位通常期望至少主流框架\"\n      },\n      {\n        \"aspect\": \"容器化经验不足\",\n        \"detail\": \"Docker仅部署过一次，缺乏编排和生产运维经验\",\n        \"severity\": \"low\",\n        \"note\": \"JD未要求容器技能，但岗位可能涉及边缘端轻量化部署，当前无相关经验\"\n      },\n      {\n        \"aspect\": \"项目规模与商业化验证不足\",\n        \"detail\": \"项目均为小型demo或外包，缺乏中大型系统或多团队协作经验\",\n        \"severity\": \"medium\",\n        \"note\": \"JD期望与业务方沟通，小型项目仍可体现需求理解，但规模小可能说服力不足\"\n      }\n    ],\n    \"education_barrier\": {\n      \"status\": \"存在学历屏障，但为非硬性优先项\",\n      \"detail\": \"候选人学历（高中）低于JD优先条件（大专及以上），构成简历筛选劣势\",\n      \"strength_of_barrier\": \"中等偏低\",\n      \"rationale\": \"公司明确'优先'而非'必须'，结合上游分析该岗位定位为初级/实习助理级别，硬性学历要求可能不严格\",\n      \"mitigation_strategies\": [\n        \"简历中教育经历靠后或不占主要篇幅，主体突出项目和技术能力\",\n        \"在求职信中以'实战派AI开发者'定位，淡化学历权重\",\n        \"若有正在进行中的学历提升计划（成人教育/在线课程证书），诚实说明以展现上进心\"\n      ]\n    },\n    \"resume_strategy\": [\n      \"优化项目描述：RAG demo突出接口调用、数据流处理及与业务方的需求对接过程\",\n      \"Python自动化脚本部分强调文件处理、流程自动化等与JD重叠技能\",\n      \"将外包项目定位为'端到端交付经验'，展现独立沟通和解决问题的能力\",\n      \"若已学习OpenCV基础，可在简历中提一句'正在学习OpenCV并完成XX小案例'\",\n      \"GitHub/作品链接提前整理，确保代码可读性和README完整\"\n    ]\n  },\n  \"facts\": [\n    \"候选人最高学历为高中\",\n    \"候选人具备Python自动化脚本、RAG知识库demo、小型企业资料问答外包项目经验\",\n    \"候选人自述熟悉Flask基础，不熟悉Django\",\n    \"候选人Docker仅有一次部署经验\",\n    \"JD明确要求：Python基础扎实、熟悉接口调用、了解OpenCV加分、大专及以上优先、有项目demo加分、能和业务方沟通需求\",\n    \"上游分析显示该岗位薪资5-7k，与候选人期望6k匹配\",\n    \"上游分析显示学历门槛为'优先条件'非硬性要求\"\n  ],\n  \"inferences\": [\n    {\n      \"inference\": \"候选人的Python基础大概率满足JD基本要求，但深度和规范程度需面试验证\",\n      \"basis\": \"多方项目Python使用经验\",\n      \"confidence\": \"medium\"\n    },\n    {\n      \"inference\": \"候选人通过外包项目积累了基础接口调用经验（可能含API调用和基本HTTP交互）\",\n      \"basis\": \"Flask基础 + 外包项目涉及端到端交付\",\n      \"confidence\": \"medium\"\n    },\n    {\n      \"inference\": \"候选人缺乏OpenCV相关经验，若JD岗位偏机器视觉，需补强\",\n      \"basis\": \"候选人未提及OpenCV或视觉项目\",\n      \"confidence\": \"high\"\n    },\n    {\n      \"inference\": \"候选人沟通能力（外包经验）可能提供一定佐证，但均未经过第三方验证\",\n      \"basis\": \"上游信息：性格开朗self-reported；外包项目暗示客户沟通但无细节\",\n      \"confidence\": \"low\"\n    },\n    {\n      \"inference\": \"候选人学历短板可通过项目展示和主动学习计划部分弥补，但仍可能成为初筛阻力\",\n      \"basis\": \"JD明确优先大专及以上\",\n      \"confidence\": \"medium\"\n    },\n    {\n      \"inference\": \"岗位实际工作内容可能涉及Python后端+轻量化部署+视觉处理，候选人当前技能侧重AI应用（RAG）而非视觉，存在方向偏差\",\n      \"basis\": \"上游公司调研：官网技术关键词含OpenCV、PLC、轻量化模型；JD仅要求Python基础和接口调用，暗示初级岗位对技能要求不深但方向偏工业场景\",\n      \"confidence\": \"medium\"\n    }\n  ],\n  \"recommendations\": [\n    \"候选人应重点准备Python基础、文件处理、接口调用的技术面试，可自备小型Demo演示\",\n    \"面试前投入约20小时快速入门OpenCV，掌握图像读取、处理、显示等基础操作\",\n    \"整理一个完整项目的代码仓库和演示视频，用于弥补学历和正式经历不足\",\n    \"投递时附加自荐信并直接联系技术负责人，规避HR学历筛选\",\n    \"若存在学历提升计划，在面试中诚实提及，展现持续学习态度\"\n  ],\n  \"risks\": [\n    {\n      \"risk\": \"候选人在HR初筛阶段可能因高中学历被直接过滤，即使JD中为优先项\",\n      \"likelihood\": \"medium\",\n      \"impact\": \"high\",\n      \"mitigation\": \"优先投递明确'学历不限'或'大专及以上优先'的岗位；通过内推或附件作品链接绕过HR\"\n    },\n    {\n      \"risk\": \"候选人Python深度和项目复杂度可能达不到岗位实际期望\",\n      \"likelihood\": \"medium\",\n      \"impact\": \"high\",\n      \"mitigation\": \"面试前针对JD重点（文件处理、接口调用）准备实战题目，提前演练\"\n    },\n    {\n      \"risk\": \"面试被问及OpenCV或工业视觉内容时可能因知识空白表现不佳\",\n      \"likelihood\": \"medium\",\n      \"impact\": \"medium\",\n      \"mitigation\": \"快速学习OpenCV基础，准备'若被问到如何快速入门'的回答策略\"\n    },\n    {\n      \"risk\": \"项目经验若无法提供代码或演示，说服力大幅下降\",\n      \"likelihood\": \"low\",\n      \"impact\": \"high\",\n      \"mitigation\": \"整理并上传项目代码（脱敏后）至GitHub，准备录屏演示\"\n    }\n  ],\n  \"red_flags\": [],\n  \"blocked\": false,\n  \"manual_review_required\": false,\n  \"output_note\": \"未对候选人未掌握的技能做熟练假设；未建议隐藏或伪造学历；所有推断均明确标注置信度。缺失信息（如沟通能力具体案例）已标注unverified。\"\n}\n```",
+  "judge": {
+    "score": 90,
+    "pass": true,
+    "rubric_hits": [
+      "逐条对照 JD 输出命中、缺漏、弱化",
+      "明确学历是优先项而非硬卡",
+      "把 RAG/脚本/外包项目映射到岗位需求",
+      "区分事实、推断、建议和置信度"
+    ],
+    "missing": [
+      "对不熟 Django、Docker 经验弱等问题给可补策略"
+    ],
+    "hallucination": [],
+    "red_line_violations": [],
+    "profile_lessons": [
+      "未验证的信息（如性格开朗）应尽量在profile中减少依赖，或明确其来源状态",
+      "技能弱项不仅要分析影响，还需给出具体的简历或面试应对策略"
+    ],
+    "prompt_patch_suggestions": [
+      "在提示中增加要求：对于候选人技能短板（如不熟某些技术），必须提供针对性弥补策略，例如强调替代技能或学习路径",
+      "提示词应要求为每项weakness给出至少一条可操作的补强建议"
+    ]
+  },
+  "dependencies": [
+    "job-background-strategy-001",
+    "job-company-gather-001"
+  ]
+}

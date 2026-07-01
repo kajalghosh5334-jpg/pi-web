@@ -1,0 +1,202 @@
+你是 Workflow 中的一个 profile 化节点。请只完成当前节点，不要越权完成下游任务。
+
+节点类型：Generate/Draft
+目标 Profile：content-draft-producer
+Workflow：WF-2
+任务：简历经历初稿
+
+上游上下文：
+上游节点 job-jd-analyze-001 输出：
+```yaml
+node_type: analyze-judge
+workflow: WF-4
+task: JD 匹配分析
+target_profile: research-report-analyst
+
+# ==========================================
+# 总体评价
+# ==========================================
+overall_confidence: MEDIUM_LOW
+overall_confidence_reason: >
+  上游 job-background-strategy-001 缺失，无法比对 JD 背景完整性。
+  候选人简历以要点摘要形式呈现，缺完整文本与分析上下文。
+  当前匹配分析严格基于给定事实。最大风险在于“高中学历 vs 大专优先”的学历屏障，
+  其余技能缺口（Django、Docker、OpenCV）均为可补项或非硬性要求。
+
+# ==========================================
+# 逐项分析
+# ==========================================
+analysis_items:
+
+  # --- 命中项 ---
+  - claim_type: fact
+    dimension: hit
+    item: Python 基础
+    status: HIT
+    evidence: 候选人具备 Python 自动化脚本 + RAG demo + Flask 外包项目，具备实战应用经验。
+    confidence: MEDIUM  # 有代码产出，但无法验证代码质量与工程规范
+    counter_evidence: 未涉及测试、异步、性能优化等中高级特性，“扎实”有待面试验证。
+    recommendation: 简历重点突出自动化脚本解决的实际业务问题（如减少人工操作量）、RAG 中数据处理细节。
+
+  - claim_type: inference
+    dimension: hit
+    item: 接口调用
+    status: WEAK_HIT
+    evidence: RAG demo 必然涉及外部 LLM API 调用；外包问答系统需对接接口。推断候选人有接口调用经验。
+    confidence: MEDIUM
+    counter_evidence: 简历未显式提及 REST API、HTTP 方法、鉴权流程等细节，无法确认深度。
+    recommendation: 项目描述中补充一行接口实践描述，如“调用 OpenAI Embedding API 实现文档向量化，处理 HTTP 请求与异常”。
+
+  - claim_type: fact
+    dimension: hit
+    item: 项目 demo
+    status: HIT
+    evidence: RAG 知识库 Demo + 外包问答项目，完全满足 JD“有项目 demo 加分”。
+    confidence: HIGH
+    recommendation: 作为简历最核心卖点展开。RAG demo 可强调技术路线（Embedding + 检索 + LLM 生成），外包项目强调交付闭环。
+
+  # --- 缺漏项 ---
+  - claim_type: fact
+    dimension: miss
+    item: OpenCV
+    status: MISS
+    evidence: 候选人技能清单中无任何 OpenCV 或图像处理相关经历。
+    confidence: HIGH
+    counter_evidence: JD 标注为“加分项”，非硬性要求。
+    recommendation: 建议候选人快速学习并实现一个极简 OpenCV demo（人脸检测 / 物体轮廓识别），1-2 天可完成，匹配度立刻提升。属高 ROI 补缺项。
+
+  # --- 弱化项 ---
+  - claim_type: inference
+    dimension: weakness
+    item: 业务沟通
+    status: WEAK
+    evidence: 外包给小型企业推测有需求沟通动作，但简历未提供结构化证明。
+    confidence: LOW
+    recommendation: 外包项目经历中主动标注“独立对接客户确认需求、交付验收”，或简历添加单独软技能条目。
+
+  - claim_type: inference
+    dimension: weakness
+    item: Django 不熟
+    status: NON_THREAT / POTENTIAL_RISK
+    evidence: JD 未要求 Django。Flask 足够胜任轻量后台。若后续需要复杂后台（用户系统 / ORM / Admin），Django 缺失会构成瓶颈。
+    confidence: MEDIUM
+    recommendation: 短期不需要补。专注 Flaks 深度（SQLAlchemy、JWT 鉴权）。如接到面试通知后再 3-5 天快速掌握 Django CRUD。
+
+  - claim_type: inference
+    dimension: weakness
+    item: Docker 经验弱
+    status: NON_THREAT / POTENTIAL_RISK
+    evidence: JD 未要求 Docker。但部署相关场景含 Docker 是常见预期，只部署过一次属“概念接触”。
+    confidence: MEDIUM
+    recommendation: 用 1-2 天完成一个 docker-compose.yml（Flask + Redis + PostgreSQL）部署练习，覆盖基础网络配置与持久化。高收益的低成本补缺。
+
+  # --- 学历屏障（专项）---
+  - claim_type: fact
+    dimension: education_barrier
+    item: 学历屏障
+    status: HIGH_RISK_ITEM  # 单独标记
+    evidence: 候选人高中学历；JD 明确写“大专及以上优先”。
+    confidence: HIGH  # 差距真实存在
+    counter_evidence: >
+      “优先”在招聘术语中为非硬性筛子。薪资 5-7k 的初级岗位通常学历容忍度较高
+      （制造业尤甚）。若有匹配的项目 demo 与稳定基础，可能通过简历初筛。
+    recommendation:
+      - 【红线约束】不得建议隐藏或伪造学历。如实填写。
+      - 简历“自我评价”应主动带一句：“虽为高中学历，但通过自学完成了完整的 RAG 项目与大模型接口对接，具备与岗位直接匹配的动手经验。”
+      - 目标公司星河智造是制造业企业，对学历硬性程度通常低于互联网公司，鼓励投递。
+      - 长期建议：积攒 1-2 年经验后报读国家开放大学专/本科补足硬伤。
+
+# ==========================================
+# 针对任务要求的聚合摘要
+# ==========================================
+summary:
+  hits:
+    - Python 基础（自动化脚本 + Flask + demo）
+    - 接口调用（RAG 依赖 API、外包对接）
+    - 项目 demo（RAG 与外包两个完整产出）
+  misses:
+    - OpenCV（但为“加分项”，非门槛）
+  weaknesses:
+    - 业务沟通经验薄（仅一次小外包）
+    - Django 不熟、Docker 弱（JD 未要求，职务通用软肋，可快速补）
+  education_barrier:
+    - 高中学历 vs 大专优先（最大单项风险，但非绝对屏障）
+  resume_tailoring_strategy:
+    - 1. 教育栏如实填写，不遮掩；自我评价引导注意力至匹配项目。
+    - 2. 项目描述标准化为 4 段结构（背景/任务/行动/结果），嵌入接口、沟通、业务价值。
+    - 3. 技能表新增“了解 OpenCV 基础”（若决定学）。
+    - 4. 投递优先级：标记“优先/加分”而非“硬性要求”的岗位。该 JD 的“大专及以上优先”和 5-7k 薪资段与候选人当前匹配度可争取。
+    - 5. 面试准备策略：Python 文件处理与接口调试是已知必考项；自备 RAG 项目 Code Review 可大幅提升通过率。
+
+# ==========================================
+# 缺口处理与可靠性声明
+# ==========================================
+gap_handling:
+  - gap: 上游 job-background-strategy-001 缺失，无法核查 JD 本身是否符合公司实际用人画像。
+    strategy: 当前匹配严格按 JD 原文做。下游审查节点须独立分析该 JD 与星河智造业务的匹配性。
+  - gap: 候选人简历仅为“要点”摘要，缺完整措辞和排版信息。
+    strategy: 上述定制策略以要点精确度为前提。实际简历生产中需获取完整简历原文进行措辞精修。
+
+# ==========================================
+# 红线检查
+# ==========================================
+escalation_flag: false  # 未触达硬性红线
+
+red_line_audit:
+  - rule: 不得把未掌握技能写成熟练
+    status: PASS  # Django/Docker 均标记为弱项，不推为熟练
+  - rule: 不得建议隐藏或伪造学历
+    status: PASS  # 明确要求如实填写
+  - rule: 不得把推断写成已验证事实
+    status: PASS  # 所有 claim_type 严格区分 fact/inference，接口与沟通经验显式标记为 inference；置信度诚实标注为 MEDIUM/LOW
+
+manual_review_suggestion:
+  - item: 学历屏障
+    reason: 高中学历大概率被 HR 系统直接过滤，建议下游结合公司实际投递漏斗决定是否推进或标记 low_probability。
+    action: 若 upstream 的 job-background-strategy-node 包含“该司学历通过率”，请覆盖本节点学历判断。
+```
+
+当前输入：
+原始经历：做过一个企业资料问答 RAG 外包，负责整理客户资料、写 Python 文档清洗脚本、接入向量库、做简单网页查询入口；还帮朋友做过批量 Excel 处理脚本；性格开朗，能和客户沟通需求。请按 STAR 写 2 段简历经历，附技能标签和项目亮点。
+
+节点通用契约：
+职责：依据上游事实和策略生成可编辑初稿，不承担最终事实责任。
+推荐输出字段：
+- draft_sections: 草稿分段或变体列表
+- source_usage: 每个事实/数字对应的上游依据；无依据必须写 placeholder 或删除
+- unsupported_claims_removed: 删除或占位的无依据表达
+- unsupported_numbers_self_check: 扫描所有数字/百分比/金额；无上游依据必须替换为非数字表达或 placeholder
+- editable_notes: 需要人类补充或确认的占位项
+- risk_flags
+通用红线：
+- 不得新增上游未支持的数字、百分比、金额、案例、客户名、项目成果、学历、职位
+- 生成标题/封面/广告语时，尤其禁止为了增强点击而添加 70%、80%、30 天、翻倍等无来源数字
+- 不得把 demo 写成生产级成果
+- 不得输出不可修改的最终定稿
+
+本样本标签/路由 schema：
+未指定；如需分类，严格使用题目给定标签。
+
+本样本生成/审查专项约束：
+无
+无
+
+输出要求：
+1. 严格遵守当前节点职责。
+2. 输出可供下游使用的结构化结果。
+3. 如信息缺失，写 unknown/missing/unverified，不得补造。
+4. 区分事实、推断、建议和风险。
+5. 遇到红线必须标记 blocked 或 manual_review_required。
+6. 优先按“节点通用契约”的字段输出；若任务要求更具体，以任务要求为准。
+
+评分 Rubric：
+1. 使用 STAR 或类似结构写可编辑经历段落
+2. 突出 AI 编程、Python、RAG、客户需求沟通
+3. 不虚构量化成果、公司、学历或正式职位
+4. 技能标签区分直接相关和弱相关
+5. 素材不足时使用可替换占位符而不是编造
+
+红线：
+1. 不得虚构学历、公司、职位、项目规模或量化成绩
+2. 不得把 demo 写成生产级平台
+3. 不得生成最终不可修改定稿

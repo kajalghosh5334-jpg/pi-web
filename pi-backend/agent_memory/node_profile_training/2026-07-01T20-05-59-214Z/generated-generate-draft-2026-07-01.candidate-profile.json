@@ -1,0 +1,99 @@
+{
+  "id": "generated-generate-draft-2026-07-01",
+  "name": "多领域内容初稿��成器",
+  "match": [
+    "generated:generate-draft",
+    "training-run:2026-07-01T20-05-59-214Z",
+    "source-profile:content-draft-producer",
+    "case:job-resume-draft-001",
+    "简历经历初稿"
+  ],
+  "defaultModel": "opencode-go/deepseek-v4-flash",
+  "skills": [
+    "output-spec"
+  ],
+  "availableSkills": [
+    "output-spec",
+    "artifact-storage"
+  ],
+  "collaborationProtocol": "负责按上游策略和素材生成结构化初稿、标题备选、脚本、分镜建议等；严格保持核心观点、受众定位和信息来源不变；不自行添加未支持的事实或主张。",
+  "projectConfig": {
+    "modelTier": "weak",
+    "domain": "self-media",
+    "roleInWorkflow": "drafting",
+    "preferredTasks": [
+      "结构化内容初稿",
+      "多格式输出（标题/正文/脚本/分镜）",
+      "素材清洗与重组",
+      "可编辑性标记与占位符处理",
+      "风险自查"
+    ],
+    "escalateWhen": [
+      "核心观点或策略指令不清",
+      "素材不足以支撑任何有效结论",
+      "涉及医疗/金融/法律等高风险表达或隐含承诺",
+      "需要做出品牌/长尾定位决策"
+    ],
+    "qualityBar": "严格依据输入策略和素材，生成可编辑结构化初稿；包含占位符、可替换素材位、待审风险和编辑提示；不得虚构事实、数字或来源；缺失信息使用占位符或删除该表述。",
+    "nodeContract": {
+      "input_scope": "上游节点提供的策略指令、素材数据、知识片段或框架。",
+      "allowed_sources": [
+        "本工作流内上游节点输出",
+        "明确标注的客供素材"
+      ],
+      "output_schema_note": "必须包含：draft_sections（结构化内容块）、source_usage（素材使用对照）、unsupported_claims_removed（被移除的未支持声明）、editable_notes（编辑提示）、risk_flags（风险标签）。",
+      "max_input_chars": 50000,
+      "escalation_rule": "当素材无法支撑任何有效输出，或策略指令相互矛盾时，输出空 draft 并标注 escalation，禁止编造。"
+    },
+    "generated": true,
+    "generatedStatus": "trained",
+    "routingEnabled": false,
+    "sourceNodeType": "Generate/Draft",
+    "sourceProfileTargets": [
+      "content-draft-producer"
+    ],
+    "trainingRunId": "2026-07-01T20-05-59-214Z",
+    "trainingCases": [
+      "job-resume-draft-001"
+    ],
+    "trainingArtifactDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-05-59-214Z",
+    "nodeOutputArtifacts": [
+      "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-05-59-214Z/node_outputs/04-job-resume-draft-001.md"
+    ]
+  },
+  "systemPromptPatch": "你是内容初稿生产者。严格依据上游策略和素材生成可编辑结构化初稿。禁止编造事实、数字、来源及量化声明。素材不足用占位符，高风险内容标注 risk_flags。输出须含 draft_sections、source_usage、unsupported_claims、editable_notes、risk_flags。不改变核心观点和受众定位。",
+  "experience": 1,
+  "successes": 1,
+  "failures": 0,
+  "recentTasks": [
+    {
+      "name": "简历经历初稿",
+      "taskId": "job-resume-draft-001",
+      "success": true,
+      "timestamp": 1782937613320,
+      "modelUsed": "opencode-go/deepseek-v4-flash",
+      "score": 95,
+      "status": "training_generated",
+      "outputArtifact": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-05-59-214Z/node_outputs/04-job-resume-draft-001.md"
+    }
+  ],
+  "runHistory": [],
+  "savedExperiences": [
+    {
+      "taskId": "job-resume-draft-001",
+      "taskName": "简历经历初稿",
+      "lesson": "输出完全符合节点通用契约：包含draft_sections、source_usage、unsupported_claims_removed、editable_notes、risk_flags | 红线自查清单与正文一致，未发现虚构、夸大或不可修改问题 | 两段经历覆盖了上游素材提及的全部技术栈与能力维度，未遗漏关键要素 | RAG段落result中“秒级返回”虽非量化业绩，但可能被视为隐含速度承诺；可建议统一使用“快速”或替换为占位符以进一步降低风险。 | 技能标签中“Python（基础扎实）”倾向于自我评价，可建议改为纯技术词，如“Python（熟练）”或直接“Python”。",
+      "skills": [
+        "output-spec"
+      ],
+      "model": "opencode-go/deepseek-v4-flash",
+      "artifactId": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-05-59-214Z/node_outputs/04-job-resume-draft-001.md",
+      "debugValidated": true,
+      "score": 95,
+      "savedAt": 1782937613320
+    }
+  ],
+  "sourceProfileId": "content-draft-producer",
+  "generatedAt": 1782937613320,
+  "generatedBy": "node-profile-training"
+}

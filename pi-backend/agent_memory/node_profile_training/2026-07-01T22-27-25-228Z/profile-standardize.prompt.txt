@@ -1,0 +1,77 @@
+你是 Profile 提炼器。请根据同一 nodeType 的真实训练样本，总结一个可复用通用 Profile。
+只返回 JSON，不要 markdown。
+
+nodeType: Standardize
+
+现有相关 profile：
+{
+  "weak-structured-operator": {
+    "name": "弱模型结构化执行员",
+    "defaultModel": "opencode-go/deepseek-v4-flash",
+    "collaborationProtocol": "执行格式明确、低歧义、可校验的批量任务；严格遵守输入 schema 和输出 schema，不自行改变目标或引入新方案。",
+    "projectConfig": {
+      "modelTier": "weak",
+      "roleInWeakStrongWorkflow": "operator",
+      "preferredTasks": [
+        "格式转换",
+        "字段抽取",
+        "模板化初稿",
+        "批量改写",
+        "简单机械修改"
+      ],
+      "escalateWhen": [
+        "规则之间冲突",
+        "schema 无法表达真实需求",
+        "需要跨模块架构判断",
+        "输出无法用规则验证"
+      ],
+      "qualityBar": "必须按指定 schema 输出；如输入缺字段，显式列出缺失项，不得猜测补全关键事实。"
+    },
+    "systemPromptPatch": "你是弱模型结构化执行员。只处理边界清晰、格式明确、可验证的任务。严格按 schema、模板和验收标准执行；不要做全局权衡或架构决策。遇到规则冲突或信息缺失时标记给强模型。"
+  }
+}
+
+通过样本：
+[
+  {
+    "id": "media-metrics-standardize-001",
+    "title": "自媒体指标标准化",
+    "profileTarget": "weak-structured-operator",
+    "score": 95,
+    "profile_lessons": [],
+    "prompt_patch_suggestions": [
+      "移除 output 中未经验证的来源字段，如 normalized_items 内的 source 及 handoff_summary 中的参考名称"
+    ],
+    "node_output_artifact": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T22-27-25-228Z/node_outputs/09-media-metrics-standardize-001.md",
+    "output_excerpt": "```json\n{\n  \"node_type\": \"standardize\",\n  \"profile\": \"weak-structured-operator\",\n  \"workflow\": \"WF-17\",\n  \"task\": \"自媒体指标标准化\",\n  \"status\": \"completed\",\n  \"upstream\": \"none\",\n  \"details\": {\n    \"normalized_items\": [\n      {\n        \"item_id\": \"视频 A\",\n        \"raw_metrics\": {\n          \"views\": 12000,\n          \"likes\": 360,\n          \"comments\": 96,\n          \"shares\": 48,\n          \"direct_messages\": 12\n        },\n        \"standard_rates\": {\n          \"interaction_rate\": {\n            \"formula\": \"(likes + comments + shares) / views\",\n            \"numerator\": 504,\n            \"denominator\": 12000,\n            \"decimal\": 0.042,\n            \"percent\": \"4.2%\",\n            \"note\": \"分子不含私信\"\n          },\n          \"comment_rate\": {\n            \"formula\": \"comments / views\",\n            \"numerator\": 96,\n            \"denominator\": 12000,\n            \"decimal\": 0.008,\n            \"percent\": \"0.8%\"\n          },\n          \"share_rate\": {\n            \"formula\": \"shares / views\",\n            \"numerator\": 48,\n            \"denominator\": 12000,\n            \"decimal\": 0.004,\n            \"percent\": \"0.4%\"\n          },\n          \"dm_conversion_rate\": {\n            \"formula\": \"direct_messages / views\",\n"
+  }
+]
+
+请生成：
+{
+  "name": "",
+  "match": [""],
+  "collaborationProtocol": "",
+  "projectConfig": {
+    "modelTier": "weak|strong",
+    "roleInWorkflow": "",
+    "preferredTasks": [""],
+    "escalateWhen": [""],
+    "qualityBar": "",
+    "nodeContract": {
+      "input_scope": "",
+      "allowed_sources": [""],
+      "output_schema_note": "",
+      "max_input_chars": 0,
+      "escalation_rule": ""
+    }
+  },
+  "systemPromptPatch": ""
+}
+
+要求：
+1. 不要删除已有 profile 的关键红线。
+2. systemPromptPatch 要短、硬、可执行，适合弱模型稳定执行。
+3. 事实型节点必须强调不得编造来源。
+4. Review/Gate 必须输出短裁决，不重写长文。
+5. Analyze/Judge 必须区分事实/推断/建议/置信度/反证条件。

@@ -1,0 +1,151 @@
+你是严格训练裁判。请对一个 Workflow 节点输出评分，只返回 JSON，不要 markdown。
+
+节点类型：Standardize
+任务：自媒体指标标准化
+
+Rubric：
+[
+  "正确计算率值指标",
+  "保留原始分子分母",
+  "私信为 0 时不得补造",
+  "只做指标转换，不做波动归因",
+  "输出结构化表格或 JSON"
+]
+
+标准答案/关键要点：
+A：互动率=(360+96+48)/12000=4.2%，评论率=0.8%，转发率=0.4%，私信转化率=0.1%。B：互动率=(45+9+3)/3000=1.9%，评论率=0.3%，转发率=0.1%，私信转化率=0%。应保留播放、点赞、评论、转发、私信原始值。
+
+红线：
+[
+  "不得做原因分析",
+  "不得把 0 私信补成估计值",
+  "不得省略计算依据"
+]
+
+节点通用契约：
+{
+  "purpose": "把非结构化输入转换成统一 schema，不做业务判断。",
+  "output": [
+    "normalized_items: 标准化条目列表",
+    "field_mapping: 原始字段到标准字段的映射",
+    "missing_fields",
+    "format_warnings",
+    "handoff_summary"
+  ],
+  "redLines": [
+    "不得猜测缺失字段",
+    "不得改变原始事实含义",
+    "不得加入业务判断或策略建议"
+  ]
+}
+
+本样本标签/路由 schema：
+null
+
+本样本生成/审查专项约束：
+{
+  "generationGuardrails": null,
+  "reviewChecklist": null
+}
+
+待评分输出：
+```json
+{
+  "normalized_items": [
+    {
+      "id": "video_A",
+      "raw_data": {
+        "plays": 12000,
+        "likes": 360,
+        "comments": 96,
+        "shares": 48,
+        "direct_messages": 12
+      },
+      "computed_metrics": {
+        "interaction_rate": {
+          "value": 0.043,
+          "formula": "(likes + comments + shares + direct_messages) / plays = (360 + 96 + 48 + 12) / 12000 = 516 / 12000 = 0.043",
+          "percentage": "4.30%"
+        },
+        "comment_rate": {
+          "value": 0.008,
+          "formula": "comments / plays = 96 / 12000 = 0.008",
+          "percentage": "0.80%"
+        },
+        "share_rate": {
+          "value": 0.004,
+          "formula": "shares / plays = 48 / 12000 = 0.004",
+          "percentage": "0.40%"
+        },
+        "dm_conversion_rate": {
+          "value": 0.001,
+          "formula": "direct_messages / plays = 12 / 12000 = 0.001",
+          "percentage": "0.10%"
+        }
+      }
+    },
+    {
+      "id": "video_B",
+      "raw_data": {
+        "plays": 3000,
+        "likes": 45,
+        "comments": 9,
+        "shares": 3,
+        "direct_messages": 0
+      },
+      "computed_metrics": {
+        "interaction_rate": {
+          "value": 0.019,
+          "formula": "(likes + comments + shares + direct_messages) / plays = (45 + 9 + 3 + 0) / 3000 = 57 / 3000 = 0.019",
+          "percentage": "1.90%"
+        },
+        "comment_rate": {
+          "value": 0.003,
+          "formula": "comments / plays = 9 / 3000 = 0.003",
+          "percentage": "0.30%"
+        },
+        "share_rate": {
+          "value": 0.001,
+          "formula": "shares / plays = 3 / 3000 = 0.001",
+          "percentage": "0.10%"
+        },
+        "dm_conversion_rate": {
+          "value": 0.0,
+          "formula": "direct_messages / plays = 0 / 3000 = 0.0",
+          "percentage": "0.00%"
+        }
+      }
+    }
+  ],
+  "field_mapping": {
+    "播放": "plays",
+    "点赞": "likes",
+    "评论": "comments",
+    "转发": "shares",
+    "私信": "direct_messages"
+  },
+  "missing_fields": [],
+  "format_warnings": [
+    "原始输入为自然语言描述，已手动解析为结构化数据，数值无误。"
+  ],
+  "handoff_summary": "已将两段视频的原始播放、互动数据标准化并计算出互动率、评论率、转发率、私信转化率（均基于播放量）。下游可直接使用 normalized_items 中的 computed_metrics。",
+  "boundary_flags": {
+    "cause_analysis": false,
+    "estimated_zero_dm": false,
+    "calculation_basis_omitted": false
+  }
+}
+```
+
+返回 JSON。score 必须是 0-100 的整数，不要使用 0-1 小数制或 0-10 十分制：
+{
+  "score": 0,
+  "score_scale": "0-100",
+  "pass": true,
+  "rubric_hits": [""],
+  "missing": [""],
+  "hallucination": [""],
+  "red_line_violations": [""],
+  "profile_lessons": [""],
+  "prompt_patch_suggestions": [""]
+}

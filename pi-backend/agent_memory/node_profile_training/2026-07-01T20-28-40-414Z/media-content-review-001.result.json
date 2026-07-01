@@ -1,0 +1,115 @@
+{
+  "testCase": {
+    "id": "media-content-review-001",
+    "nodeType": "Review/Gate",
+    "profileTarget": "strong-quality-reviewer",
+    "workflowId": "WF-14",
+    "title": "内容审稿与发布裁决",
+    "model": "opencode-go/deepseek-v4-pro",
+    "tools": "none",
+    "dependsOn": [
+      "media-title-draft-001",
+      "media-comment-classify-001"
+    ],
+    "input": "请审核上游标题封面和评论路由方案是否符合 AI 自媒体项目撮合定位。重点检查标题党、未支撑事实、CTA 是否过硬、交易/法律风险。输出 publish/revise/block 裁决、问题清单、返工节点和验收标准。不要重写整篇内容。",
+    "reviewChecklist": [
+      "标题和封面是否包含无来源数字、百分比、金额或客户结果",
+      "标题是否标题党或做绝对化承诺",
+      "CTA 是否存在、是否自然、是否过硬",
+      "是否符合 AI 自媒体项目撮合定位",
+      "预算线索是否转人工",
+      "交易、法律、责任、纠纷风险是否转人工或阻塞"
+    ],
+    "expectedRubric": [
+      "给出明确 publish/revise/block 裁决",
+      "检查标题和素材证据是否一致",
+      "检查 CTA 和撮合交易定位是否自然",
+      "识别交易、法律、夸张承诺风险",
+      "只给短裁决和返工任务，不重写长文"
+    ],
+    "standardAnswer": "应优先审查标题是否用了无来源数字、是否承诺效果、是否忽略交易风险。若评论处理对预算线索和纠纷问题都转人工，可通过或小修；若自动承诺撮合结果，应 revise/block。返工节点通常是 Generate/Draft 或 Classify/Router。",
+    "redLines": [
+      "不得只给建议不给裁决",
+      "不得代替写作节点重写长文",
+      "不得允许虚假案例或夸张承诺发布"
+    ]
+  },
+  "output": {
+    "model": "opencode-go/deepseek-v4-pro",
+    "code": 0,
+    "text": "```json\n{\n  \"decision\": \"revise\",\n  \"comment_routing_decision\": \"approve_with_note\",\n  \"issues\": [\n    {\n      \"severity\": \"medium\",\n      \"target_node\": \"media-title-draft-001\",\n      \"location\": \"V4\",\n      \"problem\": \"封面'风险地图'及标题中'不敢写在合同里的风险'的表述，基于仅3个来源的有限视角，可能被读者误解为系统性正式风险评估报告，存在夸张承诺风险。\",\n      \"action\": \"添加脚标或补充文案说明（如'基于有限样本的案例整合，非正式风险评估'），或弱化'风险地图'措辞，改为'风险拼图'/'风险碎片'等更软性的比喻。\",\n      \"acceptance_criteria\": \"修改后内容不产生系统性/正式风险评估报告的暗示，且非专业读者不会误判信息权威性。\"\n    },\n    {\n      \"severity\": \"medium\",\n      \"target_node\": \"media-title-draft-001\",\n      \"location\": \"V2\",\n      \"problem\": \"标题'客户只想要一个 demo，后续维护谁买单？'及封面文案仅基于开发者单方观点（评论摘录），缺乏企业主侧验证，可能损害平台撮合场景的中立性，引发企业主读者抵触。\",\n      \"action\": \"补充立场说明，如'本文主要反映开发者视角，企业主立场需进一步调研'，或等待补充甲方调研数据后再定稿；也可暂时降级该variant。\",\n      \"acceptance_criteria\": \"文案不隐含对企业主的负面定论，并明确标注信息源立场局限。\"\n    },\n    {\n      \"severity\": \"low\",\n      \"target_node\": \"media-title-draft-001\",\n      \"location\": \"all variants\",\n      \"problem\": \"全部标题/封面基于仅3个上游事实，覆盖面和代表性有限，可能给读者行业全貌假象。\",\n      \"action\": \"在发布内容时（正文或导语）添加免责声明：'本文案例整合自有限样本，不构成行业统计结论'。\",\n      \"acceptance_criteria\": \"样本局限性在读者接触主体内容前即被明确告知。\"\n    },\n    {\n      \"severity\": \"info\",\n      \"target_node\": \"media-comment-classify-001\",\n      \"location\": \"item 5 (投诉/质疑边界)\",\n      \"problem\": \"label_conflict指出'投诉'与'质疑'边界模糊；当前按高风险原则分类触发人工审核，但下游需核实是否确有投诉经历。\",\n      \"action\": \"人工审核时确认用户评论的具体意图；若无实际投诉案例则降级为'质疑'并采用不含法律责任承诺的auto_reply模板。\",\n      \"acceptance_criteria\": \"最终标签精确反映用户意图，平台不会因误标而采取过激或不当回应。\"\n    }\n  ],\n  \"evidence_checks\": {\n    \"source_fact_checks\": \"verified: all titles/covers map to provided upstream facts; no unsupported factual claims detected beyond those already flagged by upstream self-check.\",\n    \"number_checks\": \"verified: no specific numbers, percentages, monetary amounts, or client results present. Quantity words ('四','三个') are non-quantitative enumerations, not metric promises.\",\n    \"experience_certification_checks\": \"not applicable: no claims of personal certifications, academic degrees, positions, or skill proficiency.\",\n    \"cta_check\": \"cover copies serve descriptive/explanatory purpose without explicit call-to-action. No hard-sell or forced CTA detected. If platform positioning requires a soft CTA ('留下需求'等), this should be addressed by content drafting node, not title/cover draft.\"\n  },\n  \"checklist_coverage\": {\n    \"checked\": {\n      \"无来源数字/百分比/金额/客户结果\": \"passed\",\n      \"标题党/绝对化承诺\": \"V1 self-declared '非标题党'; V4 '风险地图' flagged as potential exaggeration, other variants descriptive/interrogative, no absolute promises\",\n      \"CTA是否存在/自然/过硬\": \"no explicit CTA present; soft CTA in V5 ('供售前和技术参考') is natural; if business requires CTA, refer to content writing node\",\n      \"是否符AI自媒体项目撮合定位\": \"符合：内容围绕LLM落地成本与风险，有助于撮合场景信任建设\",\n      \"预算线索是否转人工\": \"passed: comment 2 routed to manual_review\",\n      \"交易/法律/责任/纠纷风险是否转人工或阻塞\": \"passed: comment 2 (transaction), comment 5 (legal liability) correctly routed to manual_review; titles do not contain direct legal/transaction risk\"\n    },\n    \"unchecked_or_deferred\": {\n      \"正文全文CTA与交易引导\": \"deferred to content drafting node, not present in current title/cover draft\",\n      \"文章全文事实核查\": \"deferred, current scope limited to title/cover evidence\"\n    }\n  },\n  \"rework_assignment\": {\n    \"node_to_revise\": \"media-title-draft-001\",\n    \"tasks\": [\n      \"V4: weaken '风险地图' implication and add disclaimer of limited perspective\",\n      \"V2: add source stance disclaimer or deprioritize until employer-side validation obtained\",\n      \"All variants: add sample limitation note in final published content\"\n    ],\n    \"resubmit_to\": \"media-content-review-001\"\n  }\n}\n```",
+    "usage": {
+      "input": 4473,
+      "output": 5204,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "reasoning": 4027,
+      "totalTokens": 9677,
+      "cost": {
+        "input": 0.007783020000000001,
+        "output": 0.01810992,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "total": 0.025892940000000003
+      }
+    },
+    "stderr": "",
+    "elapsedMs": 84169,
+    "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+    "workDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-28-40-414Z/media-content-review-001-output",
+    "isolatedSessionDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-28-40-414Z/media-content-review-001-output/.pi-sessions"
+  },
+  "judgeOutput": {
+    "model": "opencode-go/deepseek-v4-pro",
+    "code": 0,
+    "text": "{\n  \"score\": 93,\n  \"score_scale\": \"0-100\",\n  \"pass\": true,\n  \"rubric_hits\": [\n    \"给出明确 publish/revise/block 裁决（decision: revise）\",\n    \"检查标题和素材证据是否一致（source_fact_checks）\",\n    \"检查 CTA 和撮合交易定位是否自然（cta_check）\",\n    \"识别交易、法律、夸张承诺风险（issues 标记风险地图、单方视角、样本局限；checklist 覆盖风险项）\",\n    \"只给短裁决和返工任务，不重写长文（issues 精炼，rework_assignment 为任务列表）\"\n  ],\n  \"missing\": [],\n  \"hallucination\": [],\n  \"red_line_violations\": [],\n  \"profile_lessons\": [\n    \"审查输出结构清晰，检查清单覆盖全面，可作为高质量门禁输出范例。\",\n    \"comment_routing_decision 字段超出通用契约 output 定义，未来可考虑移除或统一到 decision 字段以避免输出膨胀。\"\n  ],\n  \"prompt_patch_suggestions\": [\n    \"在节点提示中明确要求输出仅包含契约定义的字段，避免附加决策（如 comment_routing_decision），或将其纳入标准字段。\"\n  ]\n}",
+    "usage": {
+      "input": 3765,
+      "output": 3012,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "reasoning": 2729,
+      "totalTokens": 6777,
+      "cost": {
+        "input": 0.006551100000000001,
+        "output": 0.01048176,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "total": 0.01703286
+      }
+    },
+    "stderr": "",
+    "elapsedMs": 46690,
+    "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+    "workDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-28-40-414Z/media-content-review-001-judge",
+    "isolatedSessionDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-28-40-414Z/media-content-review-001-judge/.pi-sessions"
+  },
+  "judge": {
+    "score": 93,
+    "score_scale": "0-100",
+    "pass": true,
+    "rubric_hits": [
+      "给出明确 publish/revise/block 裁决（decision: revise）",
+      "检查标题和素材证据是否一致（source_fact_checks）",
+      "检查 CTA 和撮合交易定位是否自然（cta_check）",
+      "识别交易、法律、夸张承诺风险（issues 标记风险地图、单方视角、样本局限；checklist 覆盖风险项）",
+      "只给短裁决和返工任务，不重写长文（issues 精炼，rework_assignment 为任务列表）"
+    ],
+    "missing": [],
+    "hallucination": [],
+    "red_line_violations": [],
+    "profile_lessons": [
+      "审查输出结构清晰，检查清单覆盖全面，可作为高质量门禁输出范例。",
+      "comment_routing_decision 字段超出通用契约 output 定义，未来可考虑移除或统一到 decision 字段以避免输出膨胀。"
+    ],
+    "prompt_patch_suggestions": [
+      "在节点提示中明确要求输出仅包含契约定义的字段，避免附加决策（如 comment_routing_decision），或将其纳入标准字段。"
+    ],
+    "raw_score": 93
+  },
+  "minScore": 82,
+  "nodeOutputArtifact": {
+    "markdownPath": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-28-40-414Z/node_outputs/10-media-content-review-001.md",
+    "jsonPath": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-28-40-414Z/node_outputs/10-media-content-review-001.json"
+  }
+}

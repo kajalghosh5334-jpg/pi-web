@@ -1,0 +1,115 @@
+# 求职经历分段标准化
+
+- Case ID: `job-experience-standardize-001`
+- Workflow: `WF-2`
+- Node Type: `Standardize`
+- Target Profile: `weak-structured-operator`
+- Model: `opencode-go/deepseek-v4-flash`
+- Score: `90`
+- Pass: `false`
+- Elapsed: `34860ms`
+- Conversation Isolation: `fresh pi --print process with --no-session and --no-context-files`
+- Depends On: none
+
+## Input
+
+原始经历散文：我之前帮朋友做过 Excel 自动处理，主要是 Python 读表、合并、去重；后来接过一个企业资料问答小项目，客户资料很乱，我先清洗文档，再做向量库和简单网页入口；还给一个门店老板写过库存提醒脚本，但没有长期维护。请拆成独立经历条目。
+
+## Rubric
+
+1. 拆成可独立处理的经历条目
+2. 每条保留原始事实，不添加成果数字
+3. 字段包含项目名称、任务、技术、角色、证据缺口
+4. 缺少时间、公司、成果时标记 missing
+5. 不做简历润色或岗位判断
+
+## Node Output
+
+```json
+{
+  "normalized_items": [
+    {
+      "project_name": "Excel 自动处理",
+      "task": "使用 Python 对 Excel 表格进行读取、合并、去重",
+      "technology": ["Python"],
+      "role": "开发者（帮朋友）",
+      "evidence_gap": "缺少代码仓库、项目具体耗時、实际效果截图等可验证材料",
+      "company": "missing",
+      "time_period": "missing",
+      "achievement": "missing"
+    },
+    {
+      "project_name": "企业资料问答小项目",
+      "task": "清洗客户提供的散乱文档，构建向量库，开发简单网页入口",
+      "technology": ["向量数据库技术", "网页开发技术"],
+      "role": "开发者",
+      "evidence_gap": "缺少客户名称、项目规模、部署链接、数据量等可验证材料",
+      "company": "missing（原文提及客户，未提供具体名称）",
+      "time_period": "missing",
+      "achievement": "missing"
+    },
+    {
+      "project_name": "库存提醒脚本",
+      "task": "为门店老板开发库存提醒脚本",
+      "technology": ["unverified（原文未指定技术栈）"],
+      "role": "开发者（无后续维护）",
+      "evidence_gap": "缺少脚本文件、运行截图、使用时长等可验证材料",
+      "company": "missing（原文提及门店老板，未提供门店名称）",
+      "time_period": "missing",
+      "achievement": "missing"
+    }
+  ],
+  "field_mapping": {
+    "项目名称": "project_name",
+    "任务描述": "task",
+    "技术栈": "technology",
+    "角色": "role",
+    "证据缺口": "evidence_gap",
+    "公司/雇佣方": "company",
+    "时间": "time_period",
+    "成果": "achievement"
+  },
+  "missing_fields": {
+    "Excel 自动处理": ["company", "time_period", "achievement"],
+    "企业资料问答小项目": ["company", "time_period", "achievement", "tech_stack_detail"],
+    "库存提醒脚本": ["company", "time_period", "achievement", "tech_stack"]
+  },
+  "format_warnings": [
+    "原文为散文叙事，时间线与雇佣关系模糊，无法拆分出具体日期或所属单位",
+    "第三条经历明确标注‘没有长期维护’，属于未完成/终止项目，角色字段已相应标注",
+    "第二条经历中‘向量库’的具体技术产品（如 FAISS / Pinecone / Milvus）未指定，technology 字段保留泛称",
+    "所有条目均无可量化成果描述，achievement 全部标记为 missing"
+  ],
+  "handoff_summary": "成功将散文式经历拆分为 3 个独立条目。所有条目均缺失公司名称、时间范围和可量化成果。角色根据上下文直接映射，未做业务判断或简历润色。建议下游节点基于证据缺口标记进行补充性信息收集，或按 weak-structured-operator 标签做匹配降级处理。"
+}
+```
+
+## Judge
+
+### Rubric Hits
+
+- 成功将叙述性经历拆分为3个可独立处理的条目
+- 每条保留了原始事实，未添加成果数字
+- 字段完整包含项目名称、任务、技术、角色、证据缺口
+- 缺失的时间、公司、成果均标记为 missing
+- 未进行简历润色或岗位判断
+
+### Missing
+
+- 无
+
+### Hallucination
+
+- 无
+
+### Red Line Violations
+
+- handoff_summary 中加入了对下游节点的业务策略建议：'建议下游节点基于证据缺口标记进行补充性信息收集，或按 weak-structured-operator 标签做匹配降级处理'，违反了节点通用契约中'不得加入业务判断或策略建议'的红线
+
+### Profile Lessons
+
+- 标准化节点的 handoff_summary 应仅客观总结标准化过程本身（如拆分条目数、缺失字段情况等），不应包含对下游流程的操作指导或策略建议，保持节点职责单一、边界清晰
+
+### Prompt Patch Suggestions
+
+- 在 handoff_summary 生成指令中增加约束：'handoff_summary 只描述标准化过程的结果、注意事项与已知限制，不得提出下游节点应如何处理的建议或策略性判断'

@@ -1,0 +1,112 @@
+{
+  "testCase": {
+    "id": "job-jd-analyze-001",
+    "nodeType": "Analyze/Judge",
+    "profileTarget": "research-report-analyst",
+    "workflowId": "WF-4",
+    "title": "JD 匹配分析",
+    "model": "opencode-go/deepseek-v4-flash",
+    "tools": "none",
+    "dependsOn": [
+      "job-background-strategy-001",
+      "job-company-gather-001"
+    ],
+    "input": "候选人简历要点：高中学历；做过 Python 自动化脚本、RAG 知识库 demo、一个小型企业资料问答外包；会 Flask 基础，不熟 Django；Docker 只部署过一次。JD：Python 基础扎实，熟悉接口调用，了解 OpenCV 加分，大专及以上优先，有项目 demo 加分，能和业务方沟通需求。请输出命中项、缺漏项、弱化项、学历屏障和简历定制策略。",
+    "expectedRubric": [
+      "逐条对照 JD 输出命中、缺漏、弱化",
+      "明确学历是优先项而非硬卡",
+      "把 RAG/脚本/外包项目映射到岗位需求",
+      "对不熟 Django、Docker 经验弱等问题给可补策略",
+      "区分事实、推断、建议和置信度"
+    ],
+    "standardAnswer": "命中项包括 Python、接口调用相关经验、项目 demo、业务沟通潜力；OpenCV 未出现真实经验，应标缺漏或可补；学历是大专及以上优先，属于风险但非硬卡；Flask 可作为 Web 基础弱化 Django 缺口，Docker 只写了解或部署经验。定制策略应放大 RAG 外包、企业资料问答、Python 自动化，把学历放在简历后部如实呈现。",
+    "redLines": [
+      "不得把未掌握技能写成熟练",
+      "不得建议隐藏或伪造学历",
+      "不得把推断写成已验证事实"
+    ]
+  },
+  "output": {
+    "model": "opencode-go/deepseek-v4-flash",
+    "code": 0,
+    "text": "```json\n{\n  \"_node_type\": \"jd-match-analyzer\",\n  \"_workflow\": \"WF-4\",\n  \"_target_profile\": \"research-report-analyst\",\n  \"analysis_items\": [\n    {\n      \"jd_requirement\": \"Python 基础扎实\",\n      \"candidate_evidence\": \"自动化脚本、RAG demo\",\n      \"verdict\": \"命中\",\n      \"claim_type\": \"inference\",\n      \"confidence\": 0.8,\n      \"counter_evidence\": \"不熟 Django，Python 生态广度待验证\",\n      \"recommendation\": \"简历突出文件处理、网络请求、数据结构等 Python 基础题的准备；将 RAG demo 中的核心技术难点（Token 管理、相似度检索）写出深度以证明基础扎实。\"\n    },\n    {\n      \"jd_requirement\": \"熟悉接口调用\",\n      \"candidate_evidence\": \"RAG 调用 LLM API，企业问答外包必然涉及数据接口\",\n      \"verdict\": \"命中\",\n      \"claim_type\": \"inference\",\n      \"confidence\": 0.85,\n      \"counter_evidence\": \"未提供接口协议细节 (REST/WebSocket)\",\n      \"recommendation\": \"项目描述中明确写出调用的 API 名称、协议、认证方式、处理过的异常场景。\"\n    },\n    {\n      \"jd_requirement\": \"了解 OpenCV 加分\",\n      \"candidate_evidence\": \"未提及 CV/图像处理经验\",\n      \"verdict\": \"缺漏\",\n      \"claim_type\": \"fact\",\n      \"confidence\": 0.95,\n      \"counter_evidence\": \"简历未写不等于完全不懂，但当前输入无此信息\",\n      \"recommendation\": \"短期（3天）补一个极小项目（摄像头读取→处理→输出）写进简历；或面试时承认概念了解但无实战，强调 Python 学习迁移能力。\"\n    },\n    {\n      \"jd_requirement\": \"学历（大专及以上优先）\",\n      \"candidate_evidence\": \"高中学历\",\n      \"verdict\": \"屏障（弱化项）\",\n      \"claim_type\": \"fact + assumption\",\n      \"confidence\": 0.98,\n      \"counter_evidence\": \"JD 书写为 '优先'，并非 '必须'，有通过初筛的可能\",\n      \"recommendation\": \"① 简历弱化学历位置（置末）。② 面试准备 '自学驱动、项目验证的另类教育路径' 叙事。③ 投递前确认本岗位无硬性学历门槛。若投递后多日无回应（已读不回），说明被优先级规则过滤，需加大此类公司投递密度以对冲通过率。\",\n      \"red_line_check\": \"PASS - 未建议隐藏或伪造学历，仅建议弱化位置与叙事转化。\"\n    },\n    {\n      \"jd_requirement\": \"有项目 Demo 加分\",\n      \"candidate_evidence\": \"RAG 知识库 demo + 企业资料问答外包\",\n      \"verdict\": \"强命中（核心差异化优势）\",\n      \"claim_type\": \"fact\",\n      \"confidence\": 0.95,\n      \"counter_evidence\": \"Demo 质量和完整性未知（上游标记 '缺失数据'）\",\n      \"recommendation\": \"这是翻盘点。必须标准化为作品集（GitHub README + 截图 + 演示视频/部署链接）。面试必带，主动展示。\"\n    },\n    {\n      \"jd_requirement\": \"能和业务方沟通需求\",\n      \"candidate_evidence\": \"性格开朗 + 外包经验（本质上就是跟客户做需求对接）\",\n      \"verdict\": \"命中\",\n      \"claim_type\": \"inference\",\n      \"confidence\": 0.7,\n      \"counter_evidence\": \"未提供需求沟通的具体案例或冲突解决经历\",\n      \"recommendation\": \"准备 1 个沟通故事：'业务方说要 A 功能，我分析后建议 B 方案，最终上线验证 B 更优'。展示需求分析、预期管理和交付能力。\"\n    },\n    {\n      \"jd_requirement\": \"Docker/AI 工具部署（公司官网隐含技术栈）\",\n      \"candidate_evidence\": \"仅部署过一次\",\n      \"verdict\": \"弱化项\",\n      \"claim_type\": \"fact\",\n      \"confidence\": 0.95,\n      \"counter_evidence\": \"JD 未明确要求 Docker，但公司技术栈含 '轻量化模型部署'\",\n      \"recommendation\": \"把 RAG demo 容器化（写 Dockerfile + docker-compose.yml 并放到 GitHub）。半天工作量，工程化能力证明收益极高。\"\n    }\n  ],\n  \"gap_handling\": {\n    \"technical_gaps\": {\n      \"OpenCV\": \"短期突击项目 or 面试诚实补位说明\",\n      \"Docker\": \"立即容器化现有项目，成本低收益高\",\n      \"Django\": \"无需补，准备框架选择话术（Flask 敏捷 vs Django 全功能，表示愿意学）\"\n    },\n    \"structural_gaps\": {\n      \"学历\": \"弱化位置 + 叙事转化 + 高频投递对冲过滤\"\n    }\n  },\n  \"overall_confidence\": \"medium-low (JD 来源为片段/面经，公司研究为弱提取，候选人信息为摘要，核心假设依赖置信度低的数据层)\",\n  \"escalation_flag\": false\n}\n```\n→ Skipped: 简历正文/面试QA生成、公司注册信息推断、未验证项目细节补全。 Add when: 下游简历节点/面试准备节点接走本分析结果作为输入时。",
+    "usage": {
+      "input": 5520,
+      "output": 8857,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "reasoning": 7641,
+      "totalTokens": 14377,
+      "cost": {
+        "input": 0.0007728,
+        "output": 0.0024799600000000002,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "total": 0.0032527600000000004
+      }
+    },
+    "stderr": "",
+    "elapsedMs": 95985,
+    "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+    "workDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-28-40-414Z/job-jd-analyze-001-output",
+    "isolatedSessionDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-28-40-414Z/job-jd-analyze-001-output/.pi-sessions"
+  },
+  "judgeOutput": {
+    "model": "opencode-go/deepseek-v4-pro",
+    "code": 0,
+    "text": "{\n  \"score\": 78,\n  \"score_scale\": \"0-100\",\n  \"pass\": true,\n  \"rubric_hits\": [\n    \"逐条对照JD输出命中、缺漏、弱化（主要条目已涵盖，但缺少Django/Flask独立分析）\",\n    \"明确学历是优先项而非硬卡\",\n    \"把RAG/脚本/外包项目映射到岗位需求\",\n    \"对不熟Django、Docker经验弱等问题给可补策略\",\n    \"区分事实、推断、建议和置信度\"\n  ],\n  \"missing\": [\n    \"未在analysis_items中单独分析Django/Flask，未将Flask作为Web基础弱化Django缺口\",\n    \"学历建议弱化位置可能被误解为隐藏，需更谨慎措辞\",\n    \"未充分利用Flask经验作为Django缺口的正面替代叙事\"\n  ],\n  \"hallucination\": [],\n  \"red_line_violations\": [],\n  \"profile_lessons\": [\n    \"模型倾向于忽略JD中非主要技术栈的映射，需提示覆盖所有JD关键词\",\n    \"学历处理建议虽然合理但措辞可能被HR视为不诚实，需校准\"\n  ],\n  \"prompt_patch_suggestions\": [\n    \"在提示中明确要求逐条分析JD中每个技术需求，包括隐含或备选技术栈\",\n    \"明确要求对于缺漏技能，优先寻找候选人已有的相近经验进行弱化映射\"\n  ]\n}",
+    "usage": {
+      "input": 3712,
+      "output": 3978,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "reasoning": 3660,
+      "totalTokens": 7690,
+      "cost": {
+        "input": 0.00645888,
+        "output": 0.01384344,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "total": 0.02030232
+      }
+    },
+    "stderr": "",
+    "elapsedMs": 61628,
+    "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+    "workDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-28-40-414Z/job-jd-analyze-001-judge",
+    "isolatedSessionDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-28-40-414Z/job-jd-analyze-001-judge/.pi-sessions"
+  },
+  "judge": {
+    "score": 78,
+    "score_scale": "0-100",
+    "pass": false,
+    "rubric_hits": [
+      "逐条对照JD输出命中、缺漏、弱化（主要条目已涵盖，但缺少Django/Flask独立分析）",
+      "明确学历是优先项而非硬卡",
+      "把RAG/脚本/外包项目映射到岗位需求",
+      "对不熟Django、Docker经验弱等问题给可补策略",
+      "区分事实、推断、建议和置信度"
+    ],
+    "missing": [
+      "未在analysis_items中单独分析Django/Flask，未将Flask作为Web基础弱化Django缺口",
+      "学历建议弱化位置可能被误解为隐藏，需更谨慎措辞",
+      "未充分利用Flask经验作为Django缺口的正面替代叙事"
+    ],
+    "hallucination": [],
+    "red_line_violations": [],
+    "profile_lessons": [
+      "模型倾向于忽略JD中非主要技术栈的映射，需提示覆盖所有JD关键词",
+      "学历处理建议虽然合理但措辞可能被HR视为不诚实，需校准"
+    ],
+    "prompt_patch_suggestions": [
+      "在提示中明确要求逐条分析JD中每个技术需求，包括隐含或备选技术栈",
+      "明确要求对于缺漏技能，优先寻找候选人已有的相近经验进行弱化映射"
+    ],
+    "raw_score": 78
+  },
+  "minScore": 82,
+  "nodeOutputArtifact": {
+    "markdownPath": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-28-40-414Z/node_outputs/03-job-jd-analyze-001.md",
+    "jsonPath": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-28-40-414Z/node_outputs/03-job-jd-analyze-001.json"
+  }
+}

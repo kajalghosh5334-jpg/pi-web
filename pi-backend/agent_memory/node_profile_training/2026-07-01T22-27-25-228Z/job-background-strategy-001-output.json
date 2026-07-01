@@ -1,0 +1,25 @@
+{
+  "model": "opencode-go/deepseek-v4-pro",
+  "code": 0,
+  "text": "```json\n{\n  \"decision_summary\": \"高中学历为硬门槛，6k薪资匹配AI外包岗/初级开发生态，凭项目经验走作品集绕过学历过滤是当前最优路径。\",\n  \"positioning_or_strategy\": \"绕行策略：岗位圈锁定在AI外包、小型创业公司、AI数据标注/运维等对学历要求宽松的初级岗；叙事核心用「3个RAG/LLM外包案例+可运行代码库」替代学历，薪酬定位6k为保底生存线，非最终估值。\",\n  \"constraints\": {\n    \"irreversible_shorts\": [\n      \"学历：高中（无大专以上文凭，多数企业ATS/HR系统自动过滤）\",\n      \"无企业全职开发经历（仅外包，面试背调可验证性弱）\"\n    ],\n    \"reversible_shorts\": [\n      \"缺乏CS基础体系（数据结构/算法笔试弱）\",\n      \"无团队协作开发经验（Git/CI/CD等工程实践可能缺失）\",\n      \"无行业认证/标准化水平证明\"\n    ],\n    \"red_lines\": [\n      \"不得虚构学历、全职工作年限、项目金额、作品成果\",\n      \"不得将6k岗位包装为高级算法岗或专家岗\",\n      \"不得基于年龄、性别做任何价值判断\"\n    ],\n    \"missing_info\": [\n      \"外包项目具体数量、交付物、客户反馈 → unknown\",\n      \"代码库公开链接或作品集 → missing\",\n      \"学习路径来源（自学/培训）→ unverified\",\n      \"所在地理位置 → unknown\",\n      \"当前收入来源与经济压力 → unknown\"\n    ]\n  },\n  \"opportunities\": [\n    \"LLM/RAG技能点属于2024-2026高需求赛道，小公司用人缺口大\",\n    \"外包经历 = 真实交付能力，可转化为GitHub作品集展示\",\n    \"性格开朗适合售前/技术支持等沟通型岗位，可扩大岗位匹配圈\",\n    \"6k期望在AI领域偏低，对初创/小型外包公司是成本优势\",\n    \"可走「开源贡献+自媒体」路径建立技术品牌，绕过简历筛选\"\n  ],\n  \"execution_priorities\": [\n    \"【可验证竞争力提炼】整理3个最具代表性外包项目：名称、技术栈、功能、代码库（GitHub公开或私有截图）、客户评价或交付记录 → 包装为作品集\",\n    \"【岗位圈匹配】划定6k薪资对应的具体岗位类型：AI外包开发（Python）、AI数据标注/清洗、LLM应用开发、RAG工具维护、技术售前/支持、AI自媒体内容生产 → 给出投递优先级\",\n    \"【叙事绕行策略】简历/面试话术设计：以「项目经验」代替「学历/工龄」，以「交付案例」代替「任职证明」，避免提及学历为高中学历（简历中隐藏教育背景，除非企业硬性要求）\",\n    \"【渠道布局】外包平台（猪八戒/Upwork/Fiverr）+ 垂直社区（V2EX/掘金/知乎）+ 中小公司直投 + AI社群内推 → 摒弃海投大厂/标准招聘平台\",\n    \"【中长期补短板】规划6-12个月内完成自考大专/本科（计算机相关）或行业认证（如AWS/Python证书），为后续30k+岗位打底\",\n    \"【验证闭环】跟踪作品集展示前后面试邀约率变化，记录6k offer的行业/规模分布，每月对照调整岗位圈和叙事策略\"\n  ],\n  \"validation_metrics\": [\n    \"作品集完成后 2周内面试邀约率（期望≥15%）\",\n    \"6k薪资范围内 offer 占比（目标≥60%获得的offer在此区间或以上）\",\n    \"外包平台接单周期 vs 全职岗位投递回复率对比\",\n    \"简历投递后 HR绕过学历过滤的比例（通过回复邮件/电话判断）\",\n    \"coding test/笔试通过率（如涉及）\"\n  ],\n  \"handoff_to_next_nodes\": {\n    \"positioning_report\": \"下游需生成详细求职规划报告（1v1诊断方案），包含：岗位清单与优先级、作品集结构规范、外包平台玩法、面试话术模板、学习路线图、风险预案\",\n    \"competitiveness_extraction\": \"下游需基于3个外包项目提取技术标签、能力矩阵、Gap分析（对比目标岗位JD），输出可写进简历的技能树\",\n    \"narrative_and_material\": \"下游需产出简历大纲/话术要点（不包含教育背景字段）、作品集包装方案、社交媒体/开源贡献内容规划\",\n    \"blocked_or_review_required\": [\n      \"若求职者无法提供外包项目证据 → mark as low_confidence, 需面试进一步核实技术深度\",\n      \"若求职者学历为高中且不接受自考规划 → mark as blocked for 大厂/学历硬筛选岗\",\n      \"若求职者期望薪资6k但实际市场该技能可开到8-12k → 标注风险：可能低估自身价值，下游应给出薪资范围建议而非直接同意6k\"\n    ]\n  }\n}\n```\n\nSkipped: 全文诊断报告、简历正文、面试话术 —— 均归下游节点；附加了 `missing_info` 与 risk 标记满足“不补造”契约。",
+  "usage": {
+    "input": 2576,
+    "output": 1842,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "reasoning": 694,
+    "totalTokens": 4418,
+    "cost": {
+      "input": 0.00448224,
+      "output": 0.006410160000000001,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "total": 0.0108924
+    }
+  },
+  "stderr": "",
+  "elapsedMs": 37257,
+  "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+  "workDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T22-27-25-228Z/job-background-strategy-001-output",
+  "isolatedSessionDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T22-27-25-228Z/job-background-strategy-001-output/.pi-sessions"
+}

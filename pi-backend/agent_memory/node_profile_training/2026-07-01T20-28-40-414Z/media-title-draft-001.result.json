@@ -1,0 +1,114 @@
+{
+  "testCase": {
+    "id": "media-title-draft-001",
+    "nodeType": "Generate/Draft",
+    "profileTarget": "content-draft-producer",
+    "workflowId": "WF-13",
+    "title": "标题封面 A/B 方案",
+    "model": "opencode-go/deepseek-v4-flash",
+    "tools": "none",
+    "dependsOn": [
+      "media-material-gather-001"
+    ],
+    "input": "基于上游素材，为一篇讲企业落地 LLM 真实坑的内容生成 5 组标题和封面文案。方向要覆盖技术者向、企业主向和混合向，避免标题党。",
+    "generationGuardrails": {
+      "forbiddenUnsupportedClaims": [
+        "任何上游没有出现的百分比",
+        "任何上游没有出现的金额",
+        "任何上游没有出现的客户结果",
+        "任何 30 天、翻倍、70%、80% 等点击诱导数字"
+      ],
+      "requiredSelfCheck": "输出前逐条扫描标题和封面文案中的数字/百分比/金额；无来源依据时必须删除、改成非数字表达，或写 placeholder。"
+    },
+    "expectedRubric": [
+      "输出 5 组标题和封面文案",
+      "每组标注适用受众和点击动机",
+      "至少覆盖技术者向、企业主向、混合向",
+      "不新增上游没有支撑的案例、数字或结果",
+      "避免夸张承诺和标题党"
+    ],
+    "standardAnswer": "标题应围绕资料乱、维护没人做、demo 到生产的距离、数据清洗/权限/评测/运维这些真实素材。技术者向可强调交付边界和维护付费；企业主向可强调为什么 LLM 项目不是买个模型；混合向可强调需求怎么拆才不会烂尾。不得写 30 天降本 80% 等无来源数字。",
+    "redLines": [
+      "不得编造客户成功案例或收益数字",
+      "不得输出标题党式绝对承诺",
+      "不得偏离撮合交易定位"
+    ]
+  },
+  "output": {
+    "model": "opencode-go/deepseek-v4-flash",
+    "code": 0,
+    "text": "```json\n{\n  \"draft_sections\": [\n    {\n      \"variant_id\": \"V1\",\n      \"title\": \"数据清洗、权限设计、评测与运维：LLM 落地的四道工程成本关\",\n      \"cover_copy\": \"一篇把那些「看不见的钱」拆开讲的清单式复盘——非标题党，只列你计划预算前就该知道的真实开销项。\",\n      \"target_audience\": \"技术者向（架构师/技术负责人/开发者）\",\n      \"click_motive\": \"清单式结构满足「检查清单」心理，技术决策者需要预判隐形成本\",\n      \"source_facts_used\": [\"LLM 项目常见成本来自数据清洗、权限设计、评测和运维（文章摘录，作者论述）\"]\n    },\n    {\n      \"variant_id\": \"V2\",\n      \"title\": \"客户只想要一个 demo，后续维护谁买单？\",\n      \"cover_copy\": \"开发者圈子里反复出现的焦虑：项目做完了，客户不想为持续迭代付费。这不是单方抱怨——我们拆一下双方的预期差。\",\n      \"target_audience\": \"企业主向（决策者/甲方项目经理）\",\n      \"click_motive\": \"痛点直击（预算与长期投入的冲突），企业主需要理解供应商的持续运维诉求\",\n      \"source_facts_used\": [\"开发者担心客户只想要 demo，不愿意为后续维护付费（评论摘录，开发者个人观点）\"]\n    },\n    {\n      \"variant_id\": \"V3\",\n      \"title\": \"资料太乱、没人维护：一个制造业 LLM 知识库的真实起点\",\n      \"cover_copy\": \"不是技术选型、不是模型能力，试过之后最大的坎是没人整理数据。这是从一个具体项目访谈里拎出来的场景。\",\n      \"target_audience\": \"混合向（技术者 + 企业主）\",\n      \"click_motive\": \"案例共鸣（制造业场景常见），展示落地前置条件而非成果，降低预期同时建立信任\",\n      \"source_facts_used\": [\"某制造企业在试过知识库问答时遇到的最大问题是资料太乱、没人维护（访谈摘录，单案例经验/观点）\"]\n    },\n    {\n      \"variant_id\": \"V4\",\n      \"title\": \"LLM 项目交付之后：那些开发者不敢写在合同里的风险\",\n      \"cover_copy\": \"demo 漂亮、验收通过、然后呢？从工程成本到商业模式，把三个不同 source 的坑拼成一张风险地图。\",\n      \"target_audience\": \"混合向（技术者 + 企业主）\",\n      \"click_motive\": \"风险清单驱动点击，覆盖双方共同关心的话题：交付只是开始\",\n      \"source_facts_used\": [\n        \"LLM 项目常见成本来自数据清洗、权限设计、评测和运维（文章摘录）\",\n        \"开发者担心客户只想要 demo，不愿意为后续维护付费（评论摘录）\",\n        \"某制造企业在试过知识库问答时遇到的最大问题是资料太乱、没人维护（访谈摘录）\"\n      ]\n    },\n    {\n      \"variant_id\": \"V5\",\n      \"title\": \"当一个制造业甲方说「我的知识库资料太乱」——他在说什么？\",\n      \"cover_copy\": \"不是模型不行，不是落地方法不对。我们把这句话背后隐含的工程问题拆成可执行的 check list，供售前和技术参考。\",\n      \"target_audience\": \"技术者向兼企业主向（侧重技术视角但甲方也看得懂）\",\n      \"click_motive\": \"场景还原感，把模糊抱怨翻译成具体问题清单，适合售前阶段双方对齐预期\",\n      \"source_facts_used\": [\"某制造企业在试过知识库问答时遇到的最大问题是资料太乱、没人维护（访谈摘录）\"]\n    }\n  ],\n\n  \"source_usage\": {\n    \"V1\": \"上游事实[1]: LLM 项目常见成本来自数据清洗、权限设计、评测和运维（文章摘录）\",\n    \"V2\": \"上游事实[2]: 开发者担心客户只想要 demo，不愿意为后续维护付费（评论摘录）\",\n    \"V3\": \"上游事实[0]: 某制造企业在试过知识库问答时遇到的最大问题是资料太乱、没人维护（访谈摘录）\",\n    \"V4\": \"综合上游事实[0][1][2]\",\n    \"V5\": \"上游事实[0]\"\n  },\n\n  \"unsupported_claims_removed\": [\n    \"无。所有标题和封面文案均未引入新案例、百分比、金额或客户结果。\",\n    \"「清单式」「风险地图」等修饰均为结构说明，不构成具体事实承诺。\"\n  ],\n\n  \"unsupported_numbers_self_check\": [\n    \"扫描结果：5 组标题/封面文案中无任何百分比、金额、天/周/月等具体数字。\",\n    \"V1「四道工程成本关」中的「四」是列举数量，对应上游提到的四个成本项，允许。\",\n    \"V5「check list」为常用表述，无数字。\",\n    \"其余所有数量表达（「一篇」「一个」「三个」）均为非精确计量，不涉及收益/效果承诺。\"\n  ],\n\n  \"editable_notes\": [\n    \"V3 中「一个具体项目访谈」可等后续获得更多项目背景后升级为案例化描述（当前仅标示来源为访谈）。\",\n    \"若未来获取到成本占比数据，可替换 V1 中的「…关」为具体比例；目前维持非数字表述。\",\n    \"所有标题未使用「避坑」「血泪」「万万没想到」等加重词，已按避免标题党原则处理；如需更吸睛，可微调动词，但需保持事实底线。\"\n  ],\n\n  \"risk_flags\": [\n    \"V4「风险地图」一词可能被读者误解为系统性的正式风险评估报告，实际仅基于三个来源的有限视角，建议添加脚标或补充说明。\",\n    \"V2「客户只想要 demo」目前仅有开发者单方观点，缺乏企业主侧验证；发布前建议补充甲方调研或标注立场局限。\",\n    \"全部标题均基于少量样本（3个fact），覆盖面和代表性有限，不宜过度泛化至全行业。\"\n  ]\n}\n```",
+    "usage": {
+      "input": 3214,
+      "output": 2153,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "reasoning": 786,
+      "totalTokens": 5367,
+      "cost": {
+        "input": 0.00044996,
+        "output": 0.00060284,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "total": 0.0010528
+      }
+    },
+    "stderr": "",
+    "elapsedMs": 25094,
+    "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+    "workDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-28-40-414Z/media-title-draft-001-output",
+    "isolatedSessionDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-28-40-414Z/media-title-draft-001-output/.pi-sessions"
+  },
+  "judgeOutput": {
+    "model": "opencode-go/deepseek-v4-pro",
+    "code": 0,
+    "text": "{\n  \"score\": 100,\n  \"score_scale\": \"0-100\",\n  \"pass\": true,\n  \"rubric_hits\": [\n    \"输出 5 组标题和封面文案\",\n    \"每组标注适用受众和点击动机\",\n    \"至少覆盖技术者向、企业主向、混合向\",\n    \"不新增上游没有支撑的案例、数字或结果\",\n    \"避免夸张承诺和标题党\"\n  ],\n  \"missing\": [],\n  \"hallucination\": [],\n  \"red_line_violations\": [],\n  \"profile_lessons\": [\n    \"通过复用有限上游素材（3条事实）可以组合出针对性较强的多角度标题，无需编造新数据。\",\n    \"使用疑问句和场景还原代替断言可降低标题党风险，同时保留吸引力。\",\n    \"在 draft 阶段用 risk_flags 标注表达歧义（如“风险地图”）比直接删除更能提示编辑阶段的人类注意。\"\n  ],\n  \"prompt_patch_suggestions\": []\n}",
+    "usage": {
+      "input": 4029,
+      "output": 2305,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "reasoning": 2085,
+      "totalTokens": 6334,
+      "cost": {
+        "input": 0.0070104600000000005,
+        "output": 0.0080214,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "total": 0.015031860000000001
+      }
+    },
+    "stderr": "",
+    "elapsedMs": 37709,
+    "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+    "workDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-28-40-414Z/media-title-draft-001-judge",
+    "isolatedSessionDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-28-40-414Z/media-title-draft-001-judge/.pi-sessions"
+  },
+  "judge": {
+    "score": 100,
+    "score_scale": "0-100",
+    "pass": true,
+    "rubric_hits": [
+      "输出 5 组标题和封面文案",
+      "每组标注适用受众和点击动机",
+      "至少覆盖技术者向、企业主向、混合向",
+      "不新增上游没有支撑的案例、数字或结果",
+      "避免夸张承诺和标题党"
+    ],
+    "missing": [],
+    "hallucination": [],
+    "red_line_violations": [],
+    "profile_lessons": [
+      "通过复用有限上游素材（3条事实）可以组合出针对性较强的多角度标题，无需编造新数据。",
+      "使用疑问句和场景还原代替断言可降低标题党风险，同时保留吸引力。",
+      "在 draft 阶段用 risk_flags 标注表达歧义（如“风险地图”）比直接删除更能提示编辑阶段的人类注意。"
+    ],
+    "prompt_patch_suggestions": [],
+    "raw_score": 100
+  },
+  "minScore": 82,
+  "nodeOutputArtifact": {
+    "markdownPath": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-28-40-414Z/node_outputs/08-media-title-draft-001.md",
+    "jsonPath": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-28-40-414Z/node_outputs/08-media-title-draft-001.json"
+  }
+}

@@ -1,0 +1,349 @@
+你是严格训练裁判。请对一个 Workflow 节点输出评分，只返回 JSON，不要 markdown。
+
+节点类型：Action/Writeback
+任务：多平台分发排期 payload
+
+当前输入：
+定稿内容已通过审稿。平台要求：抖音需要标题、口播脚本、发布时间；小红书需要标题、封面文案、正文；知乎需要长标题和回答摘要。请生成排期队列 payload，不要声称已经发布。
+
+上游上下文：
+上游节点 media-title-draft-001 状态：passed
+上游节点 media-title-draft-001 输出：
+好的，任务收到。
+
+我是 content-draft-producer 节点，只负责为给定素材生成初稿。不添加、不推断、不补缺。
+
+以下是为 "企业落地 LLM 的坑" 素材生成的 5 组标题与封面文案。
+
+---
+
+### 输出结构：标题封面 A/B 方案
+
+**职责声明**：本初稿仅基于上游提供的非量化定性素材生成，未补充任何外部数据。数字、案例、百分比均无来源依据，已在文案中避免。
+
+---
+
+#### 方案一：技术者向 - 知识库质量
+
+*   **标题 A**
+    *   **文案**：企业 LLM 落地第一关：知识库到底有多乱？
+    *   **受众**：技术实施（CTO/技术负责人）
+    *   **点击动机**：同感共鸣 + 了解自身处境
+*   **封面文案 A**
+    *   **文案**：一个制造企业的真实经历：资料太乱，无从下手。
+    *   **备注**：此处“一个制造企业”指向上游素材，已标注来源类型。
+
+*   **标题 B** (变体，偏视角感)
+    *   **文案**：没人维护的知识库，是 LLM 落地的第一堵墙
+    *   **受众**：技术实施
+    *   **点击动机**：痛点共鸣 + 引发反思
+*   **封面文案 B**
+    *   **文案**：不止是技术问题，更是治理问题。
+
+---
+
+#### 方案二：技术者向 - 成本与难点
+
+*   **标题 A**
+    *   **文案**：LLM 项目预算流向何处？数据清洗、权限、评测、运维
+    *   **受众**：技术决策者
+    *   **点击动机**：成本管理 + 学习常见成本项
+*   **封面文案 A**
+    *   **文案**：别只看模型采购成本，落地成本大头在看不见的地方。
+    *   **备注**：此处未见具体金额或比例，均使用定性表达。
+
+*   **标题 B** (变体，偏清单感)
+    *   **文案**：企业 LLM 落地的四个隐形成本项
+    *   **受众**：技术决策者/CIO
+    *   **点击动机**：清单式信息，易消化
+*   **封面文案 B**
+    *   **文案**：数据清洗、权限设计、评测、运维。你的项目团队准备好了吗？
+
+---
+
+#### 方案三：企业主向 - 决策 & 风险预期
+
+*   **标题 A**
+    *   **文案**：别只被 Demo 打动：LLM 项目交付后的真实挑战
+    *   **受众**：企业主/业务决策者
+    *   **点击动机**：规避风险，管理预期
+*   **封面文案 A**
+    *   **文案**：“客户只想要个 demo，不愿意为后续维护付费。” 这不是个案。
+    *   **备注**：此处“不是个案”是语气让步，非事实陈述。已在封面中强调“这不是个案”以区分于事实。
+
+*   **标题 B** (变体，偏成本决策)
+    *   **文案**：企业上 LLM 前，先看看这三类成本
+    *   **受众**：企业主/业务决策者
+    *   **点击动机**：成本评估，避免预算陷阱
+*   **封面文案 B**
+    *   **文案**：技术选型只是开始。数据准备、权限体系、持续评测，才是长期投入的核心。
+
+---
+
+#### 方案四：混合向 - 知识库与期望管理
+
+*   **标题**
+    *   **文案**：知识库问答：为什么别人说“好用”，你却说“没用”？
+    *   **受众**：业务 + 技术共同阅读（混合向）
+    *   **点击动机**：破解期望落差，找到落地卡点
+*   **封面文案**
+    *   **文案**：一位工程师的观察：资料没整理好之前，先别谈 LLM 有多强。
+
+---
+
+#### 方案五：混合向 - 治理与协作
+
+*   **标题**
+    *   **文案**：不止是模型选型——企业 LLM 落地中的隐性治理成本
+    *   **受众**：企业主 + 技术负责人（混合向）
+    *   **点击动机**：系统化视角，避免踩坑
+*   **封面文案**
+    *   **文案**：从权限设计到评测体系，从数据清洗到运维团队。LLM 项目，是一场组织协作的考验。
+
+---
+
+### 源使用与自检
+
+| 文案元素 | 上游依据 | 备注 |
+| :--- | :--- | :--- |
+| “资料太乱”、“没人维护” | 访谈摘录（制造企业） | 已保留来源标注 |
+| “数据清洗、权限设计、评测、运维” | 文章摘录（成本项） | 已使用 |
+| “客户只想要 demo，不愿意为后续维护付费” | 评论摘录（开发者观点） | 已保留来源标注 |
+| 数字、百分比、金额、成功案例 | 无 | 已全部移除，未使用任何数字表达 |
+| “不是个案” | 无 | 已在封面文案中标注为语气表达，非事实断言。 |
+
+---
+
+### evidence_gaps & 未使用字段
+
+*   **evidence_gaps**：本章案未对“坑”的普遍性、成本金额、或“demo 陷阱”发生率做出任何事实承诺。所有论断均锚定在上游提供的具体个案或观点中。
+*   **unsupported_claims_removed**：未发现需删除的无依据表达。
+*   **unsupported_numbers_self_check**：所有标题和封面向中不存在任何数字/百分比/金额。已通过。
+
+---
+
+### 风险与备注
+
+*   **风险 1**：若将“一人制造企业”直接推广为“行业常态”，需补充行业调研数据。本章案未进行此推广。
+*   **风险 2**：标题/封面中使用了“真实经历”、“真实挑战”等词语，旨在强调素材来源为客观输入，而非 AI 虚构。但在读者感知中，可能被理解为“客观事实”。如需更严谨，可将“真实经历”替换为“分享的经验”。
+*   **职责边界**：本输出为草稿，具体选题、配图、行文由下游节点决定。所有观点需在最终审查中经人类确认。
+
+---
+
+上游节点 media-content-review-001 状态：passed
+上游节点 media-content-review-001 输出：
+```json
+{
+  "decision": "revise",
+  "issues": [
+    {
+      "severity": "medium",
+      "target_node": "media-title-draft-001",
+      "location": "全部5组方案，标题/封面文案区块",
+      "problem": "CTA（行动号召）完全缺失。标题和封面作为发布内容的第一触点，缺少任何形式的互动引导（评论/私信/点击），不符合 AI 自媒体内容运营基本规范，可能削弱转化与撮合效率。",
+      "action": "在每个方案或最终选用方案中，补充一条匹配内容风格的自然CTA，例如：‘评论区聊聊你们公司的知识库现状’或‘遇到类似坑？私信我们帮你对接合适开发者’",
+      "acceptance_criteria": "发布版文案至少包含一处自然、不硬的CTA，且与内容主题相关，避免推销感过强"
+    },
+    {
+      "severity": "low",
+      "target_node": "media-title-draft-001",
+      "location": "方案一 · 标题A‘一个制造企业的真实经历’；方案三 · 封面文案A‘真实挑战’等",
+      "problem": "使用‘真实经历’‘真实挑战’等措辞，虽草案自我标注为‘指向上游素材’或‘语气’，但读者端易误解为客观普遍事实，存在轻度夸张感知风险。",
+      "action": "将‘真实经历’替换为‘分享的经历/实例’；将‘真实挑战’替换为‘实际挑战’或直接使用‘落地后的常见挑战’。",
+      "acceptance_criteria": "所有类似表述修改后不产生‘绝对事实’暗示，标注的临时让步说明可移除。"
+    },
+    {
+      "severity": "low",
+      "target_node": "media-title-draft-001",
+      "location": "方案三 · 封面文案A ‘这不是个案’",
+      "problem": "‘这不是个案’虽标注为语气表达，但独立出现在封面时，读者极大概率理解为客观结论，产生无依据的普遍化断言风险。",
+      "action": "删除该句，或改为行业常见语气如‘这类反馈不少见’（仍含风险，推荐删除）。",
+      "acceptance_criteria": "该句不再出现于任何发布文案，或修改后明确带主观缓冲词且不影响理解。"
+    }
+  ],
+  "evidence_checks": {
+    "numerical_claims": "pass — 无任何数字/百分比/金额/客户结果",
+    "source_alignment": "pass — 草案中所有素材锚点均在自检表中指向‘访谈摘录’‘文章摘录’‘评论摘录’，未额外补造",
+    "unsupported_generalization": "low_risk — ‘真实经历’‘真实挑战’‘这不是个案’已标注但仍有误解空间，建议按 issues 调整",
+    "cta_check": "fail — 内容无任何CTA，需补充"
+  },
+  "checklist_coverage": {
+    "checked": [
+      "标题/封面是否包含无来源数字——否，已通过",
+      "标题是否标题党/绝对化承诺——否，无明显震惊体或保证性承诺",
+      "是否符合AI自媒体项目撮合定位——是，内容精准吸引LLM落地相关决策者",
+      "预算线索是否转人工——是，评论2已正确标为manual_review",
+      "交易/法律/责任/纠纷风险是否转人工或阻塞——是，评论5已正确转人工"
+    ],
+    "partially_checked": [
+      "CTA是否存在/自然/过硬——当前缺失，需补充后重检"
+    ],
+    "unchecked": [
+      "最终配图、视频内容与标题封面的一致性（超出本节点输入范围）"
+    ]
+  },
+  "rework_assignment": {
+    "node": "media-title-draft-001",
+    "due_changes": [
+      "补充CTA",
+      "调整‘真实经历/真实挑战’措辞",
+      "删除或修改‘这不是个案’句"
+    ],
+    "return_output": "修订后的标题/封面方案（保持原有结构），完成上述修改后重新提交本 gate 审查",
+    "note": "评论分类结果 media-comment-classify-001 无需返工，可直接流转使用"
+  },
+  "comment_classification_review": {
+    "decision": "approve",
+    "reason": "5条评论分类准确，风险标志完整，交易线索（评论2）与法律投诉（评论5）均已正确标记 manual_review，无漏标或误标，可以直接使用。"
+  }
+}
+```
+
+Rubric：
+[
+  "为各平台生成 action_payloads",
+  "包含 idempotency_key",
+  "缺少字段标记 blocked 或 missing",
+  "不得声称已发布或已写入",
+  "高风险或缺审稿通过时转人工",
+  "每个 action_payload 顶层都必须包含 platform、action_type、status、source_artifact、content_fields、scheduled_time、idempotency_key",
+  "不得凭空生成 variant_set、素材编号、排期时间或外部 artifact id"
+]
+
+标准答案/关键要点：
+应输出三个平台的待执行 payload，包含 platform、action_type、status、source_artifact、content_fields、scheduled_time、idempotency_key。若发布时间未给，每个 payload 顶层 scheduled_time 都应写 missing，status 应是 blocked 或 pending_schedule，不得默认当前时间。source_artifact 应引用上游标题/审稿结果或标 missing，不得编造 variant_set、素材编号、外部 artifact id。状态应是 pending_write/pending_schedule/blocked/manual_review，不是 published。
+
+红线：
+[
+  "不得声称已经发布",
+  "不得给缺失发布时间填默认值",
+  "不得绕过审稿状态",
+  "不得编造 variant_set、素材编号、发布时间或外部 artifact id",
+  "不得把 scheduled_time 只藏在 content_fields 内，必须在 payload 顶层出现"
+]
+
+节点通用契约：
+{
+  "purpose": "生成系统动作 payload 或队列项，不声称已经执行真实外部动作。",
+  "output": [
+    "action_payloads: 待执行 payload 列表；每项必须含 platform/action_type/status/source_artifact/content_fields/scheduled_time/idempotency_key",
+    "idempotency_key: 全局幂等键；每个 payload 也要有平台级幂等键",
+    "validation_result",
+    "blocked_items",
+    "retry_or_manual_review_advice"
+  ],
+  "redLines": [
+    "不得声称已写入、已发布、已执行，除非工具真实返回成功",
+    "必填项缺失必须 blocked，不得默认为 0 或空",
+    "每个 action_payload 都必须在顶层显式写 scheduled_time；缺少 scheduled_time/source_artifact/content_fields 时必须显式写 missing 或 blocked",
+    "status 只能使用 pending_write、pending_schedule、blocked、manual_review，不得用含糊状态掩盖必填项缺失",
+    "不得凭空生成 variant_set、素材编号、排期时间或外部 artifact id",
+    "高风险动作必须 manual_review"
+  ]
+}
+
+本样本标签/路由 schema：
+null
+
+本样本生成/审查专项约束：
+{
+  "generationGuardrails": null,
+  "reviewChecklist": null,
+  "calculationRules": null,
+  "deterministicReference": null
+}
+
+裁判注意：
+1. 当前输入中明确出现的实体、公司名、数字或事实，不应判为编造。
+2. 上游上下文中明确出现的实体、公司名、数字或事实，也不应判为编造。
+3. 只有输出新增了当前输入、上游输出、标准答案都未支持的信息，才算 hallucination。
+4. 若上游依赖 failed/missing，输出把失败依赖当作已验证事实，应扣分；但不能把上游已通过节点中的事实误判为 hallucination。
+5. 若存在确定性预计算参考，所有率值/百分比以该参考为准，偏离即扣分。
+6. red_line_violations 如果没有，请返回空数组 []，不要返回 ["无"]。
+
+待评分输出：
+```json
+{
+  "idempotency_key": "wf-15-multiplatform-schedule-2026-07-02T00:00:00Z",
+  "action_payloads": [
+    {
+      "platform": "douyin",
+      "action_type": "schedule_post",
+      "status": "blocked",
+      "source_artifact": "media-title-draft-001 (initial draft, 5 variants, no selection, no voice script)",
+      "content_fields": {
+        "title": "missing – 5 candidate titles in source, none selected",
+        "voice_script": "missing – upstream never provided",
+        "scheduled_time": "missing"
+      },
+      "scheduled_time": "missing",
+      "idempotency_key": "wf-15-douyin-schedule-2026-07-02T00:00:00Z"
+    },
+    {
+      "platform": "xiaohongshu",
+      "action_type": "schedule_post",
+      "status": "blocked",
+      "source_artifact": "media-title-draft-001 (initial draft, 5 title/cover pairs, no body)",
+      "content_fields": {
+        "title": "missing – 5 candidates, none selected",
+        "cover_text": "missing – candidates exist but review required wording changes; final not confirmed",
+        "body": "missing – upstream never provided",
+        "scheduled_time": "missing"
+      },
+      "scheduled_time": "missing",
+      "idempotency_key": "wf-15-xiaohongshu-schedule-2026-07-02T00:00:00Z"
+    },
+    {
+      "platform": "zhihu",
+      "action_type": "schedule_post",
+      "status": "blocked",
+      "source_artifact": "media-title-draft-001 (insufficient metadata)",
+      "content_fields": {
+        "long_title": "missing – not provided",
+        "answer_summary": "missing – not provided",
+        "scheduled_time": "missing"
+      },
+      "scheduled_time": "missing",
+      "idempotency_key": "wf-15-zhihu-schedule-2026-07-02T00:00:00Z"
+    }
+  ],
+  "validation_result": {
+    "overall": "blocked",
+    "missing_fields_per_platform": {
+      "douyin": ["voice_script", "scheduled_time", "final_title_selection"],
+      "xiaohongshu": ["body", "scheduled_time", "final_title_selection", "final_cover_text (review #1 wording changes pending)"],
+      "zhihu": ["long_title", "answer_summary", "scheduled_time"]
+    },
+    "risks": [
+      "review #1 (media-content-review-001) requires: add CTA, adjust '真实经历' phrasing, remove '这不是个案'. Current payload uses initial draft; final version with these fixes is not available. All payloads blocked until confirmed final draft is supplied.",
+      "Each platform requires fields that the upstream sequence never produced (voice script, body, long title, answer summary, publication time). These must be provided by upstream or external input before scheduling."
+    ]
+  },
+  "blocked_items": [
+    "douyin: voice script missing",
+    "douyin: scheduled_time missing",
+    "douyin: final variant not selected among 5 candidates",
+    "douyin: CTA not added (review requirement)",
+    "xiaohongshu: body missing",
+    "xiaohongshu: scheduled_time missing",
+    "xiaohongshu: final variant not selected; cover wording pending review fix",
+    "zhihu: long_title missing",
+    "zhihu: answer_summary missing",
+    "zhihu: scheduled_time missing"
+  ],
+  "retry_or_manual_review_advice": "Blocked. Await upstream finalisation: (1) select one variant per platform, (2) apply review #1 wording fixes, (3) produce voice script / body / long title + answer summary, (4) assign scheduled_time. After receiving complete content, resubmit to this node for payload generation."
+}
+```
+
+返回 JSON。score 必须是 0-100 的整数，不要使用 0-1 小数制或 0-10 十分制：
+{
+  "score": 0,
+  "score_scale": "0-100",
+  "pass": true,
+  "rubric_hits": [""],
+  "missing": [""],
+  "hallucination": [""],
+  "red_line_violations": [""],
+  "profile_lessons": [""],
+  "prompt_patch_suggestions": [""]
+}

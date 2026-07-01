@@ -1,0 +1,267 @@
+你是 Workflow 中的一个 profile 化节点。请只完成当前节点，不要越权完成下游任务。
+
+节点类型：Action/Writeback
+目标 Profile：structured-writeback-operator
+Workflow：WF-15
+任务：多平台分发排期 payload
+
+上游上下文：
+上游节点 media-title-draft-001 输出：
+```json
+{
+  "node_type": "Generate/Draft",
+  "profile": "content-draft-producer",
+  "workflow": "WF-13",
+  "task": "标题封面 A/B 方案",
+  "output": {
+    "draft_sections": [
+      {
+        "variant_id": "A1",
+        "title": "企业知识库项目第一步就卡住？不是技术问题，是没人管数据",
+        "cover_copy": "不少企业花了几个月整理文档，却发现连一个清晰的维护流程都没有。这不是技术债，是管理债。",
+        "target_audience": "技术者向（技术负责人 / 架构师 / AI 工程师）",
+        "click_motivation": "共鸣 + 痛点诊断 → 引向解决思路探求",
+        "source_usage": {
+          "fact_ids": ["fact_001"],
+          "note": "直接对应上游制造企业访谈：“内部资料混乱，且没有专人负责维护”。封面文案中未引入其他来源。"
+        }
+      },
+      {
+        "variant_id": "A2",
+        "title": "LLM 项目成本大头在哪？我们拆了一下，发现模型调用不是最贵",
+        "cover_copy": "从数据清洗到后期运维，这些隐藏环节加起来的成本可能超出你的预期。",
+        "target_audience": "技术者向（工程师 / AI 项目经理 / 技术选型者）",
+        "click_motivation": "成本洞察 → 吸引技术读者验证或反驳",
+        "source_usage": {
+          "fact_ids": ["fact_002"],
+          "note": "基于上游文章断言：“LLM 项目的常见成本主要来自数据清洗、权限设计、评测以及后期运维”。未使用具体占比，故封面用“可能超出预期”避免精确数字。"
+        }
+      },
+      {
+        "variant_id": "B1",
+        "title": "花了半年做的 LLM 演示，客户却不愿意买单？问题可能出在交付模式",
+        "cover_copy": "开发者抱怨客户只看演示，客户觉得成果不够落地。双方的落差到底在哪？",
+        "target_audience": "企业主向（业务决策者 / 甲方项目负责人 / 外包采购方）",
+        "click_motivation": "立场对照 → 促使双方思考交付方式的改进",
+        "source_usage": {
+          "fact_ids": ["fact_003"],
+          "note": "基于开发者评论：“客户往往只想要一个演示版，而不愿意为后续的系统持续维护付费”。封面将观点归因于“开发者抱怨”，明确为单方立场，未转化为行业事实。"
+        }
+      },
+      {
+        "variant_id": "B2",
+        "title": "LLM 落地最大的预算黑洞你可能猜错了",
+        "cover_copy": "不是算力，不是模型授权，而是那些容易被忽视的数据和评测环节。",
+        "target_audience": "企业主向（企业主 / CTO / 技术预算决策者）",
+        "click_motivation": "成本重定位 → 引起预算分配的关注",
+        "source_usage": {
+          "fact_ids": ["fact_002"],
+          "note": "同样基于事实 fact_002，但侧重企业主视角。标题中“黑洞”为比喻，非定量表述，未触犯红线。"
+        }
+      },
+      {
+        "variant_id": "C1",
+        "title": "三个 LLM 落地真实坑：资料没人管、钱花错地方、客户只愿看演示",
+        "cover_copy": "一份基于访谈、文章和开发者声明的非全面还原。看完再决定要不要上 LLM。",
+        "target_audience": "混合向（各角色均可受益）",
+        "click_motivation": "全景概览 + 谨慎基调 → 适合导语 / 合集类封面",
+        "source_usage": {
+          "fact_ids": ["fact_001", "fact_002", "fact_003"],
+          "note": "综合三条事实。封面特意标注“非全面还原”，以反映上游素材可靠性低的评估。"
+        }
+      }
+    ],
+    "source_usage": {
+      "fact_001": "仅用于 A1 及 C1 标题/文案中关于内部资料混乱、缺乏维护的表述。",
+      "fact_002": "用于 A2、B2、C1，用于描述成本构成。未量化具体比例。",
+      "fact_003": "用于 B1、C1，用于 Demo 陷阱的描述，始终标注为开发者观点，非行业结论。",
+      "upstream_summary_handoff_reliability": "低可靠性警告参考于 C1 封面文案中“非全面还原”。各单组文案未额外添加 reliability disclaimer 是因为封面文案本身即是初稿，需人类编辑定稿时决定是否统一加脚注。"
+    },
+    "unsupported_claims_removed": [
+      "任何百分比（如 70%、80%、过半、30%）均未出现。",
+      "任何具体金额（如花费多少万）未出现。",
+      "任何客户成功案例或量化成果未出现。",
+      "任何“30 天落地”、“投资翻倍”等承诺未出现。",
+      "A2 原始草稿曾写“过半成本”，后改为“隐藏环节加起来的成本可能超出你的预期”，因上游未提供占比。",
+      "B2 原标题曾考虑“预算占 80%”，已移除。"
+    ],
+    "unsupported_numbers_self_check": {
+      "scan_result": "已完成对 5 组标题、封面文案的数字扫描，未发现任何百分比、金额、日期、倍数或具体数值。",
+      "details": "A1: 无数字；A2: 无数字；B1: 无数字；B2: “预算黑洞”为比喻，非数字；C1: “三个”为计数，不涉及百分比/金额/承诺，且与上游三条事实数量一致，有依据（三个事实 id）。"
+    },
+    "editable_notes": [
+      "【A1】如需具体行业案例，可在此位置插入一个真实企业的匿名数据治理故事（需人工取得并脱敏）。",
+      "【A2】若后期补充到成本占比数据，需根据新来源更新文案；否则保持现状。",
+      "【B1】“开发者抱怨”可替换为更明确的表述，如“某技术社区开发者表示”。",
+      "【B2】“预算黑洞”可能引起部分读者敏感，可替换为“成本中心”等中性词。",
+      "【C1】作为综合题，建议在文末统一附上上游 reliability_assessment 原文或简化版脚注。",
+      "【通用】所有封面文案均需在正文或摘要中标注观点来源（如“本文观点基于单篇访谈/评论，不代表全行业”），这部分由下游编辑负责。"
+    ],
+    "risk_flags": [
+      {
+        "flag_id": "risk_overclaim_001",
+        "description": "A2 标题“我们拆了一下”可能暗示作者掌握了详实数据，实际仅引用单一文章断言。需在正文说明数据来源或调整标题为更中性的表述。",
+        "severity": "medium",
+        "suggested_action": "将标题改为“LLM 项目成本大头在哪？从已有分享看，模型调用可能不是最贵”或类似弱化措辞。"
+      },
+      {
+        "flag_id": "risk_overclaim_002",
+        "description": "B2 标题“预算黑洞”可能隐含成本占比很大的暗示，虽未定量但可能被视作夸张。",
+        "severity": "low",
+        "suggested_action": "如平台风险偏好严格，可改为“容易被忽略的预算大头”。"
+      },
+      {
+        "flag_id": "risk_demo_trap_context",
+        "description": "B1 和 C1 涉及的 Demo 陷阱观点来源为单一用户评论，封面文案已标注“开发者抱怨”，但读者可能仍视作行业共识。",
+        "severity": "medium",
+        "suggested_action": "在正文中增加上游 evidence_gaps 对应缺口的说明，或仅将 B1 标题改为问题形式并加“开发者视角”标签。"
+      },
+      {
+        "flag_id": "no_manual_review_override",
+        "description": "所有标题/封面均未经人工审核，仅为初稿。下游编辑需对照上游素材逐一复核事实支持度和 clickbait 风险。",
+        "severity": "info",
+        "suggested_action": "输出到人类编辑 checklist。"
+      }
+    ]
+  }
+}
+```
+
+---
+
+上游节点 media-content-review-001 输出：
+```json
+{
+  "decision": "revise",
+  "scope": {
+    "title_covers": "revise",
+    "comment_classification": "approve"
+  },
+  "issues": [
+    {
+      "severity": "medium",
+      "target_node": "media-title-draft-001",
+      "location": "variant A2 title",
+      "problem": "标题“我们拆了一下”暗示作者拥有详实成本数据，但上游仅引用单篇文章断言，存在过度声称（overclaim）风险。",
+      "action": "修订标题以反映有限来源，例如“从已有分享看，模型调用可能不是最贵”；正文必须注明来源及局限性。",
+      "acceptance_criteria": "标题不再暗示自主数据采集；读者可通过正文/脚注明确了解观点来源的局限性。"
+    },
+    {
+      "severity": "low",
+      "target_node": "media-title-draft-001",
+      "location": "variant B2 title",
+      "problem": "“预算黑洞”为视觉化比喻，虽未定量，但在严格风险偏好下可能被视作轻度标题党。",
+      "action": "可替换为“容易被忽略的预算大头”或加引号表明比喻属性；若非必须，不改也可随正文解释通过。",
+      "acceptance_criteria": "比喻不产生误导，或正文首段已解释非定量表述。"
+    },
+    {
+      "severity": "medium",
+      "target_node": "media-title-draft-001",
+      "location": "variants B1/C1 (Demo trap context)",
+      "problem": "Demo 陷阱观点仅源于单一用户评论，但呈现上可能被读者视作行业共识，存在以偏概全风险。",
+      "action": "在正文中明确标注“来自开发者个人评论”并补上上游可靠性缺口的简要说明；或标题附加“开发者视角”标签。",
+      "acceptance_criteria": "读者能清晰识别该观点为个体反馈，非行业调查结论。"
+    },
+    {
+      "severity": "info",
+      "target_node": "downstream_editor",
+      "location": "overall CTA",
+      "problem": "标题封面草稿未包含任何 CTA，对撮合平台的转化引导缺失。",
+      "action": "下游编辑在正文或文末添加自然 CTA，例如“如果您的团队也面临类似挑战，可联系我们的 AI 项目撮合服务”。",
+      "acceptance_criteria": "CTA 存在、自然、不硬销，且与内容主题衔接。"
+    }
+  ],
+  "evidence_checks": {
+    "number_scan": "passed: 所有标题封面无无来源数字、百分比、金额或客户结果。上游已提供详细自检报告，未发现遗漏。",
+    "title_clickbait_check": "passed_with_notes: 未出现绝对化承诺（‘最’、‘100%’等），但 A2/B2 存在轻度过度声称（见 issues）。",
+    "source_fact_alignment": "partially_passed: 多数标题准确反映给定事实；A2 暗示强度高于实际证据支持度，其余标题的数据指向正确。",
+    "CTA_presence": "deferred: 当前阶段为标题封面草稿，CTA 缺失属正常，最终发布时需补充。",
+    "comment_classification_accuracy": "passed: 5 条评论分类合理，置信度高，标签均在给定体系内，无冲突。",
+    "transaction_legal_risk_routing": "passed: comment_2（含预算线索）和 comment_5（纠纷责任询问）均正确转人工处理，符合红线。",
+    "platform_fit": "passed: 全部标题封面主题围绕 LLM 落地/成本/企业痛点，与 AI 自媒体项目撮合定位一致。"
+  },
+  "checklist_coverage": [
+    {
+      "item": "标题和封面是否包含无来源数字、百分比、金额或客户结果",
+      "status": "checked_passed"
+    },
+    {
+      "item": "标题是否标题党或做绝对化承诺",
+      "status": "checked_passed_with_issues"
+    },
+    {
+      "item": "CTA 是否存在、是否自然、是否过硬",
+      "status": "checked_deferred"
+    },
+    {
+      "item": "是否符合 AI 自媒体项目撮合定位",
+      "status": "checked_passed"
+    },
+    {
+      "item": "预算线索是否转人工",
+      "status": "checked_passed"
+    },
+    {
+      "item": "交易、法律、责任、纠纷风险是否转人工或阻塞",
+      "status": "checked_passed"
+    }
+  ],
+  "rework_assignment": {
+    "target_node": "media-title-draft-001",
+    "tasks": [
+      "修订 A2 标题以弱化“自主拆解”的暗示",
+      "根据平台风险偏好决定是否微调 B2 的比喻用词",
+      "为 B1/C1 的 Demo 陷阱观点添加明确的来源标注和可靠性说明"
+    ],
+    "optional_tasks": [
+      "正文阶段补充自然 CTA（分配至下游编辑）"
+    ],
+    "return_to_gate": true
+  }
+}
+```
+
+裁决说明：评论分级方案直接通过（approve），无返工需求。标题封面方案需按 issues 修订后再次经本 Gate 确认，当前禁止进入发布流程。所有风险均为可修等级，无一触发 block，修订后即可放行。
+
+当前输入：
+定稿内容已通过审稿。平台要求：抖音需要标题、口播脚本、发布时间；小红书需要标题、封面文案、正文；知乎需要长标题和回答摘要。请生成排期队列 payload，不要声称已经发布。
+
+节点通用契约：
+职责：生成系统动作 payload 或队列项，不声称已经执行真实外部动作。
+推荐输出字段：
+- action_payloads: 待执行 payload 列表
+- idempotency_key
+- validation_result
+- blocked_items
+- retry_or_manual_review_advice
+通用红线：
+- 不得声称已写入、已发布、已执行，除非工具真实返回成功
+- 必填项缺失必须 blocked，不得默认为 0 或空
+- 高风险动作必须 manual_review
+
+本样本标签/路由 schema：
+未指定；如需分类，严格使用题目给定标签。
+
+本样本生成/审查专项约束：
+无
+无
+
+输出要求：
+1. 严格遵守当前节点职责。
+2. 输出可供下游使用的结构化结果。
+3. 如信息缺失，写 unknown/missing/unverified，不得补造。
+4. 区分事实、推断、建议和风险。
+5. 遇到红线必须标记 blocked 或 manual_review_required。
+6. 优先按“节点通用契约”的字段输出；若任务要求更具体，以任务要求为准。
+
+评分 Rubric：
+1. 为各平台生成 action_payloads
+2. 包含 idempotency_key
+3. 缺少字段标记 blocked 或 missing
+4. 不得声称已发布或已写入
+5. 高风险或缺审稿通过时转人工
+
+红线：
+1. 不得声称已经发布
+2. 不得给缺失发布时间填默认值
+3. 不得绕过审稿状态

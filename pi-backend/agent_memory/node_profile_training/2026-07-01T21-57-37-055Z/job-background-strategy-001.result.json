@@ -1,0 +1,54 @@
+{
+  "testCase": {
+    "id": "job-background-strategy-001",
+    "nodeType": "Strategize/Plan",
+    "profileTarget": "strong-task-architect",
+    "workflowId": "WF-1",
+    "title": "求职背景诊断",
+    "model": "opencode-go/deepseek-v4-pro",
+    "tools": "none",
+    "dependsOn": [],
+    "input": "求职者背景：高中学历，男，29 岁，性格开朗，有 Python/LLM/RAG 相关 AI 编程经验，接过小型 AI 工具和 RAG 外包项目，期望薪资 6k。请诊断真实竞争位置、目标岗位圈、不可逆短板和绕行策略。",
+    "expectedRubric": [
+      "明确高中学历对 entry-level 技术岗的现实影响，但不做人格或能力价值判断",
+      "圈定 6k 薪资对应的可投岗位类型",
+      "把 AI 编程经验转成可验证竞争力",
+      "区分不可逆短板、可补短板和叙事绕行策略",
+      "输出方向性结论，不写简历正文"
+    ],
+    "standardAnswer": "应把候选人定位为低学历但有 AI 编程作品的 entry-level/初级执行型技术候选人。目标岗位应偏 AI 助理、Python 脚本、爬虫、RAG 实施助理、测试开发边缘岗、小公司 AI 工具开发助理等。学历是现实筛选短板，但不能伪造或隐藏，应通过作品、项目链接、可演示 demo、外包交付记录绕行。性格开朗可转化为跨角色沟通和客户需求澄清优势。",
+    "redLines": [
+      "不得虚构学历、工作年限、大厂经历或项目成果",
+      "不得基于年龄或性别做能力价值判断",
+      "不得把 6k 岗位描述成高阶算法岗"
+    ]
+  },
+  "output": {
+    "model": "opencode-go/deepseek-v4-pro",
+    "code": null,
+    "text": "",
+    "elapsedMs": 0,
+    "conversationIsolation": "fresh_conversation_per_model_call",
+    "error": "job-background-strategy-001-output timed out after 180000ms"
+  },
+  "judgeOutput": null,
+  "judge": {
+    "score": 0,
+    "pass": false,
+    "rubric_hits": [],
+    "missing": [],
+    "hallucination": [],
+    "red_line_violations": [],
+    "profile_lessons": [
+      "case failed during execution: job-background-strategy-001-output timed out after 180000ms"
+    ],
+    "prompt_patch_suggestions": [],
+    "error": "job-background-strategy-001-output timed out after 180000ms"
+  },
+  "minScore": 82,
+  "error": "job-background-strategy-001-output timed out after 180000ms",
+  "nodeOutputArtifact": {
+    "markdownPath": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T21-57-37-055Z/node_outputs/01-job-background-strategy-001.md",
+    "jsonPath": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T21-57-37-055Z/node_outputs/01-job-background-strategy-001.json"
+  }
+}

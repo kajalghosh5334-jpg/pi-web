@@ -1,0 +1,108 @@
+{
+  "id": "trained-case-media-account-strategy-001-2026-07-01",
+  "name": "AI 自媒体账号定位 专用 Profile",
+  "match": [
+    "trained-case:media-account-strategy-001",
+    "workflow:WF-9",
+    "node-type:Strategize/Plan",
+    "AI 自媒体账号定位",
+    "content-strategy-director"
+  ],
+  "defaultModel": "opencode-go/deepseek-v4-pro",
+  "skills": [
+    "output-engine",
+    "stage-flow",
+    "output-spec"
+  ],
+  "availableSkills": [
+    "output-engine",
+    "stage-flow",
+    "output-spec",
+    "artifact-storage"
+  ],
+  "collaborationProtocol": "专用于真实训练任务：AI 自媒体账号定位。\n负责高判断环节：账号定位、目标受众、选题优先级、内容角度和成功指标；把资料搜集、初稿、标题备选和多平台改写交给弱模型。\n必须复用训练样本中的成功模式，并保留风险、证据和待确认项。",
+  "projectConfig": {
+    "modelTier": "strong",
+    "domain": "self-media",
+    "roleInWorkflow": "strategy",
+    "preferredTasks": [
+      "账号定位",
+      "受众画像",
+      "选题优先级",
+      "内容角度设计",
+      "传播假设与指标"
+    ],
+    "handoffTargets": [
+      "content-researcher",
+      "content-draft-producer",
+      "content-editor-reviewer"
+    ],
+    "qualityBar": "必须输出目标受众、核心观点、内容角度、平台适配、验证指标和不可做清单。",
+    "generated": true,
+    "generatedStatus": "trained",
+    "routingEnabled": false,
+    "profileKind": "task-specific",
+    "workflowId": "WF-9",
+    "sourceNodeType": "Strategize/Plan",
+    "sourceProfileId": "content-strategy-director",
+    "trainingRunId": "2026-07-01T21-57-37-055Z",
+    "trainingCaseId": "media-account-strategy-001",
+    "trainingScore": 92,
+    "trainingArtifactDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T21-57-37-055Z",
+    "nodeOutputArtifact": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T21-57-37-055Z/node_outputs/05-media-account-strategy-001.md",
+    "nodeContract": {
+      "purpose": "做方向性判断和任务/策略规划，不生成正文、不替下游执行。",
+      "output": [
+        "decision_summary: 一句话方向结论",
+        "positioning_or_strategy: 目标定位/策略方向",
+        "constraints: 不可逆约束、现实限制、红线",
+        "opportunities: 可利用优势或机会",
+        "execution_priorities: 3-6 个优先执行项",
+        "validation_metrics: 可验证指标或验证动作",
+        "handoff_to_next_nodes: 下游节点需要拿到的结构化输入"
+      ],
+      "redLines": [
+        "不得生成长文正文、简历正文或营销稿正文",
+        "不得编造案例、金额、转化率、学历、工作年限",
+        "必须把可验证竞争力/验证资产写成明确字段，而不是泛泛建议"
+      ]
+    }
+  },
+  "systemPromptPatch": "你是“AI 自媒体账号定位”专用节点 Profile。\n节点类型：Strategize/Plan。\n节点职责：做方向性判断和任务/策略规划，不生成正文、不替下游执行。\n红线：不得生成长文正文、简历正文或营销稿正文；不得编造案例、金额、转化率、学历、工作年限；必须把可验证竞争力/验证资产写成明确字段，而不是泛泛建议\n训练沉淀：双端受众画像采用统一的动机-触发-信任构建者（motivation/content_triggers/trust_builders）结构化模板，可作为裁判标准复用 | 季度规划严格遵循'内容→信任→撮合'三阶段递进，每个阶段同时覆盖 dev/biz/bridge 三方行动，结构高度可评估 | distinction_fact_inference_suggestion_risk 字段显式标注事实、推断、建议、风险，显著降低 hallucination 误判率 | 季度规划中的 milestone_metric 可要求必须给出可量化基线（如具体数字范围），减少'具体值由后续定义'的模糊表述 | 可在 rubric 中增加一条：'季度规划每个阶段须包含至少一个可独立验证的硬指标'\n只完成当前节点；缺失信息标记 missing/unknown/unverified；不得补造。",
+  "experience": 1,
+  "successes": 1,
+  "failures": 0,
+  "recentTasks": [
+    {
+      "name": "AI 自媒体账号定位",
+      "taskId": "media-account-strategy-001",
+      "success": true,
+      "timestamp": 1782944467148,
+      "modelUsed": "opencode-go/deepseek-v4-pro",
+      "score": 92,
+      "status": "training_case_profile",
+      "outputArtifact": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T21-57-37-055Z/node_outputs/05-media-account-strategy-001.md"
+    }
+  ],
+  "runHistory": [],
+  "savedExperiences": [
+    {
+      "taskId": "media-account-strategy-001",
+      "taskName": "AI 自媒体账号定位",
+      "lesson": "双端受众画像采用统一的动机-触发-信任构建者（motivation/content_triggers/trust_builders）结构化模板，可作为裁判标准复用 | 季度规划严格遵循'内容→信任→撮合'三阶段递进，每个阶段同时覆盖 dev/biz/bridge 三方行动，结构高度可评估 | distinction_fact_inference_suggestion_risk 字段显式标注事实、推断、建议、风险，显著降低 hallucination 误判率 | 季度规划中的 milestone_metric 可要求必须给出可量化基线（如具体数字范围），减少'具体值由后续定义'的模糊表述 | 可在 rubric 中增加一条：'季度规划每个阶段须包含至少一个可独立验证的硬指标'",
+      "skills": [
+        "output-engine",
+        "stage-flow",
+        "output-spec"
+      ],
+      "model": "opencode-go/deepseek-v4-pro",
+      "artifactId": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T21-57-37-055Z/node_outputs/05-media-account-strategy-001.md",
+      "debugValidated": true,
+      "score": 92,
+      "savedAt": 1782944467148
+    }
+  ],
+  "sourceProfileId": "content-strategy-director",
+  "generatedAt": 1782944467148,
+  "generatedBy": "node-profile-training"
+}

@@ -1,0 +1,140 @@
+你是 Workflow 中的一个 profile 化节点。请只完成当前节点，不要越权完成下游任务。
+
+节点类型：Review/Gate
+目标 Profile：strong-quality-reviewer
+Workflow：WF-6
+任务：简历终审裁决
+
+上游上下文：
+上游节点 job-resume-draft-001 输出：
+```json
+{
+  "node_id": "content-draft-producer",
+  "workflow": "WF-2",
+  "target_profile": "content-draft-producer",
+  "draft_sections": [
+    {
+      "section_type": "project_experience",
+      "project_name": "企业资料问答 RAG 系统（外包项目）",
+      "star_description": "为客户 [客户公司名称 placeholder] 构建内部知识库问答系统。独立负责从需求沟通、数据处理到系统开发交付的全流程。使用 Python 编写文档清洗脚本，整理企业资料；基于 LangChain 框架和 OpenAI Embedding/Chat API，结合 Chroma 向量数据库实现语义检索；开发 Flask Web 查询页面，支持文件上传和自然语言问答。最终交付一套可运行的 RAG 系统，客户可直接通过 Web 页面查询内部资料。",
+      "skills_tags": [
+        {"tag": "Python", "relevance": "direct"},
+        {"tag": "LangChain RAG 框架", "relevance": "direct"},
+        {"tag": "OpenAI API", "relevance": "direct"},
+        {"tag": "Chroma 向量数据库", "relevance": "direct"},
+        {"tag": "Flask Web 开发", "relevance": "direct"},
+        {"tag": "需求沟通与独立交付", "relevance": "direct"}
+      ],
+      "highlights": [
+        "独立完成从需求分析到交付的全栈开发",
+        "直接对接业务方，确保系统贴合实际场景",
+        "产出可公开演示的 Demo 项目（建议上传 GitHub）"
+      ]
+    },
+    {
+      "section_type": "project_experience",
+      "project_name": "批量 Excel 数据处理脚本",
+      "star_description": "朋友在处理大量 Excel 报表时重复性工作耗时，需自动化处理。使用 Python 的 pandas 和 openpyxl 编写自动化脚本，实现数据的批量读取、清洗、合并及格式转换。交付后朋友可直接运行脚本完成月报处理，大幅减少手动操作时间。",
+      "skills_tags": [
+        {"tag": "Python", "relevance": "direct"},
+        {"tag": "pandas / openpyxl", "relevance": "direct"},
+        {"tag": "自动化脚本设计", "relevance": "direct"},
+        {"tag": "数据处理", "relevance": "direct"}
+      ],
+      "highlights": [
+        "针对重复性数据处理问题提供自动化方案",
+        "与需求方直接沟通，交付即用工具"
+      ]
+    }
+  ],
+  "source_usage": {
+    "项目1-文档清洗脚本": "上游原始经历：「写 Python 文档清洗脚本」",
+    "项目1-向量数据库": "上游原始经历：「接入向量库」",
+    "项目1-Web查询页面": "上游原始经历：「做简单网页查询入口」",
+    "项目1-需求沟通": "上游原始经历：「能和客户沟通需求」+ upstream analysis claim_type inference",
+    "项目1-LangChain/OpenAI": "上游分析 inference（上游 analysis_items 中 RAG 知识库 Demo evidence 为「RAG 知识库 Demo（LangChain）」「必然调用大模型 API」）",
+    "项目2-Excel处理": "上游原始经历：「帮朋友做过批量 Excel 处理脚本」",
+    "项目2-pandas/openpyxl": "合理推断（无上游直接依据），需候选人确认",
+    "客户名称": "unverified / 需补充",
+    "朋友使用场景": "unverified / 需补充",
+    "所有数字性描述": "无数字性描述，使用非量化表述"
+  },
+  "unsupported_claims_removed": [
+    "未使用上游建议中的「累计 XX 行 Python 代码」「月报处理时间节省 XX%」等无依据数字",
+    "未写具体客户名称、公司名、职位头衔",
+    "未将 Demo 描述为生产级平台（仅写「交付可运行系统」）"
+  ],
+  "unsupported_numbers_self_check": {
+    "status": "clean",
+    "note": "两份经历草稿中未出现任何数字、百分比或金额，无需替换"
+  },
+  "editable_notes": [
+    "项目1 客户名称需候选人补充",
+    "项目1 是否确用 LangChain/OpenAI 需候选人确认（上游推断，非原始经历直接给出）",
+    "项目2 的朋友场景细节（如报表类型、数据量）可进一步丰富",
+    "项目1 的「独立负责全流程」描述可补充沟通案例细节",
+    "项目2 的脚本规模（约多少行/处理多少文件）可择机量化（若有真实数据）"
+  ],
+  "risk_flags": {
+    "redlines_violation": "none",
+    "notes": [
+      "未虚构学历、公司、职位、项目规模",
+      "未将 Demo 拔高为生产级系统",
+      "未使用无来源数字",
+      "输出为可修改初稿，非不可编辑定稿"
+    ]
+  }
+}
+```
+
+当前输入：
+请审查上游生成的简历经历是否诚实、专业、针对星河智造初级 AI 工具开发助理 JD。必须给出 pass/revise/block 裁决、问题清单、返工节点和验收标准。不要重写整份简历。
+
+节点通用契约：
+职责：最终质量门，只做短裁决和返工分配，不重写长内容。
+推荐输出字段：
+- decision: pass|publish|approve|revise|block|escalate
+- issues: 每项含 severity, target_node, location, problem, action, acceptance_criteria
+- evidence_checks: 事实/数字/来源/项目证明/学历/职位/技能熟练度/CTA 检查
+- checklist_coverage: 明确列出已检查和未检查的关键项
+- rework_assignment
+通用红线：
+- 必须给明确裁决，不能只给建议
+- 不得代替上游节点重写整篇长文
+- 无来源数字、虚构经历、夸大技能、法律/交易风险、缺失必要 CTA 审查必须阻塞或升级
+
+本样本标签/路由 schema：
+未指定；如需分类，严格使用题目给定标签。
+
+本样本生成/审查专项约束：
+无
+{
+  "reviewChecklist": [
+    "学历是否如实呈现且未虚构",
+    "职位/身份是否被夸大",
+    "AI 项目成果和量化数据是否有支撑",
+    "技能熟练度是否与素材一致",
+    "是否对齐 JD 的 Python、接口调用、项目 demo、沟通能力要求",
+    "是否要求补充项目链接、demo、代码仓库或可验证证明"
+  ]
+}
+
+输出要求：
+1. 严格遵守当前节点职责。
+2. 输出可供下游使用的结构化结果。
+3. 如信息缺失，写 unknown/missing/unverified，不得补造。
+4. 区分事实、推断、建议和风险。
+5. 遇到红线必须标记 blocked 或 manual_review_required。
+6. 优先按“节点通用契约”的字段输出；若任务要求更具体，以任务要求为准。
+
+评分 Rubric：
+1. 给出明确 pass/revise/block 裁决
+2. 检查是否虚构学历、项目成果、职位或技能熟练度
+3. 检查是否对齐 JD 的 Python、接口调用、项目 demo 和沟通要求
+4. 指出具体返工位置和返工节点
+5. 输出短裁决，不展开长文重写
+
+红线：
+1. 不得直接替弱模型重写整份长简历
+2. 不得只给建议不给裁决
+3. 不得允许虚构经历通过

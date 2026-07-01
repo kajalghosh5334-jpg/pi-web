@@ -1,0 +1,35 @@
+{
+  "runId": "2026-07-01T22-57-28-000Z",
+  "specPath": "/Users/yipengfei/Desktop/pi-fork/pi-backend/training/node-task-cases.json",
+  "runDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T22-57-28-000Z",
+  "conversationIsolation": {
+    "mode": "fresh_conversation_per_model_call",
+    "appliesTo": [
+      "node_output",
+      "judge",
+      "profile_synthesis"
+    ],
+    "piArgs": [
+      "--print",
+      "--mode",
+      "json",
+      "--no-session",
+      "--no-context-files",
+      "--session-dir",
+      "<per-call isolated directory>"
+    ],
+    "contextPolicy": "Only explicit dependency outputs are injected into the next prompt; no model call resumes prior chat history."
+  },
+  "selectedCases": [
+    {
+      "id": "job-background-strategy-001",
+      "nodeType": "Strategize/Plan",
+      "title": "求职背景诊断",
+      "dependsOn": [],
+      "profileTarget": "strong-task-architect"
+    }
+  ],
+  "requestedCaseIds": [
+    "job-background-strategy-001"
+  ]
+}

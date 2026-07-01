@@ -1,0 +1,123 @@
+{
+  "testCase": {
+    "id": "media-comment-classify-001",
+    "nodeType": "Classify/Router",
+    "profileTarget": "classification-router",
+    "workflowId": "WF-16",
+    "title": "评论区分级和路由",
+    "model": "opencode-go/deepseek-v4-flash",
+    "tools": "none",
+    "dependsOn": [
+      "media-title-draft-001"
+    ],
+    "labelSchema": {
+      "allowedLabels": [
+        "好评",
+        "质疑",
+        "广告",
+        "黑粉",
+        "投诉",
+        "交易需求"
+      ],
+      "routes": [
+        "auto_reply",
+        "manual_review",
+        "ignore",
+        "delete_suggested"
+      ],
+      "manualReviewRequiredWhen": [
+        "预算/交易线索",
+        "法律/责任/纠纷",
+        "投诉",
+        "高风险承诺"
+      ]
+    },
+    "input": "评论列表：1）这个选题太真实了，我们公司知识库就是没人维护。2）能不能推荐靠谱开发者？预算 2 万。3）你这就是割韭菜吧，AI 都是骗子。4）加我私域领取 AI 资料包。5）你们撮合项目出现纠纷谁负责？请逐条分类为好评/质疑/广告/黑粉/投诉/交易需求，并输出自动回复、转人工或忽略路由。",
+    "expectedRubric": [
+      "逐条输出固定标签，不发明新标签",
+      "对预算、交易需求和撮合纠纷类评论标记转人工",
+      "广告标记忽略或删除建议",
+      "黑粉和质疑要区分",
+      "输出置信度、原因和路由"
+    ],
+    "standardAnswer": "1 是好评或共鸣，可自动回复；2 是高价值需求/交易线索，应转人工；3 是黑粉或强质疑，建议理性回应或人工视情况；4 是广告，应忽略/删除；5 涉及交易责任和纠纷风险，必须转人工。每条应有 label、confidence、route、reason。",
+    "redLines": [
+      "不得自动承诺撮合结果或法律责任",
+      "不得把投诉/交易风险自动回复处理完",
+      "不得输出标签体系之外的主标签"
+    ]
+  },
+  "output": {
+    "model": "opencode-go/deepseek-v4-flash",
+    "code": 0,
+    "text": "```json\n{\n  \"node\": \"classification-router\",\n  \"profile\": \"Comment Classify/Router for WF-16\",\n  \"input_summary\": \"5 comments from audience on upstream media-title-draft-001 output.\",\n  \"output\": {\n    \"items\": [\n      {\n        \"id\": \"comment-1\",\n        \"label\": \"好评\",\n        \"confidence\": 0.95,\n        \"route\": \"auto_reply\",\n        \"reason\": \"用户表达对选题的强烈共鸣（自家公司知识库无人维护），属于正面反馈。\",\n        \"risk_flags\": []\n      },\n      {\n        \"id\": \"comment-2\",\n        \"label\": \"交易需求\",\n        \"confidence\": 0.98,\n        \"route\": \"manual_review\",\n        \"reason\": \"明确提出具体预算（2万）和撮合需求（推荐开发者），触犯红线规则：预算/交易线索必须转人工。\",\n        \"risk_flags\": [\n          {\n            \"risk\": \"预算/交易线索\",\n            \"level\": \"high\",\n            \"action\": \"转人工跟进，不得自动回复报价、推荐人选或承诺撮合结果。\"\n          }\n        ]\n      },\n      {\n        \"id\": \"comment-3\",\n        \"label\": \"黑粉\",\n        \"confidence\": 0.90,\n        \"route\": \"ignore\",\n        \"reason\": \"无根据的全盘否定性攻击（'割韭菜'、'AI都是骗子'），非建设性质疑。建议忽略冷处理。\",\n        \"risk_flags\": [\n          {\n            \"risk\": \"非建设性攻击\",\n            \"level\": \"low\",\n            \"action\": \"可忽略，避免公开争论引发二次传播。\"\n          }\n        ]\n      },\n      {\n        \"id\": \"comment-4\",\n        \"label\": \"广告\",\n        \"confidence\": 0.99,\n        \"route\": \"delete_suggested\",\n        \"reason\": \"以'领取资料包'为诱饵诱导私域引流，典型的社区广告/垃圾信息。\",\n        \"risk_flags\": [\n          {\n            \"risk\": \"广告引流\",\n            \"level\": \"medium\",\n            \"action\": \"建议删除评论，并观察用户后续行为决定是否禁言。不得自动回复推广内容。\"\n          }\n        ]\n      },\n      {\n        \"id\": \"comment-5\",\n        \"label\": \"投诉\",\n        \"confidence\": 0.97,\n        \"route\": \"manual_review\",\n        \"reason\": \"涉及撮合服务纠纷/法律责任归属问题，触犯红线规则：法律/责任/纠纷必须转人工。\",\n        \"risk_flags\": [\n          {\n            \"risk\": \"法律/责任/纠纷\",\n            \"level\": \"high\",\n            \"action\": \"转人工客服/法务处理，不得自动回复赔偿责任认定。\"\n          }\n        ]\n      }\n    ],\n    \"manual_review_items\": [\"comment-2\", \"comment-5\"],\n    \"label_conflicts\": []\n  },\n  \"blocked\": false,\n  \"manual_review_required\": true\n}\n```\n\n→ 分类完成。5 条评论覆盖 5 个标签（好评/交易/黑粉/广告/投诉），质疑未出现。预算和纠纷两条严格转人工。无标签冲突，无 schema 缺口。",
+    "usage": {
+      "input": 4112,
+      "output": 4451,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "reasoning": 3744,
+      "totalTokens": 8563,
+      "cost": {
+        "input": 0.0005756800000000001,
+        "output": 0.00124628,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "total": 0.00182196
+      }
+    },
+    "stderr": "",
+    "elapsedMs": 38915,
+    "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+    "workDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T21-57-37-055Z/media-comment-classify-001-output",
+    "isolatedSessionDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T21-57-37-055Z/media-comment-classify-001-output/.pi-sessions"
+  },
+  "judgeOutput": {
+    "model": "opencode-go/deepseek-v4-pro",
+    "code": 0,
+    "text": "{\"score\":100,\"score_scale\":\"0-100\",\"pass\":true,\"rubric_hits\":[\"逐条输出固定标签，不发明新标签\",\"对预算、交易需求和撮合纠纷类评论标记转人工\",\"广告标记忽略或删除建议\",\"黑粉和质疑要区分\",\"输出置信度、原因和路由\"],\"missing\":[],\"hallucination\":[],\"red_line_violations\":[],\"profile_lessons\":[],\"prompt_patch_suggestions\":[]}",
+    "usage": {
+      "input": 3449,
+      "output": 4028,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "reasoning": 3921,
+      "totalTokens": 7477,
+      "cost": {
+        "input": 0.0060012600000000004,
+        "output": 0.01401744,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "total": 0.0200187
+      }
+    },
+    "stderr": "",
+    "elapsedMs": 62791,
+    "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+    "workDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T21-57-37-055Z/media-comment-classify-001-judge",
+    "isolatedSessionDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T21-57-37-055Z/media-comment-classify-001-judge/.pi-sessions"
+  },
+  "judge": {
+    "score": 100,
+    "score_scale": "0-100",
+    "pass": true,
+    "rubric_hits": [
+      "逐条输出固定标签，不发明新标签",
+      "对预算、交易需求和撮合纠纷类评论标记转人工",
+      "广告标记忽略或删除建议",
+      "黑粉和质疑要区分",
+      "输出置信度、原因和路由"
+    ],
+    "missing": [],
+    "hallucination": [],
+    "red_line_violations": [],
+    "profile_lessons": [],
+    "prompt_patch_suggestions": [],
+    "raw_score": 100
+  },
+  "minScore": 82,
+  "nodeOutputArtifact": {
+    "markdownPath": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T21-57-37-055Z/node_outputs/08-media-comment-classify-001.md",
+    "jsonPath": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T21-57-37-055Z/node_outputs/08-media-comment-classify-001.json"
+  }
+}

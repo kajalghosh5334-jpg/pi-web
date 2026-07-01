@@ -1,0 +1,220 @@
+{
+  "runId": "2026-07-01T20-28-40-414Z",
+  "runDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-28-40-414Z",
+  "specPath": "/Users/yipengfei/Desktop/pi-fork/pi-backend/training/node-task-cases.json",
+  "writeProfiles": true,
+  "dryRun": false,
+  "nodeOutputDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-28-40-414Z/node_outputs",
+  "conversationIsolation": {
+    "mode": "fresh_conversation_per_model_call",
+    "appliesTo": [
+      "node_output",
+      "judge",
+      "profile_synthesis"
+    ],
+    "piArgs": [
+      "--print",
+      "--mode",
+      "json",
+      "--no-session",
+      "--no-context-files",
+      "--session-dir",
+      "<per-call isolated directory>"
+    ],
+    "contextPolicy": "Only explicit dependency outputs are injected into the next prompt; no model call resumes prior chat history."
+  },
+  "cases": [
+    {
+      "id": "job-background-strategy-001",
+      "nodeType": "Strategize/Plan",
+      "profileTarget": "strong-task-architect",
+      "model": "opencode-go/deepseek-v4-pro",
+      "score": 78,
+      "pass": false,
+      "outputChars": 5095,
+      "elapsedMs": 63732,
+      "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+      "missing": [
+        "圈定 6k 薪资对应的可投岗位类型时，未充分纳入低门槛执行型岗位（如 AI 助理、Python 脚本开发、爬虫、RAG 实施助理、测试开发边缘岗），给出的岗位 title 略高于能力水位",
+        "区分不可逆短板、可补短板和叙事绕行策略时，将不可缓解的‘学历证照缺失’放在了 reversible_gaps 中，导致区分度不够清晰"
+      ],
+      "hallucination": [
+        "在 constraints.irreversible 中编造了‘屏蔽约70%的标准化技术岗’的具体比例数据，无任何依据，违反了节点通用契约中‘不得编造案例、金额、转化率……’的要求"
+      ],
+      "redLineViolations": [],
+      "outputArtifact": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-28-40-414Z/node_outputs/01-job-background-strategy-001.md"
+    },
+    {
+      "id": "job-company-gather-001",
+      "nodeType": "Gather/Fetch",
+      "profileTarget": "weak-research-extractor",
+      "model": "opencode-go/deepseek-v4-flash",
+      "score": 100,
+      "pass": true,
+      "outputChars": 2112,
+      "elapsedMs": 49099,
+      "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+      "missing": [],
+      "hallucination": [],
+      "redLineViolations": [],
+      "outputArtifact": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-28-40-414Z/node_outputs/02-job-company-gather-001.md"
+    },
+    {
+      "id": "job-jd-analyze-001",
+      "nodeType": "Analyze/Judge",
+      "profileTarget": "research-report-analyst",
+      "model": "opencode-go/deepseek-v4-flash",
+      "score": 78,
+      "pass": false,
+      "outputChars": 3017,
+      "elapsedMs": 95985,
+      "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+      "missing": [
+        "未在analysis_items中单独分析Django/Flask，未将Flask作为Web基础弱化Django缺口",
+        "学历建议弱化位置可能被误解为隐藏，需更谨慎措辞",
+        "未充分利用Flask经验作为Django缺口的正面替代叙事"
+      ],
+      "hallucination": [],
+      "redLineViolations": [],
+      "outputArtifact": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-28-40-414Z/node_outputs/03-job-jd-analyze-001.md"
+    },
+    {
+      "id": "job-resume-draft-001",
+      "nodeType": "Generate/Draft",
+      "profileTarget": "content-draft-producer",
+      "model": "opencode-go/deepseek-v4-flash",
+      "score": 95,
+      "pass": true,
+      "outputChars": 3230,
+      "elapsedMs": 55056,
+      "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+      "missing": [],
+      "hallucination": [],
+      "redLineViolations": [],
+      "outputArtifact": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-28-40-414Z/node_outputs/04-job-resume-draft-001.md"
+    },
+    {
+      "id": "job-resume-review-001",
+      "nodeType": "Review/Gate",
+      "profileTarget": "strong-quality-reviewer",
+      "model": "opencode-go/deepseek-v4-pro",
+      "score": 88,
+      "pass": true,
+      "outputChars": 2986,
+      "elapsedMs": 51578,
+      "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+      "missing": [],
+      "hallucination": [],
+      "redLineViolations": [],
+      "outputArtifact": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-28-40-414Z/node_outputs/05-job-resume-review-001.md"
+    },
+    {
+      "id": "media-account-strategy-001",
+      "nodeType": "Strategize/Plan",
+      "profileTarget": "content-strategy-director",
+      "model": "opencode-go/deepseek-v4-pro",
+      "score": 90,
+      "pass": true,
+      "outputChars": 5132,
+      "elapsedMs": 93847,
+      "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+      "missing": [
+        "内容矩阵缺少独立的“匿名案例复盘”和“项目报价/边界科普”板块，仅在案例拆解和信任建设中间接涉及，未如标准答案要求般显性化",
+        "handoff 中的 audience_profiles 虽然区分了技术者和企业主动机，但未在内容矩阵中针对“落地坑”专门分类"
+      ],
+      "hallucination": [],
+      "redLineViolations": [],
+      "outputArtifact": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-28-40-414Z/node_outputs/06-media-account-strategy-001.md"
+    },
+    {
+      "id": "media-material-gather-001",
+      "nodeType": "Gather/Fetch",
+      "profileTarget": "weak-research-extractor",
+      "model": "opencode-go/deepseek-v4-flash",
+      "score": 100,
+      "pass": true,
+      "outputChars": 1286,
+      "elapsedMs": 31916,
+      "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+      "missing": [],
+      "hallucination": [],
+      "redLineViolations": [],
+      "outputArtifact": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-28-40-414Z/node_outputs/07-media-material-gather-001.md"
+    },
+    {
+      "id": "media-title-draft-001",
+      "nodeType": "Generate/Draft",
+      "profileTarget": "content-draft-producer",
+      "model": "opencode-go/deepseek-v4-flash",
+      "score": 100,
+      "pass": true,
+      "outputChars": 2806,
+      "elapsedMs": 25094,
+      "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+      "missing": [],
+      "hallucination": [],
+      "redLineViolations": [],
+      "outputArtifact": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-28-40-414Z/node_outputs/08-media-title-draft-001.md"
+    },
+    {
+      "id": "media-comment-classify-001",
+      "nodeType": "Classify/Router",
+      "profileTarget": "classification-router",
+      "model": "opencode-go/deepseek-v4-flash",
+      "score": 78,
+      "pass": false,
+      "outputChars": 1343,
+      "elapsedMs": 34987,
+      "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+      "missing": [
+        "第3条路由不应为ignore；标准答案明确建议'理性回应或人工视情况'，应路由到manual_review或auto_reply",
+        "label_conflicts未记录第3条黑粉/质疑标签歧义，标准答案指出该条可能为'黑粉或强质疑'"
+      ],
+      "hallucination": [],
+      "redLineViolations": [],
+      "outputArtifact": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-28-40-414Z/node_outputs/09-media-comment-classify-001.md"
+    },
+    {
+      "id": "media-content-review-001",
+      "nodeType": "Review/Gate",
+      "profileTarget": "strong-quality-reviewer",
+      "model": "opencode-go/deepseek-v4-pro",
+      "score": 93,
+      "pass": true,
+      "outputChars": 3608,
+      "elapsedMs": 84169,
+      "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+      "missing": [],
+      "hallucination": [],
+      "redLineViolations": [],
+      "outputArtifact": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-28-40-414Z/node_outputs/10-media-content-review-001.md"
+    }
+  ],
+  "generatedProfiles": [
+    "generated-gather-fetch-2026-07-01",
+    "generated-generate-draft-2026-07-01",
+    "generated-review-gate-2026-07-01",
+    "generated-strategize-plan-2026-07-01"
+  ],
+  "writtenProfiles": [
+    "generated-gather-fetch-2026-07-01-3",
+    "generated-generate-draft-2026-07-01-2",
+    "generated-review-gate-2026-07-01-2",
+    "generated-strategize-plan-2026-07-01-2"
+  ],
+  "pass": false,
+  "postWriteChecks": [
+    {
+      "command": "npm run check:weak-strong-profiles",
+      "code": 0,
+      "stdout": "\n> pi-monorepo@0.0.3 check:weak-strong-profiles\n> node scripts/check-weak-strong-profiles.mjs\n\n{\n  \"checkedProfiles\": [\n    \"strong-task-architect\",\n    \"weak-research-extractor\",\n    \"weak-structured-operator\",\n    \"weak-test-enumerator\",\n    \"strong-quality-reviewer\",\n    \"content-strategy-director\",\n    \"content-researcher\",\n    \"content-draft-producer\",\n    \"content-editor-reviewer\",\n    \"ecommerce-listing-optimizer\",\n    \"support-kb-responder\",\n    \"research-report-analyst\",\n    \"classification-router\",\n    \"monitor-alert-operator\",\n    \"structured-writeback-operator\",\n    \"sales-call-analyst\"\n  ],\n  \"routingCases\": [\n    {\n      \"case\": \"intent-and-plan\",\n      \"profileId\": \"strong-task-architect\",\n      \"modelTier\": \"strong\",\n      \"defaultModel\": \"opencode-go/deepseek-v4-pro\"\n    },\n    {\n      \"case\": \"research\",\n      \"profileId\": \"weak-research-extractor\",\n      \"modelTier\": \"weak\",\n      \"defaultModel\": \"opencode-go/deepseek-v4-flash\"\n    },\n    {\n      \"case\": \"structured\",\n      \"profileId\": \"weak-structured-operator\",\n      \"modelTier\": \"weak\",\n      \"defaultModel\": \"opencode-go/deepseek-v4-flash\"\n    },\n    {\n      \"case\": \"tests\",\n      \"profileId\": \"weak-test-enumerator\",\n      \"modelTier\": \"weak\",\n      \"defaultModel\": \"opencode-go/deepseek-v4-flash\"\n    },\n    {\n      \"case\": \"review\",\n      \"profileId\": \"strong-quality-reviewer\",\n      \"modelTier\": \"strong\",\n      \"defaultModel\": \"opencode-go/deepseek-v4-pro\"\n    },\n    {\n      \"case\": \"self-media-strategy\",\n      \"profileId\": \"content-strategy-director\",\n      \"modelTier\": \"strong\",\n      \"defaultModel\": \"opencode-go/deepseek-v4-pro\"\n    },\n    {\n      \"case\": \"self-media-research\",\n      \"profileId\": \"content-researcher\",\n      \"modelTier\": \"weak\",\n      \"defaultModel\": \"opencode-go/deepseek-v4-flash\"\n    },\n    {\n      \"case\": \"self-media-draft\",\n      \"profileId\": \"content-draft-producer\",\n      \"modelTier\": \"weak\",\n      \"defaultModel\": \"opencode-go/deepseek-v4-flash\"\n    },\n    {\n      \"case\": \"self-media-review\",\n      \"profileId\": \"content-editor-reviewer\",\n      \"modelTier\": \"strong\",\n      \"defaultModel\": \"opencode-go/deepseek-v4-pro\"\n    },\n    {\n      \"case\": \"ecommerce\",\n      \"profileId\": \"ecommerce-listing-optimizer\",\n      \"modelTier\": \"weak\",\n      \"defaultModel\": \"opencode-go/deepseek-v4-flash\"\n    },\n    {\n      \"case\": \"support\",\n      \"profileId\": \"support-kb-responder\",\n      \"modelTier\": \"weak\",\n      \"defaultModel\": \"opencode-go/deepseek-v4-flash\"\n    },\n    {\n      \"case\": \"research-report\",\n      \"profileId\": \"research-report-analyst\",\n      \"modelTier\": \"strong\",\n      \"defaultModel\": \"opencode-go/deepseek-v4-pro\"\n    },\n    {\n      \"case\": \"classification-router\",\n      \"profileId\": \"classification-router\",\n      \"modelTier\": \"weak\",\n      \"defaultModel\": \"opencode-go/deepseek-v4-flash\"\n    },\n    {\n      \"case\": \"monitor-alert\",\n      \"profileId\": \"monitor-alert-operator\",\n      \"modelTier\": \"weak\",\n      \"defaultModel\": \"opencode-go/deepseek-v4-flash\"\n    },\n    {\n      \"case\": \"structured-writeback\",\n      \"profileId\": \"structured-writeback-operator\",\n      \"modelTier\": \"weak\",\n      \"defaultModel\": \"opencode-go/deepseek-v4-flash\"\n    },\n    {\n      \"case\": \"sales-call\",\n      \"profileId\": \"sales-call-analyst\",\n      \"modelTier\": \"strong\",\n      \"defaultModel\": \"opencode-go/deepseek-v4-pro\"\n    }\n  ],\n  \"workflowCases\": [\n    {\n      \"workflowId\": \"self-media-content-pipeline\",\n      \"taskCount\": 4,\n      \"modelTiers\": [\n        \"strong\",\n        \"weak\"\n      ],\n      \"profiles\": [\n        \"content-strategy-director\",\n        \"content-researcher\",\n        \"content-draft-producer\",\n        \"content-editor-reviewer\"\n      ]\n    },\n    {\n      \"workflowId\": \"ecommerce-listing-optimization\",\n      \"taskCount\": 3,\n      \"modelTiers\": [\n        \"strong\",\n        \"weak\"\n      ],\n      \"profiles\": [\n        \"weak-research-extractor\",\n        \"ecommerce-listing-optimizer\",\n        \"strong-quality-reviewer\"\n      ]\n    },\n    {\n      \"workflowId\": \"support-kb-response-pipeline\",\n      \"taskCount\": 3,\n      \"modelTiers\": [\n        \"strong\",\n        \"weak\"\n      ],\n      \"profiles\": [\n        \"support-kb-responder\",\n        \"weak-structured-operator\",\n        \"strong-quality-reviewer\"\n      ]\n    },\n    {\n      \"workflowId\": \"industry-research-brief\",\n      \"taskCount\": 4,\n      \"modelTiers\": [\n        \"strong\",\n        \"weak\"\n      ],\n      \"profiles\": [\n        \"weak-research-extractor\",\n        \"weak-structured-operator\",\n        \"research-report-analyst\",\n        \"strong-quality-reviewer\"\n      ]\n    },\n    {\n      \"workflowId\": \"template-fetch-summarize\",\n      \"taskCount\": 3,\n      \"modelTiers\": [\n        \"strong\",\n        \"weak\"\n      ],\n      \"profiles\": [\n        \"weak-research-extractor\",\n        \"weak-structured-operator\",\n        \"research-report-analyst\"\n      ]\n    },\n    {\n      \"workflowId\": \"template-generate-variants\",\n      \"taskCount\": 3,\n      \"modelTiers\": [\n        \"strong\",\n        \"weak\"\n      ],\n      \"profiles\": [\n        \"strong-task-architect\",\n        \"content-draft-producer\",\n        \"strong-quality-reviewer\"\n      ]\n    },\n    {\n      \"workflowId\": \"template-classify-route\",\n      \"taskCount\": 4,\n      \"modelTiers\": [\n        \"strong\",\n        \"weak\"\n      ],\n      \"profiles\": [\n        \"weak-structured-operator\",\n        \"classification-router\",\n        \"support-kb-responder\",\n        \"strong-quality-reviewer\"\n      ]\n    },\n    {\n      \"workflowId\": \"template-monitor-alert\",\n      \"taskCount\": 3,\n      \"modelTiers\": [\n        \"strong\",\n        \"weak\"\n      ],\n      \"profiles\": [\n        \"weak-research-extractor\",\n        \"monitor-alert-operator\",\n        \"strong-quality-reviewer\"\n      ]\n    },\n    {\n      \"workflowId\": \"template-extract-writeback\",\n      \"taskCount\": 4,\n      \"modelTiers\": [\n        \"strong\",\n        \"weak\"\n      ],\n      \"profiles\": [\n        \"weak-structured-operator\",\n        \"structured-writeback-operator\",\n        \"strong-quality-reviewer\"\n      ]\n    },\n    {\n      \"workflowId\": \"self-media-comment-reply-routing\",\n      \"taskCount\": 4,\n      \"modelTiers\": [\n        \"strong\",\n        \"weak\"\n      ],\n      \"profiles\": [\n        \"weak-structured-operator\",\n        \"classification-router\",\n        \"content-draft-producer\",\n        \"content-editor-reviewer\"\n      ]\n    },\n    {\n      \"workflowId\": \"sales-call-crm-writeback\",\n      \"taskCount\": 4,\n      \"modelTiers\": [\n        \"strong\",\n        \"weak\"\n      ],\n      \"profiles\": [\n        \"weak-structured-operator\",\n        \"sales-call-analyst\",\n        \"structured-writeback-operator\"\n      ]\n    },\n    {\n      \"workflowId\": \"self-media-topic-mining\",\n      \"taskCount\": 3,\n      \"modelTiers\": [\n        \"strong\",\n        \"weak\"\n      ],\n      \"profiles\": [\n        \"content-researcher\",\n        \"weak-structured-operator\",\n        \"content-strategy-director\"\n      ]\n    },\n    {\n      \"workflowId\": \"self-media-title-cover-ab\",\n      \"taskCount\": 3,\n      \"modelTiers\": [\n        \"strong\",\n        \"weak\"\n      ],\n      \"profiles\": [\n        \"content-strategy-director\",\n        \"content-draft-producer\",\n        \"content-editor-reviewer\"\n      ]\n    },\n    {\n      \"workflowId\": \"self-media-data-review-weekly\",\n      \"taskCount\": 3,\n      \"modelTiers\": [\n        \"strong\",\n        \"weak\"\n      ],\n      \"profiles\": [\n        \"weak-structured-operator\",\n        \"monitor-alert-operator\",\n        \"content-strategy-director\"\n      ]\n    },\n    {\n      \"workflowId\": \"industry-source-monitoring-daily\",\n      \"taskCount\": 3,\n      \"modelTiers\": [\n        \"strong\",\n        \"weak\"\n      ],\n      \"profiles\": [\n        \"weak-research-extractor\",\n        \"weak-structured-operator\",\n        \"research-report-analyst\"\n      ]\n    },\n    {\n      \"workflowId\": \"industry-competitor-diff-tracking\",\n      \"taskCount\": 4,\n      \"modelTiers\": [\n        \"strong\",\n        \"weak\"\n      ],\n      \"profiles\": [\n        \"weak-research-extractor\",\n        \"weak-structured-operator\",\n        \"monitor-alert-operator\",\n        \"research-report-analyst\"\n      ]\n    },\n    {\n      \"workflowId\": \"industry-interview-summary\",\n      \"taskCount\": 3,\n      \"modelTiers\": [\n        \"strong\",\n        \"weak\"\n      ],\n      \"profiles\": [\n        \"weak-structured-operator\",\n        \"structured-writeback-operator\",\n        \"research-report-analyst\"\n      ]\n    },\n    {\n      \"workflowId\": \"industry-sentiment-risk-alert\",\n      \"taskCount\": 3,\n      \"modelTiers\": [\n        \"strong\",\n        \"weak\"\n      ],\n      \"profiles\": [\n        \"weak-research-extractor\",\n        \"monitor-alert-operator\",\n        \"strong-quality-reviewer\"\n      ]\n    },\n    {\n      \"workflowId\": \"ecommerce-review-mining\",\n      \"taskCount\": 4,\n      \"modelTiers\": [\n        \"strong\",\n        \"weak\"\n      ],\n      \"profiles\": [\n        \"weak-structured-operator\",\n        \"ecommerce-listing-optimizer\",\n        \"strong-quality-reviewer\"\n      ]\n    },\n    {\n      \"workflowId\": \"ecommerce-inventory-pricing-alert\",\n      \"taskCount\": 3,\n      \"modelTiers\": [\n        \"strong\",\n        \"weak\"\n      ],\n      \"profiles\": [\n        \"weak-structured-operator\",\n        \"monitor-alert-operator\",\n        \"strong-quality-reviewer\"\n      ]\n    },\n    {\n      \"workflowId\": \"ecommerce-promo-creative-batch\",\n      \"taskCount\": 3,\n      \"modelTiers\": [\n        \"strong\",\n        \"weak\"\n      ],\n      \"profiles\": [\n        \"strong-task-architect\",\n        \"ecommerce-listing-optimizer\",\n        \"strong-quality-reviewer\"\n      ]\n    },\n    {\n      \"workflowId\": \"support-auto-answer\",\n      \"taskCount\": 3,\n      \"modelTiers\": [\n        \"strong\",\n        \"weak\"\n      ],\n      \"profiles\": [\n        \"support-kb-responder\",\n        \"strong-quality-reviewer\"\n      ]\n    },\n    {\n      \"workflowId\": \"support-ticket-priority-routing\",\n      \"taskCount\": 3,\n      \"modelTiers\": [\n        \"strong\",\n        \"weak\"\n      ],\n      \"profiles\": [\n        \"weak-structured-operator\",\n        \"classification-router\",\n        \"strong-quality-reviewer\"\n      ]\n    },\n    {\n      \"workflowId\": \"support-prehandoff-info-collection\",\n      \"taskCount\": 4,\n      \"modelTiers\": [\n        \"strong\",\n        \"weak\"\n      ],\n      \"profiles\": [\n        \"structured-writeback-operator\",\n        \"support-kb-responder\",\n        \"strong-quality-reviewer\"\n      ]\n    },\n    {\n      \"workflowId\": \"support-service-quality-review\",\n      \"taskCount\": 3,\n      \"modelTiers\": [\n        \"strong\",\n        \"weak\"\n      ],\n      \"profiles\": [\n        \"weak-structured-operator\",\n        \"classification-router\",\n        \"strong-quality-reviewer\"\n      ]\n    },\n    {\n      \"workflowId\": \"sales-lead-scoring\",\n      \"taskCount\": 3,\n      \"modelTiers\": [\n        \"strong\",\n        \"weak\"\n      ],\n      \"profiles\": [\n        \"structured-writeback-operator\",\n        \"sales-call-analyst\",\n        \"classification-router\"\n      ]\n    },\n    {\n      \"workflowId\": \"sales-precall-brief\",\n      \"taskCount\": 3,\n      \"modelTiers\": [\n        \"strong\",\n        \"weak\"\n      ],\n      \"profiles\": [\n        \"weak-research-extractor\",\n        \"sales-call-analyst\"\n      ]\n    },\n    {\n      \"workflowId\": \"sales-objection-coach\",\n      \"taskCount\": 4,\n      \"modelTiers\": [\n        \"strong\",\n        \"weak\"\n      ],\n      \"profiles\": [\n        \"classification-router\",\n        \"sales-call-analyst\",\n        \"structured-writeback-operator\"\n      ]\n    },\n    {\n      \"workflowId\": \"sales-followup-cadence\",\n      \"taskCount\": 4,\n      \"modelTiers\": [\n        \"strong\",\n        \"weak\"\n      ],\n      \"profiles\": [\n        \"structured-writeback-operator\",\n        \"sales-call-analyst\",\n        \"sales-followup-draft-producer\"\n      ]\n    }\n  ]\n}\n",
+      "stderr": ""
+    },
+    {
+      "command": "npm run check:workflow-catalog",
+      "code": 0,
+      "stdout": "\n> pi-monorepo@0.0.3 check:workflow-catalog\n> node scripts/check-workflow-catalog.mjs\n\n{\n  \"total\": 40,\n  \"legacy\": [\n    \"restart-check\",\n    \"workflow-ui-check\",\n    \"smoke-workflow-e2e\",\n    \"smoke-workflow-e2e-2\",\n    \"smoke-workflow-e2e-3\",\n    \"smoke-workflow-1782761344971\",\n    \"smoke-workflow-1782761400725\",\n    \"smoke-workflow-1782761431560\",\n    \"eval-weak-to-strong-2026-06-29t21-09-41-525z\",\n    \"new-workflow\"\n  ],\n  \"templates\": [\n    \"template-fetch-summarize\",\n    \"template-generate-variants\",\n    \"template-classify-route\",\n    \"template-monitor-alert\",\n    \"template-extract-writeback\"\n  ],\n  \"industry\": {\n    \"self-media\": [\n      \"self-media-content-pipeline\",\n      \"self-media-comment-reply-routing\",\n      \"self-media-topic-mining\",\n      \"self-media-ai-track-topic-research\",\n      \"self-media-title-cover-ab\",\n      \"self-media-data-review-weekly\"\n    ],\n    \"ecommerce\": [\n      \"ecommerce-listing-optimization\",\n      \"ecommerce-review-mining\",\n      \"ecommerce-inventory-pricing-alert\",\n      \"ecommerce-promo-creative-batch\"\n    ],\n    \"customer-support\": [\n      \"support-kb-response-pipeline\",\n      \"support-auto-answer\",\n      \"support-ticket-priority-routing\",\n      \"support-prehandoff-info-collection\",\n      \"support-service-quality-review\"\n    ],\n    \"research\": [\n      \"industry-research-brief\",\n      \"industry-source-monitoring-daily\",\n      \"industry-competitor-diff-tracking\",\n      \"industry-interview-summary\",\n      \"industry-sentiment-risk-alert\"\n    ],\n    \"sales\": [\n      \"sales-call-crm-writeback\",\n      \"sales-lead-scoring\",\n      \"sales-precall-brief\",\n      \"sales-objection-coach\",\n      \"sales-followup-cadence\"\n    ]\n  },\n  \"invalid\": []\n}\n",
+      "stderr": ""
+    }
+  ]
+}

@@ -1,0 +1,99 @@
+{
+  "id": "trained-case-media-comment-classify-001-2026-07-01",
+  "name": "评论区分级和路由 专用 Profile",
+  "match": [
+    "trained-case:media-comment-classify-001",
+    "workflow:WF-16",
+    "node-type:Classify/Router",
+    "评论区分级和路由",
+    "classification-router"
+  ],
+  "defaultModel": "opencode-go/deepseek-v4-flash",
+  "skills": [
+    "output-spec"
+  ],
+  "availableSkills": [
+    "output-spec",
+    "artifact-storage"
+  ],
+  "collaborationProtocol": "专用于真实训练任务：评论区分级和路由。\n负责低成本分类、置信度、路由建议和人工升级条件；不处理高风险最终裁决。\n必须复用训练样本中的成功模式，并保留风险、证据和待确认项。",
+  "projectConfig": {
+    "modelTier": "weak",
+    "pattern": "classify-route",
+    "roleInWorkflow": "classifier-router",
+    "preferredTasks": [
+      "标签分类",
+      "置信度输出",
+      "情绪识别",
+      "路由分支建议",
+      "人工审核触发"
+    ],
+    "escalateWhen": [
+      "confidence 低于阈值",
+      "标签互相冲突",
+      "涉及投诉/法务/赔偿/高价值客户",
+      "输入有讽刺或隐晦攻击"
+    ],
+    "qualityBar": "必须输出 label、confidence、emotion、route、reason 和 manual_review_required。",
+    "generated": true,
+    "generatedStatus": "trained",
+    "routingEnabled": false,
+    "profileKind": "task-specific",
+    "workflowId": "WF-16",
+    "sourceNodeType": "Classify/Router",
+    "sourceProfileId": "classification-router",
+    "trainingRunId": "2026-07-01T22-27-25-228Z",
+    "trainingCaseId": "media-comment-classify-001",
+    "trainingScore": 85,
+    "trainingArtifactDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T22-27-25-228Z",
+    "nodeOutputArtifact": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T22-27-25-228Z/node_outputs/07-media-comment-classify-001.md",
+    "nodeContract": {
+      "purpose": "按给定标签体系做分类、置信度和路由，不生成最终处置。",
+      "output": [
+        "items: 每条含 id, label, confidence, route(auto_reply|manual_review|ignore|delete_suggested), reason, risk_flags",
+        "manual_review_items",
+        "label_conflicts"
+      ],
+      "redLines": [
+        "不得发明标签；若标签体系不足，使用 other 并说明 schema_gap",
+        "预算、交易、法律、投诉、纠纷必须 manual_review",
+        "广告只能忽略/删除建议，不应生成推广回复"
+      ]
+    }
+  },
+  "systemPromptPatch": "你是“评论区分级和路由”专用节点 Profile。\n节点类型：Classify/Router。\n节点职责：按给定标签体系做分类、置信度和路由，不生成最终处置。\n红线：不得发明标签；若标签体系不足，使用 other 并说明 schema_gap；预算、交易、法律、投诉、纠纷必须 manual_review；广告只能忽略/删除建议，不应生成推广回复\n标签 schema：{\"allowedLabels\":[\"好评\",\"质疑\",\"广告\",\"黑粉\",\"投诉\",\"交易需求\"],\"routes\":[\"auto_reply\",\"manual_review\",\"ignore\",\"delete_suggested\"],\"manualReviewRequiredWhen\":[\"预算/交易线索\",\"法律/责任/纠纷\",\"投诉\",\"高风险承诺\"]}\n训练沉淀：对于攻击性/黑粉评论，即使选择忽略也应考虑保留人工审核或理性回应的可能性，避免简单忽略导致用户负面感知 | 可在分类 prompt 中明确：对于黑粉/强质疑，路由应为 manual_review 或至少标记为需人工复核，避免直接 ignore\n只完成当前节点；缺失信息标记 missing/unknown/unverified；不得补造。",
+  "experience": 1,
+  "successes": 1,
+  "failures": 0,
+  "recentTasks": [
+    {
+      "name": "评论区分级和路由",
+      "taskId": "media-comment-classify-001",
+      "success": true,
+      "timestamp": 1782946100495,
+      "modelUsed": "opencode-go/deepseek-v4-flash",
+      "score": 85,
+      "status": "training_case_profile",
+      "outputArtifact": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T22-27-25-228Z/node_outputs/07-media-comment-classify-001.md"
+    }
+  ],
+  "runHistory": [],
+  "savedExperiences": [
+    {
+      "taskId": "media-comment-classify-001",
+      "taskName": "评论区分级和路由",
+      "lesson": "对于攻击性/黑粉评论，即使选择忽略也应考虑保留人工审核或理性回应的可能性，避免简单忽略导致用户负面感知 | 可在分类 prompt 中明确：对于黑粉/强质疑，路由应为 manual_review 或至少标记为需人工复核，避免直接 ignore",
+      "skills": [
+        "output-spec"
+      ],
+      "model": "opencode-go/deepseek-v4-flash",
+      "artifactId": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T22-27-25-228Z/node_outputs/07-media-comment-classify-001.md",
+      "debugValidated": true,
+      "score": 85,
+      "savedAt": 1782946100495
+    }
+  ],
+  "sourceProfileId": "classification-router",
+  "generatedAt": 1782946100495,
+  "generatedBy": "node-profile-training"
+}

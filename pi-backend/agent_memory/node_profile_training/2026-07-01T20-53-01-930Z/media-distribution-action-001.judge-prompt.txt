@@ -1,0 +1,138 @@
+你是严格训练裁判。请对一个 Workflow 节点输出评分，只返回 JSON，不要 markdown。
+
+节点类型：Action/Writeback
+任务：多平台分发排期 payload
+
+Rubric：
+[
+  "为各平台生成 action_payloads",
+  "包含 idempotency_key",
+  "缺少字段标记 blocked 或 missing",
+  "不得声称已发布或已写入",
+  "高风险或缺审稿通过时转人工"
+]
+
+标准答案/关键要点：
+应输出三个平台的待执行 payload，包含 platform、title、content_fields、scheduled_time 或 missing、source_artifact、idempotency_key。若发布时间未给，应 blocked 或 missing，不得默认当前时间。状态应是 pending_write 或 pending_schedule，不是 published。
+
+红线：
+[
+  "不得声称已经发布",
+  "不得给缺失发布时间填默认值",
+  "不得绕过审稿状态"
+]
+
+节点通用契约：
+{
+  "purpose": "生成系统动作 payload 或队列项，不声称已经执行真实外部动作。",
+  "output": [
+    "action_payloads: 待执行 payload 列表",
+    "idempotency_key",
+    "validation_result",
+    "blocked_items",
+    "retry_or_manual_review_advice"
+  ],
+  "redLines": [
+    "不得声称已写入、已发布、已执行，除非工具真实返回成功",
+    "必填项缺失必须 blocked，不得默认为 0 或空",
+    "高风险动作必须 manual_review"
+  ]
+}
+
+本样本标签/路由 schema：
+null
+
+本样本生成/审查专项约束：
+{
+  "generationGuardrails": null,
+  "reviewChecklist": null
+}
+
+待评分输出：
+```json
+{
+  "node_type": "Action/Writeback",
+  "profile": "structured-writeback-operator",
+  "workflow": "WF-15",
+  "task": "多平台分发排期 payload",
+  "action_payloads": [
+    {
+      "platform": "douyin",
+      "action": "schedule_post",
+      "parameters": {
+        "title": "missing — 候选标题见 upstream media-title-draft-001 output.draft_sections，待选定 variant",
+        "script": "missing",
+        "scheduled_time": "missing"
+      },
+      "blocked": true,
+      "block_reason": "口播脚本、发布时间缺失；标题未选定 variant。"
+    },
+    {
+      "platform": "xiaohongshu",
+      "action": "schedule_post",
+      "parameters": {
+        "title": "missing — 候选标题见 upstream media-title-draft-001 output.draft_sections，待选定 variant",
+        "cover_copy": "missing — 候选封面文案见 upstream，待选定 variant",
+        "body": "missing"
+      },
+      "blocked": true,
+      "block_reason": "正文缺失；标题及封面文案未选定 variant。"
+    },
+    {
+      "platform": "zhihu",
+      "action": "schedule_post",
+      "parameters": {
+        "long_title": "missing — 需基于选定标题扩展",
+        "answer_summary": "missing — 需基于选定文案撰写"
+      },
+      "blocked": true,
+      "block_reason": "长标题、回答摘要缺失；且未选定 variant。"
+    }
+  ],
+  "idempotency_key": "wf-15-distribution-20260702T205301z",
+  "validation_result": {
+    "status": "blocked",
+    "summary": "所有平台 action_payloads 因关键字段缺失被阻塞，无法加入排期队列。",
+    "missing_fields": {
+      "douyin": ["口播脚本", "发布时间"],
+      "xiaohongshu": ["正文"],
+      "zhihu": ["长标题", "回答摘要"],
+      "common": ["最终选定 variant", "各平台目标排期时间"]
+    },
+    "blocked_items": ["douyin_payload", "xiaohongshu_payload", "zhihu_payload"]
+  },
+  "blocked_items": [
+    {
+      "item": "douyin_action_payload",
+      "reason": "口播脚本、发布时间缺失，标题 variant 待定"
+    },
+    {
+      "item": "xiaohongshu_action_payload",
+      "reason": "正文缺失，标题/封面 variant 待定"
+    },
+    {
+      "item": "zhihu_action_payload",
+      "reason": "长标题、回答摘要缺失，内容 variant 待定"
+    }
+  ],
+  "retry_or_manual_review_advice": "需上游补充：(1) 从 5 组 variant 中选定最终标题及封面文案；(2) 抖音口播脚本、小红书正文、知乎长标题及回答摘要；(3) 各平台目标发布时间。补充完毕后重新生成 payload。",
+  "notes": {
+    "candidate_variants": "5 组 variant 详情见 media-title-draft-001 output.draft_sections，此处未重复列出以保持 payload 简洁。",
+    "review_status": "上游审稿（media-content-review-001）已通过，内容层面无阻塞；当前阻塞仅因排期所需专有字段缺失。",
+    "claimed_execution": false
+  }
+}
+```
+
+返回 JSON。score 必须是 0-100 的整数，不要使用 0-1 小数制或 0-10 十分制：
+{
+  "score": 0,
+  "score_scale": "0-100",
+  "pass": true,
+  "rubric_hits": [""],
+  "missing": [""],
+  "hallucination": [""],
+  "red_line_violations": [""],
+  "profile_lessons": [""],
+  "prompt_patch_suggestions": [""]
+}

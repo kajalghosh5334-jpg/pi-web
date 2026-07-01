@@ -1,0 +1,136 @@
+你是严格训练裁判。请对一个 Workflow 节点输出评分，只返回 JSON，不要 markdown。
+
+节点类型：Gather/Fetch
+任务：公司调研资料搬运
+
+Rubric：
+[
+  "只抽取给定来源中出现的业务、技术栈、学历门槛、薪资和面经",
+  "每条事实标注来源片段",
+  "未出现的信息输出 unknown 或 missing",
+  "不判断候选人是否适合",
+  "给出证据缺口和复核建议"
+]
+
+标准答案/关键要点：
+业务应记录为制造业质检自动化和设备数据采集；技术栈应包含 Python、OpenCV、PLC、轻量化模型部署；岗位薪资 5-7k；学历门槛为大专及以上优先，不是硬性本科；面试关注 Python 文件处理、接口调用、项目 demo。团队规模、真实文化、实际录取学历、长期发展空间等来源未出现，应标 unknown/missing。
+
+红线：
+[
+  "不得补造公司新闻、融资、员工规模或文化",
+  "不得凭公司名推断技术栈",
+  "不得把优先条件改写成硬性条件"
+]
+
+节点通用契约：
+{
+  "purpose": "只搬运用户给定来源、工具结果或可定位文件中的显性事实，不做判断。",
+  "output": [
+    "extracted_facts: 每条含 fact, source, source_status",
+    "unknown_fields: 来源未出现但任务关心的字段",
+    "evidence_gaps: 证据缺口和补源建议",
+    "handoff_summary: 给下游的短摘要"
+  ],
+  "redLines": [
+    "不得凭记忆或行业常识补公司新闻、数字、链接、媒体名",
+    "不得把评论/访谈观点写成行业事实"
+  ]
+}
+
+本样本标签/路由 schema：
+null
+
+待评分输出：
+```json
+{
+  "workflow": "WF-3",
+  "profile": "weak-research-extractor",
+  "node_type": "Gather/Fetch",
+  "target_company": "星河智造",
+  "extracted_facts": [
+    {
+      "fact": "公司为制造业客户提供质检自动化和设备数据采集服务。",
+      "source": "官网片段（来源1）",
+      "source_status": "verifiable"
+    },
+    {
+      "fact": "技术关键词包含 Python、OpenCV、PLC、轻量化模型部署。",
+      "source": "官网片段（来源1）",
+      "source_status": "verifiable"
+    },
+    {
+      "fact": "招聘岗位为初级 AI 工具开发助理。",
+      "source": "招聘 JD 片段（来源2）",
+      "source_status": "verifiable"
+    },
+    {
+      "fact": "薪资范围为 5-7k。",
+      "source": "招聘 JD 片段（来源2）",
+      "source_status": "verifiable"
+    },
+    {
+      "fact": "要求具备 Python 基础、能读懂接口文档。",
+      "source": "招聘 JD 片段（来源2）",
+      "source_status": "verifiable"
+    },
+    {
+      "fact": "学历要求为‘大专及以上优先（原文为优先条件，非硬性门槛）’。",
+      "source": "招聘 JD 片段（来源2）",
+      "source_status": "verifiable",
+      "red_line_notes": "严格遵守红线：未将‘优先’改写为硬性要求。"
+    },
+    {
+      "fact": "面试环节会考察 Python 文件处理、接口调用以及是否做过项目 demo。",
+      "source": "面经摘录（来源3）",
+      "source_status": "verifiable"
+    }
+  ],
+  "unknown_fields": [
+    "公司成立时间",
+    "公司人数/规模",
+    "融资历史与投资方",
+    "具体产品/品牌名称",
+    "落地行业子类（如汽车/电子/食品等）",
+    "管理层或技术负责人背景",
+    "办公地点",
+    "企业价值观或文化描述",
+    "公开奖项、认证或媒体报道"
+  ],
+  "evidence_gaps": [
+    {
+      "gap": "官网仅一个片段，缺乏完整的关于我们、产品页面或解决方案详情。",
+      "supplement_suggestion": "需补全完整官网首页、关于我们及产品线页面。"
+    },
+    {
+      "gap": "招聘 JD 为初级岗位，无法覆盖高阶技术能力栈或产品核心竞争力。",
+      "supplement_suggestion": "建议搜集高级/资深岗位 JD 或技术负责人履历。"
+    },
+    {
+      "gap": "面经样本单一，存在候选人视角偏差。",
+      "supplement_suggestion": "建议搜集更多面经以交叉验证团队风格和技术深度。"
+    },
+    {
+      "gap": "未见公司工商信息、第三方媒体新闻或行业报告引用。",
+      "supplement_suggestion": "建议通过企查查/天眼查或行业新闻搜索补充工商动态与产品发布信息。"
+    }
+  ],
+  "handoff_summary": "已完成星河智造有限来源的事实搬运。已获取信息：面向制造业的质检与数据采集业务、Python/OpenCV/PLC 等技术关键词、初级岗薪资 5-7k 及大专优先门槛、面试侧重文件处理/接口/项目 demo。缺失公司规模、成立时间、融资、具体产品名称等关键维度。下游需重点补全工商信息及产品/融资新闻。",
+  "red_line_compliance_check": {
+    "no_fabricated_news_funding_size": "passed",
+    "no_inferred_tech_stack_from_name": "passed（技术栈源于给定来源）",
+    "no_rewriting_preferred_as_required": "passed（已在事实中明确标注为‘优先’）"
+  }
+}
+```
+
+返回 JSON：
+{
+  "score": 0,
+  "pass": true,
+  "rubric_hits": [""],
+  "missing": [""],
+  "hallucination": [""],
+  "red_line_violations": [""],
+  "profile_lessons": [""],
+  "prompt_patch_suggestions": [""]
+}

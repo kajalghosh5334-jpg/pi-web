@@ -1,0 +1,102 @@
+{
+  "testCase": {
+    "id": "job-company-gather-001",
+    "nodeType": "Gather/Fetch",
+    "profileTarget": "weak-research-extractor",
+    "workflowId": "WF-3",
+    "title": "公司调研资料搬运",
+    "model": "opencode-go/deepseek-v4-flash",
+    "tools": "none",
+    "dependsOn": [],
+    "input": "目标公司：星河智造。给定来源材料：1）官网片段：公司为制造业客户做质检自动化和设备数据采集，技术关键词包含 Python、OpenCV、PLC、轻量化模型部署。2）招聘 JD 片段：初级 AI 工具开发助理，薪资 5-7k，要求 Python 基础、能读懂接口文档，学历写的是大专及以上优先。3）面经摘录：面试会问 Python 文件处理、接口调用、是否做过项目 demo。请只基于这些材料搬运事实。",
+    "expectedRubric": [
+      "只抽取给定来源中出现的业务、技术栈、学历门槛、薪资和面经",
+      "每条事实标注来源片段",
+      "未出现的信息输出 unknown 或 missing",
+      "不判断候选人是否适合",
+      "给出证据缺口和复核建议"
+    ],
+    "standardAnswer": "业务应记录为制造业质检自动化和设备数据采集；技术栈应包含 Python、OpenCV、PLC、轻量化模型部署；岗位薪资 5-7k；学历门槛为大专及以上优先，不是硬性本科；面试关注 Python 文件处理、接口调用、项目 demo。团队规模、真实文化、实际录取学历、长期发展空间等来源未出现，应标 unknown/missing。",
+    "redLines": [
+      "不得补造公司新闻、融资、员工规模或文化",
+      "不得凭公司名推断技术栈",
+      "不得把优先条件改写成硬性条件"
+    ]
+  },
+  "output": {
+    "model": "opencode-go/deepseek-v4-flash",
+    "code": 0,
+    "text": "```json\n{\n  \"extracted_facts\": [\n    {\n      \"fact\": \"星河智造为制造业客户提供质检自动化和设备数据采集服务\",\n      \"source\": \"官网片段\",\n      \"source_status\": \"explicit\"\n    },\n    {\n      \"fact\": \"公司涉及技术包括 Python、OpenCV、PLC、轻量化模型部署\",\n      \"source\": \"官网片段\",\n      \"source_status\": \"explicit\"\n    },\n    {\n      \"fact\": \"公司招聘初级AI工具开发助理，薪资5-7k\",\n      \"source\": \"招聘JD片段\",\n      \"source_status\": \"explicit\"\n    },\n    {\n      \"fact\": \"该职位要求具备Python基础，能读懂接口文档\",\n      \"source\": \"招聘JD片段\",\n      \"source_status\": \"explicit\"\n    },\n    {\n      \"fact\": \"学历要求为大专及以上，注明为优先条件\",\n      \"source\": \"招聘JD片段\",\n      \"source_status\": \"explicit_with_qualifier (优先条件)\"\n    },\n    {\n      \"fact\": \"面试会问Python文件处理、接口调用、是否做过项目demo\",\n      \"source\": \"面经摘录\",\n      \"source_status\": \"explicit\"\n    }\n  ],\n  \"unknown_fields\": {\n    \"company_full_name_official\": \"missing\",\n    \"company_establishment_year\": \"missing\",\n    \"company_financing_status\": \"missing\",\n    \"company_employee_count\": \"missing\",\n    \"company_core_products_or_services\": \"部分已知（质检自动化和设备数据采集），无具体产品名或功能描述\",\n    \"company_tech_stack_detail\": \"仅知部分技术标签，完整架构/平台/工具链未提及\",\n    \"company_culture\": \"missing\",\n    \"team_background\": \"missing\",\n    \"salary_range_for_other_positions\": \"missing\",\n    \"interview_format\": \"仅知几类问题，完整流程和覆盖面未提及\",\n    \"education_requirement_is_hard\": \"unverified（原文为优先条件，是否硬性未明确）\"\n  },\n  \"evidence_gaps\": [\n    {\n      \"gap\": \"官网片段仅给出业务方向和技术标签，缺少公司背景、成立时间、核心产品名称或客户案例。\",\n      \"suggestion\": \"查阅完整官网或公开工商信息补充\"\n    },\n    {\n      \"gap\": \"仅一个初级助理岗位的JD，不足以反映公司整体团队构成、层级分布或核心成员背景。\",\n      \"suggestion\": \"收集更多岗位JD或团队介绍页面\"\n    },\n    {\n      \"gap\": \"面经仅一个简短摘录，缺乏面试流程、时长、轮次、占比等信息。\",\n      \"suggestion\": \"从多个渠道收集更完整的面经\"\n    },\n    {\n      \"gap\": \"学历条件标注为优先，未说明是否为硬性筛选标准。\",\n      \"suggestion\": \"通过招聘方或更多JD确认\"\n    }\n  ],\n  \"handoff_summary\": \"基于三段给定来源，已提取6条显性事实：星河智造主营质检自动化和设备数据采集，技术关键词含Python、OpenCV、PLC、轻量化模型部署；招聘初级AI工具开发助理，薪资5-7k，要求Python基础和接口文档阅读能力，学历大专及以上优先；面试涉及Python文件处理、接口调用和项目经验。缺失公司基本背景、融资、团队、完整技术栈、其他岗位薪资等关键信息，需下游补充调研。\"\n}\n```",
+    "usage": {
+      "input": 2539,
+      "output": 3318,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "reasoning": 2570,
+      "totalTokens": 5857,
+      "cost": {
+        "input": 0.00035546000000000004,
+        "output": 0.0009290400000000001,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "total": 0.0012845
+      }
+    },
+    "stderr": "",
+    "elapsedMs": 39363,
+    "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+    "workDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T22-27-25-228Z/job-company-gather-001-output",
+    "isolatedSessionDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T22-27-25-228Z/job-company-gather-001-output/.pi-sessions"
+  },
+  "judgeOutput": {
+    "model": "opencode-go/deepseek-v4-pro",
+    "code": 0,
+    "text": "{\n  \"score\": 100,\n  \"score_scale\": \"0-100\",\n  \"pass\": true,\n  \"rubric_hits\": [\n    \"只抽取给定来源中出现的业务、技术栈、学历门槛、薪资和面经\",\n    \"每条事实标注来源片段\",\n    \"未出现的信息输出 unknown 或 missing\",\n    \"不判断候选人是否适合\",\n    \"给出证据缺口和复核建议\",\n    \"优先条件保持优先，未改写为硬性条件\"\n  ],\n  \"missing\": [],\n  \"hallucination\": [],\n  \"red_line_violations\": [],\n  \"profile_lessons\": [\n    \"模型在纯信息搬运任务中准确区分已知和未知，符合Gather/Fetch契约要求\"\n  ],\n  \"prompt_patch_suggestions\": []\n}",
+    "usage": {
+      "input": 3518,
+      "output": 2525,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "reasoning": 2352,
+      "totalTokens": 6043,
+      "cost": {
+        "input": 0.00612132,
+        "output": 0.008787,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "total": 0.01490832
+      }
+    },
+    "stderr": "",
+    "elapsedMs": 42904,
+    "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+    "workDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T22-27-25-228Z/job-company-gather-001-judge",
+    "isolatedSessionDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T22-27-25-228Z/job-company-gather-001-judge/.pi-sessions"
+  },
+  "judge": {
+    "score": 100,
+    "score_scale": "0-100",
+    "pass": true,
+    "rubric_hits": [
+      "只抽取给定来源中出现的业务、技术栈、学历门槛、薪资和面经",
+      "每条事实标注来源片段",
+      "未出现的信息输出 unknown 或 missing",
+      "不判断候选人是否适合",
+      "给出证据缺口和复核建议",
+      "优先条件保持优先，未改写为硬性条件"
+    ],
+    "missing": [],
+    "hallucination": [],
+    "red_line_violations": [],
+    "profile_lessons": [
+      "模型在纯信息搬运任务中准确区分已知和未知，符合Gather/Fetch契约要求"
+    ],
+    "prompt_patch_suggestions": [],
+    "raw_score": 100
+  },
+  "minScore": 82,
+  "nodeOutputArtifact": {
+    "markdownPath": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T22-27-25-228Z/node_outputs/02-job-company-gather-001.md",
+    "jsonPath": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T22-27-25-228Z/node_outputs/02-job-company-gather-001.json"
+  }
+}

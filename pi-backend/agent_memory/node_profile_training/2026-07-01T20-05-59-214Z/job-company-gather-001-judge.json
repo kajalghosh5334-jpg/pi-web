@@ -1,0 +1,25 @@
+{
+  "model": "opencode-go/deepseek-v4-pro",
+  "code": 0,
+  "text": "{\n  \"score\": 95,\n  \"score_scale\": \"0-100\",\n  \"pass\": true,\n  \"rubric_hits\": [\n    \"只抽取给定来源中出现的业务、技术栈、学历门槛、薪资和面经\",\n    \"每条事实标注来源片段\",\n    \"未出现的信息输出 unknown 或 missing\",\n    \"不判断候选人是否适合\",\n    \"给出证据缺口和复核建议\"\n  ],\n  \"missing\": [\n    \"unknown_fields 未明确覆盖「实际录取学历」和「长期发展空间」等标准答案提及的未出现信息，虽已涵盖大部分关键缺失项\"\n  ],\n  \"hallucination\": [],\n  \"red_line_violations\": [],\n  \"profile_lessons\": [\n    \"对学历红线的显式标注与风险提示是优秀实践，可防止下游误读\",\n    \"整体事实搬运质量高，未掺杂判断或幻觉\"\n  ],\n  \"prompt_patch_suggestions\": [\n    \"可要求 unknown_fields 对齐任务定义中的所有关键关注维度（如录取学历、发展空间），避免遗漏标准答案期望的缺失字段\"\n  ]\n}",
+  "usage": {
+    "input": 3431,
+    "output": 1864,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "reasoning": 1621,
+    "totalTokens": 5295,
+    "cost": {
+      "input": 0.00596994,
+      "output": 0.0064867200000000005,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "total": 0.012456660000000001
+    }
+  },
+  "stderr": "",
+  "elapsedMs": 34096,
+  "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+  "workDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-05-59-214Z/job-company-gather-001-judge",
+  "isolatedSessionDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-05-59-214Z/job-company-gather-001-judge/.pi-sessions"
+}

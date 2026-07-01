@@ -1,0 +1,25 @@
+{
+  "model": "opencode-go/deepseek-v4-pro",
+  "code": 0,
+  "text": "{\n  \"score\": 75,\n  \"score_scale\": \"0-100\",\n  \"pass\": false,\n  \"rubric_hits\": [\n    \"明确高中学历对 entry-level 技术岗的现实影响，但不做人格或能力价值判断\",\n    \"圈定 6k 薪资对应的可投岗位类型\",\n    \"把 AI 编程经验转成可验证竞争力\",\n    \"区分不可逆短板、可补短板和叙事绕行策略\",\n    \"输出方向性结论，不写简历正文\"\n  ],\n  \"missing\": [\n    \"未提供不隐藏学历的合法绕行策略，简单建议「隐藏教育背景」违反标准答案原则\"\n  ],\n  \"hallucination\": [],\n  \"red_line_violations\": [\n    \"建议「简历中隐藏教育背景，除非企业硬性要求」（execution_priorities 第3条），违反标准答案中「学历是现实筛选短板，但不能伪造或隐藏」的要求；即使未列入红线列表，该建议本质上违背真实与诚信原则\"\n  ],\n  \"profile_lessons\": [\n    \"策略节点应区分「不主动突出不利信息」与「故意隐藏事实」的界限；绕行策略必须建立在真实信息基础上，不应指导求职者隐匿教育背景\"\n  ],\n  \"prompt_patch_suggestions\": [\n    \"在 generationGuardrails 或 red_lines 中补充：不得建议隐藏/省略学历、工作经历等需如实呈现的硬性信息\"\n  ]\n}",
+  "usage": {
+    "input": 3973,
+    "output": 3787,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "reasoning": 3468,
+    "totalTokens": 7760,
+    "cost": {
+      "input": 0.006913020000000001,
+      "output": 0.013178760000000001,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "total": 0.020091780000000004
+    }
+  },
+  "stderr": "",
+  "elapsedMs": 59324,
+  "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+  "workDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T22-27-25-228Z/job-background-strategy-001-judge",
+  "isolatedSessionDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T22-27-25-228Z/job-background-strategy-001-judge/.pi-sessions"
+}

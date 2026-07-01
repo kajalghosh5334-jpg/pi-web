@@ -1,0 +1,25 @@
+{
+  "model": "opencode-go/deepseek-v4-flash",
+  "code": 0,
+  "text": "```json\n{\n  \"node\": \"Gather/Fetch\",\n  \"profile\": \"weak-research-extractor\",\n  \"task\": \"公司调研资料搬运\",\n  \"target_company\": \"星河智造\",\n  \"extracted_facts\": [\n    {\n      \"category\": \"业务\",\n      \"fact\": \"为制造业客户做质检自动化和设备数据采集\",\n      \"source\": \"官网片段\"\n    },\n    {\n      \"category\": \"技术栈\",\n      \"fact\": \"技术关键词包含 Python、OpenCV、PLC、轻量化模型部署\",\n      \"source\": \"官网片段\"\n    },\n    {\n      \"category\": \"技术栈\",\n      \"fact\": \"招聘 JD 要求 Python 基础、能读懂接口文档\",\n      \"source\": \"招聘 JD 片段\"\n    },\n    {\n      \"category\": \"技术栈\",\n      \"fact\": \"面试考察 Python 文件处理、接口调用、是否做过项目 demo\",\n      \"source\": \"面经摘录\"\n    },\n    {\n      \"category\": \"学历门槛\",\n      \"fact\": \"大专及以上优先（优先条件，非硬性要求）\",\n      \"source\": \"招聘 JD 片段\"\n    },\n    {\n      \"category\": \"薪资\",\n      \"fact\": \"月薪 5-7k\",\n      \"source\": \"招聘 JD 片段\"\n    },\n    {\n      \"category\": \"面经\",\n      \"fact\": \"面试会问 Python 文件处理、接口调用、是否做过项目 demo\",\n      \"source\": \"面经摘录\"\n    }\n  ],\n  \"inferences\": [\n    {\n      \"inference\": \"轻量化模型部署与 PLC 结合 OpenCV 指向工业边缘端侧视觉质检场景\",\n      \"basis\": \"官网技术关键词组合\",\n      \"confidence\": \"medium\"\n    },\n    {\n      \"inference\": \"薪资 5-7k 与「大专及以上优先」共同暗示该岗位为初级/实习助理级别\",\n      \"basis\": \"招聘 JD 内容\",\n      \"confidence\": \"high\"\n    },\n    {\n      \"inference\": \"面试题目侧重基础 Python 和接口理解，未涉及 OpenCV 或 PLC，与官网技术栈存在脱节\",\n      \"basis\": \"面经摘录 vs 官网片段\",\n      \"confidence\": \"medium\"\n    }\n  ],\n  \"suggestions\": [\n    \"建议补充轻量化部署的具体框架（如 TensorFlow Lite、ONNX Runtime），当前材料未提及\",\n    \"建议寻找更多面经确认面试中是否包含视觉或 PLC 题目\",\n    \"建议核实薪资对应城市级别，以辅助下游评估\"\n  ],\n  \"risks\": [\n    \"薪资低于主流 AI 岗位，可能表示工作内容简单或公司规模较小\",\n    \"「优先」条件不排除非大专候选人，下游不宜作为硬性筛选项\",\n    \"官网技术栈与面试考察不完全匹配，候选人实际工作内容可能与面试预期不符\"\n  ],\n  \"evidence_gaps\": [\n    \"公司全称、成立时间、员工规模未提及\",\n    \"具体产品/解决方案名称未提及\",\n    \"轻量化部署使用的具体框架/工具未提及\",\n    \"面试是否涉及 OpenCV 或 PLC 未提及\",\n    \"岗位是自有产品开发、外包还是驻场未说明\",\n    \"办公地点和公司性质（甲/乙方）未说明\"\n  ],\n  \"review_suggestions\": [\n    \"建议在下一节点交叉参考工商信息、官网更多页面及更多面经\",\n    \"建议核实薪资学历是否准确代表岗位实际定位\",\n    \"建议将「大专及以上优先」下游使用前明确标记为软性条件\"\n  ],\n  \"red_flags\": [],\n  \"blocked\": false,\n  \"manual_review_required\": false\n}\n```",
+  "usage": {
+    "input": 2298,
+    "output": 2826,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "reasoning": 2023,
+    "totalTokens": 5124,
+    "cost": {
+      "input": 0.00032172,
+      "output": 0.00079128,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "total": 0.001113
+    }
+  },
+  "stderr": "",
+  "elapsedMs": 29217,
+  "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+  "workDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T19-35-43-671Z/job-company-gather-001-output",
+  "isolatedSessionDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T19-35-43-671Z/job-company-gather-001-output/.pi-sessions"
+}

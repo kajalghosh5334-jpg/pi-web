@@ -1,0 +1,134 @@
+{
+  "testCase": {
+    "id": "media-comment-classify-001",
+    "nodeType": "Classify/Router",
+    "profileTarget": "classification-router",
+    "workflowId": "WF-16",
+    "title": "评论区分级和路由",
+    "model": "opencode-go/deepseek-v4-flash",
+    "tools": "none",
+    "dependsOn": [
+      "media-title-draft-001"
+    ],
+    "labelSchema": {
+      "allowedLabels": [
+        "好评",
+        "质疑",
+        "广告",
+        "黑粉",
+        "投诉",
+        "交易需求"
+      ],
+      "routes": [
+        "auto_reply",
+        "manual_review",
+        "ignore",
+        "delete_suggested"
+      ],
+      "manualReviewRequiredWhen": [
+        "预算/交易线索",
+        "法律/责任/纠纷",
+        "投诉",
+        "高风险承诺"
+      ]
+    },
+    "input": "评论列表：1）这个选题太真实了，我们公司知识库就是没人维护。2）能不能推荐靠谱开发者？预算 2 万。3）你这就是割韭菜吧，AI 都是骗子。4）加我私域领取 AI 资料包。5）你们撮合项目出现纠纷谁负责？请逐条分类为好评/质疑/广告/黑粉/投诉/交易需求，并输出自动回复、转人工或忽略路由。",
+    "expectedRubric": [
+      "逐条输出固定标签，不发明新标签",
+      "对预算、交易需求和撮合纠纷类评论标记转人工",
+      "广告标记忽略或删除建议",
+      "黑粉和质疑要区分",
+      "输出置信度、原因和路由"
+    ],
+    "standardAnswer": "1 是好评或共鸣，可自动回复；2 是高价值需求/交易线索，应转人工；3 是黑粉或强质疑，建议理性回应或人工视情况；4 是广告，应忽略/删除；5 涉及交易责任和纠纷风险，必须转人工。每条应有 label、confidence、route、reason。",
+    "redLines": [
+      "不得自动承诺撮合结果或法律责任",
+      "不得把投诉/交易风险自动回复处理完",
+      "不得输出标签体系之外的主标签"
+    ]
+  },
+  "output": {
+    "model": "opencode-go/deepseek-v4-flash",
+    "code": 0,
+    "text": "```json\n{\n  \"items\": [\n    {\n      \"id\": 1,\n      \"label\": \"好评\",\n      \"confidence\": 0.95,\n      \"route\": \"auto_reply\",\n      \"reason\": \"用户分享亲身经历并表达共鸣，属于积极的用户正向反馈。\",\n      \"risk_flags\": []\n    },\n    {\n      \"id\": 2,\n      \"label\": \"交易需求\",\n      \"confidence\": 0.98,\n      \"route\": \"manual_review\",\n      \"reason\": \"用户明确提出寻找开发者并给出明确预算（2万），属于交易线索和预算窗口条，必须人工跟进。\",\n      \"risk_flags\": [\"budget_clue\", \"transaction_request\"]\n    },\n    {\n      \"id\": 3,\n      \"label\": \"黑粉\",\n      \"confidence\": 0.90,\n      \"route\": \"ignore\",\n      \"reason\": \"用户使用「割韭菜」「骗子」等标签化、非建设性的攻击性语言，符合黑粉特征，无具体质疑点或投诉要素。\",\n      \"risk_flags\": []\n    },\n    {\n      \"id\": 4,\n      \"label\": \"广告\",\n      \"confidence\": 0.98,\n      \"route\": \"delete_suggested\",\n      \"reason\": \"典型的私域引流和资料推广，属于垃圾广告内容，建议删除。\",\n      \"risk_flags\": [\"spam_advertisement\", \"private_traffic_promotion\"]\n    },\n    {\n      \"id\": 5,\n      \"label\": \"投诉\",\n      \"confidence\": 0.85,\n      \"route\": \"manual_review\",\n      \"reason\": \"用户询问撮合服务的纠纷责任归属，直接涉及法律责任和平台风险，按高风险原则归类为投诉以触发人工审核。\",\n      \"risk_flags\": [\"legal_liability\", \"dispute_resolution\", \"platform_risk\"]\n    }\n  ],\n  \"manual_review_items\": [2, 5],\n  \"label_conflicts\": [\n    {\n      \"item_id\": 5,\n      \"detail\": \"标签「投诉」与「质疑」边界模糊。该评论语气为假设性质问，但内容直接关联平台纠纷责任。按高风险原则归类为「投诉」以触发人工审核。建议下游核实用户是否确有投诉经历；若无具体案例，可降为「质疑」并采用不含法律责任承诺的 auto_reply 模板。\"\n    }\n  ]\n}\n```",
+    "usage": {
+      "input": 3918,
+      "output": 4221,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "reasoning": 3698,
+      "totalTokens": 8139,
+      "cost": {
+        "input": 0.00054852,
+        "output": 0.0011818800000000002,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "total": 0.0017304000000000002
+      }
+    },
+    "stderr": "",
+    "elapsedMs": 34987,
+    "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+    "workDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-28-40-414Z/media-comment-classify-001-output",
+    "isolatedSessionDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-28-40-414Z/media-comment-classify-001-output/.pi-sessions"
+  },
+  "judgeOutput": {
+    "model": "opencode-go/deepseek-v4-pro",
+    "code": 0,
+    "text": "```json\n{\n  \"score\": 78,\n  \"score_scale\": \"0-100\",\n  \"pass\": true,\n  \"rubric_hits\": [\n    \"逐条输出固定标签体系内标签，无发明新标签\",\n    \"预算交易需求(第2条)正确标记转人工，附budget_clue等风险标记\",\n    \"撮合纠纷(第5条)正确识别为投诉转人工，附法律/平台风险标记\",\n    \"广告(第4条)正确标记delete_suggested\",\n    \"黑粉与质疑做了区分(第3条理由指出无具体质疑点)\",\n    \"每条均有label、confidence、route、reason，结构完整\",\n    \"label_conflicts记录第5条投诉/质疑边界模糊并附处理建议\"\n  ],\n  \"missing\": [\n    \"第3条路由不应为ignore；标准答案明确建议'理性回应或人工视情况'，应路由到manual_review或auto_reply\",\n    \"label_conflicts未记录第3条黑粉/质疑标签歧义，标准答案指出该条可能为'黑粉或强质疑'\"\n  ],\n  \"hallucination\": [],\n  \"red_line_violations\": [],\n  \"profile_lessons\": [\n    \"黑粉类评论即使无具体质疑点，不宜直接忽略；应至少触发人工判断或预备理性回应模板\",\n    \"标准答案指出标签歧义(黑粉/质疑)时，应在label_conflicts中记录供下游核实\"\n  ],\n  \"prompt_patch_suggestions\": [\n    \"明确：黑粉默认路由为manual_review或auto_reply(理性回应)，确认纯垃圾才用ignore\",\n    \"要求：单条存在标签歧义(黑粉vs质疑、投诉vs质疑)时必须在label_conflicts记录并给出降级/升级建议\"\n  ]\n}\n```",
+    "usage": {
+      "input": 3085,
+      "output": 3491,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "reasoning": 3091,
+      "totalTokens": 6576,
+      "cost": {
+        "input": 0.0053679,
+        "output": 0.01214868,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "total": 0.01751658
+      }
+    },
+    "stderr": "",
+    "elapsedMs": 48533,
+    "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+    "workDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-28-40-414Z/media-comment-classify-001-judge",
+    "isolatedSessionDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-28-40-414Z/media-comment-classify-001-judge/.pi-sessions"
+  },
+  "judge": {
+    "score": 78,
+    "score_scale": "0-100",
+    "pass": false,
+    "rubric_hits": [
+      "逐条输出固定标签体系内标签，无发明新标签",
+      "预算交易需求(第2条)正确标记转人工，附budget_clue等风险标记",
+      "撮合纠纷(第5条)正确识别为投诉转人工，附法律/平台风险标记",
+      "广告(第4条)正确标记delete_suggested",
+      "黑粉与质疑做了区分(第3条理由指出无具体质疑点)",
+      "每条均有label、confidence、route、reason，结构完整",
+      "label_conflicts记录第5条投诉/质疑边界模糊并附处理建议"
+    ],
+    "missing": [
+      "第3条路由不应为ignore；标准答案明确建议'理性回应或人工视情况'，应路由到manual_review或auto_reply",
+      "label_conflicts未记录第3条黑粉/质疑标签歧义，标准答案指出该条可能为'黑粉或强质疑'"
+    ],
+    "hallucination": [],
+    "red_line_violations": [],
+    "profile_lessons": [
+      "黑粉类评论即使无具体质疑点，不宜直接忽略；应至少触发人工判断或预备理性回应模板",
+      "标准答案指出标签歧义(黑粉/质疑)时，应在label_conflicts中记录供下游核实"
+    ],
+    "prompt_patch_suggestions": [
+      "明确：黑粉默认路由为manual_review或auto_reply(理性回应)，确认纯垃圾才用ignore",
+      "要求：单条存在标签歧义(黑粉vs质疑、投诉vs质疑)时必须在label_conflicts记录并给出降级/升级建议"
+    ],
+    "raw_score": 78
+  },
+  "minScore": 82,
+  "nodeOutputArtifact": {
+    "markdownPath": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-28-40-414Z/node_outputs/09-media-comment-classify-001.md",
+    "jsonPath": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-28-40-414Z/node_outputs/09-media-comment-classify-001.json"
+  }
+}

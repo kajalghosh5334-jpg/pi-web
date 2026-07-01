@@ -1,0 +1,25 @@
+{
+  "model": "opencode-go/deepseek-v4-pro",
+  "code": 0,
+  "text": "{\n  \"score\": 0.95,\n  \"pass\": true,\n  \"rubric_hits\": [\n    \"明确高中学历对 entry-level 技术岗的现实影响，但不做人格或能力价值判断\",\n    \"圈定 6k 薪资对应的可投岗位类型\",\n    \"把 AI 编程经验转成可验证竞争力\",\n    \"区分不可逆短板、可补短板和叙事绕行策略\",\n    \"输出方向性结论，不写简历正文\"\n  ],\n  \"missing\": [\n    \"未明确覆盖爬虫、测试开发等标准答案提及的边缘岗位类型\",\n    \"性格开朗优势未进一步转化为具体的跨角色沟通/需求澄清策略\"\n  ],\n  \"hallucination\": [],\n  \"red_line_violations\": [],\n  \"profile_lessons\": [],\n  \"prompt_patch_suggestions\": []\n}",
+  "usage": {
+    "input": 4431,
+    "output": 3004,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "reasoning": 2820,
+    "totalTokens": 7435,
+    "cost": {
+      "input": 0.00770994,
+      "output": 0.01045392,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "total": 0.01816386
+    }
+  },
+  "stderr": "",
+  "elapsedMs": 61140,
+  "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+  "workDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T19-59-53-455Z/job-background-strategy-001-judge",
+  "isolatedSessionDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T19-59-53-455Z/job-background-strategy-001-judge/.pi-sessions"
+}

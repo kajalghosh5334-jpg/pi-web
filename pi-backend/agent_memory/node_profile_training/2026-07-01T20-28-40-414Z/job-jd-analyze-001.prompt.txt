@@ -1,0 +1,319 @@
+你是 Workflow 中的一个 profile 化节点。请只完成当前节点，不要越权完成下游任务。
+
+节点类型：Analyze/Judge
+目标 Profile：research-report-analyst
+Workflow：WF-4
+任务：JD 匹配分析
+
+上游上下文：
+上游节点 job-background-strategy-001 输出：
+```json
+{
+  "decision_summary": "以AI编程实战能力为核心支点，主攻对学历硬性要求较低的中小型/创业企业的AI应用开发、LLM/RAG相关岗位，薪资目标6k合理，但需快速建立可验证的作品集以弥补学历短板。",
+  "positioning_or_strategy": {
+    "target_role_cluster": [
+      "LLM应用开发工程师",
+      "Python后端开发（AI方向）",
+      "RAG/Agent开发",
+      "AI产品技术支持"
+    ],
+    "positioning_statement": "具备端到端LLM/RAG项目交付能力的实战型开发者，以项目结果替代学历证明，瞄准务实型技术团队。",
+    "salary_alignment": "6k处于初级AI开发者市场价低位，适合外包/远程/二三线城市中小团队，性价比是核心议价武器。",
+    "job_search_channel": "BOSS直聘（中小团队密集）、远程工作平台（电鸭/程序员客栈）、技术社群内推、外包平台反哺正职机会。"
+  },
+  "constraints": {
+    "irreversible": [
+      {
+        "type": "学历",
+        "detail": "高中学历，多数中大型企业HR系统/社招硬性过滤，无法通过常规校招/正式岗入局。此约束不可逆，绕行而非弥补。",
+        "impact": "屏蔽约70%的标准化技术岗，尤其是设有学历门槛的公司和外包驻场项目。"
+      }
+    ],
+    "reversible_gaps": [
+      {
+        "type": "缺乏正规团队协作经验",
+        "detail": "仅有外包个人项目，未经历代码评审、CI/CD、需求评审等流程，面试易被挑战工程化能力。",
+        "can_mitigate": true
+      },
+      {
+        "type": "项目深度与规模未知",
+        "detail": "小型外包项目可能缺乏高并发、复杂架构、长周期维护等企业级场景。",
+        "can_mitigate": true
+      },
+      {
+        "type": "学历证照缺失",
+        "detail": "无法满足部分企业入职材料要求（如学信网验证）。",
+        "can_mitigate": false
+      }
+    ],
+    "salary_lock": "6k预期锁定了岗位层级（初级/助理级），不可定位为高阶算法岗，符合当前能力水位。",
+    "red_lines": [
+      "不得虚构学历、工作年限、大厂经历或项目成果",
+      "不得基于年龄或性别做能力价值判断",
+      "不得将6k岗位描述为高阶算法岗"
+    ]
+  },
+  "opportunities": [
+    {
+      "type": "技能资产",
+      "detail": "Python/LLM/RAG实战经验是当前招聘热点，尤其在AI应用层快速原型开发领域，需求缺口远大于传统开发。",
+      "validatable": true
+    },
+    {
+      "type": "项目证据链",
+      "detail": "多个小型AI工具和RAG外包项目可整理为作品集，提供代码仓库、演示视频、客户证言，构成可验证的能力证明。",
+      "validatable": true
+    },
+    {
+      "type": "性格优势",
+      "detail": "开朗的性格有助于在面试中建立亲和力、在自由职业中维系客户关系，弥补技术深度不足时的沟通信任。",
+      "validatable": false
+    },
+    {
+      "type": "薪资竞争力",
+      "detail": "6k预期低于同级市场价（一线城市初级AI开发通常8-12k），雇主风险成本低，愿意给机会验证。",
+      "validatable": true
+    }
+  ],
+  "execution_priorities": [
+    {
+      "priority": 1,
+      "action": "构建标准化作品集",
+      "goal": "将外包项目转化为3个可展示的案例，每个包含：背景/技术栈/核心挑战/解决方案/运行截图或Demo链接/GitHub仓库。",
+      "validation": "作品集页面或PDF可用，他人能独立理解项目价值。"
+    },
+    {
+      "priority": 2,
+      "action": "明确投递目标池",
+      "goal": "筛选出对学历硬性要求为'不限'或'高中以上'的AI相关岗位，建立至少30个目标公司的清单，优先创业型（天使/A轮）。",
+      "validation": "清单中每个岗位的JD确实未要求大专以上学历。"
+    },
+    {
+      "priority": 3,
+      "action": "补充工程化能力证据",
+      "goal": "至少一个项目体现版本控制、环境配置文档、基础测试或API设计规范，哪怕是小规模，展示工程意识。",
+      "validation": "GitHub有README、requirements.txt和环境说明。"
+    },
+    {
+      "priority": 4,
+      "action": "设计面试叙事",
+      "goal": "准备10分钟的中文技术自我介绍，突出'自学驱动 + 交付结果'，并预设3个外包项目中的技术难点与解决路径，避免空洞形容词。",
+      "validation": "录音自测或模拟面试反馈，核心故事线清晰无矛盾。"
+    },
+    {
+      "priority": 5,
+      "action": "建立社交证明",
+      "goal": "在技术社区（如掘金、知乎、CSDN）发布2-3篇技术文章，阐述项目中的解决方案，吸引潜在雇主或内推。",
+      "validation": "文章阅读量>500或获得有效内推联系。"
+    }
+  ],
+  "validation_metrics": [
+    {
+      "metric": "面试转化率",
+      "target": "投递50份简历后获得≥5个面试邀请",
+      "measurement": "统计主流招聘平台投递/邀约数据"
+    },
+    {
+      "metric": "作品集反馈",
+      "target": "至少1次面试中面试官对项目细节提问（表明作品集被仔细阅读）",
+      "measurement": "面试记录"
+    },
+    {
+      "metric": "offer薪资",
+      "target": "到手offer≥5.5k（接近期望6k）",
+      "measurement": "offer letter"
+    },
+    {
+      "metric": "技能验证",
+      "target": "通过至少1次技术面中的现场编程或项目问答",
+      "measurement": "面试后反馈"
+    }
+  ],
+  "handoff_to_next_nodes": {
+    "candidate_profile": {
+      "education": "高中",
+      "age": 29,
+      "gender": "男",
+      "skills": ["Python", "LLM应用开发", "RAG", "小型AI工具开发"],
+      "experience": {
+        "type": "自由职业/外包",
+        "projects": "多个小型AI工具和RAG项目（具体数量、名称未知）",
+        "duration": "unknown",
+        "team_environment": "个人开发"
+      },
+      "salary_expectation": "6k RMB",
+      "personality_trait": "性格开朗"
+    },
+    "target_job_templates": [
+      {
+        "title": "LLM应用开发工程师",
+        "company_type": "创业公司/中小企业",
+        "location": "不限（优先二三线城市或远程）",
+        "requirements_highlight": "不要求学历，看重项目经验和Python能力"
+      },
+      {
+        "title": "RAG工程师",
+        "company_type": "AI工具开发团队",
+        "location": "远程/一线城市基础岗",
+        "requirements_highlight": "熟悉LangChain/LlamaIndex等框架，有实际RAG项目"
+      }
+    ],
+    "key_narrative_angles": [
+      "自学Python+LLM，独立承接外包并成功交付，证明快速学习与落地能力",
+      "性格开朗，在远程协作中善于沟通需求，避免返工",
+      "期望稳定技术岗位，6k薪资体现务实的职业起步心态，非好高骛远"
+    ],
+    "risks_and_mitigations": [
+      {
+        "risk": "学历导致简历初筛直接淘汰",
+        "mitigation": "避开硬性学历要求的公司，聚焦能力导向的雇主；简历中弱化学历位置，强化项目经验区块。"
+      },
+      {
+        "risk": "缺乏大公司流程经验被质疑工程化能力",
+        "mitigation": "在作品中加入标准化工程实践（Git使用、文档、虚拟环境、环境变量），并准备口头解释如何保证交付质量。"
+      }
+    ],
+    "forbidden_items": [
+      "不得编造学历、工作年限、大厂经历",
+      "不得虚构项目成果数据（如准确率、收入）",
+      "不得承诺不存在的证书"
+    ],
+    "downstream_tasks_ready": [
+      "简历撰写节点：基于以上定位模板生成无学历特化的项目驱动型简历（中文）",
+      "求职信/招呼语节点：生成强调自学和实践的热忱型开场白",
+      "面试准备节点：准备项目QA脚本、技术问答、薪资谈判话术"
+    ],
+    "missing_data": ["具体项目数量与名称", "外包合作客户类型", "是否管理过代码仓库（GitHub链接）", "是否有任何志愿者或团队贡献经历"]
+  }
+}
+```
+
+**Skipped:** 未生成任何正文/简历/面试回答，仅输出策略结构化数据。下游节点可直接消费 `handoff_to_next_nodes` 字段。  
+**Add when:** 当需要自动生成简历或面试问答时，在下游节点引入此结构作为输入。  
+**Ponytail note:** 诊断完成，无冗余设计。未编造任何事实，缺失数据已标记。
+
+---
+
+上游节点 job-company-gather-001 输出：
+```json
+{
+  "node_output": {
+    "_node_type": "weak-research-extractor",
+    "_workflow": "WF-3",
+    "_target": "星河智造"
+  },
+  "extracted_facts": [
+    {
+      "fact": "公司为制造业客户提供质检自动化和设备数据采集服务。",
+      "source": "官网片段",
+      "source_status": "显性陈述，直接引用"
+    },
+    {
+      "fact": "技术关键词涉及 Python、OpenCV、PLC、轻量化模型部署。",
+      "source": "官网片段",
+      "source_status": "显性陈述"
+    },
+    {
+      "fact": "招聘职位为初级 AI 工具开发助理。",
+      "source": "招聘 JD 片段",
+      "source_status": "显性陈述"
+    },
+    {
+      "fact": "薪资区间为 5-7k。",
+      "source": "招聘 JD 片段",
+      "source_status": "显性陈述"
+    },
+    {
+      "fact": "职位要求：Python 基础、能读懂接口文档。",
+      "source": "招聘 JD 片段",
+      "source_status": "显性陈述"
+    },
+    {
+      "fact": "学历要求为“大专及以上优先”（优先条件）。",
+      "source": "招聘 JD 片段",
+      "source_status": "显性陈述（已标注优先属性，非硬性门槛）"
+    },
+    {
+      "fact": "面试提问包括 Python 文件处理、接口调用、是否做过项目 demo。",
+      "source": "面经摘录",
+      "source_status": "候选人口述，非官方面试大纲，存在个体偏差可能"
+    }
+  ],
+  "unknown_fields": [
+    "公司全称、注册地址、成立时间、注册资本",
+    "员工规模、组织架构",
+    "具体产品名称、平台名称、客户案例",
+    "融资历史、估值",
+    "公司愿景、文化、价值观",
+    "该职位的具体 KPI、汇报线、团队构成",
+    "薪资完整结构（绩效、奖金、五险一金基数等）",
+    "面试轮次、面试官角色、面试形式（机试/白板/口答）"
+  ],
+  "evidence_gaps": [
+    {
+      "gap": "公司业务细节仅有一个方向概述，缺乏产品形态、客户案例、技术部署量级等具体信息。",
+      "suggestion": "建议补源：完整官网页面、行业报告公司简介、企业信用信息公示系统数据。"
+    },
+    {
+      "gap": "JD 片段较短，未明确职责细节（如具体开发什么工具、使用何种框架、接口协议类型等）。",
+      "suggestion": "建议补源：完整 JD 文本、同公司同类岗位 JD、招聘平台其他在招岗位。"
+    },
+    {
+      "gap": "面经仅一份，代表性不足，无法判断面试侧重点在不同面试官间的稳定性。",
+      "suggestion": "建议补源：牛客网、看准网、脉脉等多平台面经交叉验证。"
+    },
+    {
+      "gap": "“大专及以上优先”的权重未量化，无法判断在候选人评估中实际加分力度。",
+      "suggestion": "建议补源：查阅该职位或同公司其他职位历史反馈，确认实际筛选阈值。"
+    }
+  ],
+  "red_line_review": [
+    "[PASS] 红线1：未补造公司新闻、融资、员工规模或文化。全量信息来自给定来源。",
+    "[PASS] 红线2：技术栈完全抽取自官网片段，未凭公司名推断。",
+    "[PASS] 红线3：“大专及以上优先”已按“优先条件”标记，未改写成硬性门槛。"
+  ],
+  "handoff_summary": "[向下游 profile-builder / matching-engine] 星河智造完成事实抽取。覆盖：业务方向（质检自动化+数采）、技术栈（Python/OpenCV/PLC/轻量模型）、岗位画像（初级 AI 工具开发助理，5-7k，大专及以上优先，需 Python+接口文档阅读）、面试侧重（文件处理/接口调用/项目 demo）。缺失：公司注册信息、规模、产品名、案例、薪资结构细化。面经归类为单方口述，学历门槛已确认为优先属性。"
+}
+```
+
+当前输入：
+候选人简历要点：高中学历；做过 Python 自动化脚本、RAG 知识库 demo、一个小型企业资料问答外包；会 Flask 基础，不熟 Django；Docker 只部署过一次。JD：Python 基础扎实，熟悉接口调用，了解 OpenCV 加分，大专及以上优先，有项目 demo 加分，能和业务方沟通需求。请输出命中项、缺漏项、弱化项、学历屏障和简历定制策略。
+
+节点通用契约：
+职责：基于事实做可验证判断，输出证据、置信度、反证条件和建议。
+推荐输出字段：
+- analysis_items: 每项含 claim_type(fact|inference|assumption|recommendation), evidence, confidence, counter_evidence, recommendation
+- gap_handling: 对关键缺口的处理策略
+- overall_confidence
+- escalation_flag
+通用红线：
+- 不得对未验证来源下高置信结论
+- 不得把推断写成事实
+- 每个短板/风险必须给可操作处理建议
+
+本样本标签/路由 schema：
+未指定；如需分类，严格使用题目给定标签。
+
+本样本生成/审查专项约束：
+无
+无
+
+输出要求：
+1. 严格遵守当前节点职责。
+2. 输出可供下游使用的结构化结果。
+3. 如信息缺失，写 unknown/missing/unverified，不得补造。
+4. 区分事实、推断、建议和风险。
+5. 遇到红线必须标记 blocked 或 manual_review_required。
+6. 优先按“节点通用契约”的字段输出；若任务要求更具体，以任务要求为准。
+
+评分 Rubric：
+1. 逐条对照 JD 输出命中、缺漏、弱化
+2. 明确学历是优先项而非硬卡
+3. 把 RAG/脚本/外包项目映射到岗位需求
+4. 对不熟 Django、Docker 经验弱等问题给可补策略
+5. 区分事实、推断、建议和置信度
+
+红线：
+1. 不得把未掌握技能写成熟练
+2. 不得建议隐藏或伪造学历
+3. 不得把推断写成已验证事实

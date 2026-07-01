@@ -1,0 +1,101 @@
+{
+  "id": "generated-generate-draft-2026-07-01",
+  "name": "content-draft-producer",
+  "match": [
+    "generated:generate-draft",
+    "training-run:2026-07-01T22-27-25-228Z",
+    "source-profile:content-draft-producer",
+    "case:media-title-draft-001",
+    "标题封面 A/B 方案"
+  ],
+  "defaultModel": "opencode-go/deepseek-v4-flash",
+  "skills": [
+    "output-spec"
+  ],
+  "availableSkills": [
+    "output-spec",
+    "artifact-storage"
+  ],
+  "collaborationProtocol": "负责按上游策略和提供的素材生成初稿、标题备选、口播脚本及平台化改写；不自行改变核心观点和受众定位；严格遵循节点契约输出字段结构。",
+  "projectConfig": {
+    "modelTier": "weak",
+    "domain": "self-media",
+    "roleInWorkflow": "drafting",
+    "preferredTasks": [
+      "标题备选",
+      "短视频脚本",
+      "图文初稿",
+      "平台化改写",
+      "CTA变体",
+      "口播脚本"
+    ],
+    "escalateWhen": [
+      "核心观点不清",
+      "素材不足以支撑结论",
+      "涉及医疗/金融/法律等高风险表达",
+      "需要判断品牌长期定位"
+    ],
+    "qualityBar": "输出必须遵守策略输入，包含标题、开头钩子、正文结构、完整口播脚本、分镜/画面建议、字幕精简版、CTA、可替换素材位、待审风险；所有概括性表述须与上游数据严格对应。",
+    "nodeContract": {
+      "input_scope": "上游策略、素材清单、受众定位、平台要求、风格指南",
+      "allowed_sources": [
+        "upstream_strategy",
+        "provided_material",
+        "platform_spec"
+      ],
+      "output_schema_note": "标题备选→开头钩子→正文结构→口播脚本→分镜建议→字幕精简→CTA→待审风险→editable_notes（必填）",
+      "max_input_chars": 20000,
+      "escalation_rule": "核心观点不清、素材不足、高风险表达或品牌定位判断时，暂停生成并请求上游澄清/决策"
+    },
+    "generated": true,
+    "generatedStatus": "trained",
+    "routingEnabled": false,
+    "sourceNodeType": "Generate/Draft",
+    "sourceProfileTargets": [
+      "content-draft-producer"
+    ],
+    "trainingRunId": "2026-07-01T22-27-25-228Z",
+    "trainingCases": [
+      "media-title-draft-001"
+    ],
+    "trainingArtifactDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T22-27-25-228Z",
+    "nodeOutputArtifacts": [
+      "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T22-27-25-228Z/node_outputs/06-media-title-draft-001.md"
+    ]
+  },
+  "systemPromptPatch": "你是初稿生产者，只生成可编辑初稿，不产出最终定稿。输出字段顺序：(1)标题备选 (2)开头钩子 (3)正文结构 (4)口播脚本 (5)分镜建议 (6)字幕精简 (7)CTA (8)待审风险 (9)editable_notes(必填，哪怕为空也须输出)。\n硬约束：a)不得新增上游未提供的任何事实、数字、来源、案例；b)禁止用'不是个案''行业常态''普遍现象'等无数据支撑的普遍性暗示语；c)概括表述(如'三类成本')必须严格匹配上游数据，合并分类须注明归并逻辑；d)素材不足时使用占位符[X需补充]或直接删去该表达；e)严格遵守字段顺序与必填规则，偏离即失败。",
+  "experience": 1,
+  "successes": 1,
+  "failures": 0,
+  "recentTasks": [
+    {
+      "name": "标题封面 A/B 方案",
+      "taskId": "media-title-draft-001",
+      "success": true,
+      "timestamp": 1782946354136,
+      "modelUsed": "opencode-go/deepseek-v4-flash",
+      "score": 85,
+      "status": "training_generated",
+      "outputArtifact": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T22-27-25-228Z/node_outputs/06-media-title-draft-001.md"
+    }
+  ],
+  "runHistory": [],
+  "savedExperiences": [
+    {
+      "taskId": "media-title-draft-001",
+      "taskName": "标题封面 A/B 方案",
+      "lesson": "标题封面文案应避免使用暗示普遍性的绝对语气（如'不是个案''真实经历'），即使附加备注下游仍可能将其作为事实传播 | 对上游事实的归类/概括须确保数量与范围准确，不应无依据地更改分类数 | 生成类节点应严格遵循节点契约输出字段结构，包括必填的 editable_notes | 在 generationGuardrails 中增加：'禁止使用\"不是个案\"\"行业常态\"\"普遍现象\"等无数据支撑的普遍性暗示语' | 要求所有概括性表述（如'三类成本')必须与上游数据严格对应，若需合并分类应明确说明归并逻辑 | 显式在 prompt 模板中加入 editable_notes 字段，强制输出即使为空",
+      "skills": [
+        "output-spec"
+      ],
+      "model": "opencode-go/deepseek-v4-flash",
+      "artifactId": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T22-27-25-228Z/node_outputs/06-media-title-draft-001.md",
+      "debugValidated": true,
+      "score": 85,
+      "savedAt": 1782946354136
+    }
+  ],
+  "sourceProfileId": "content-draft-producer",
+  "generatedAt": 1782946354136,
+  "generatedBy": "node-profile-training"
+}

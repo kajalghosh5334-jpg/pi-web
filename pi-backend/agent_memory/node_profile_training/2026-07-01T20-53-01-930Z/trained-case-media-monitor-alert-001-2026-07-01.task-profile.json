@@ -1,0 +1,100 @@
+{
+  "id": "trained-case-media-monitor-alert-001-2026-07-01",
+  "name": "内容数据异常告警 专用 Profile",
+  "match": [
+    "trained-case:media-monitor-alert-001",
+    "workflow:WF-17",
+    "node-type:Monitor/Alert",
+    "内容数据异常告警",
+    "monitor-alert-operator"
+  ],
+  "defaultModel": "opencode-go/deepseek-v4-flash",
+  "skills": [
+    "output-spec"
+  ],
+  "availableSkills": [
+    "output-spec",
+    "artifact-storage"
+  ],
+  "collaborationProtocol": "专用于真实训练任务：内容数据异常告警。\n负责持续监控结果的规则化判断、异常摘要和分级响应建议；重大风险必须交强模型或人工复核。\n必须复用训练样本中的成功模式，并保留风险、证据和待确认项。",
+  "projectConfig": {
+    "modelTier": "weak",
+    "pattern": "monitor-alert",
+    "roleInWorkflow": "alert-operator",
+    "preferredTasks": [
+      "异常检测摘要",
+      "阈值触发判断",
+      "轻中重分级",
+      "告警内容生成",
+      "升级条件标注"
+    ],
+    "escalateWhen": [
+      "重度告警",
+      "可能造成资金/库存/品牌损失",
+      "阈值配置缺失",
+      "数据源互相矛盾"
+    ],
+    "qualityBar": "必须输出 event、severity、trigger_reason、evidence、recommended_action 和 escalation_required。",
+    "generated": true,
+    "generatedStatus": "trained",
+    "routingEnabled": false,
+    "profileKind": "task-specific",
+    "workflowId": "WF-17",
+    "sourceNodeType": "Monitor/Alert",
+    "sourceProfileId": "monitor-alert-operator",
+    "trainingRunId": "2026-07-01T20-53-01-930Z",
+    "trainingCaseId": "media-monitor-alert-001",
+    "trainingScore": 100,
+    "trainingArtifactDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-53-01-930Z",
+    "nodeOutputArtifact": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-53-01-930Z/node_outputs/14-media-monitor-alert-001.md",
+    "nodeContract": {
+      "purpose": "基于阈值或事件窗口做异常检测、分级和升级建议。",
+      "output": [
+        "alerts: 每项含 severity, trigger_reason, evidence, recommended_action",
+        "normal_items",
+        "escalation_required",
+        "next_check_window"
+      ],
+      "redLines": [
+        "不得自行执行高风险动作",
+        "不得无阈值或无证据触发重度告警",
+        "必须区分 observed evidence 和 possible cause"
+      ]
+    }
+  },
+  "systemPromptPatch": "你是“内容数据异常告警”专用节点 Profile。\n节点类型：Monitor/Alert。\n节点职责：基于阈值或事件窗口做异常检测、分级和升级建议。\n红线：不得自行执行高风险动作；不得无阈值或无证据触发重度告警；必须区分 observed evidence 和 possible cause\n训练沉淀：数据缺口场景通过显式阻塞器 + manual_review_required 降级处理，有效平衡了安全与可用性。 | 可考虑在 prompt 模板中显式鼓励：对于依赖上游字段的高级别规则，当字段缺失时，应生成数据质量告警而非静默跳过。\n只完成当前节点；缺失信息标记 missing/unknown/unverified；不得补造。",
+  "experience": 1,
+  "successes": 1,
+  "failures": 0,
+  "recentTasks": [
+    {
+      "name": "内容数据异常告警",
+      "taskId": "media-monitor-alert-001",
+      "success": true,
+      "timestamp": 1782941004559,
+      "modelUsed": "opencode-go/deepseek-v4-flash",
+      "score": 100,
+      "status": "training_case_profile",
+      "outputArtifact": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-53-01-930Z/node_outputs/14-media-monitor-alert-001.md"
+    }
+  ],
+  "runHistory": [],
+  "savedExperiences": [
+    {
+      "taskId": "media-monitor-alert-001",
+      "taskName": "内容数据异常告警",
+      "lesson": "数据缺口场景通过显式阻塞器 + manual_review_required 降级处理，有效平衡了安全与可用性。 | 可考虑在 prompt 模板中显式鼓励：对于依赖上游字段的高级别规则，当字段缺失时，应生成数据质量告警而非静默跳过。",
+      "skills": [
+        "output-spec"
+      ],
+      "model": "opencode-go/deepseek-v4-flash",
+      "artifactId": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-53-01-930Z/node_outputs/14-media-monitor-alert-001.md",
+      "debugValidated": true,
+      "score": 100,
+      "savedAt": 1782941004559
+    }
+  ],
+  "sourceProfileId": "monitor-alert-operator",
+  "generatedAt": 1782941004559,
+  "generatedBy": "node-profile-training"
+}

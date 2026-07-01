@@ -1,0 +1,142 @@
+{
+  "id": "generated-review-gate-2026-07-01",
+  "name": "quality-gate-reviewer",
+  "match": [
+    "generated:review-gate",
+    "training-run:2026-07-01T20-28-40-414Z",
+    "source-profile:strong-quality-reviewer",
+    "case:job-resume-review-001",
+    "case:media-content-review-001",
+    "简历终审裁决",
+    "内容审稿与发布裁决"
+  ],
+  "defaultModel": "opencode-go/deepseek-v4-pro",
+  "skills": [
+    "output-engine",
+    "artifact-storage",
+    "output-spec"
+  ],
+  "availableSkills": [
+    "output-engine",
+    "artifact-storage",
+    "output-spec",
+    "stage-flow"
+  ],
+  "collaborationProtocol": "负责最终质量门：接收上游节点输出、成功标准、证据链与审查清单，执行多维度质量审查（事实准确性、一致性、完整性、合规性、风险）。输出 decision（pass/revise/block）及 issues（问题清单），包含证据、返工任务分配和可验证验收标准。无法裁决的问题升级人工确认。",
+  "projectConfig": {
+    "modelTier": "strong",
+    "roleInWeakStrongWorkflow": "reviewer",
+    "preferredTasks": [
+      "最终审查",
+      "质量门禁",
+      "错误检测",
+      "一致性与完整性检查",
+      "风险裁决"
+    ],
+    "handoffTargets": [
+      "strong-task-architect",
+      "weak-research-extractor",
+      "weak-structured-operator",
+      "weak-test-enumerator"
+    ],
+    "qualityBar": "必须给出通过/返工/阻塞结论、证据、缺口、返工任务和可验证验收标准。输出仅允许标准字段，不得附带非契约字段。",
+    "roleInWorkflow": "reviewer",
+    "escalateWhen": [
+      "关键问题无法自动裁决",
+      "涉及安全/法律/合规红线",
+      "证据不足且上游无法返工解决",
+      "产出物存在系统性矛盾"
+    ],
+    "nodeContract": {
+      "input_scope": "上游节点的最终产出、成功标准、证据链和审查清单",
+      "allowed_sources": [
+        "上游节点输出",
+        "成功标准文档",
+        "事实证据",
+        "契约定义"
+      ],
+      "output_schema_note": "输出仅包含 decision(string: pass|revise|block) 和 issues 数组。每个 issue 含 severity, target_node(纯节点ID), location, problem, action, acceptance_criteria。禁止额外字段。",
+      "max_input_chars": 100000,
+      "escalation_rule": "当存在安全、合规或无法通过返工解决的系统性缺陷时，decision 设为 block 并触发人工审核。"
+    },
+    "generated": true,
+    "generatedStatus": "trained",
+    "routingEnabled": false,
+    "sourceNodeType": "Review/Gate",
+    "sourceProfileTargets": [
+      "strong-quality-reviewer"
+    ],
+    "trainingRunId": "2026-07-01T20-28-40-414Z",
+    "trainingCases": [
+      "job-resume-review-001",
+      "media-content-review-001"
+    ],
+    "trainingArtifactDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-28-40-414Z",
+    "nodeOutputArtifacts": [
+      "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-28-40-414Z/node_outputs/05-job-resume-review-001.md",
+      "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-28-40-414Z/node_outputs/10-media-content-review-001.md"
+    ]
+  },
+  "systemPromptPatch": "你是质量审查员。审查上游输出是否符合成功标准，不重写、不创作。输出 decision（pass/revise/block）和 issues。每个 issue 标明具体位置、问题、修复建议和验收标准。仅使用上游数据，禁止编造证据。target_node 必须为纯节点 ID，不加前缀。输出必须精简，禁止长文重述。",
+  "experience": 2,
+  "successes": 2,
+  "failures": 0,
+  "recentTasks": [
+    {
+      "name": "简历终审裁决",
+      "taskId": "job-resume-review-001",
+      "success": true,
+      "timestamp": 1782938866737,
+      "modelUsed": "opencode-go/deepseek-v4-pro",
+      "score": 88,
+      "status": "training_generated",
+      "outputArtifact": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-28-40-414Z/node_outputs/05-job-resume-review-001.md"
+    },
+    {
+      "name": "内容审稿与发布裁决",
+      "taskId": "media-content-review-001",
+      "success": true,
+      "timestamp": 1782938866737,
+      "modelUsed": "opencode-go/deepseek-v4-pro",
+      "score": 93,
+      "status": "training_generated",
+      "outputArtifact": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-28-40-414Z/node_outputs/10-media-content-review-001.md"
+    }
+  ],
+  "runHistory": [],
+  "savedExperiences": [
+    {
+      "taskId": "job-resume-review-001",
+      "taskName": "简历终审裁决",
+      "lesson": "rework_assignment 指令指向内容与格式节点，准确分割 revision 范围 | issue #5 的 target_node 使用了非标准前缀 'next: resume-formatting-node'，但 rework_assignment 中正常引用，应在 issue 数组内统一为纯节点 ID | 在 issue 中强制 target_node 仅使用节点 ID（不含 'next: ' 前缀）以保持一致性 | 可在 evidence_checks 中补充 CTA/后续步骤的检查项（本案例中缺失相关检查）",
+      "skills": [
+        "output-engine",
+        "artifact-storage",
+        "output-spec"
+      ],
+      "model": "opencode-go/deepseek-v4-pro",
+      "artifactId": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-28-40-414Z/node_outputs/05-job-resume-review-001.md",
+      "debugValidated": true,
+      "score": 88,
+      "savedAt": 1782938866737
+    },
+    {
+      "taskId": "media-content-review-001",
+      "taskName": "内容审稿与发布裁决",
+      "lesson": "审查输出结构清晰，检查清单覆盖全面，可作为高质量门禁输出范例。 | comment_routing_decision 字段超出通用契约 output 定义，未来可考虑移除或统一到 decision 字段以避免输出膨胀。 | 在节点提示中明确要求输出仅包含契约定义的字段，避免附加决策（如 comment_routing_decision），或将其纳入标准字段。",
+      "skills": [
+        "output-engine",
+        "artifact-storage",
+        "output-spec"
+      ],
+      "model": "opencode-go/deepseek-v4-pro",
+      "artifactId": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-28-40-414Z/node_outputs/10-media-content-review-001.md",
+      "debugValidated": true,
+      "score": 93,
+      "savedAt": 1782938866737
+    }
+  ],
+  "sourceProfileId": "strong-quality-reviewer",
+  "generatedAt": 1782938866737,
+  "generatedBy": "node-profile-training"
+}

@@ -1,0 +1,25 @@
+{
+  "model": "opencode-go/deepseek-v4-pro",
+  "code": 0,
+  "text": "{\n  \"score\": 8,\n  \"pass\": true,\n  \"rubric_hits\": [\n    \"明确高中学历对 entry-level 技术岗的现实影响（学历劣势分析，无能力价值判断）\",\n    \"圈定 6k 薪资对应的可投岗位类型（列出了5个目标圈子及薪资匹配度）\",\n    \"部分将 AI 编程经验转成可验证竞争力（给出了作品集、GitHub、demo等策略，但未直接提供具体可验证点）\",\n    \"区分不可逆短板（年龄）、可补短板（学历、工作经历、项目背书）和叙事绕行策略\",\n    \"输出方向性结论，未生成简历正文\"\n  ],\n  \"missing\": [\n    \"未直接呈现已转化的可验证竞争力（如具体项目链接、代码仓库、演示demo等），仅停留在策略建议层面\"\n  ],\n  \"hallucination\": [],\n  \"red_line_violations\": [],\n  \"profile_lessons\": [\n    \"当输入严重缺失时，诊断输出应着重标注不确定性，而非过度推断；可验证竞争力建议需挂钩具体输入，否则仍属空洞指导\"\n  ],\n  \"prompt_patch_suggestions\": [\n    \"在Prompt中要求节点必须基于现有输入，将‘AI编程经验’直接映射为可验证的竞争力点（如‘可展示的GitHub仓库’），而非泛泛建议；同时禁止将年龄列为不可逆劣势，改为中立表述市场偏好。\"\n  ]\n}",
+  "usage": {
+    "input": 4012,
+    "output": 2810,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "reasoning": 2492,
+    "totalTokens": 6822,
+    "cost": {
+      "input": 0.00698088,
+      "output": 0.0097788,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "total": 0.01675968
+    }
+  },
+  "stderr": "",
+  "elapsedMs": 49095,
+  "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+  "workDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T19-35-43-671Z/job-background-strategy-001-judge",
+  "isolatedSessionDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T19-35-43-671Z/job-background-strategy-001-judge/.pi-sessions"
+}

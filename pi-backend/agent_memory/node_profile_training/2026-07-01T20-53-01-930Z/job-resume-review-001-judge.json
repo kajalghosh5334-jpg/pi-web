@@ -1,0 +1,25 @@
+{
+  "model": "opencode-go/deepseek-v4-pro",
+  "code": 0,
+  "text": "{\n  \"score\": 95,\n  \"score_scale\": \"0-100\",\n  \"pass\": true,\n  \"rubric_hits\": [\n    \"给出明确 pass/revise/block 裁决\",\n    \"检查是否虚构学历、项目成果、职位或技能熟练度\",\n    \"检查是否对齐 JD 的 Python、接口调用、项目 demo 和沟通要求\",\n    \"指出具体返工位置和返工节点\",\n    \"输出短裁决，不展开长文重写\"\n  ],\n  \"missing\": [],\n  \"hallucination\": [],\n  \"red_line_violations\": [],\n  \"profile_lessons\": [\n    \"Review 节点成功分离裁决与重写，仅提供短问题描述和返工分配\",\n    \"对推断来源的技能标签设置了高严重性并要求候选确认，避免未经核实的声明进入最终产出\",\n    \"要求补充项目可验证证明（demolink）并移除占位符，有效预防数字造假\",\n    \"缺失教育背景被标记为待收集而非虚构，体现了审查的粒度\"\n  ],\n  \"prompt_patch_suggestions\": []\n}",
+  "usage": {
+    "input": 4054,
+    "output": 2526,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "reasoning": 2285,
+    "totalTokens": 6580,
+    "cost": {
+      "input": 0.007053960000000001,
+      "output": 0.00879048,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "total": 0.01584444
+    }
+  },
+  "stderr": "",
+  "elapsedMs": 56903,
+  "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+  "workDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-53-01-930Z/job-resume-review-001-judge",
+  "isolatedSessionDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-53-01-930Z/job-resume-review-001-judge/.pi-sessions"
+}

@@ -1,0 +1,111 @@
+{
+  "runId": "2026-07-01T20-28-40-414Z",
+  "specPath": "/Users/yipengfei/Desktop/pi-fork/pi-backend/training/node-task-cases.json",
+  "runDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-28-40-414Z",
+  "conversationIsolation": {
+    "mode": "fresh_conversation_per_model_call",
+    "appliesTo": [
+      "node_output",
+      "judge",
+      "profile_synthesis"
+    ],
+    "piArgs": [
+      "--print",
+      "--mode",
+      "json",
+      "--no-session",
+      "--no-context-files",
+      "--session-dir",
+      "<per-call isolated directory>"
+    ],
+    "contextPolicy": "Only explicit dependency outputs are injected into the next prompt; no model call resumes prior chat history."
+  },
+  "selectedCases": [
+    {
+      "id": "job-background-strategy-001",
+      "nodeType": "Strategize/Plan",
+      "title": "求职背景诊断",
+      "dependsOn": [],
+      "profileTarget": "strong-task-architect"
+    },
+    {
+      "id": "job-company-gather-001",
+      "nodeType": "Gather/Fetch",
+      "title": "公司调研资料搬运",
+      "dependsOn": [],
+      "profileTarget": "weak-research-extractor"
+    },
+    {
+      "id": "job-jd-analyze-001",
+      "nodeType": "Analyze/Judge",
+      "title": "JD 匹配分析",
+      "dependsOn": [
+        "job-background-strategy-001",
+        "job-company-gather-001"
+      ],
+      "profileTarget": "research-report-analyst"
+    },
+    {
+      "id": "job-resume-draft-001",
+      "nodeType": "Generate/Draft",
+      "title": "简历经历初稿",
+      "dependsOn": [
+        "job-jd-analyze-001"
+      ],
+      "profileTarget": "content-draft-producer"
+    },
+    {
+      "id": "job-resume-review-001",
+      "nodeType": "Review/Gate",
+      "title": "简历终审裁决",
+      "dependsOn": [
+        "job-resume-draft-001"
+      ],
+      "profileTarget": "strong-quality-reviewer"
+    },
+    {
+      "id": "media-account-strategy-001",
+      "nodeType": "Strategize/Plan",
+      "title": "AI 自媒体账号定位",
+      "dependsOn": [],
+      "profileTarget": "content-strategy-director"
+    },
+    {
+      "id": "media-material-gather-001",
+      "nodeType": "Gather/Fetch",
+      "title": "AI 选题素材搜集",
+      "dependsOn": [
+        "media-account-strategy-001"
+      ],
+      "profileTarget": "weak-research-extractor"
+    },
+    {
+      "id": "media-title-draft-001",
+      "nodeType": "Generate/Draft",
+      "title": "标题封面 A/B 方案",
+      "dependsOn": [
+        "media-material-gather-001"
+      ],
+      "profileTarget": "content-draft-producer"
+    },
+    {
+      "id": "media-comment-classify-001",
+      "nodeType": "Classify/Router",
+      "title": "评论区分级和路由",
+      "dependsOn": [
+        "media-title-draft-001"
+      ],
+      "profileTarget": "classification-router"
+    },
+    {
+      "id": "media-content-review-001",
+      "nodeType": "Review/Gate",
+      "title": "内容审稿与发布裁决",
+      "dependsOn": [
+        "media-title-draft-001",
+        "media-comment-classify-001"
+      ],
+      "profileTarget": "strong-quality-reviewer"
+    }
+  ]
+}

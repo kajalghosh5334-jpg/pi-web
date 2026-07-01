@@ -1,0 +1,108 @@
+{
+  "testCase": {
+    "id": "job-resume-draft-001",
+    "nodeType": "Generate/Draft",
+    "profileTarget": "content-draft-producer",
+    "workflowId": "WF-2",
+    "title": "简历经历初稿",
+    "model": "opencode-go/deepseek-v4-flash",
+    "tools": "none",
+    "dependsOn": [
+      "job-jd-analyze-001"
+    ],
+    "input": "原始经历：做过一个企业资料问答 RAG 外包，负责整理客户资料、写 Python 文档清洗脚本、接入向量库、做简单网页查询入口；还帮朋友做过批量 Excel 处理脚本；性格开朗，能和客户沟通需求。请按 STAR 写 2 段简历经历，附技能标签和项目亮点。",
+    "expectedRubric": [
+      "使用 STAR 或类似结构写可编辑经历段落",
+      "突出 AI 编程、Python、RAG、客户需求沟通",
+      "不虚构量化成果、公司、学历或正式职位",
+      "技能标签区分直接相关和弱相关",
+      "素材不足时使用可替换占位符而不是编造"
+    ],
+    "standardAnswer": "应生成企业资料问答 RAG 项目和 Excel 自动化脚本两段经历。RAG 段突出资料清洗、向量库接入、查询入口、需求沟通；Excel 段突出 Python 批处理和效率提升但避免虚构具体百分比。技能标签应含 Python、文档清洗、RAG、向量库、接口/网页入口、沟通协作。不得写本科、正式 AI 工程师、大厂项目或夸张商业结果。",
+    "redLines": [
+      "不得虚构学历、公司、职位、项目规模或量化成绩",
+      "不得把 demo 写成生产级平台",
+      "不得生成最终不可修改定稿"
+    ]
+  },
+  "output": {
+    "model": "opencode-go/deepseek-v4-flash",
+    "code": 0,
+    "text": "```json\n{\n  \"node_type\": \"Generate/Draft\",\n  \"profile\": \"content-draft-producer\",\n  \"workflow\": \"WF-2\",\n  \"task\": \"简历经历初稿\",\n  \"draft_sections\": [\n    {\n      \"title\": \"企业资料智能问答 RAG 系统（Demo / 外包项目）\",\n      \"highlights\": [\n        \"全链路独立交付：从文档清洗、向量化到问答界面全流程闭环。\",\n        \"跨组件整合能力：融合 LLM API、向量数据库和 Web 框架，构建可运行 Demo。\",\n        \"需求驱动开发：根据客户实际文档格式与查询场景进行定制迭代。\"\n      ],\n      \"star\": {\n        \"situation\": \"客户需要从大量企业内部文档（报告、条款、产品说明等）中快速检索和解答问题，传统关键词检索无法满足非结构化文档的精准查找需求。\",\n        \"task\": \"负责全流程交付，构建基于 RAG（检索增强生成）的原型系统，支持自然语言提问并从文档中返回对应答案。\",\n        \"action\": [\n          \"与客户沟通并明确文档格式 [placeholder: PDF/Word/纯文本] 及核心查询场景。\",\n          \"使用 Python 编写文档解析与清洗脚本，对非结构化内容进行分块、格式标准化。\",\n          \"集成向量数据库 [placeholder: 如 Chroma / FAISS] 构建语义索引。\",\n          \"调用 LLM API [placeholder: 如 OpenAI / 通义千问] 实现检索后上下文回答。\",\n          \"基于 Flask 开发简易 Web 查询页面，支持关键词和自然语言提问的输入方式。\",\n          \"进行多轮客户演示与反馈迭代，调整分块策略与回答 prompt 格式。\"\n        ],\n        \"result\": [\n          \"交付可运行的企业知识问答 Demo，客户输入问题后可秒级返回文档内相关内容。\",\n          \"具备全链路 RAG 搭建能力，从数据处理到展示均可独立完成。\",\n          \"获得客户对数据交付及时性和系统可用性的积极反馈 [placeholder: 具体反馈可补充]。\"\n        ]\n      },\n      \"skill_tags\": {\n        \"directly_related\": [\"Python（基础扎实）\", \"RAG（检索增强生成）\", \"LLM API 调用（接口调用）\", \"向量数据库\", \"Flask（Web 框架）\", \"文档清洗与分块\"],\n        \"weakly_related\": [\"客户需求沟通\", \"快速原型设计\", \"非技术用户需求转化\"]\n      },\n      \"source_usage\": {\n        \"原始依据——项目类型\": \"原文「做过一个企业资料问答 RAG 外包」\",\n        \"原始依据——文档处理\": \"原文「整理客户资料」+「写 Python 文档清洗脚本」\",\n        \"原始依据——向量库与检索\": \"原文「接入向量库」\",\n        \"原始依据——前端界面\": \"原文「做简单网页查询入口」+ 上游推断「有 Flask 基础」\",\n        \"原始依据——技术栈\": \"上游 JD 分析「Python 基础扎实」「接口调用」「项目 demo」\",\n        \"原始依据——沟通\": \"原文「性格开朗，能和客户沟通需求」+ 上游推断\"\n      },\n      \"unsupported_claims_removed\": [\n        \"删除「高并发生产级平台」— 原始材料描述为 Demo/外包原型\",\n        \"删除具体公司名称、团队人数 — 无上游依据\",\n        \"删除明确效率数据（如提升 80%）— 使用 placeholder 替代\",\n        \"删除客户评价原文 — 无上游依据\"\n      ],\n      \"editable_notes\": [\n        \"[Editable: 向量库选择 — Chroma/FAISS/Milvus 等]\",\n        \"[Editable: LLM API 类型 — OpenAI GPT / 本地模型 / 文心一言等]\",\n        \"[Editable: 客户名称／项目名称]\",\n        \"[Editable: 文档处理规模 — 如 500 份 / 10GB]\",\n        \"[Editable: Demo 代码是否可公开 — 如涉及客户数据仅提供脱敏框架]\",\n        \"[Editable: 客户反馈的具体措辞]\"\n      ],\n      \"risk_flags\": [\n        \"本项目为 Demo 原型，不可在简历中描述为生产级企业平台。\",\n        \"如果使用了客户真实数据做清洗，GitHub 放完整代码需先脱敏或获授权。\",\n        \"API 接口调用涉及外部依赖，面试时需准备数据安全与方案选型说明。\"\n      ]\n    },\n    {\n      \"title\": \"批量 Excel 数据处理自动化（个人协助项目）\",\n      \"highlights\": [\n        \"零到一的效率工具交付：从需求理解到可运行脚本独立完成。\",\n        \"非技术用户赋能：交付即用型脚本，降低使用门槛。\",\n        \"Python 自动化实战能力：体现数据处理与脚本工程基本功。\"\n      ],\n      \"star\": {\n        \"situation\": \"朋友/同事日常需处理大量 Excel 报表，人工格式调整、数据合并与校验耗时且易出错。\",\n        \"task\": \"编写 Python 脚本实现 Excel 文件批量自动化处理，减少人工操作时间并降低出错率。\",\n        \"action\": [\n          \"分析源文件格式，明确清洗、转换与合并规则。\",\n          \"使用 Python 的 pandas 和 openpyxl 库编写处理脚本。\",\n          \"集成基本异常处理和运行日志，提升脚本稳定性与可调试性。\",\n          \"交付可直接运行的脚本和操作说明，非技术用户也可通过修改参数执行。\"\n        ],\n        \"result\": [\n          \"将 [placeholder: X 小时] 的手动操作缩短至脚本运行 [placeholder: Y 分钟]。\",\n          \"体现了 Python 数据处理与自动化交付的独立执行能力。\",\n          \"[placeholder: 可补充实际使用频率或反馈]。\"\n        ]\n      },\n      \"skill_tags\": {\n        \"directly_related\": [\"Python\", \"pandas\", \"openpyxl\", \"脚本自动化\"],\n        \"weakly_related\": [\"需求理解与转化\", \"非技术人员赋能\"]\n      },\n      \"source_usage\": {\n        \"原始依据——项目类型\": \"原文「帮朋友做过批量 Excel 处理脚本」\",\n        \"原始依据——技术\": \"上游 JD 匹配「Python 基础扎实——实际 Python 编写经验」\"\n      },\n      \"unsupported_claims_removed\": [\n        \"删除「为企业节省数十万成本」— 无公司背景与规模依据\",\n        \"删除具体处理数据行数／文件数量 — 使用 placeholder\"\n      ],\n      \"editable_notes\": [\n        \"[Editable: 具体处理场景 — 财务对账 / 数据合并 / 报告自动生成]\",\n        \"[Editable: 脚本运行效率提升的具体数据]\",\n        \"[Editable: 补全项目时间与是否正式雇佣关系 — 影响简历板块归类]\"\n      ],\n      \"risk_flags\": [\n        \"项目性质为「帮朋友完成」，非正式工作经历，建议归入「项目经历」或「副业/个人项目」板块。\",\n        \"避免夸大为团队正式项目或全职开发者角色。\"\n      ]\n    }\n  ],\n  \"general_editable_notes\": [\n    \"所有 [placeholder] 占位符均需人工根据真实情况替换，严禁直接输出。\",\n    \"技能标签按「直接相关」与「弱相关」分组，直接相关对应 JD 核心要求或强匹配技能，弱相关为 JD 未明确但在该经历中可体现的迁移能力。\",\n    \"如需附 GitHub 链接，必须在脱敏且确认客户授权后添加。\",\n    \"建议将上述两段经历排在教育背景之前，以实战能力先入为主。\",\n    \"OpenCV、Docker、Django 等未出现在经历中，面试前建议准备简短学习计划或入门 Demo 以应对可能的追问。\"\n  ],\n  \"general_risk_flags\": [\n    \"未提供学历、正式职位、公司背景 — 面试时需如实说明为项目/外包/协助经历，避免简历审查误解。\",\n    \"RAG Demo 如使用真实客户数据，代码中不可保留任何客户隐私内容。\",\n    \"JD 加分项 OpenCV 无体现，面试前建议补充一个入门 Demo 或主动表达学习意愿。\",\n    \"所有量化指标（文档数、效率提升率）均处于 placeholder 状态，未填充前不可直接输出为定稿。\"\n  ],\n  \"red_line_checklist\": [\n    {\"rule\": \"不得虚构学历、公司、职位、项目规模或量化成绩\", \"status\": \"合规。无公司、职位、学历虚构，量化数据均使用 placeholder 占位。项目规模基于原始描述且未夸大。\"},\n    {\"rule\": \"不得把 demo 写成生产级平台\", \"status\": \"合规。RAG 项目标题与描述明确标注「Demo / 外包项目」，用词为「原型」「演示」「简易」。\"},\n    {\"rule\": \"不得生成最终不可修改定稿\", \"status\": \"合规。输出包含 editable_notes、placeholders、risk_flags，明确标识为 draft，允许且期望人类编辑修改。\"}\n  ]\n}\n```",
+    "usage": {
+      "input": 4085,
+      "output": 7358,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "reasoning": 5369,
+      "totalTokens": 11443,
+      "cost": {
+        "input": 0.0005719000000000001,
+        "output": 0.00206024,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "total": 0.0026321400000000003
+      }
+    },
+    "stderr": "",
+    "elapsedMs": 83577,
+    "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+    "workDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-05-59-214Z/job-resume-draft-001-output",
+    "isolatedSessionDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-05-59-214Z/job-resume-draft-001-output/.pi-sessions"
+  },
+  "judgeOutput": {
+    "model": "opencode-go/deepseek-v4-pro",
+    "code": 0,
+    "text": "{\n  \"score\": 95,\n  \"score_scale\": \"0-100\",\n  \"pass\": true,\n  \"rubric_hits\": [\n    \"使用STAR结构写可编辑经历段落：两段经历均包含Situation/Task/Action/Result，并嵌入可编辑占位符与修改提示\",\n    \"突出Python、RAG、客户需求沟通：技能标签覆盖Python、RAG、文档清洗、向量库、网页入口、沟通协作等关键点，叙事行为中明确体现需求沟通\",\n    \"未虚构量化成果、公司、学历或正式职位：所有量化指标使用[placeholder: …]占位，未出现具体公司名、学位或正式职位\",\n    \"技能标签区分直接相关和弱相关：每个项目均列出directly_related和weakly_related分组，区分JD核心技能与迁移能力\",\n    \"素材不足时使用可替换占位符而非编造：缺失的具体数据（文档量、效率提升率、客户名称等）均以[placeholder]或[Editable: …]形式明示，未自行填补\"\n  ],\n  \"missing\": [],\n  \"hallucination\": [],\n  \"red_line_violations\": [],\n  \"profile_lessons\": [\n    \"输出完全符合节点通用契约：包含draft_sections、source_usage、unsupported_claims_removed、editable_notes、risk_flags\",\n    \"红线自查清单与正文一致，未发现虚构、夸大或不可修改问题\",\n    \"两段经历覆盖了上游素材提及的全部技术栈与能力维度，未遗漏关键要素\"\n  ],\n  \"prompt_patch_suggestions\": [\n    \"RAG段落result中“秒级返回”虽非量化业绩，但可能被视为隐含速度承诺；可建议统一使用“快速”或替换为占位符以进一步降低风险。\",\n    \"技能标签中“Python（基础扎实）”倾向于自我评价，可建议改为纯技术词，如“Python（熟练）”或直接“Python”。\"\n  ]\n}",
+    "usage": {
+      "input": 4487,
+      "output": 1764,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "reasoning": 1328,
+      "totalTokens": 6251,
+      "cost": {
+        "input": 0.00780738,
+        "output": 0.00613872,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "total": 0.0139461
+      }
+    },
+    "stderr": "",
+    "elapsedMs": 29420,
+    "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+    "workDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-05-59-214Z/job-resume-draft-001-judge",
+    "isolatedSessionDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-05-59-214Z/job-resume-draft-001-judge/.pi-sessions"
+  },
+  "judge": {
+    "score": 95,
+    "score_scale": "0-100",
+    "pass": true,
+    "rubric_hits": [
+      "使用STAR结构写可编辑经历段落：两段经历均包含Situation/Task/Action/Result，并嵌入可编辑占位符与修改提示",
+      "突出Python、RAG、客户需求沟通：技能标签覆盖Python、RAG、文档清洗、向量库、网页入口、沟通协作等关键点，叙事行为中明确体现需求沟通",
+      "未虚构量化成果、公司、学历或正式职位：所有量化指标使用[placeholder: …]占位，未出现具体公司名、学位或正式职位",
+      "技能标签区分直接相关和弱相关：每个项目均列出directly_related和weakly_related分组，区分JD核心技能与迁移能力",
+      "素材不足时使用可替换占位符而非编造：缺失的具体数据（文档量、效率提升率、客户名称等）均以[placeholder]或[Editable: …]形式明示，未自行填补"
+    ],
+    "missing": [],
+    "hallucination": [],
+    "red_line_violations": [],
+    "profile_lessons": [
+      "输出完全符合节点通用契约：包含draft_sections、source_usage、unsupported_claims_removed、editable_notes、risk_flags",
+      "红线自查清单与正文一致，未发现虚构、夸大或不可修改问题",
+      "两段经历覆盖了上游素材提及的全部技术栈与能力维度，未遗漏关键要素"
+    ],
+    "prompt_patch_suggestions": [
+      "RAG段落result中“秒级返回”虽非量化业绩，但可能被视为隐含速度承诺；可建议统一使用“快速”或替换为占位符以进一步降低风险。",
+      "技能标签中“Python（基础扎实）”倾向于自我评价，可建议改为纯技术词，如“Python（熟练）”或直接“Python”。"
+    ],
+    "raw_score": 95
+  },
+  "minScore": 82,
+  "nodeOutputArtifact": {
+    "markdownPath": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-05-59-214Z/node_outputs/04-job-resume-draft-001.md",
+    "jsonPath": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-05-59-214Z/node_outputs/04-job-resume-draft-001.json"
+  }
+}

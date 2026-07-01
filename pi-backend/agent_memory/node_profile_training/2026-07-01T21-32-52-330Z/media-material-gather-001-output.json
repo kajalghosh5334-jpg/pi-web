@@ -1,0 +1,25 @@
+{
+  "model": "opencode-go/deepseek-v4-flash",
+  "code": 0,
+  "text": "```json\n{\n  \"node_id\": \"weak-research-extractor\",\n  \"workflow\": \"WF-10\",\n  \"task\": \"AI选题素材搜集_LLM落地坑\",\n  \"upstream_context\": \"基于上游策略，本素材将服务于P1内容基座中的'行业痛点'类选题，需严格限定为事实搬运，不做判断分析。\",\n  \"extracted_facts\": [\n    {\n      \"fact\": \"某制造企业尝试知识库问答项目，遇到的最大问题是内部资料混乱、且无人负责维护。\",\n      \"source\": \"访谈摘录（某制造企业）\",\n      \"source_status\": \"匿名访谈，单一来源个体经验\",\n      \"fact_type\": \"受访者观点\",\n      \"claim_level\": \"个体经验/单一样本观察\"\n    },\n    {\n      \"fact\": \"LLM项目的常见成本与风险主要来自：数据清洗、权限设计、评测和运维四个环节。\",\n      \"source\": \"文章摘录\",\n      \"source_status\": \"行业文章分析，未附具体定量数据或研究样本量\",\n      \"fact_type\": \"作者分析/行文观点\",\n      \"claim_level\": \"作者基于行业观察的归纳\"\n    },\n    {\n      \"fact\": \"部分开发者担忧企业客户只想要一个Demo验证效果，而不愿意为后续的持续维护和迭代付费。\",\n      \"source\": \"评论摘录（开发者）\",\n      \"source_status\": \"匿名网络评论，单方面观点\",\n      \"fact_type\": \"评论者担忧/经验之谈\",\n      \"claim_level\": \"开发者个人视角或从业经验\"\n    }\n  ],\n  \"unknown_fields\": [\n    \"具体企业名称（所有来源均为匿名）—— missing\",\n    \"具体成本金额或各环节耗时占比—— missing\",\n    \"涉及的模型名称、框架或工具—— missing\",\n    \"数据量级或项目规模—— missing\",\n    \"成功案例、正向数据或补救方案—— missing\",\n    \"权限设计的具体难点类型—— missing\",\n    \"评测方法和运维团队配置—— missing\"\n  ],\n  \"evidence_gaps\": [\n    {\n      \"gap\": \"单一企业样本：访谈仅覆盖一家匿名制造企业，无法代表全行业或做严谨归因。\",\n      \"suggestion\": \"补充3-5家不同行业的匿名访谈，或引用公开行业报告（如Gartner、CSDN调研）。\"\n    },\n    {\n      \"gap\": \"成本论述无定量支撑：文章指出的四个成本来源缺少具体比例或金额数据。\",\n      \"suggestion\": \"寻找包含LLM项目预算拆解的公开研究或工具厂商白皮书。\"\n    },\n    {\n      \"gap\": \"开发者担忧缺乏普遍性验证：评论观点的样本大小和代表性不可知。\",\n      \"suggestion\": \"设计面向AI开发者的问卷，统计‘非标维护费’的接受度与谈判成功率。\"\n    },\n    {\n      \"gap\": \"缺少“解决路径”信息：所有来源只谈问题（坑），未涉及任何可行的避坑措施或行业最佳实践。\",\n      \"suggestion\": \"补充一篇技术社区的避坑经验汇总帖，或采访有交付经验的开发者。\"\n    }\n  ],\n  \"handoff_summary\": \"本节点从三份给定来源中搬运了三条关于 LLM 落地困难的显性事实。所有内容均为单方观点（访谈/文章/评论），缺乏多来源交叉验证和定量数据。下游节点若用于内容生产，建议：1）明确标注信息来源的局限性（“受访者反馈”、“行业观察”等）；2）不宜将单一制造企业的经验上升为“行业通病”；3）该素材足够支撑一篇“心态/流程避坑”类软文，但不足以独立支撑成本分析或行业报告类内容。\",\n  \"red_line_check\": {\n    \"status\": \"PASS\",\n    \"details\": \"未补造任何企业案例、成本金额、成功数据。所有观点已严格按来源立场进行标注（访谈观点 / 文章观点 / 评论观点），未升格为行业事实。\"\n  },\n  \"blocked_items\": []\n}\n```",
+  "usage": {
+    "input": 4159,
+    "output": 3558,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "reasoning": 2683,
+    "totalTokens": 7717,
+    "cost": {
+      "input": 0.00058226,
+      "output": 0.00099624,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "total": 0.0015785
+    }
+  },
+  "stderr": "",
+  "elapsedMs": 39909,
+  "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+  "workDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T21-32-52-330Z/media-material-gather-001-output",
+  "isolatedSessionDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T21-32-52-330Z/media-material-gather-001-output/.pi-sessions"
+}

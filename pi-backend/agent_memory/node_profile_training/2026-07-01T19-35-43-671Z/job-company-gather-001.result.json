@@ -1,0 +1,102 @@
+{
+  "testCase": {
+    "id": "job-company-gather-001",
+    "nodeType": "Gather/Fetch",
+    "profileTarget": "weak-research-extractor",
+    "workflowId": "WF-3",
+    "title": "公司调研资料搬运",
+    "model": "opencode-go/deepseek-v4-flash",
+    "tools": "none",
+    "dependsOn": [],
+    "input": "目标公司：星河智造。给定来源材料：1）官网片段：公司为制造业客户做质检自动化和设备数据采集，技术关键词包含 Python、OpenCV、PLC、轻量化模型部署。2）招聘 JD 片段：初级 AI 工具开发助理，薪资 5-7k，要求 Python 基础、能读懂接口文档，学历写的是大专及以上优先。3）面经摘录：面试会问 Python 文件处理、接口调用、是否做过项目 demo。请只基于这些材料搬运事实。",
+    "expectedRubric": [
+      "只抽取给定来源中出现的业务、技术栈、学历门槛、薪资和面经",
+      "每条事实标注来源片段",
+      "未出现的信息输出 unknown 或 missing",
+      "不判断候选人是否适合",
+      "给出证据缺口和复核建议"
+    ],
+    "standardAnswer": "业务应记录为制造业质检自动化和设备数据采集；技术栈应包含 Python、OpenCV、PLC、轻量化模型部署；岗位薪资 5-7k；学历门槛为大专及以上优先，不是硬性本科；面试关注 Python 文件处理、接口调用、项目 demo。团队规模、真实文化、实际录取学历、长期发展空间等来源未出现，应标 unknown/missing。",
+    "redLines": [
+      "不得补造公司新闻、融资、员工规模或文化",
+      "不得凭公司名推断技术栈",
+      "不得把优先条件改写成硬性条件"
+    ]
+  },
+  "output": {
+    "model": "opencode-go/deepseek-v4-flash",
+    "code": 0,
+    "text": "```json\n{\n  \"node\": \"Gather/Fetch\",\n  \"profile\": \"weak-research-extractor\",\n  \"task\": \"公司调研资料搬运\",\n  \"target_company\": \"星河智造\",\n  \"extracted_facts\": [\n    {\n      \"category\": \"业务\",\n      \"fact\": \"为制造业客户做质检自动化和设备数据采集\",\n      \"source\": \"官网片段\"\n    },\n    {\n      \"category\": \"技术栈\",\n      \"fact\": \"技术关键词包含 Python、OpenCV、PLC、轻量化模型部署\",\n      \"source\": \"官网片段\"\n    },\n    {\n      \"category\": \"技术栈\",\n      \"fact\": \"招聘 JD 要求 Python 基础、能读懂接口文档\",\n      \"source\": \"招聘 JD 片段\"\n    },\n    {\n      \"category\": \"技术栈\",\n      \"fact\": \"面试考察 Python 文件处理、接口调用、是否做过项目 demo\",\n      \"source\": \"面经摘录\"\n    },\n    {\n      \"category\": \"学历门槛\",\n      \"fact\": \"大专及以上优先（优先条件，非硬性要求）\",\n      \"source\": \"招聘 JD 片段\"\n    },\n    {\n      \"category\": \"薪资\",\n      \"fact\": \"月薪 5-7k\",\n      \"source\": \"招聘 JD 片段\"\n    },\n    {\n      \"category\": \"面经\",\n      \"fact\": \"面试会问 Python 文件处理、接口调用、是否做过项目 demo\",\n      \"source\": \"面经摘录\"\n    }\n  ],\n  \"inferences\": [\n    {\n      \"inference\": \"轻量化模型部署与 PLC 结合 OpenCV 指向工业边缘端侧视觉质检场景\",\n      \"basis\": \"官网技术关键词组合\",\n      \"confidence\": \"medium\"\n    },\n    {\n      \"inference\": \"薪资 5-7k 与「大专及以上优先」共同暗示该岗位为初级/实习助理级别\",\n      \"basis\": \"招聘 JD 内容\",\n      \"confidence\": \"high\"\n    },\n    {\n      \"inference\": \"面试题目侧重基础 Python 和接口理解，未涉及 OpenCV 或 PLC，与官网技术栈存在脱节\",\n      \"basis\": \"面经摘录 vs 官网片段\",\n      \"confidence\": \"medium\"\n    }\n  ],\n  \"suggestions\": [\n    \"建议补充轻量化部署的具体框架（如 TensorFlow Lite、ONNX Runtime），当前材料未提及\",\n    \"建议寻找更多面经确认面试中是否包含视觉或 PLC 题目\",\n    \"建议核实薪资对应城市级别，以辅助下游评估\"\n  ],\n  \"risks\": [\n    \"薪资低于主流 AI 岗位，可能表示工作内容简单或公司规模较小\",\n    \"「优先」条件不排除非大专候选人，下游不宜作为硬性筛选项\",\n    \"官网技术栈与面试考察不完全匹配，候选人实际工作内容可能与面试预期不符\"\n  ],\n  \"evidence_gaps\": [\n    \"公司全称、成立时间、员工规模未提及\",\n    \"具体产品/解决方案名称未提及\",\n    \"轻量化部署使用的具体框架/工具未提及\",\n    \"面试是否涉及 OpenCV 或 PLC 未提及\",\n    \"岗位是自有产品开发、外包还是驻场未说明\",\n    \"办公地点和公司性质（甲/乙方）未说明\"\n  ],\n  \"review_suggestions\": [\n    \"建议在下一节点交叉参考工商信息、官网更多页面及更多面经\",\n    \"建议核实薪资学历是否准确代表岗位实际定位\",\n    \"建议将「大专及以上优先」下游使用前明确标记为软性条件\"\n  ],\n  \"red_flags\": [],\n  \"blocked\": false,\n  \"manual_review_required\": false\n}\n```",
+    "usage": {
+      "input": 2298,
+      "output": 2826,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "reasoning": 2023,
+      "totalTokens": 5124,
+      "cost": {
+        "input": 0.00032172,
+        "output": 0.00079128,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "total": 0.001113
+      }
+    },
+    "stderr": "",
+    "elapsedMs": 29217,
+    "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+    "workDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T19-35-43-671Z/job-company-gather-001-output",
+    "isolatedSessionDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T19-35-43-671Z/job-company-gather-001-output/.pi-sessions"
+  },
+  "judgeOutput": {
+    "model": "opencode-go/deepseek-v4-pro",
+    "code": 0,
+    "text": "{\n  \"score\": 90,\n  \"pass\": true,\n  \"rubric_hits\": [\n    \"只抽取给定来源中出现的业务、技术栈、学历门槛、薪资和面经\",\n    \"每条事实标注来源片段\",\n    \"未出现的信息输出通过 evidence_gaps 列出，满足 unknown/missing 要求\",\n    \"不判断候选人是否适合\",\n    \"给出证据缺口和复核建议\"\n  ],\n  \"missing\": [\n    \"未在 extracted_facts 中为缺失类别（如团队规模、文化）显式标注 unknown，但 evidence_gaps 已覆盖\"\n  ],\n  \"hallucination\": [],\n  \"red_line_violations\": [],\n  \"profile_lessons\": [\n    \"evidence_gaps 机制可替代事实级 unknown 标记，但需注意下游客服用场景是否期望结构化 missing 字段\",\n    \"inferences 与 facts 分离良好，减少混淆\"\n  ],\n  \"prompt_patch_suggestions\": []\n}",
+    "usage": {
+      "input": 3063,
+      "output": 1942,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "reasoning": 1731,
+      "totalTokens": 5005,
+      "cost": {
+        "input": 0.00532962,
+        "output": 0.00675816,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "total": 0.01208778
+      }
+    },
+    "stderr": "",
+    "elapsedMs": 35960,
+    "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+    "workDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T19-35-43-671Z/job-company-gather-001-judge",
+    "isolatedSessionDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T19-35-43-671Z/job-company-gather-001-judge/.pi-sessions"
+  },
+  "judge": {
+    "score": 90,
+    "pass": true,
+    "rubric_hits": [
+      "只抽取给定来源中出现的业务、技术栈、学历门槛、薪资和面经",
+      "每条事实标注来源片段",
+      "未出现的信息输出通过 evidence_gaps 列出，满足 unknown/missing 要求",
+      "不判断候选人是否适合",
+      "给出证据缺口和复核建议"
+    ],
+    "missing": [
+      "未在 extracted_facts 中为缺失类别（如团队规模、文化）显式标注 unknown，但 evidence_gaps 已覆盖"
+    ],
+    "hallucination": [],
+    "red_line_violations": [],
+    "profile_lessons": [
+      "evidence_gaps 机制可替代事实级 unknown 标记，但需注意下游客服用场景是否期望结构化 missing 字段",
+      "inferences 与 facts 分离良好，减少混淆"
+    ],
+    "prompt_patch_suggestions": []
+  },
+  "minScore": 82,
+  "nodeOutputArtifact": {
+    "markdownPath": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T19-35-43-671Z/node_outputs/02-job-company-gather-001.md",
+    "jsonPath": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T19-35-43-671Z/node_outputs/02-job-company-gather-001.json"
+  }
+}

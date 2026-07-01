@@ -1,0 +1,25 @@
+{
+  "model": "opencode-go/deepseek-v4-pro",
+  "code": 0,
+  "text": "{\n  \"score\": 95,\n  \"score_scale\": \"0-100\",\n  \"pass\": true,\n  \"rubric_hits\": [\n    \"给出明确 publish/revise/block 裁决\",\n    \"检查标题和素材证据是否一致\",\n    \"检查 CTA 和撮合交易定位是否自然\",\n    \"识别交易、法律、夸张承诺风险\",\n    \"只给短裁决和返工任务，不重写长文\"\n  ],\n  \"missing\": [],\n  \"hallucination\": [],\n  \"red_line_violations\": [],\n  \"profile_lessons\": [],\n  \"prompt_patch_suggestions\": []\n}",
+  "usage": {
+    "input": 4151,
+    "output": 2484,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "reasoning": 2342,
+    "totalTokens": 6635,
+    "cost": {
+      "input": 0.00722274,
+      "output": 0.00864432,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "total": 0.015867060000000002
+    }
+  },
+  "stderr": "",
+  "elapsedMs": 47403,
+  "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+  "workDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T21-32-52-330Z/media-content-review-001-judge",
+  "isolatedSessionDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T21-32-52-330Z/media-content-review-001-judge/.pi-sessions"
+}

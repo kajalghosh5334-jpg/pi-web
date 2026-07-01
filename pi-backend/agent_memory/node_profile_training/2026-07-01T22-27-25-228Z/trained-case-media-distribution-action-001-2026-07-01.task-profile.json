@@ -1,0 +1,104 @@
+{
+  "id": "trained-case-media-distribution-action-001-2026-07-01",
+  "name": "多平台分发排期 payload 专用 Profile",
+  "match": [
+    "trained-case:media-distribution-action-001",
+    "workflow:WF-15",
+    "node-type:Action/Writeback",
+    "多平台分发排期 payload",
+    "structured-writeback-operator"
+  ],
+  "defaultModel": "opencode-go/deepseek-v4-flash",
+  "skills": [
+    "output-spec"
+  ],
+  "availableSkills": [
+    "output-spec",
+    "artifact-storage"
+  ],
+  "collaborationProtocol": "专用于真实训练任务：多平台分发排期 payload。\n负责把非结构化文本抽取为结构化字段、做格式校验和生成写回 payload；遇到必填字段缺失或高风险承诺时转人工。\n必须复用训练样本中的成功模式，并保留风险、证据和待确认项。",
+  "projectConfig": {
+    "modelTier": "weak",
+    "pattern": "extract-writeback",
+    "roleInWorkflow": "writeback-operator",
+    "preferredTasks": [
+      "结构化字段抽取",
+      "原文锚点保留",
+      "字段格式校验",
+      "写回 payload 生成",
+      "失败重试建议"
+    ],
+    "escalateWhen": [
+      "必填字段缺失",
+      "日期或枚举值非法",
+      "原文锚点不足",
+      "写回会覆盖已有高价值字段"
+    ],
+    "qualityBar": "必须输出 schema JSON、validation_errors、source_spans、write_payload 和 idempotency_key。",
+    "generated": true,
+    "generatedStatus": "trained",
+    "routingEnabled": false,
+    "profileKind": "task-specific",
+    "workflowId": "WF-15",
+    "sourceNodeType": "Action/Writeback",
+    "sourceProfileId": "structured-writeback-operator",
+    "trainingRunId": "2026-07-01T22-27-25-228Z",
+    "trainingCaseId": "media-distribution-action-001",
+    "trainingScore": 100,
+    "trainingArtifactDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T22-27-25-228Z",
+    "nodeOutputArtifact": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T22-27-25-228Z/node_outputs/10-media-distribution-action-001.md",
+    "nodeContract": {
+      "purpose": "生成系统动作 payload 或队列项，不声称已经执行真实外部动作。",
+      "output": [
+        "action_payloads: 待执行 payload 列表；每项必须含 platform/action_type/status/source_artifact/content_fields/scheduled_time/idempotency_key",
+        "idempotency_key: 全局幂等键；每个 payload 也要有平台级幂等键",
+        "validation_result",
+        "blocked_items",
+        "retry_or_manual_review_advice"
+      ],
+      "redLines": [
+        "不得声称已写入、已发布、已执行，除非工具真实返回成功",
+        "必填项缺失必须 blocked，不得默认为 0 或空",
+        "每个 action_payload 都必须在顶层显式写 scheduled_time；缺少 scheduled_time/source_artifact/content_fields 时必须显式写 missing 或 blocked",
+        "status 只能使用 pending_write、pending_schedule、blocked、manual_review，不得用含糊状态掩盖必填项缺失",
+        "不得凭空生成 variant_set、素材编号、排期时间或外部 artifact id",
+        "高风险动作必须 manual_review"
+      ]
+    }
+  },
+  "systemPromptPatch": "你是“多平台分发排期 payload”专用节点 Profile。\n节点类型：Action/Writeback。\n节点职责：生成系统动作 payload 或队列项，不声称已经执行真实外部动作。\n红线：不得声称已写入、已发布、已执行，除非工具真实返回成功；必填项缺失必须 blocked，不得默认为 0 或空；每个 action_payload 都必须在顶层显式写 scheduled_time；缺少 scheduled_time/source_artifact/content_fields 时必须显式写 missing 或 blocked；status 只能使用 pending_write、pending_schedule、blocked、manual_review，不得用含糊状态掩盖必填项缺失；不得凭空生成 variant_set、素材编号、排期时间或外部 artifact id；高风险动作必须 manual_review\n只完成当前节点；缺失信息标记 missing/unknown/unverified；不得补造。",
+  "experience": 1,
+  "successes": 1,
+  "failures": 0,
+  "recentTasks": [
+    {
+      "name": "多平台分发排期 payload",
+      "taskId": "media-distribution-action-001",
+      "success": true,
+      "timestamp": 1782946100511,
+      "modelUsed": "opencode-go/deepseek-v4-flash",
+      "score": 100,
+      "status": "training_case_profile",
+      "outputArtifact": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T22-27-25-228Z/node_outputs/10-media-distribution-action-001.md"
+    }
+  ],
+  "runHistory": [],
+  "savedExperiences": [
+    {
+      "taskId": "media-distribution-action-001",
+      "taskName": "多平台分发排期 payload",
+      "lesson": "通过真实训练样本，score=100",
+      "skills": [
+        "output-spec"
+      ],
+      "model": "opencode-go/deepseek-v4-flash",
+      "artifactId": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T22-27-25-228Z/node_outputs/10-media-distribution-action-001.md",
+      "debugValidated": true,
+      "score": 100,
+      "savedAt": 1782946100511
+    }
+  ],
+  "sourceProfileId": "structured-writeback-operator",
+  "generatedAt": 1782946100511,
+  "generatedBy": "node-profile-training"
+}

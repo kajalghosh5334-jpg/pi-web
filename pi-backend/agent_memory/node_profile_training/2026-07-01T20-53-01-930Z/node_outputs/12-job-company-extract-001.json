@@ -1,0 +1,38 @@
+{
+  "caseId": "job-company-extract-001",
+  "title": "公司字段抽取",
+  "workflowId": "WF-3",
+  "nodeType": "Extract",
+  "profileTarget": "structured-writeback-operator",
+  "model": "opencode-go/deepseek-v4-flash",
+  "score": 95,
+  "pass": true,
+  "elapsedMs": 38589,
+  "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+  "workDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-53-01-930Z/job-company-extract-001-output",
+  "input": "请从上游公司调研资料中抽取字段：business_domain、tech_stack、salary_range、education_requirement、interview_topics、unknown_fields。每个字段必须有 source_anchor。",
+  "output": "```json\n{\n  \"extracted_fields\": [\n    {\n      \"field\": \"business_domain\",\n      \"value\": \"制造业质检自动化与设备数据采集服务\",\n      \"source_anchor\": \"官网片段：公司为制造业客户提供质检自动化和设备数据采集服务\",\n      \"confidence\": \"high\"\n    },\n    {\n      \"field\": \"tech_stack\",\n      \"value\": \"Python, OpenCV, PLC, 轻量化模型部署\",\n      \"source_anchor\": \"官网片段：技术关键词包括 Python、OpenCV、PLC、轻量化模型部署\",\n      \"confidence\": \"high\"\n    },\n    {\n      \"field\": \"salary_range\",\n      \"value\": \"5-7k（周期未说明）\",\n      \"source_anchor\": \"招聘JD片段：薪资范围为 5-7k（周期未说明）\",\n      \"confidence\": \"medium\"\n    },\n    {\n      \"field\": \"education_requirement\",\n      \"value\": \"大专及以上优先（非硬性）\",\n      \"source_anchor\": \"招聘JD片段：学历要求为「大专及以上优先」（优先条件，非硬性）\",\n      \"confidence\": \"high\"\n    },\n    {\n      \"field\": \"interview_topics\",\n      \"value\": \"Python 文件处理、接口调用、项目 demo 经验\",\n      \"source_anchor\": \"面经摘录：面试会问 Python 文件处理、接口调用、是否做过项目 demo\",\n      \"confidence\": \"medium\"\n    },\n    {\n      \"field\": \"unknown_fields\",\n      \"value\": [\n        \"公司注册全称\",\n        \"办公城市/地点\",\n        \"公司成立时间/发展阶段\",\n        \"员工规模\",\n        \"融资情况\",\n        \"公司文化/价值观\",\n        \"JD完整职责描述\",\n        \"面试完整流程\",\n        \"薪资周期与结构\",\n        \"技术栈具体版本或品牌\"\n      ],\n      \"source_anchor\": \"上游 unknown_fields 及材料覆盖不足，以上字段在所有给定材料中均未出现\",\n      \"confidence\": \"high\"\n    }\n  ],\n  \"missing_required_fields\": [],\n  \"validation_errors\": [\n    {\n      \"severity\": \"info\",\n      \"message\": \"education_requirement 标注为“优先条件，非硬性”，渲染时需明确这是 preferred 而非 mandatory\"\n    },\n    {\n      \"severity\": \"info\",\n      \"message\": \"salary_range 未注明周期（月薪/周薪），渲染时需要标注周期未知\"\n    },\n    {\n      \"severity\": \"info\",\n      \"message\": \"interview_topics 仅来源于单一面经，可能不具代表性，渲染时建议注明来源限制\"\n    }\n  ],\n  \"handoff_payload\": {\n    \"summary\": \"已完成公司字段抽取，business_domain、tech_stack、salary_range、education_requirement、interview_topics 均保留原文锚点，unknown_fields 完整列出缺失信息。请下游据此结构化数据渲染公司档案卡片，并留意 validation_errors 中的质量提示。\",\n    \"$ref\": \"this object 中的 extracted_fields 和 validation_errors 均为下游可读数据\"\n  }\n}\n```",
+  "judge": {
+    "score": 95,
+    "score_scale": "0-100",
+    "pass": true,
+    "rubric_hits": [
+      "抽取指定字段并保留 source_anchor: 所有字段均带原文锚点",
+      "未出现字段放入 unknown_fields: 已将公司规模、融资、文化等缺失字段汇入 unknown_fields",
+      "不新增公司规模、融资、文化等未出现信息: 未编造任何材料外内容",
+      "salary_range 和 education_requirement 不得改写含义: 保留原文含义，仅追加澄清性注释",
+      "输出可供公司档案渲染使用: 提供结构化字段与 source_anchor 及渲染提示"
+    ],
+    "missing": [],
+    "hallucination": [],
+    "red_line_violations": [],
+    "profile_lessons": [
+      "unknown_fields 作为 extracted_fields 的一项非标准结构，建议作为顶层数组字段以提高下游兼容性"
+    ],
+    "prompt_patch_suggestions": [],
+    "raw_score": 95
+  },
+  "dependencies": [
+    "job-company-gather-001"
+  ]
+}

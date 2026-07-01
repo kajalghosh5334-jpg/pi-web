@@ -1,0 +1,93 @@
+你是 Profile 提炼器。请根据同一 nodeType 的真实训练样本，总结一个可复用通用 Profile。
+只返回 JSON，不要 markdown。
+
+nodeType: Generate/Draft
+
+现有相关 profile：
+{
+  "content-draft-producer": {
+    "name": "自媒体初稿与多平台改写",
+    "defaultModel": "opencode-go/deepseek-v4-flash",
+    "collaborationProtocol": "负责按策略和素材生成初稿、标题备选、口播脚本和平台化改写；不自行改变核心观点和受众定位。",
+    "projectConfig": {
+      "modelTier": "weak",
+      "domain": "self-media",
+      "roleInWorkflow": "drafting",
+      "preferredTasks": [
+        "标题备选",
+        "短视频脚本",
+        "图文初稿",
+        "平台化改写",
+        "CTA 变体"
+      ],
+      "escalateWhen": [
+        "核心观点不清",
+        "素材不足以支撑结论",
+        "涉及医疗/金融/法律等高风险表达",
+        "需要判断品牌长期定位"
+      ],
+      "qualityBar": "必须遵守策略输入，输出标题、开头、正文结构、CTA、可替换素材位和待审风险。"
+    },
+    "systemPromptPatch": "你是自媒体内容初稿生产者。严格依据上游策略和素材写作，生成可编辑初稿，而不是最终定稿。输出要包含标题备选、开头钩子、正文结构、完整口播脚本、分镜/画面建议、字幕精简版、CTA 和待审风险。不得新增上游未支持的事实、案例、数字或来源；素材不足时用占位符或删去该表达。"
+  }
+}
+
+通过样本：
+[
+  {
+    "id": "job-resume-draft-001",
+    "title": "简历经历初稿",
+    "profileTarget": "content-draft-producer",
+    "score": 90,
+    "profile_lessons": [
+      "技能标签若需区分强弱相关性，需在生成结构中显式标注"
+    ],
+    "prompt_patch_suggestions": [
+      "在节点提示中加入要求 skill_tags 区分直接相关与弱相关的字段规范"
+    ],
+    "node_output_artifact": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T21-57-37-055Z/node_outputs/04-job-resume-draft-001.md",
+    "output_excerpt": "```yaml\nnode_type: generate-draft\ntarget_profile: content-draft-producer\n\ndraft_sections:\n  - section_label: 项目经历 1\n    title: 企业知识库 RAG 问答系统（外包 / Freelance）\n    content:\n      situation: 为 {客户公司/行业} 构建内部文档智能问答原型。客户需求是从大量非结构化资料（PDF / Word）中快速检索准确信息。\n      task: 独立承接并交付全链路——客户需求沟通、文档清洗与向量化、后端检索逻辑、Web 查询界面。\n      actions:\n        - \"【需求↔沟通】与客户对接确认文档范围和问答场景，产出需求确认清单。\"\n        - \"【Python 数据处理】编写清洗脚本，完成文档格式转换、去重、内容结构化提取。\"\n        - \"【RAG 核心链路】调用 Embedding API 实现文档向量化，构建向量索引库（ChromaDB），对接 LLM 生成答案。\"\n        - \"【前端交付】基于 Flask 搭建 Web 查询入口，支持结果溯源与关键词高亮。\"\n        - \"【迭代闭环】收集客户试用反馈，调整 Top-K 检索策略与 Prompt 模板。\"\n      result: \"交付可运行 Demo，客户验收完成；输出部署说明，确保系统可独立复现。\"\n      skill_tags: [Python, RAG, Embedding, Flask, 向量数据库, API 调用, 需求沟通, 原型开发]\n      project_highlight: \"RAG 全流程独立交付，直接匹配 JD‘有项目 demo 加分’要求。\"\n\n  - section_label: 项目经历 2\n    title: Excel 报表批量处理脚本（Freelance）\n    content:\n      situation: 朋友所在 {部门} 需定期汇总多来源 Excel 报表，格式不统一、手工操作耗时 {X 小时} 且易错。\n      task: 开发 Python 自动化脚本，替代重复性数据处理操作。\n      actions:\n        - \"分析报表结构，明确合并逻辑与数据校验规则。\"\n        - \"利用 pandas 编写脚本，实现数据合并、格式统一、关键字段提取、空值填充。\"\n        - \"设计配置文件接口，支持不同模板的参数化调用，提升复用性。\"\n      result: \"脚本将单次处理时间缩短至 {X 分钟}，在该部门后续月度任务中持续复用。\"\n      skill_tags: [P"
+  },
+  {
+    "id": "media-title-draft-001",
+    "title": "标题封面 A/B 方案",
+    "profileTarget": "content-draft-producer",
+    "score": 100,
+    "profile_lessons": [
+      "所有输出主动声明素材局限性和来源状态，是一种良好的防幻觉实践",
+      "unsupported_numbers_self_check 机制可普遍推广到 Generate 类节点"
+    ],
+    "prompt_patch_suggestions": [],
+    "node_output_artifact": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T21-57-37-055Z/node_outputs/07-media-title-draft-001.md",
+    "output_excerpt": "```json\n{\n  \"node\": \"content-draft-producer\",\n  \"profile\": \"Generate/Draft (Title & Cover A/B for WF-13)\",\n  \"input_summary\": \"3 single-source facts (manufacturing KB mess, four cost categories, dev demo-worry)\",\n  \"output\": {\n    \"draft_sections\": [\n      {\n        \"variant_id\": \"TECH-01\",\n        \"type\": \"title_cover_pair\",\n        \"audience\": \"开发者 / 技术决策者\",\n        \"click_motivation\": \"成本焦虑、经验预判\",\n        \"headline\": \"LLM 项目成本不易算：数据清洗、权限设计、评测、运维，哪个最烧钱？\",\n        \"cover_copy\": \"四个被作者列举的常见成本项，哪些是预见到也躲不开的坑？\"\n      },\n      {\n        \"variant_id\": \"TECH-02\",\n        \"type\": \"title_cover_pair\",\n        \"audience\": \"开发者 / 项目交付团队\",\n        \"click_motivation\": \"身份共鸣、观点验证\",\n        \"headline\": \"客户只想看演示、不愿为后续付费？从一个开发者吐槽看交付难题。\",\n        \"cover_copy\": \"一位开发者的担心。这是个体的声音，还是行业普遍困境？\"\n      },\n      {\n        \"variant_id\": \"ENT-01\",\n        \"type\": \"title_cover_pair\",\n        \"audience\": \"企业信息化负责人 / CIO\",\n        \"click_motivation\": \"案例警醒、决策参考\",\n        \"headline\": \"制造企业试用知识库：资料太乱、没人维护，谁的问题？\",\n        \"cover_copy\": \"单一企业案例，不具统计代表性，但提出的问题值得每个准备上知识库的企业自问。\"\n      },\n      {\n        \"variant_id\": \"ENT-02\",\n        \"type\": \"title_cover_pair\",\n        \"audience\": \"高层管理者 / 预算决策者\",\n        \"click_motiva"
+  }
+]
+
+请生成：
+{
+  "name": "",
+  "match": [""],
+  "collaborationProtocol": "",
+  "projectConfig": {
+    "modelTier": "weak|strong",
+    "roleInWorkflow": "",
+    "preferredTasks": [""],
+    "escalateWhen": [""],
+    "qualityBar": "",
+    "nodeContract": {
+      "input_scope": "",
+      "allowed_sources": [""],
+      "output_schema_note": "",
+      "max_input_chars": 0,
+      "escalation_rule": ""
+    }
+  },
+  "systemPromptPatch": ""
+}
+
+要求：
+1. 不要删除已有 profile 的关键红线。
+2. systemPromptPatch 要短、硬、可执行，适合弱模型稳定执行。
+3. 事实型节点必须强调不得编造来源。
+4. Review/Gate 必须输出短裁决，不重写长文。
+5. Analyze/Judge 必须区分事实/推断/建议/置信度/反证条件。

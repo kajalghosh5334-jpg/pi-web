@@ -1,0 +1,107 @@
+{
+  "testCase": {
+    "id": "media-material-gather-001",
+    "nodeType": "Gather/Fetch",
+    "profileTarget": "weak-research-extractor",
+    "workflowId": "WF-10",
+    "title": "AI 选题素材搜集",
+    "model": "opencode-go/deepseek-v4-flash",
+    "tools": "none",
+    "dependsOn": [
+      "media-account-strategy-001"
+    ],
+    "input": "选题：企业实际落地 LLM 的坑。给定来源材料：1）访谈摘录：某制造企业试过知识库问答，最大问题是资料太乱、没人维护。2）文章摘录：LLM 项目常见成本来自数据清洗、权限设计、评测和运维。3）评论摘录：开发者担心客户只想要 demo，不愿意为后续维护付费。请提取结构化素材包。",
+    "expectedRubric": [
+      "逐条提取事实并标注来源",
+      "把资料混乱、维护、数据清洗、权限、评测、运维、demo 付费问题保留下来",
+      "识别哪些 claim 只是访谈/评论观点",
+      "输出证据缺口",
+      "不扩展外部新闻或行业数据"
+    ],
+    "standardAnswer": "素材包应包含三类来源：制造企业访谈、文章摘录、评论摘录。事实/观点应区分：资料乱和没人维护来自访谈；成本项来自文章；开发者担心 demo 付费来自评论。证据缺口包括没有具体行业统计、没有真实成本数字、没有可公开客户案例。",
+    "redLines": [
+      "不得补造知名企业案例",
+      "不得补造成本金额或成功率",
+      "不得把评论观点写成行业事实"
+    ]
+  },
+  "output": {
+    "model": "opencode-go/deepseek-v4-flash",
+    "code": 0,
+    "text": "```json\n{\n  \"node_type\": \"weak-research-extractor\",\n  \"profile\": \"gather/fetch\",\n  \"workflow\": \"WF-10\",\n  \"task\": \"AI 选题素材搜集 —— 企业实际落地 LLM 的坑\",\n  \"extracted_facts\": [\n    {\n      \"fact\": \"某制造企业尝试了知识库问答，最大的问题是资料太乱。\",\n      \"source\": \"访谈摘录\",\n      \"source_status\": \"采访对象观点（非公开一手数据）\"\n    },\n    {\n      \"fact\": \"某制造企业尝试了知识库问答，最大的问题是没人维护（知识库资料）。\",\n      \"source\": \"访谈摘录\",\n      \"source_status\": \"采访对象观点（非公开一手数据）\"\n    },\n    {\n      \"fact\": \"LLM 项目的常见成本来自于数据清洗、权限设计、评测和运维。\",\n      \"source\": \"文章摘录\",\n      \"source_status\": \"文章观点/陈述\"\n    },\n    {\n      \"fact\": \"有开发者担心客户只想要一个 demo，不愿意为后续维护付费。\",\n      \"source\": \"评论摘录\",\n      \"source_status\": \"个人评论观点\"\n    }\n  ],\n  \"unknown_fields\": [\n    \"该制造企业的具体名称、行业细分、知识库的具体规模\",\n    \"“资料太乱”的详细表征（格式不一、标注缺失、隐私混入等）\",\n    \"“成本”一词对应的具体金额量级或占总预算比例\",\n    \"“权限设计”的具体粒度（文档级 / 属性级 / 角色级）\",\n    \"开发者的身份背景或该评论对应的具体项目经验\",\n    \"是否存在成功化解上述问题的案例或行业通用方案\"\n  ],\n  \"evidence_gaps\": [\n    \"缺乏成本金额或百分比数据，无法支撑“常见成本”的普遍性判断\",\n    \"“资料太乱、没人维护”的现象有多普遍无法判断，仅为一个样本\",\n    \"三个来源互相独立，且均为非量化的经验或观点陈述，无交叉验证\",\n    \"缺乏“开发者担心 Demo 陷阱”在真实项目中的发生率或影响数据\"\n  ],\n  \"inferences_and_risks\": {\n    \"allowable_inferences\": [\n      \"从文章摘录可推断：数据清洗、权限、评测、运维是当前业界在 LLM 落地中经常被提及的成本项\",\n      \"从访谈摘录可推断：知识库数据质量是落地实操中的阻力点之一\"\n    ],\n    \"risks_and_notes\": [\n      \"若将评论摘录中“客户只想要 Demo”直接表述为行业普遍事实，将触及红线（评论/访谈观点 ≠ 行业事实）\",\n      \"若将访谈中单一制造企业的个案描述为通病，可能误导下游读者对问题规模的认知\",\n      \"文章所列成本项（数据清洗、权限等）与用户端感知（答案不准）之间的因果关系未说明，下游若直接建立因果链需标注推理逻辑\"\n    ]\n  },\n  \"red_lines_compliance\": {\n    \"no_fabricated_cases\": \"passed —— 未补造任何企业名、客户名、产品名\",\n    \"no_fabricated_numbers\": \"passed —— 未编造任何金额、成功率、员工数等数字\",\n    \"opinion_not_fact\": \"passed —— 访谈/评论观点均已标注来源类型，未写成客观事实\"\n  },\n  \"handoff_summary\": \"给定 3 条非量化定性材料：访谈（制造企业知识库=资料乱+无人维护）、文章（LLM 成本=数据清洗/权限/评测/运维）、评论（开发者担心 Demo 陷阱/不愿为维护付费）。已逐条提取并标注来源类型，未做外部补充。下游节点使用时应保留来源标注，避免将个案或评论上升为行业定论。如需量化支撑，建议补充调研报告或白皮书。\"\n}\n```",
+    "usage": {
+      "input": 4364,
+      "output": 3106,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "reasoning": 2267,
+      "totalTokens": 7470,
+      "cost": {
+        "input": 0.00061096,
+        "output": 0.0008696800000000001,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "total": 0.00148064
+      }
+    },
+    "stderr": "",
+    "elapsedMs": 37860,
+    "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+    "workDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T22-27-25-228Z/media-material-gather-001-output",
+    "isolatedSessionDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T22-27-25-228Z/media-material-gather-001-output/.pi-sessions"
+  },
+  "judgeOutput": {
+    "model": "opencode-go/deepseek-v4-pro",
+    "code": 0,
+    "text": "{\"score\":95,\"score_scale\":\"0-100\",\"pass\":true,\"rubric_hits\":[\"逐条提取事实并标注来源\",\"把资料混乱、维护、数据清洗、权限、评测、运维、demo 付费问题保留下来\",\"识别哪些 claim 只是访谈/评论观点\",\"输出证据缺口\",\"不扩展外部新闻或行业数据\"],\"missing\":[],\"hallucination\":[],\"red_line_violations\":[],\"profile_lessons\":[\"拆分复合事实为多条独立条目提升下游引用精度\",\"通过 source_status 明确区分采访观点、文章陈述、个人评论\",\"将 allowable_inferences 与 risks 并列辅助下游安全使用\"],\"prompt_patch_suggestions\":[\"建议在提取事实时尽量保留原文措辞，以便下游溯源。\"]}",
+    "usage": {
+      "input": 5414,
+      "output": 4341,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "reasoning": 4172,
+      "totalTokens": 9755,
+      "cost": {
+        "input": 0.009420360000000001,
+        "output": 0.01510668,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "total": 0.02452704
+      }
+    },
+    "stderr": "",
+    "elapsedMs": 93557,
+    "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+    "workDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T22-27-25-228Z/media-material-gather-001-judge",
+    "isolatedSessionDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T22-27-25-228Z/media-material-gather-001-judge/.pi-sessions"
+  },
+  "judge": {
+    "score": 95,
+    "score_scale": "0-100",
+    "pass": true,
+    "rubric_hits": [
+      "逐条提取事实并标注来源",
+      "把资料混乱、维护、数据清洗、权限、评测、运维、demo 付费问题保留下来",
+      "识别哪些 claim 只是访谈/评论观点",
+      "输出证据缺口",
+      "不扩展外部新闻或行业数据"
+    ],
+    "missing": [],
+    "hallucination": [],
+    "red_line_violations": [],
+    "profile_lessons": [
+      "拆分复合事实为多条独立条目提升下游引用精度",
+      "通过 source_status 明确区分采访观点、文章陈述、个人评论",
+      "将 allowable_inferences 与 risks 并列辅助下游安全使用"
+    ],
+    "prompt_patch_suggestions": [
+      "建议在提取事实时尽量保留原文措辞，以便下游溯源。"
+    ],
+    "raw_score": 95
+  },
+  "minScore": 82,
+  "nodeOutputArtifact": {
+    "markdownPath": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T22-27-25-228Z/node_outputs/05-media-material-gather-001.md",
+    "jsonPath": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T22-27-25-228Z/node_outputs/05-media-material-gather-001.json"
+  }
+}

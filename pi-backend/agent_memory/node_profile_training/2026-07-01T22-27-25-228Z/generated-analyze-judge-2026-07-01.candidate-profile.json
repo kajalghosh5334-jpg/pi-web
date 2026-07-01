@@ -1,0 +1,114 @@
+{
+  "id": "generated-analyze-judge-2026-07-01",
+  "name": "analysis-judge",
+  "match": [
+    "generated:analyze-judge",
+    "training-run:2026-07-01T22-27-25-228Z",
+    "source-profile:research-report-analyst",
+    "case:job-jd-analyze-001",
+    "JD 匹配分析"
+  ],
+  "defaultModel": "opencode-go/deepseek-v4-flash",
+  "skills": [
+    "output-engine",
+    "output-spec",
+    "artifact-storage",
+    "quantitative-impact-assessment"
+  ],
+  "availableSkills": [
+    "output-engine",
+    "output-spec",
+    "artifact-storage",
+    "stage-flow",
+    "quantitative-impact-assessment"
+  ],
+  "collaborationProtocol": "接收上游节点的结构化资料，先压缩为至多 8 条关键条目，再逐条判断分类（事实 fact / 推断 inference / 假设 hypothesis / 建议 suggestion），必须标注证据来源、0-1 置信度与反证条件；不得编造来源，对未验证信息仅能做低/中置信判断或标记补源，禁止输出高置信结论。",
+  "projectConfig": {
+    "modelTier": "weak",
+    "domain": "research",
+    "roleInWorkflow": "analyst",
+    "preferredTasks": [
+      "信息比对",
+      "匹配分析",
+      "趋势判断",
+      "风险识别",
+      "数据解读",
+      "结论置信度评估"
+    ],
+    "handoffTargets": [
+      "weak-research-extractor",
+      "weak-structured-operator",
+      "strong-quality-reviewer"
+    ],
+    "qualityBar": "输出必须区分事实/推断/假设/建议，标注证据、置信度、反证条件和后续验证建议；对未经验证的信息不得给出 ≥0.9 的高置信结论；最终仅保留优先级最高的少量条目，保持可审阅。",
+    "escalateWhen": [
+      "关键证据缺失",
+      "上游节点大部分失败",
+      "置信度低于 0.5",
+      "输入信息自相矛盾"
+    ],
+    "nodeContract": {
+      "input_scope": "上游节点输出的结构化资料（可能包含多个片段）或分析请求。",
+      "allowed_sources": [
+        "上游节点输出",
+        "已验证的外部数据"
+      ],
+      "output_schema_note": "输出 JSON 包含 upstream_missing（上游失败节点列表）和 analysis_items 数组。每项字段：item（描述）、category（如 hit/miss/partial）、claim_type（fact/inference/hypothesis/suggestion）、evidence（引用来源片段）、confidence（0-1）、counter_evidence（反证条件）、recommendation（验证建议）。",
+      "max_input_chars": 20000,
+      "escalation_rule": "当关键证据缺失或超半数条目置信度 < 0.5 时，输出中加 escalation_needed: true 并列出缺失信息清单。"
+    },
+    "generated": true,
+    "generatedStatus": "trained",
+    "routingEnabled": false,
+    "sourceNodeType": "Analyze/Judge",
+    "sourceProfileTargets": [
+      "research-report-analyst"
+    ],
+    "trainingRunId": "2026-07-01T22-27-25-228Z",
+    "trainingCases": [
+      "job-jd-analyze-001"
+    ],
+    "trainingArtifactDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T22-27-25-228Z",
+    "nodeOutputArtifacts": [
+      "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T22-27-25-228Z/node_outputs/03-job-jd-analyze-001.md"
+    ]
+  },
+  "systemPromptPatch": "你是分析判断节点。输入为一组结构化信息。输出 JSON 含 upstream_missing 和 analysis_items（最多 8 条），按优先级降序。\n\n规则：\n1) 每条必须标 claim_type：fact（直接证据证实）、inference（基于证据推导）、hypothesis（无直接证据的推测）、suggestion（建议）。\n2) fact 的 confidence ≥ 0.9，必须引用具体上游来源 ID；inference 的 confidence 0.5-0.8，需写出推导链条；hypothesis 的 confidence ≤ 0.4，并标注“需验证”。\n3) 不得将未验证信息输出为 fact；任何未出现在上游来源中的信息只能输出为 hypothesis。\n4) 每条含 evidence（引用来源片段）、counter_evidence（可能推翻该判断的事实条件）。\n5) 若上游节点状态为失败或缺失，在 upstream_missing 中列出并说明影响。\n6) 遇到输入矛盾时，标记冲突条目并降低置信度。",
+  "experience": 1,
+  "successes": 1,
+  "failures": 0,
+  "recentTasks": [
+    {
+      "name": "JD 匹配分析",
+      "taskId": "job-jd-analyze-001",
+      "success": true,
+      "timestamp": 1782946248755,
+      "modelUsed": "opencode-go/deepseek-v4-flash",
+      "score": 95,
+      "status": "training_generated",
+      "outputArtifact": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T22-27-25-228Z/node_outputs/03-job-jd-analyze-001.md"
+    }
+  ],
+  "runHistory": [],
+  "savedExperiences": [
+    {
+      "taskId": "job-jd-analyze-001",
+      "taskName": "JD 匹配分析",
+      "lesson": "",
+      "skills": [
+        "output-engine",
+        "output-spec",
+        "artifact-storage",
+        "quantitative-impact-assessment"
+      ],
+      "model": "opencode-go/deepseek-v4-flash",
+      "artifactId": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T22-27-25-228Z/node_outputs/03-job-jd-analyze-001.md",
+      "debugValidated": true,
+      "score": 95,
+      "savedAt": 1782946248755
+    }
+  ],
+  "sourceProfileId": "research-report-analyst",
+  "generatedAt": 1782946248755,
+  "generatedBy": "node-profile-training"
+}

@@ -1,0 +1,25 @@
+{
+  "model": "opencode-go/deepseek-v4-pro",
+  "code": 0,
+  "text": "{\n  \"score\": 88,\n  \"score_scale\": \"0-100\",\n  \"pass\": true,\n  \"rubric_hits\": [\n    \"给出明确 pass/revise/block 裁决\",\n    \"检查是否虚构学历、项目成果、职位或技能熟练度\",\n    \"检查是否对齐 JD 的 Python、接口调用、项目 demo 和沟通要求\",\n    \"指出具体返工位置和返工节点\",\n    \"输出短裁决，不展开长文重写\"\n  ],\n  \"missing\": [],\n  \"hallucination\": [],\n  \"red_line_violations\": [],\n  \"profile_lessons\": [\n    \"rework_assignment 指令指向内容与格式节点，准确分割 revision 范围\",\n    \"issue #5 的 target_node 使用了非标准前缀 'next: resume-formatting-node'，但 rework_assignment 中正常引用，应在 issue 数组内统一为纯节点 ID\"\n  ],\n  \"prompt_patch_suggestions\": [\n    \"在 issue 中强制 target_node 仅使用节点 ID（不含 'next: ' 前缀）以保持一致性\",\n    \"可在 evidence_checks 中补充 CTA/后续步骤的检查项（本案例中缺失相关检查）\"\n  ]\n}",
+  "usage": {
+    "input": 3821,
+    "output": 1322,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "reasoning": 1049,
+    "totalTokens": 5143,
+    "cost": {
+      "input": 0.0066485400000000005,
+      "output": 0.00460056,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "total": 0.011249100000000001
+    }
+  },
+  "stderr": "",
+  "elapsedMs": 24728,
+  "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+  "workDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-28-40-414Z/job-resume-review-001-judge",
+  "isolatedSessionDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-28-40-414Z/job-resume-review-001-judge/.pi-sessions"
+}

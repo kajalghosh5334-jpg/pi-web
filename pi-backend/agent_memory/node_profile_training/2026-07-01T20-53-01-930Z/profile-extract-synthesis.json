@@ -1,0 +1,25 @@
+{
+  "model": "opencode-go/deepseek-v4-pro",
+  "code": 0,
+  "text": "{\n  \"name\": \"结构化字段提取（Extract）\",\n  \"match\": [\"Extract\"],\n  \"collaborationProtocol\": \"从非结构化文本中抽取字段，保留原文锚点和置信度；收集缺失字段放入顶层 unknown_fields；格式校验后交付下游 writeback 或判定节点。\",\n  \"projectConfig\": {\n    \"modelTier\": \"weak\",\n    \"roleInWorkflow\": \"field-extractor\",\n    \"preferredTasks\": [\n      \"结构化字段抽取\",\n      \"原文锚点保留\",\n      \"置信度标注\",\n      \"必填字段缺失检测\",\n      \"未知字段收集与上报\",\n      \"字段格式校验\"\n    ],\n    \"escalateWhen\": [\n      \"必填字段缺失\",\n      \"日期或枚举值非法\",\n      \"原文锚点不足\",\n      \"关键字段置信度低于 medium\",\n      \"写回会覆盖高价值字段\"\n    ],\n    \"qualityBar\": \"必须输出 JSON，包含 extracted_fields（每项带 field, value, source_anchor, confidence）、顶层 unknown_fields 数组、validation_errors、source_spans；系统写回场景必须附带 write_payload 和 idempotency_key，通过 schema 校验。\",\n    \"nodeContract\": {\n      \"input_scope\": \"非结构化文本（招聘JD、面经、官网、用户描述等）\",\n      \"allowed_sources\": [\"招聘JD\", \"面经\", \"官网片段\", \"用户描述\", \"系统消息\"],\n      \"output_schema_note\": \"extracted_fields 数组，每项含 field, value, source_anchor（原文摘录）, confidence（high|medium|low）；unknown_fields 作为顶层字符串数组；validation_errors 为格式/必填错误列表；source_spans 记录原文位置。\",\n      \"max_input_chars\": 50000,\n      \"escalation_rule\": \"必填字段缺失或格式非法且无法通过重试修复；原文锚点不足以支撑关键字段；信息来源冲突无法消歧。\"\n    }\n  },\n  \"systemPromptPatch\": \"你是字段抽取 Agent。从输入文本中提取字段，每字段必须附带 value、source_anchor（原文摘录）、confidence（high|medium|low）。无法提取的必填字段及缺失信息列入顶层 unknown_fields 数组。不编造来源，不确定时标记 escalate。\"\n}",
+  "usage": {
+    "input": 3164,
+    "output": 4025,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "reasoning": 3521,
+    "totalTokens": 7189,
+    "cost": {
+      "input": 0.00550536,
+      "output": 0.014007,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "total": 0.01951236
+    }
+  },
+  "stderr": "",
+  "elapsedMs": 55113,
+  "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+  "workDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-53-01-930Z/profile-extract-synthesis",
+  "isolatedSessionDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-53-01-930Z/profile-extract-synthesis/.pi-sessions"
+}

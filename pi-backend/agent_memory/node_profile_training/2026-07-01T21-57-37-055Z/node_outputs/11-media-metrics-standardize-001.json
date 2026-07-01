@@ -1,0 +1,39 @@
+{
+  "caseId": "media-metrics-standardize-001",
+  "title": "自媒体指标标准化",
+  "workflowId": "WF-17",
+  "nodeType": "Standardize",
+  "profileTarget": "weak-structured-operator",
+  "model": "opencode-go/deepseek-v4-flash",
+  "score": 70,
+  "pass": false,
+  "elapsedMs": 30997,
+  "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+  "workDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T21-57-37-055Z/media-metrics-standardize-001-output",
+  "input": "发布数据：视频 A 播放 12000，点赞 360，评论 96，转发 48，私信 12；视频 B 播放 3000，点赞 45，评论 9，转发 3，私信 0。请转换成互动率、评论率、转发率、私信转化率。",
+  "output": "```json\n{\n  \"normalized_items\": [\n    {\n      \"video_id\": \"视频A\",\n      \"raw_metrics\": {\n        \"播放\": 12000,\n        \"点赞\": 360,\n        \"评论\": 96,\n        \"转发\": 48,\n        \"私信\": 12\n      },\n      \"computed_rates\": {\n        \"互动率\": {\n          \"value\": \"4.30%\",\n          \"formula\": \"(点赞+评论+转发+私信)/播放\"\n        },\n        \"评论率\": {\n          \"value\": \"0.80%\",\n          \"formula\": \"评论/播放\"\n        },\n        \"转发率\": {\n          \"value\": \"0.40%\",\n          \"formula\": \"转发/播放\"\n        },\n        \"私信转化率\": {\n          \"value\": \"0.10%\",\n          \"formula\": \"私信/播放\"\n        }\n      }\n    },\n    {\n      \"video_id\": \"视频B\",\n      \"raw_metrics\": {\n        \"播放\": 3000,\n        \"点赞\": 45,\n        \"评论\": 9,\n        \"转发\": 3,\n        \"私信\": 0\n      },\n      \"computed_rates\": {\n        \"互动率\": {\n          \"value\": \"1.90%\",\n          \"formula\": \"(点赞+评论+转发+私信)/播放\"\n        },\n        \"评论率\": {\n          \"value\": \"0.30%\",\n          \"formula\": \"评论/播放\"\n        },\n        \"转发率\": {\n          \"value\": \"0.10%\",\n          \"formula\": \"转发/播放\"\n        },\n        \"私信转化率\": {\n          \"value\": \"0.00%\",\n          \"formula\": \"私信/播放\"\n        }\n      }\n    }\n  ],\n  \"field_mapping\": {\n    \"播放\": \"play_count\",\n    \"点赞\": \"like_count\",\n    \"评论\": \"comment_count\",\n    \"转发\": \"share_count\",\n    \"私信\": \"dm_count\",\n    \"互动率\": \"engagement_rate\",\n    \"评论率\": \"comment_rate\",\n    \"转发率\": \"share_rate\",\n    \"私信转化率\": \"dm_conversion_rate\"\n  },\n  \"missing_fields\": [],\n  \"format_warnings\": [],\n  \"handoff_summary\": \"标准化完成：两个视频的原始播放/互动字段已提取并映射为标准字段，基于播放量计算互动率、评论率、转发率、私信转化率。视频B私信为0，私信转化率保持0，未补造。计算依据附在每条computed_rates中。无缺失字段。\"\n}\n```",
+  "judge": {
+    "score": 70,
+    "score_scale": "0-100",
+    "pass": false,
+    "rubric_hits": [
+      "保留原始分子分母",
+      "私信为 0 时不得补造",
+      "只做指标转换，不做波动归因",
+      "输出结构化表格或 JSON"
+    ],
+    "missing": [
+      "正确计算率值指标：互动率公式错误，包含了私信，导致视频A互动率输出为4.30%，不符合标准答案的4.2%"
+    ],
+    "hallucination": [],
+    "red_line_violations": [],
+    "profile_lessons": [
+      "互动率公式应严格遵循 calculationRules，不包括私信。计算前须核对公式定义。"
+    ],
+    "prompt_patch_suggestions": [
+      "在提示中强调互动率计算仅包括点赞、评论、转发，不含私信，以避免公式混淆。"
+    ],
+    "raw_score": 70
+  },
+  "dependencies": []
+}

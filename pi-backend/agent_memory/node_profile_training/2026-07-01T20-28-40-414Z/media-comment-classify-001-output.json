@@ -1,0 +1,25 @@
+{
+  "model": "opencode-go/deepseek-v4-flash",
+  "code": 0,
+  "text": "```json\n{\n  \"items\": [\n    {\n      \"id\": 1,\n      \"label\": \"好评\",\n      \"confidence\": 0.95,\n      \"route\": \"auto_reply\",\n      \"reason\": \"用户分享亲身经历并表达共鸣，属于积极的用户正向反馈。\",\n      \"risk_flags\": []\n    },\n    {\n      \"id\": 2,\n      \"label\": \"交易需求\",\n      \"confidence\": 0.98,\n      \"route\": \"manual_review\",\n      \"reason\": \"用户明确提出寻找开发者并给出明确预算（2万），属于交易线索和预算窗口条，必须人工跟进。\",\n      \"risk_flags\": [\"budget_clue\", \"transaction_request\"]\n    },\n    {\n      \"id\": 3,\n      \"label\": \"黑粉\",\n      \"confidence\": 0.90,\n      \"route\": \"ignore\",\n      \"reason\": \"用户使用「割韭菜」「骗子」等标签化、非建设性的攻击性语言，符合黑粉特征，无具体质疑点或投诉要素。\",\n      \"risk_flags\": []\n    },\n    {\n      \"id\": 4,\n      \"label\": \"广告\",\n      \"confidence\": 0.98,\n      \"route\": \"delete_suggested\",\n      \"reason\": \"典型的私域引流和资料推广，属于垃圾广告内容，建议删除。\",\n      \"risk_flags\": [\"spam_advertisement\", \"private_traffic_promotion\"]\n    },\n    {\n      \"id\": 5,\n      \"label\": \"投诉\",\n      \"confidence\": 0.85,\n      \"route\": \"manual_review\",\n      \"reason\": \"用户询问撮合服务的纠纷责任归属，直接涉及法律责任和平台风险，按高风险原则归类为投诉以触发人工审核。\",\n      \"risk_flags\": [\"legal_liability\", \"dispute_resolution\", \"platform_risk\"]\n    }\n  ],\n  \"manual_review_items\": [2, 5],\n  \"label_conflicts\": [\n    {\n      \"item_id\": 5,\n      \"detail\": \"标签「投诉」与「质疑」边界模糊。该评论语气为假设性质问，但内容直接关联平台纠纷责任。按高风险原则归类为「投诉」以触发人工审核。建议下游核实用户是否确有投诉经历；若无具体案例，可降为「质疑」并采用不含法律责任承诺的 auto_reply 模板。\"\n    }\n  ]\n}\n```",
+  "usage": {
+    "input": 3918,
+    "output": 4221,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "reasoning": 3698,
+    "totalTokens": 8139,
+    "cost": {
+      "input": 0.00054852,
+      "output": 0.0011818800000000002,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "total": 0.0017304000000000002
+    }
+  },
+  "stderr": "",
+  "elapsedMs": 34987,
+  "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+  "workDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-28-40-414Z/media-comment-classify-001-output",
+  "isolatedSessionDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-28-40-414Z/media-comment-classify-001-output/.pi-sessions"
+}

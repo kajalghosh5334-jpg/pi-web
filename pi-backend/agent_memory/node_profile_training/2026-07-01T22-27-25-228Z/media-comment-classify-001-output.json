@@ -1,0 +1,25 @@
+{
+  "model": "opencode-go/deepseek-v4-flash",
+  "code": 0,
+  "text": "```json\n{\n  \"items\": [\n    {\n      \"id\": 1,\n      \"label\": \"好评\",\n      \"confidence\": \"high\",\n      \"route\": \"auto_reply\",\n      \"reason\": \"用户对选题表示认同，并分享自身知识库维护经历，属于正面反馈。\",\n      \"risk_flags\": []\n    },\n    {\n      \"id\": 2,\n      \"label\": \"交易需求\",\n      \"confidence\": \"high\",\n      \"route\": \"manual_review\",\n      \"reason\": \"用户明确询问推荐开发者并给出预算2万，属于交易线索，必须人工跟进。\",\n      \"risk_flags\": [\"budget_mentioned\"]\n    },\n    {\n      \"id\": 3,\n      \"label\": \"黑粉\",\n      \"confidence\": \"medium\",\n      \"route\": \"ignore\",\n      \"reason\": \"用户发表攻击性言论（'割韭菜'、'骗子'），无建设性质疑，属于恶意攻击。\",\n      \"risk_flags\": [\"attacking_language\"]\n    },\n    {\n      \"id\": 4,\n      \"label\": \"广告\",\n      \"confidence\": \"high\",\n      \"route\": \"ignore\",\n      \"reason\": \"用户引导加私域领取资料包，属于广告推广。\",\n      \"risk_flags\": [\"advertisement\"]\n    },\n    {\n      \"id\": 5,\n      \"label\": \"投诉\",\n      \"confidence\": \"high\",\n      \"route\": \"manual_review\",\n      \"reason\": \"用户询问撮合项目纠纷责任归属，涉及法律/责任问题，必须人工处理。\",\n      \"risk_flags\": [\"legal_liability\"]\n    }\n  ],\n  \"manual_review_items\": [2, 5],\n  \"label_conflicts\": []\n}\n```",
+  "usage": {
+    "input": 4027,
+    "output": 1590,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "reasoning": 1212,
+    "totalTokens": 5617,
+    "cost": {
+      "input": 0.00056378,
+      "output": 0.00044520000000000003,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "total": 0.00100898
+    }
+  },
+  "stderr": "",
+  "elapsedMs": 17570,
+  "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+  "workDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T22-27-25-228Z/media-comment-classify-001-output",
+  "isolatedSessionDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T22-27-25-228Z/media-comment-classify-001-output/.pi-sessions"
+}

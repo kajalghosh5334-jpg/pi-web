@@ -1,0 +1,25 @@
+{
+  "model": "opencode-go/deepseek-v4-pro",
+  "code": 0,
+  "text": "{\n  \"score\": 100,\n  \"score_scale\": \"0-100\",\n  \"pass\": true,\n  \"rubric_hits\": [\n    \"为各平台生成 action_payloads\",\n    \"包含 idempotency_key\",\n    \"缺少字段标记 blocked 或 missing\",\n    \"不得声称已发布或已写入\",\n    \"高风险或缺审稿通过时转人工\",\n    \"每个 action_payload 顶层都必须包含 platform、action_type、status、source_artifact、content_fields、scheduled_time、idempotency_key\",\n    \"不得凭空生成 variant_set、素材编号、排期时间或外部 artifact id\"\n  ],\n  \"missing\": [],\n  \"hallucination\": [],\n  \"red_line_violations\": [],\n  \"profile_lessons\": [],\n  \"prompt_patch_suggestions\": []\n}",
+  "usage": {
+    "input": 6262,
+    "output": 3346,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "reasoning": 3165,
+    "totalTokens": 9608,
+    "cost": {
+      "input": 0.01089588,
+      "output": 0.011644080000000001,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "total": 0.02253996
+    }
+  },
+  "stderr": "",
+  "elapsedMs": 67228,
+  "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+  "workDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T22-27-25-228Z/media-distribution-action-001-judge",
+  "isolatedSessionDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T22-27-25-228Z/media-distribution-action-001-judge/.pi-sessions"
+}

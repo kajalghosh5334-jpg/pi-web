@@ -1,0 +1,25 @@
+{
+  "model": "opencode-go/deepseek-v4-pro",
+  "code": 0,
+  "text": "{\n  \"score\": 100,\n  \"score_scale\": \"0-100\",\n  \"pass\": true,\n  \"rubric_hits\": [\n    \"产物结构清晰，以 Markdown 章节和表格组织，适合作为报告阅读\",\n    \"保留了命中项（强命中、命中）、缺口项（OpenCV、Django/Docker）、学历屏障和定制建议\",\n    \"未新增岗位、技能或项目事实，所有论据均引用上游数据和常识推断\",\n    \"保留了待确认信息和风险，设置独立表格进行跟踪\",\n    \"仅做渲染，未重做分析，合规声明明确\"\n  ],\n  \"missing\": [],\n  \"hallucination\": [],\n  \"red_line_violations\": [],\n  \"profile_lessons\": [],\n  \"prompt_patch_suggestions\": []\n}",
+  "usage": {
+    "input": 4514,
+    "output": 2733,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "reasoning": 2558,
+    "totalTokens": 7247,
+    "cost": {
+      "input": 0.00785436,
+      "output": 0.00951084,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "total": 0.017365199999999997
+    }
+  },
+  "stderr": "",
+  "elapsedMs": 43553,
+  "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+  "workDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-53-01-930Z/job-report-render-001-judge",
+  "isolatedSessionDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-53-01-930Z/job-report-render-001-judge/.pi-sessions"
+}

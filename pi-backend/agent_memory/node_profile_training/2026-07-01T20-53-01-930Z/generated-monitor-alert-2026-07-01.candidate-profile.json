@@ -1,0 +1,102 @@
+{
+  "id": "generated-monitor-alert-2026-07-01",
+  "name": "监控告警与分级响应",
+  "match": [
+    "generated:monitor-alert",
+    "training-run:2026-07-01T20-53-01-930Z",
+    "source-profile:monitor-alert-operator",
+    "case:media-monitor-alert-001",
+    "内容数据异常告警"
+  ],
+  "defaultModel": "opencode-go/deepseek-v4-flash",
+  "skills": [
+    "output-spec"
+  ],
+  "availableSkills": [
+    "output-spec",
+    "artifact-storage"
+  ],
+  "collaborationProtocol": "负责持续监控结果的规则化判断、异常摘要和分级响应建议。重大风险必须交强模型或人工复核。上游字段缺失时，应生成数据质量告警并阻塞下游，不可静默跳过。",
+  "projectConfig": {
+    "modelTier": "weak",
+    "pattern": "monitor-alert",
+    "roleInWorkflow": "alert-operator",
+    "preferredTasks": [
+      "异常检测摘要",
+      "阈值触发判断",
+      "轻中重分级",
+      "告警内容生成",
+      "升级条件标注",
+      "上游字段缺失检测",
+      "数据缺口告警"
+    ],
+    "escalateWhen": [
+      "重度告警",
+      "可能造成资金/库存/品牌损失",
+      "阈值配置缺失",
+      "数据源互相矛盾",
+      "上游关键字段缺失导致规则无法执行"
+    ],
+    "qualityBar": "必须输出 event、severity、trigger_reason、evidence、recommended_action 和 escalation_required。evidence 只引用输入数据，禁止合成或推测。字段缺失时输出 data_gap 告警。",
+    "nodeContract": {
+      "input_scope": "���自上游节点的标准化指标数据，包含事件上下文及阈值配置",
+      "allowed_sources": [
+        "上游节点输出",
+        "配置阈值规则"
+      ],
+      "output_schema_note": "alerts 数组，每个告警包含 item_id、severity、trigger_reason、evidence（含 observed_metrics 和 threshold）、recommended_action、type，可选 escalation_required 和 data_gap 标记",
+      "max_input_chars": 100000,
+      "escalation_rule": "重度告警或必需数据缺失时 escalation_required=true"
+    },
+    "generated": true,
+    "generatedStatus": "trained",
+    "routingEnabled": false,
+    "sourceNodeType": "Monitor/Alert",
+    "sourceProfileTargets": [
+      "monitor-alert-operator"
+    ],
+    "trainingRunId": "2026-07-01T20-53-01-930Z",
+    "trainingCases": [
+      "media-monitor-alert-001"
+    ],
+    "trainingArtifactDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-53-01-930Z",
+    "nodeOutputArtifacts": [
+      "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-53-01-930Z/node_outputs/14-media-monitor-alert-001.md"
+    ]
+  },
+  "systemPromptPatch": "你是监控告警与分级响应 Agent。按阈值判定告警轻重。规则依赖字段缺失时，生成 data_gap 告警并设 manual_review_required=true。证据只从输入数据取，不得编造。重度告警或数据缺失直接升级。",
+  "experience": 1,
+  "successes": 1,
+  "failures": 0,
+  "recentTasks": [
+    {
+      "name": "内容数据异常告警",
+      "taskId": "media-monitor-alert-001",
+      "success": true,
+      "timestamp": 1782941395435,
+      "modelUsed": "opencode-go/deepseek-v4-flash",
+      "score": 100,
+      "status": "training_generated",
+      "outputArtifact": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-53-01-930Z/node_outputs/14-media-monitor-alert-001.md"
+    }
+  ],
+  "runHistory": [],
+  "savedExperiences": [
+    {
+      "taskId": "media-monitor-alert-001",
+      "taskName": "内容数据异常告警",
+      "lesson": "数据缺口场景通过显式阻塞器 + manual_review_required 降级处理，有效平衡了安全与可用性。 | 可考虑在 prompt 模板中显式鼓励：对于依赖上游字段的高级别规则，当字段缺失时，应生成数据质量告警而非静默跳过。",
+      "skills": [
+        "output-spec"
+      ],
+      "model": "opencode-go/deepseek-v4-flash",
+      "artifactId": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-53-01-930Z/node_outputs/14-media-monitor-alert-001.md",
+      "debugValidated": true,
+      "score": 100,
+      "savedAt": 1782941395435
+    }
+  ],
+  "sourceProfileId": "monitor-alert-operator",
+  "generatedAt": 1782941395435,
+  "generatedBy": "node-profile-training"
+}

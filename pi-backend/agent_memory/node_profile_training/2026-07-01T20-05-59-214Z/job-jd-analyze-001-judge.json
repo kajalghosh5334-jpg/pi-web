@@ -1,0 +1,25 @@
+{
+  "model": "opencode-go/deepseek-v4-pro",
+  "code": 0,
+  "text": "```json\n{\n  \"score\": 92,\n  \"score_scale\": \"0-100\",\n  \"pass\": true,\n  \"rubric_hits\": [\n    \"逐条对照 JD 输出命中、缺漏、弱化\",\n    \"明确学历是优先项而非硬卡\",\n    \"把 RAG/脚本/外包项目映射到岗位需求\",\n    \"对不熟 Django、Docker 经验弱等问题给可补策略\",\n    \"区分事实、推断、建议和置信度\"\n  ],\n  \"missing\": [],\n  \"hallucination\": [],\n  \"red_line_violations\": [],\n  \"profile_lessons\": [\n    \"可进一步利用候选人已有 Flask 经验明确弱化 Django 缺口，而不只建议补学\",\n    \"对外包项目的接口调用推断可要求更直接的证据描述以提升简历说服力\"\n  ],\n  \"prompt_patch_suggestions\": [\n    \"可在 Analyze/Judge 节点 prompt 中增加一条：'若存在可替代技能，应明确映射关系以弱化对不熟悉工具的要求'\",\n    \"强调对外包类经历应提取出可直接写入简历的量化或具体调用证据\"\n  ]\n}\n```",
+  "usage": {
+    "input": 4084,
+    "output": 3066,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "reasoning": 2811,
+    "totalTokens": 7150,
+    "cost": {
+      "input": 0.00710616,
+      "output": 0.01066968,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "total": 0.01777584
+    }
+  },
+  "stderr": "",
+  "elapsedMs": 53050,
+  "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+  "workDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-05-59-214Z/job-jd-analyze-001-judge",
+  "isolatedSessionDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-05-59-214Z/job-jd-analyze-001-judge/.pi-sessions"
+}

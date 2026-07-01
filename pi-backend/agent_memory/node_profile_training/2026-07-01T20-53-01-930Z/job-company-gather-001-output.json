@@ -1,0 +1,25 @@
+{
+  "model": "opencode-go/deepseek-v4-flash",
+  "code": 0,
+  "text": "```json\n{\n  \"extracted_facts\": [\n    {\n      \"fact\": \"公司为制造业客户提供质检自动化和设备数据采集服务\",\n      \"source\": \"官网片段\",\n      \"source_status\": \"直接引用\"\n    },\n    {\n      \"fact\": \"技术关键词包括 Python、OpenCV、PLC、轻量化模型部署\",\n      \"source\": \"官网片段\",\n      \"source_status\": \"直接引用\"\n    },\n    {\n      \"fact\": \"招聘岗位为「初级AI工具开发助理」\",\n      \"source\": \"招聘JD片段\",\n      \"source_status\": \"直接引用\"\n    },\n    {\n      \"fact\": \"薪资范围为 5-7k（周期未说明）\",\n      \"source\": \"招聘JD片段\",\n      \"source_status\": \"直接引用\"\n    },\n    {\n      \"fact\": \"要求 Python 基础、能读懂接口文档\",\n      \"source\": \"招聘JD片段\",\n      \"source_status\": \"直接引用\"\n    },\n    {\n      \"fact\": \"学历要求为「大专及以上优先」（优先条件，非硬性）\",\n      \"source\": \"招聘JD片段\",\n      \"source_status\": \"直接引用，需注意优先非硬性\"\n    },\n    {\n      \"fact\": \"面试会问 Python 文件处理、接口调用、是否做过项目 demo\",\n      \"source\": \"面经摘录\",\n      \"source_status\": \"直接引用\"\n    }\n  ],\n  \"unknown_fields\": [\n    \"公司注册全称\",\n    \"办公城市 / 地点\",\n    \"公司成立时间 / 发展阶段\",\n    \"公司员工规模\",\n    \"融资情况\",\n    \"公司文化 / 价值观\",\n    \"JD 完整职责描述\",\n    \"面试完整流程（除面经提及的问题外）\",\n    \"薪资周期（月薪 / 周薪）与结构\",\n    \"技术栈具体版本或品牌（如 OpenCV 版本、PLC 品牌）\"\n  ],\n  \"evidence_gaps\": [\n    {\n      \"gap\": \"官网片段仅有技术关键词，缺少公司背景、产品名称、客户细分、官网完整性无法判断\",\n      \"suggestion\": \"补充完整官网页面或公司介绍资料\"\n    },\n    {\n      \"gap\": \"JD 仅为片段，缺少详细职责、汇报关系、团队架构、工作方式\",\n      \"suggestion\": \"获取完整 JD 或在招聘平台交叉验证\"\n    },\n    {\n      \"gap\": \"面经来源单一，可能不具代表性\",\n      \"suggestion\": \"采集更多面经或通过人脉了解面试常规考点\"\n    },\n    {\n      \"gap\": \"薪资 5-7k 未注明周期，无法确定是月薪还是其他\",\n      \"suggestion\": \"确认薪资计算周期及构成\"\n    }\n  ],\n  \"handoff_summary\": \"目标公司「星河智造」面向制造业提供质检自动化与设备数据采集方案，技术栈含 Python/OpenCV/PLC/轻量化模型部署。招聘初级 AI 工具开发助理，薪资 5-7k（周期未知），要求 Python 基础、接口文档阅读，大专及以上优先。面试主要考查 Python 文件处理、接口调用及项目 demo 经验。公司背景、规模、地点、融资等均未出现在给定材料中，需下游进一步采集。\"\n}\n```",
+  "usage": {
+    "input": 2472,
+    "output": 2414,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "reasoning": 1714,
+    "totalTokens": 4886,
+    "cost": {
+      "input": 0.00034608,
+      "output": 0.00067592,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "total": 0.001022
+    }
+  },
+  "stderr": "",
+  "elapsedMs": 25965,
+  "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+  "workDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-53-01-930Z/job-company-gather-001-output",
+  "isolatedSessionDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-53-01-930Z/job-company-gather-001-output/.pi-sessions"
+}

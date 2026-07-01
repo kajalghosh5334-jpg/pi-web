@@ -1,0 +1,25 @@
+{
+  "model": "opencode-go/deepseek-v4-pro",
+  "code": 0,
+  "text": "{\n  \"score\": 80,\n  \"score_scale\": \"0-100\",\n  \"pass\": true,\n  \"rubric_hits\": [\n    \"为各平台生成 action_payloads\",\n    \"包含 idempotency_key\",\n    \"缺少字段标记 blocked 或 missing（内容字段缺失已标记）\",\n    \"不得声称已发布或已写入\",\n    \"高风险或缺审稿通过时转人工（无高风险，无需转人工，未违反）\"\n  ],\n  \"missing\": [\n    \"scheduled_time 字段未在每个 action_payload 中显式出现并标记为 missing/blocked（仅在 douyin 的 content_fields 内部提及，其余平台未标注）\",\n    \"payload 的 status 应使用 pending_write 或 pending_schedule，而非 missing_info\",\n    \"scheduled_time 的缺失处理不够规范，未满足标准答案要求\"\n  ],\n  \"hallucination\": [\n    \"凭空生成 variant_set 具体标识（TECH-01、ENT-02、MIX-01 等），输入和上游输出均未提供相关信息\"\n  ],\n  \"red_line_violations\": [],\n  \"profile_lessons\": [\n    \"调度 payload 的必填字段（如 scheduled_time）即使缺失也应显式占位并标注 blocked/missing，不能只靠全局 validation_result 说明\",\n    \"状态值应使用标准、语义明确的术语（pending_write/pending_schedule），避免自定义词（missing_info）\",\n    \"引用上游产出时应使用输入中已出现的标识，避免假设具体 artifact 名称\"\n  ],\n  \"prompt_patch_suggestions\": [\n    \"要求每个 action_payload 必须包含 scheduled_time 顶层字段，值为具体时间或 missing/blocked\",\n    \"明确 payload 状态枚举为 pending_write 或 pending_schedule，禁止使用其他自定义状态\",\n    \"强调引用上游 artifact 时必须基于输入上下文，不得编造具体名称\"\n  ]\n}",
+  "usage": {
+    "input": 3225,
+    "output": 3981,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "reasoning": 3563,
+    "totalTokens": 7206,
+    "cost": {
+      "input": 0.0056115,
+      "output": 0.01385388,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "total": 0.01946538
+    }
+  },
+  "stderr": "",
+  "elapsedMs": 60533,
+  "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+  "workDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T21-57-37-055Z/media-distribution-action-001-judge",
+  "isolatedSessionDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T21-57-37-055Z/media-distribution-action-001-judge/.pi-sessions"
+}

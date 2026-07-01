@@ -1,0 +1,25 @@
+{
+  "model": "opencode-go/deepseek-v4-pro",
+  "code": 0,
+  "text": "{\n  \"score\": 70,\n  \"score_scale\": \"0-100\",\n  \"pass\": false,\n  \"rubric_hits\": [\n    \"只抽取给定来源中出现的业务、技术栈、学历门槛、薪资和面经\",\n    \"每条事实标注来源片段\",\n    \"未出现的信息输出 unknown 或 missing\",\n    \"不判断候选人是否适合\",\n    \"给出证据缺口和复核建议\"\n  ],\n  \"missing\": [],\n  \"hallucination\": [\n    \"handoff_summary 中添加了公司名「星河智造」，该名称未在 extracted_facts 中出现，且推测来源未提供，属于补造信息\"\n  ],\n  \"red_line_violations\": [\n    \"不得补造公司新闻、融资、员工规模或文化（添加了公司名，违反了仅搬运显性事实的原则）\"\n  ],\n  \"profile_lessons\": [\n    \"搬运节点必须严格基于给定来源，不得在总结中添加任何未在事实列表中明确记载的信息，包括公司名、人名等专有名词。\"\n  ],\n  \"prompt_patch_suggestions\": [\n    \"在输出规范中增加约束：handoff_summary 中禁止引入任何未在 extracted_facts 的 fact 字段中出现的专有名词（如公司名、品牌名、域名）。\"\n  ]\n}",
+  "usage": {
+    "input": 3174,
+    "output": 2401,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "reasoning": 2115,
+    "totalTokens": 5575,
+    "cost": {
+      "input": 0.00552276,
+      "output": 0.00835548,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "total": 0.01387824
+    }
+  },
+  "stderr": "",
+  "elapsedMs": 49610,
+  "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+  "workDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-53-01-930Z/job-company-gather-001-judge",
+  "isolatedSessionDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-53-01-930Z/job-company-gather-001-judge/.pi-sessions"
+}

@@ -1,0 +1,104 @@
+{
+  "testCase": {
+    "id": "media-material-gather-001",
+    "nodeType": "Gather/Fetch",
+    "profileTarget": "weak-research-extractor",
+    "workflowId": "WF-10",
+    "title": "AI 选题素材搜集",
+    "model": "opencode-go/deepseek-v4-flash",
+    "tools": "none",
+    "dependsOn": [
+      "media-account-strategy-001"
+    ],
+    "input": "选题：企业实际落地 LLM 的坑。给定来源材料：1）访谈摘录：某制造企业试过知识库问答，最大问题是资料太乱、没人维护。2）文章摘录：LLM 项目常见成本来自数据清洗、权限设计、评测和运维。3）评论摘录：开发者担心客户只想要 demo，不愿意为后续维护付费。请提取结构化素材包。",
+    "expectedRubric": [
+      "逐条提取事实并标注来源",
+      "把资料混乱、维护、数据清洗、权限、评测、运维、demo 付费问题保留下来",
+      "识别哪些 claim 只是访谈/评论观点",
+      "输出证据缺口",
+      "不扩展外部新闻或行业数据"
+    ],
+    "standardAnswer": "素材包应包含三类来源：制造企业访谈、文章摘录、评论摘录。事实/观点应区分：资料乱和没人维护来自访谈；成本项来自文章；开发者担心 demo 付费来自评论。证据缺口包括没有具体行业统计、没有真实成本数字、没有可公开客户案例。",
+    "redLines": [
+      "不得补造知名企业案例",
+      "不得补造成本金额或成功率",
+      "不得把评论观点写成行业事实"
+    ]
+  },
+  "output": {
+    "model": "opencode-go/deepseek-v4-flash",
+    "code": 0,
+    "text": "```json\n{\n  \"extracted_facts\": [\n    {\n      \"fact\": \"某制造企业在试过知识库问答时遇到的最大问题是资料太乱、没人维护。\",\n      \"source\": \"访谈摘录\",\n      \"source_status\": \"单案例经验/观点，非行业通识\"\n    },\n    {\n      \"fact\": \"LLM 项目常见成本来自数据清洗、权限设计、评测和运维。\",\n      \"source\": \"文章摘录\",\n      \"source_status\": \"作者论述，缺乏具体量级或案例支撑\"\n    },\n    {\n      \"fact\": \"开发者担心客户只想要 demo，不愿意为后续维护付费。\",\n      \"source\": \"评论摘录\",\n      \"source_status\": \"开发者个人观点/担忧\"\n    }\n  ],\n  \"unknown_fields\": [\n    \"具体项目规模、技术栈或团队配置\",\n    \"模型选型（开源 vs 闭源 API）带来的特定坑\",\n    \"企业主/客户侧对成本构成、维护付费的真实看法（仅持有开发者观点）\",\n    \"法律法规与合规性问题\",\n    \"各项成本（数据清洗、权限等）的具体金额或比例\",\n    \"制造业案例的后续解决方式或最终结果\"\n  ],\n  \"evidence_gaps\": [\n    {\n      \"缺口描述\": \"“客户不愿为维护付费”的观点仅来自开发者担忧，缺乏企业主视角验证。\",\n      \"补源建议\": \"获取甲方项目经理或决策者对项目交付与运维付费的访谈/问卷数据。\"\n    },\n    {\n      \"缺口描述\": \"文章提及的成本项（数据清洗、权限设计等）缺乏量级、占比和具体构成。\",\n      \"补源建议\": \"查找具备成本结构拆解的行业报告、供应商白皮书或甲方复盘长文。\"\n    },\n    {\n      \"缺口描述\": \"制造业案例仅有痛点描述，缺少项目背景、供应商选择及后续进展。\",\n      \"补源建议\": \"搜索制造企业 LLM 知识库落地的完整复盘（含数据准备范围、项目周期、验收标准）。\"\n    },\n    {\n      \"缺口描述\": \"全部素材为访谈/文章/评论等间接来源，无一手项目复盘。\",\n      \"补源建议\": \"寻找参与过完整 LLM 落地项目（开发+交付）的工程师或 PM 的复盘分享（播客/技术大会PPT/博客）。\"\n    }\n  ],\n  \"handoff_summary\": \"从给定来源提取三个角度 LLM 落地坑：1）制造业知识库基础资料混乱与维护缺失（访谈）；2）显性工程成本项：数据清洗、权限设计、评测与运维（文章）；3）隐性商业模式信任风险：开发者担忧客户只愿为 demo 付费、不愿为维护付费（评论）。所有条目已标注来源类型与状态。证据缺口在于缺少企业主视角、具体成本量级及完整项目复盘。\"\n}\n```",
+    "usage": {
+      "input": 4927,
+      "output": 3446,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "reasoning": 2829,
+      "totalTokens": 8373,
+      "cost": {
+        "input": 0.0006897800000000001,
+        "output": 0.0009648800000000001,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "total": 0.00165466
+      }
+    },
+    "stderr": "",
+    "elapsedMs": 31916,
+    "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+    "workDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-28-40-414Z/media-material-gather-001-output",
+    "isolatedSessionDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-28-40-414Z/media-material-gather-001-output/.pi-sessions"
+  },
+  "judgeOutput": {
+    "model": "opencode-go/deepseek-v4-pro",
+    "code": 0,
+    "text": "{\n  \"score\": 100,\n  \"score_scale\": \"0-100\",\n  \"pass\": true,\n  \"rubric_hits\": [\n    \"逐条提取事实并标注来源\",\n    \"保留资料混乱、维护、数据清洗、权限、评测、运维、demo付费问题\",\n    \"识别访谈/评论观点并标注source_status\",\n    \"输出证据缺口并给出补源建议\",\n    \"未扩展外部新闻或行业数据\"\n  ],\n  \"missing\": [],\n  \"hallucination\": [],\n  \"red_line_violations\": [],\n  \"profile_lessons\": [\n    \"该节点能够严格区分事实与观点，逐一标注来源类型和观点属性，符合Gather/Fetch节点的契约要求。\",\n    \"evidence_gaps和unknown_fields覆盖全面，且未自行补造数字或案例。\"\n  ],\n  \"prompt_patch_suggestions\": []\n}",
+    "usage": {
+      "input": 3067,
+      "output": 1151,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "reasoning": 958,
+      "totalTokens": 4218,
+      "cost": {
+        "input": 0.0053365800000000005,
+        "output": 0.0040054800000000005,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "total": 0.009342060000000001
+      }
+    },
+    "stderr": "",
+    "elapsedMs": 20249,
+    "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+    "workDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-28-40-414Z/media-material-gather-001-judge",
+    "isolatedSessionDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-28-40-414Z/media-material-gather-001-judge/.pi-sessions"
+  },
+  "judge": {
+    "score": 100,
+    "score_scale": "0-100",
+    "pass": true,
+    "rubric_hits": [
+      "逐条提取事实并标注来源",
+      "保留资料混乱、维护、数据清洗、权限、评测、运维、demo付费问题",
+      "识别访谈/评论观点并标注source_status",
+      "输出证据缺口并给出补源建议",
+      "未扩展外部新闻或行业数据"
+    ],
+    "missing": [],
+    "hallucination": [],
+    "red_line_violations": [],
+    "profile_lessons": [
+      "该节点能够严格区分事实与观点，逐一标注来源类型和观点属性，符合Gather/Fetch节点的契约要求。",
+      "evidence_gaps和unknown_fields覆盖全面，且未自行补造数字或案例。"
+    ],
+    "prompt_patch_suggestions": [],
+    "raw_score": 100
+  },
+  "minScore": 82,
+  "nodeOutputArtifact": {
+    "markdownPath": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-28-40-414Z/node_outputs/07-media-material-gather-001.md",
+    "jsonPath": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-28-40-414Z/node_outputs/07-media-material-gather-001.json"
+  }
+}

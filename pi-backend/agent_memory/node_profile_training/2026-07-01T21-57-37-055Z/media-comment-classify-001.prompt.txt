@@ -1,0 +1,187 @@
+你是 Workflow 中的一个 profile 化节点。请只完成当前节点，不要越权完成下游任务。
+
+节点类型：Classify/Router
+目标 Profile：classification-router
+Workflow：WF-16
+任务：评论区分级和路由
+
+上游上下文：
+上游节点 media-title-draft-001 输出：
+```json
+{
+  "node": "content-draft-producer",
+  "profile": "Generate/Draft (Title & Cover A/B for WF-13)",
+  "input_summary": "3 single-source facts (manufacturing KB mess, four cost categories, dev demo-worry)",
+  "output": {
+    "draft_sections": [
+      {
+        "variant_id": "TECH-01",
+        "type": "title_cover_pair",
+        "audience": "开发者 / 技术决策者",
+        "click_motivation": "成本焦虑、经验预判",
+        "headline": "LLM 项目成本不易算：数据清洗、权限设计、评测、运维，哪个最烧钱？",
+        "cover_copy": "四个被作者列举的常见成本项，哪些是预见到也躲不开的坑？"
+      },
+      {
+        "variant_id": "TECH-02",
+        "type": "title_cover_pair",
+        "audience": "开发者 / 项目交付团队",
+        "click_motivation": "身份共鸣、观点验证",
+        "headline": "客户只想看演示、不愿为后续付费？从一个开发者吐槽看交付难题。",
+        "cover_copy": "一位开发者的担心。这是个体的声音，还是行业普遍困境？"
+      },
+      {
+        "variant_id": "ENT-01",
+        "type": "title_cover_pair",
+        "audience": "企业信息化负责人 / CIO",
+        "click_motivation": "案例警醒、决策参考",
+        "headline": "制造企业试用知识库：资料太乱、没人维护，谁的问题？",
+        "cover_copy": "单一企业案例，不具统计代表性，但提出的问题值得每个准备上知识库的企业自问。"
+      },
+      {
+        "variant_id": "ENT-02",
+        "type": "title_cover_pair",
+        "audience": "高层管理者 / 预算决策者",
+        "click_motivation": "预算审视、长期视角",
+        "headline": "别只看演示效果：LLM 项目的「持续成本」谁在买单？",
+        "cover_copy": "文章列出数据清洗、权限、评测、运维四类持续成本；开发者担心客户停下迭代。这是典型的供需错位？"
+      },
+      {
+        "variant_id": "MIX-01",
+        "type": "title_cover_pair",
+        "audience": "行业观察者 / 双向参与者",
+        "click_motivation": "全景视角、跳出单方叙事",
+        "headline": "开发者在抱怨、企业在踩坑——LLM 落地的三条真实片段能拼出什么？",
+        "cover_copy": "三份素材、三个视角。不包装成完整真相，只作为深入追问的起点。"
+      }
+    ],
+    "source_usage": {
+      "TECH-01": {
+        "headline_basis": ["extracted_facts[1]: article_observation (cost categories)"],
+        "fact_status": "single article observation, no data support"
+      },
+      "TECH-02": {
+        "headline_basis": ["extracted_facts[2]: commenter_opinion (dev demo-worry)"],
+        "fact_status": "single commenter opinion"
+      },
+      "ENT-01": {
+        "headline_basis": ["extracted_facts[0]: reported_individual_experience (manufacturing)"],
+        "fact_status": "single interview case (n=1)"
+      },
+      "ENT-02": {
+        "headline_basis": ["extracted_facts[1]: cost categories", "extracted_facts[2]: payment concern"],
+        "fact_status": "synthesis of two unlinked sources"
+      },
+      "MIX-01": {
+        "headline_basis": ["extracted_facts[0]", "extracted_facts[1]", "extracted_facts[2]"],
+        "fact_status": "triangulation of three independent pieces"
+      }
+    },
+    "unsupported_claims_removed": [
+      "所有标题不含任何上游未支持的百分比、金额、客户成功结果。",
+      "TECH-01 使用了‘烧钱’一词，属非数字化的口语表达，未引入具体金额。",
+      "TECH-02 标题明确以‘一位开发者’限定来源，未泛化为全体开发者。",
+      "ENT-01 案例明确注明为单一制造企业案例。",
+      "MIX-01 主动声明素材边界，避免虚假全面感。"
+    ],
+    "unsupported_numbers_self_check": {
+      "status": "PASS — 无一例外",
+      "details": [
+        "所有文本中无百分比（70%、80%）、金额（万元、美金）、天数（30天）、倍数（翻倍）。",
+        "所有数字均为列举类别数（四个成本项、三个视角、一条评论…），直接来源于上游 JSON 结构或明确限定，不存在无据数字。",
+        "无任何将 Demo 表述为生产级成果的措辞。"
+      ]
+    },
+    "editable_notes": [
+      "通用：上游仅有 3 份素材（访谈摘录×1、文章摘录×1、评论摘录×1），所有标题均基于这些有限材料。人类编辑应结合更广泛的调研验证方向。",
+      "TECH-01/TECH-02: 技术向标题偏内部分享，与破圈传播可能存在张力，请确认优先级。",
+      "ENT-01: 案例唯一性可能让企业读者感到缺乏代表性。建议定稿时加入‘你的行业可能不同’等免责语境。",
+      "MIX-01: 如果选题策略为‘深度特写’，这组标题最妥；若策略是‘痛点切入’，TECH-01 或 ENT-01 的钩子更强。建议下游复制进行 A/B 测试。"
+    ],
+    "risk_flags": [
+      {
+        "risk": "事实基础薄弱",
+        "level": "high",
+        "description": "所有输出依赖于三个孤立的小片段。正文必须充分披露来源局限，避免读者误认为普遍真理。",
+        "action": "正文首段需明确提醒素材边界。"
+      },
+      {
+        "risk": "红线上限合规",
+        "level": "clean",
+        "description": "逐条对照红线：①未编造客户成功案例或收益数字；②未输出标题党式绝对承诺；③未偏离撮合交易定位（内容旨在帮助双方理性决策）。全部通过。"
+      },
+      {
+        "risk": "观点平衡风险",
+        "level": "medium",
+        "description": "TECH-02 和 ENT-02 均引用单方观点。若组合使用可能被认定立场偏颇。正文应加入平衡声明段落。"
+      }
+    ]
+  },
+  "blocked": false,
+  "manual_review_required": false
+}
+```
+
+→ 5组标题覆盖技术者向(2)、企业主向(2)、混合向(1)。所有数字已逐字段扫描清零，未新增任何上游无据数字/案例/结果。风险集中标注为事实基础薄弱，下游保留占位需补充定量调研后才能定稿。
+
+当前输入：
+评论列表：1）这个选题太真实了，我们公司知识库就是没人维护。2）能不能推荐靠谱开发者？预算 2 万。3）你这就是割韭菜吧，AI 都是骗子。4）加我私域领取 AI 资料包。5）你们撮合项目出现纠纷谁负责？请逐条分类为好评/质疑/广告/黑粉/投诉/交易需求，并输出自动回复、转人工或忽略路由。
+
+节点通用契约：
+职责：按给定标签体系做分类、置信度和路由，不生成最终处置。
+推荐输出字段：
+- items: 每条含 id, label, confidence, route(auto_reply|manual_review|ignore|delete_suggested), reason, risk_flags
+- manual_review_items
+- label_conflicts
+通用红线：
+- 不得发明标签；若标签体系不足，使用 other 并说明 schema_gap
+- 预算、交易、法律、投诉、纠纷必须 manual_review
+- 广告只能忽略/删除建议，不应生成推广回复
+
+本样本标签/路由 schema：
+{
+  "allowedLabels": [
+    "好评",
+    "质疑",
+    "广告",
+    "黑粉",
+    "投诉",
+    "交易需求"
+  ],
+  "routes": [
+    "auto_reply",
+    "manual_review",
+    "ignore",
+    "delete_suggested"
+  ],
+  "manualReviewRequiredWhen": [
+    "预算/交易线索",
+    "法律/责任/纠纷",
+    "投诉",
+    "高风险承诺"
+  ]
+}
+
+本样本生成/审查专项约束：
+无
+无
+
+输出要求：
+1. 严格遵守当前节点职责。
+2. 输出可供下游使用的结构化结果。
+3. 如信息缺失，写 unknown/missing/unverified，不得补造。
+4. 区分事实、推断、建议和风险。
+5. 遇到红线必须标记 blocked 或 manual_review_required。
+6. 优先按“节点通用契约”的字段输出；若任务要求更具体，以任务要求为准。
+
+评分 Rubric：
+1. 逐条输出固定标签，不发明新标签
+2. 对预算、交易需求和撮合纠纷类评论标记转人工
+3. 广告标记忽略或删除建议
+4. 黑粉和质疑要区分
+5. 输出置信度、原因和路由
+
+红线：
+1. 不得自动承诺撮合结果或法律责任
+2. 不得把投诉/交易风险自动回复处理完
+3. 不得输出标签体系之外的主标签

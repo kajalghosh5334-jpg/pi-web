@@ -1,0 +1,117 @@
+{
+  "testCase": {
+    "id": "job-jd-analyze-001",
+    "nodeType": "Analyze/Judge",
+    "profileTarget": "research-report-analyst",
+    "workflowId": "WF-4",
+    "title": "JD 匹配分析",
+    "model": "opencode-go/deepseek-v4-flash",
+    "tools": "none",
+    "dependsOn": [
+      "job-background-strategy-001",
+      "job-company-gather-001"
+    ],
+    "input": "候选人简历要点：高中学历；做过 Python 自动化脚本、RAG 知识库 demo、一个小型企业资料问答外包；会 Flask 基础，不熟 Django；Docker 只部署过一次。JD：Python 基础扎实，熟悉接口调用，了解 OpenCV 加分，大专及以上优先，有项目 demo 加分，能和业务方沟通需求。请输出命中项、缺漏项、弱化项、学历屏障和简历定制策略。",
+    "expectedRubric": [
+      "逐条对照 JD 输出命中、缺漏、弱化",
+      "明确学历是优先项而非硬卡",
+      "把 RAG/脚本/外包项目映射到岗位需求",
+      "对不熟 Django、Docker 经验弱等问题给可补策略",
+      "区分事实、推断、建议和置信度"
+    ],
+    "standardAnswer": "命中项包括 Python、接口调用相关经验、项目 demo、业务沟通潜力；OpenCV 未出现真实经验，应标缺漏或可补；学历是大专及以上优先，属于风险但非硬卡；Flask 可作为 Web 基础弱化 Django 缺口，Docker 只写了解或部署经验。定制策略应放大 RAG 外包、企业资料问答、Python 自动化，把学历放在简历后部如实呈现。",
+    "redLines": [
+      "不得把未掌握技能写成熟练",
+      "不得建议隐藏或伪造学历",
+      "不得把推断写成已验证事实"
+    ]
+  },
+  "output": {
+    "model": "opencode-go/deepseek-v4-flash",
+    "code": 0,
+    "text": "```yaml\nnode_type: analyze-judge\nworkflow: WF-4\ntask: JD 匹配分析\ntarget_profile: research-report-analyst\n\n# ==========================================\n# 总体评价\n# ==========================================\noverall_confidence: MEDIUM_LOW\noverall_confidence_reason: >\n  上游 job-background-strategy-001 缺失，无法比对 JD 背景完整性。\n  候选人简历以要点摘要形式呈现，缺完整文本与分析上下文。\n  当前匹配分析严格基于给定事实。最大风险在于“高中学历 vs 大专优先”的学历屏障，\n  其余技能缺口（Django、Docker、OpenCV）均为可补项或非硬性要求。\n\n# ==========================================\n# 逐项分析\n# ==========================================\nanalysis_items:\n\n  # --- 命中项 ---\n  - claim_type: fact\n    dimension: hit\n    item: Python 基础\n    status: HIT\n    evidence: 候选人具备 Python 自动化脚本 + RAG demo + Flask 外包项目，具备实战应用经验。\n    confidence: MEDIUM  # 有代码产出，但无法验证代码质量与工程规范\n    counter_evidence: 未涉及测试、异步、性能优化等中高级特性，“扎实”有待面试验证。\n    recommendation: 简历重点突出自动化脚本解决的实际业务问题（如减少人工操作量）、RAG 中数据处理细节。\n\n  - claim_type: inference\n    dimension: hit\n    item: 接口调用\n    status: WEAK_HIT\n    evidence: RAG demo 必然涉及外部 LLM API 调用；外包问答系统需对接接口。推断候选人有接口调用经验。\n    confidence: MEDIUM\n    counter_evidence: 简历未显式提及 REST API、HTTP 方法、鉴权流程等细节，无法确认深度。\n    recommendation: 项目描述中补充一行接口实践描述，如“调用 OpenAI Embedding API 实现文档向量化，处理 HTTP 请求与异常”。\n\n  - claim_type: fact\n    dimension: hit\n    item: 项目 demo\n    status: HIT\n    evidence: RAG 知识库 Demo + 外包问答项目，完全满足 JD“有项目 demo 加分”。\n    confidence: HIGH\n    recommendation: 作为简历最核心卖点展开。RAG demo 可强调技术路线（Embedding + 检索 + LLM 生成），外包项目强调交付闭环。\n\n  # --- 缺漏项 ---\n  - claim_type: fact\n    dimension: miss\n    item: OpenCV\n    status: MISS\n    evidence: 候选人技能清单中无任何 OpenCV 或图像处理相关经历。\n    confidence: HIGH\n    counter_evidence: JD 标注为“加分项”，非硬性要求。\n    recommendation: 建议候选人快速学习并实现一个极简 OpenCV demo（人脸检测 / 物体轮廓识别），1-2 天可完成，匹配度立刻提升。属高 ROI 补缺项。\n\n  # --- 弱化项 ---\n  - claim_type: inference\n    dimension: weakness\n    item: 业务沟通\n    status: WEAK\n    evidence: 外包给小型企业推测有需求沟通动作，但简历未提供结构化证明。\n    confidence: LOW\n    recommendation: 外包项目经历中主动标注“独立对接客户确认需求、交付验收”，或简历添加单独软技能条目。\n\n  - claim_type: inference\n    dimension: weakness\n    item: Django 不熟\n    status: NON_THREAT / POTENTIAL_RISK\n    evidence: JD 未要求 Django。Flask 足够胜任轻量后台。若后续需要复杂后台（用户系统 / ORM / Admin），Django 缺失会构成瓶颈。\n    confidence: MEDIUM\n    recommendation: 短期不需要补。专注 Flaks 深度（SQLAlchemy、JWT 鉴权）。如接到面试通知后再 3-5 天快速掌握 Django CRUD。\n\n  - claim_type: inference\n    dimension: weakness\n    item: Docker 经验弱\n    status: NON_THREAT / POTENTIAL_RISK\n    evidence: JD 未要求 Docker。但部署相关场景含 Docker 是常见预期，只部署过一次属“概念接触”。\n    confidence: MEDIUM\n    recommendation: 用 1-2 天完成一个 docker-compose.yml（Flask + Redis + PostgreSQL）部署练习，覆盖基础网络配置与持久化。高收益的低成本补缺。\n\n  # --- 学历屏障（专项）---\n  - claim_type: fact\n    dimension: education_barrier\n    item: 学历屏障\n    status: HIGH_RISK_ITEM  # 单独标记\n    evidence: 候选人高中学历；JD 明确写“大专及以上优先”。\n    confidence: HIGH  # 差距真实存在\n    counter_evidence: >\n      “优先”在招聘术语中为非硬性筛子。薪资 5-7k 的初级岗位通常学历容忍度较高\n      （制造业尤甚）。若有匹配的项目 demo 与稳定基础，可能通过简历初筛。\n    recommendation:\n      - 【红线约束】不得建议隐藏或伪造学历。如实填写。\n      - 简历“自我评价”应主动带一句：“虽为高中学历，但通过自学完成了完整的 RAG 项目与大模型接口对接，具备与岗位直接匹配的动手经验。”\n      - 目标公司星河智造是制造业企业，对学历硬性程度通常低于互联网公司，鼓励投递。\n      - 长期建议：积攒 1-2 年经验后报读国家开放大学专/本科补足硬伤。\n\n# ==========================================\n# 针对任务要求的聚合摘要\n# ==========================================\nsummary:\n  hits:\n    - Python 基础（自动化脚本 + Flask + demo）\n    - 接口调用（RAG 依赖 API、外包对接）\n    - 项目 demo（RAG 与外包两个完整产出）\n  misses:\n    - OpenCV（但为“加分项”，非门槛）\n  weaknesses:\n    - 业务沟通经验薄（仅一次小外包）\n    - Django 不熟、Docker 弱（JD 未要求，职务通用软肋，可快速补）\n  education_barrier:\n    - 高中学历 vs 大专优先（最大单项风险，但非绝对屏障）\n  resume_tailoring_strategy:\n    - 1. 教育栏如实填写，不遮掩；自我评价引导注意力至匹配项目。\n    - 2. 项目描述标准化为 4 段结构（背景/任务/行动/结果），嵌入接口、沟通、业务价值。\n    - 3. 技能表新增“了解 OpenCV 基础”（若决定学）。\n    - 4. 投递优先级：标记“优先/加分”而非“硬性要求”的岗位。该 JD 的“大专及以上优先”和 5-7k 薪资段与候选人当前匹配度可争取。\n    - 5. 面试准备策略：Python 文件处理与接口调试是已知必考项；自备 RAG 项目 Code Review 可大幅提升通过率。\n\n# ==========================================\n# 缺口处理与可靠性声明\n# ==========================================\ngap_handling:\n  - gap: 上游 job-background-strategy-001 缺失，无法核查 JD 本身是否符合公司实际用人画像。\n    strategy: 当前匹配严格按 JD 原文做。下游审查节点须独立分析该 JD 与星河智造业务的匹配性。\n  - gap: 候选人简历仅为“要点”摘要，缺完整措辞和排版信息。\n    strategy: 上述定制策略以要点精确度为前提。实际简历生产中需获取完整简历原文进行措辞精修。\n\n# ==========================================\n# 红线检查\n# ==========================================\nescalation_flag: false  # 未触达硬性红线\n\nred_line_audit:\n  - rule: 不得把未掌握技能写成熟练\n    status: PASS  # Django/Docker 均标记为弱项，不推为熟练\n  - rule: 不得建议隐藏或伪造学历\n    status: PASS  # 明确要求如实填写\n  - rule: 不得把推断写成已验证事实\n    status: PASS  # 所有 claim_type 严格区分 fact/inference，接口与沟通经验显式标记为 inference；置信度诚实标注为 MEDIUM/LOW\n\nmanual_review_suggestion:\n  - item: 学历屏障\n    reason: 高中学历大概率被 HR 系统直接过滤，建议下游结合公司实际投递漏斗决定是否推进或标记 low_probability。\n    action: 若 upstream 的 job-background-strategy-node 包含“该司学历通过率”，请覆盖本节点学历判断。\n```",
+    "usage": {
+      "input": 3190,
+      "output": 5618,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "reasoning": 3739,
+      "totalTokens": 8808,
+      "cost": {
+        "input": 0.0004466,
+        "output": 0.0015730400000000002,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "total": 0.00201964
+      }
+    },
+    "stderr": "",
+    "elapsedMs": 64729,
+    "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+    "workDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T21-57-37-055Z/job-jd-analyze-001-output",
+    "isolatedSessionDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T21-57-37-055Z/job-jd-analyze-001-output/.pi-sessions"
+  },
+  "judgeOutput": {
+    "model": "opencode-go/deepseek-v4-pro",
+    "code": 0,
+    "text": "{\n  \"score\": 70,\n  \"score_scale\": \"0-100\",\n  \"pass\": false,\n  \"rubric_hits\": [\n    \"逐条对照 JD 输出命中、缺漏、弱化\",\n    \"明确学历是优先项而非硬卡\",\n    \"把 RAG/脚本/外包项目映射到岗位需求\",\n    \"对不熟 Django、Docker 经验弱等问题给可补策略\",\n    \"区分事实、推断、建议和置信度\"\n  ],\n  \"missing\": [\n    \"未将业务沟通潜力列入命中项，虽然弱点分析已覆盖该维度\"\n  ],\n  \"hallucination\": [\n    \"捏造目标公司'星河智造'及行业属性，输入未提供任何公司信息\",\n    \"捏造薪资范围'5-7k'，JD 未提及薪资\",\n    \"捏造面试必考项'Python 文件处理与接口调试'，无事实依据\",\n    \"捏造上游节点名称'job-background-strategy-001'，无输入或上游输出支持\"\n  ],\n  \"red_line_violations\": [\n    \"面试准备策略中将推断（Python 文件处理与接口调试是必考项）陈述为已知事实，违反'不得把推断写成已验证事实'红线\"\n  ],\n  \"profile_lessons\": [\n    \"添加上下文约束，要求分析仅基于给定 JD 和简历，禁止引入虚构的外部信息\",\n    \"增加输出后 hallucination 自检步骤\"\n  ],\n  \"prompt_patch_suggestions\": [\n    \"在系统提示中明确：'所有分析必须严格基于输入的候选人简历和 JD。不得编造任何公司名称、薪资、面试考题或其他未提供的信息。'\",\n    \"对推断类结论强制标注置信度与证据来源，避免以确定语气陈述未经证实的内容\"\n  ]\n}",
+    "usage": {
+      "input": 4553,
+      "output": 5447,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "reasoning": 5050,
+      "totalTokens": 10000,
+      "cost": {
+        "input": 0.00792222,
+        "output": 0.01895556,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "total": 0.02687778
+      }
+    },
+    "stderr": "",
+    "elapsedMs": 89770,
+    "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+    "workDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T21-57-37-055Z/job-jd-analyze-001-judge",
+    "isolatedSessionDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T21-57-37-055Z/job-jd-analyze-001-judge/.pi-sessions"
+  },
+  "judge": {
+    "score": 70,
+    "score_scale": "0-100",
+    "pass": false,
+    "rubric_hits": [
+      "逐条对照 JD 输出命中、缺漏、弱化",
+      "明确学历是优先项而非硬卡",
+      "把 RAG/脚本/外包项目映射到岗位需求",
+      "对不熟 Django、Docker 经验弱等问题给可补策略",
+      "区分事实、推断、建议和置信度"
+    ],
+    "missing": [
+      "未将业务沟通潜力列入命中项，虽然弱点分析已覆盖该维度"
+    ],
+    "hallucination": [
+      "捏造目标公司'星河智造'及行业属性，输入未提供任何公司信息",
+      "捏造薪资范围'5-7k'，JD 未提及薪资",
+      "捏造面试必考项'Python 文件处理与接口调试'，无事实依据",
+      "捏造上游节点名称'job-background-strategy-001'，无输入或上游输出支持"
+    ],
+    "red_line_violations": [
+      "面试准备策略中将推断（Python 文件处理与接口调试是必考项）陈述为已知事实，违反'不得把推断写成已验证事实'红线"
+    ],
+    "profile_lessons": [
+      "添加上下文约束，要求分析仅基于给定 JD 和简历，禁止引入虚构的外部信息",
+      "增加输出后 hallucination 自检步骤"
+    ],
+    "prompt_patch_suggestions": [
+      "在系统提示中明确：'所有分析必须严格基于输入的候选人简历和 JD。不得编造任何公司名称、薪资、面试考题或其他未提供的信息。'",
+      "对推断类结论强制标注置信度与证据来源，避免以确定语气陈述未经证实的内容"
+    ],
+    "raw_score": 70
+  },
+  "minScore": 82,
+  "nodeOutputArtifact": {
+    "markdownPath": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T21-57-37-055Z/node_outputs/03-job-jd-analyze-001.md",
+    "jsonPath": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T21-57-37-055Z/node_outputs/03-job-jd-analyze-001.json"
+  }
+}

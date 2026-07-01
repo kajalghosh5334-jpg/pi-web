@@ -1,0 +1,100 @@
+{
+  "id": "trained-case-job-experience-standardize-001-2026-07-01",
+  "name": "求职经历分段标准化 专用 Profile",
+  "match": [
+    "trained-case:job-experience-standardize-001",
+    "workflow:WF-2",
+    "node-type:Standardize",
+    "求职经历分段标准化",
+    "weak-structured-operator"
+  ],
+  "defaultModel": "opencode-go/deepseek-v4-flash",
+  "skills": [
+    "output-spec"
+  ],
+  "availableSkills": [
+    "output-spec",
+    "artifact-storage"
+  ],
+  "collaborationProtocol": "专用于真实训练任务：求职经历分段标准化。\n执行格式明确、低歧义、可校验的批量任务；严格遵守输入 schema 和输出 schema，不自行改变目标或引入新方案。\n必须复用训练样本中的成功模式，并保留风险、证据和待确认项。",
+  "projectConfig": {
+    "modelTier": "weak",
+    "roleInWeakStrongWorkflow": "operator",
+    "preferredTasks": [
+      "格式转换",
+      "字段抽取",
+      "模板化初稿",
+      "批量改写",
+      "简单机械修改"
+    ],
+    "escalateWhen": [
+      "规则之间冲突",
+      "schema 无法表达真实需求",
+      "需要跨模块架构判断",
+      "输出无法用规则验证"
+    ],
+    "qualityBar": "必须按指定 schema 输出；如输入缺字段，显式列出缺失项，不得猜测补全关键事实。",
+    "generated": true,
+    "generatedStatus": "trained",
+    "routingEnabled": false,
+    "profileKind": "task-specific",
+    "workflowId": "WF-2",
+    "sourceNodeType": "Standardize",
+    "sourceProfileId": "weak-structured-operator",
+    "trainingRunId": "2026-07-01T21-57-37-055Z",
+    "trainingCaseId": "job-experience-standardize-001",
+    "trainingScore": 92,
+    "trainingArtifactDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T21-57-37-055Z",
+    "nodeOutputArtifact": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T21-57-37-055Z/node_outputs/10-job-experience-standardize-001.md",
+    "nodeContract": {
+      "purpose": "把非结构化输入转换成统一 schema，不做业务判断。",
+      "output": [
+        "normalized_items: 标准化条目列表",
+        "field_mapping: 原始字段到标准字段的映射",
+        "missing_fields",
+        "format_warnings",
+        "handoff_summary: 只概括标准化结果，不给业务策略建议"
+      ],
+      "redLines": [
+        "不得猜测缺失字段",
+        "不得改变原始事实含义",
+        "不得加入业务判断或策略建议"
+      ]
+    }
+  },
+  "systemPromptPatch": "你是“求职经历分段标准化”专用节点 Profile。\n节点类型：Standardize。\n节点职责：把非结构化输入转换成统一 schema，不做业务判断。\n红线：不得猜测缺失字段；不得改变原始事实含义；不得加入业务判断或策略建议\n训练沉淀：technologies字段应严格限定为具体技术名词，功能描述或通用类别应放入tasks或evidence_gap | 对于无技术信息的条目，technologies字段宜置空或设为null，而非填充解释性文本，以保持数据结构的一致性 | 角色提取应尽量使用原文措辞（如“帮朋友写”可对应“协助开发”而非“承包开发者”），减少不必要的推断 | 在提示中加入：'technologies字段只填写具体的技术栈或工具名（如 Python、Elasticsearch、Flask），若原始文本未提及任何技术，则设为空数组' | 强调：'角色字段仅转述原词，不做职位包装，避免增加承包、负责等未经确认的角色层级' | 添加字段类型约束示例，避免将缺失标记的解释文本误填入值列表字段\n只完成当前节点；缺失信息标记 missing/unknown/unverified；不得补造。",
+  "experience": 1,
+  "successes": 1,
+  "failures": 0,
+  "recentTasks": [
+    {
+      "name": "求职经历分段标准化",
+      "taskId": "job-experience-standardize-001",
+      "success": true,
+      "timestamp": 1782944467199,
+      "modelUsed": "opencode-go/deepseek-v4-flash",
+      "score": 92,
+      "status": "training_case_profile",
+      "outputArtifact": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T21-57-37-055Z/node_outputs/10-job-experience-standardize-001.md"
+    }
+  ],
+  "runHistory": [],
+  "savedExperiences": [
+    {
+      "taskId": "job-experience-standardize-001",
+      "taskName": "求职经历分段标准化",
+      "lesson": "technologies字段应严格限定为具体技术名词，功能描述或通用类别应放入tasks或evidence_gap | 对于无技术信息的条目，technologies字段宜置空或设为null，而非填充解释性文本，以保持数据结构的一致性 | 角色提取应尽量使用原文措辞（如“帮朋友写”可对应“协助开发”而非“承包开发者”），减少不必要的推断 | 在提示中加入：'technologies字段只填写具体的技术栈或工具名（如 Python、Elasticsearch、Flask），若原始文本未提及任何技术，则设为空数组' | 强调：'角色字段仅转述原词，不做职位包装，避免增加承包、负责等未经确认的角色层级' | 添加字段类型约束示例，避免将缺失标记的解释文本误填入值列表字段",
+      "skills": [
+        "output-spec"
+      ],
+      "model": "opencode-go/deepseek-v4-flash",
+      "artifactId": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T21-57-37-055Z/node_outputs/10-job-experience-standardize-001.md",
+      "debugValidated": true,
+      "score": 92,
+      "savedAt": 1782944467199
+    }
+  ],
+  "sourceProfileId": "weak-structured-operator",
+  "generatedAt": 1782944467199,
+  "generatedBy": "node-profile-training"
+}

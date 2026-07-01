@@ -1,0 +1,25 @@
+{
+  "model": "opencode-go/deepseek-v4-pro",
+  "code": 0,
+  "text": "{\n  \"score\": 92,\n  \"score_scale\": \"0-100\",\n  \"pass\": true,\n  \"rubric_hits\": [\n    \"输出 5 组标题和封面文案\",\n    \"每组标注适用受众和点击动机\",\n    \"至少覆盖技术者向、企业主向、混合向\",\n    \"未新增上游没有支撑的案例、数字或结果\",\n    \"避免夸张承诺和标题党\",\n    \"输出结构完整覆盖 source_usage、自检、风险标记等契约字段\"\n  ],\n  \"missing\": [\n    \"标题 A2 “我们拆了一下”暗示存在实际数据拆分分析，与仅引用单一文章的事实基础有轻微错位，已在风险标记中指出\"\n  ],\n  \"hallucination\": [],\n  \"red_line_violations\": [],\n  \"profile_lessons\": [\n    \"叙事动词（如“拆了一下”）也需与执行能力匹配，避免超出可执行事实的表述\"\n  ],\n  \"prompt_patch_suggestions\": [\n    \"在生成提示中加入约束：叙述性动作描述（如“我们分析”、“我们发现”）仅当对应的上游分析过程被明确支持时方可使用，否则改用“据已知信息”、“从已有材料看”等中性表述\"\n  ]\n}",
+  "usage": {
+    "input": 4542,
+    "output": 3085,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "reasoning": 2815,
+    "totalTokens": 7627,
+    "cost": {
+      "input": 0.00790308,
+      "output": 0.0107358,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "total": 0.01863888
+    }
+  },
+  "stderr": "",
+  "elapsedMs": 63520,
+  "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+  "workDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-53-01-930Z/media-title-draft-001-judge",
+  "isolatedSessionDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-53-01-930Z/media-title-draft-001-judge/.pi-sessions"
+}

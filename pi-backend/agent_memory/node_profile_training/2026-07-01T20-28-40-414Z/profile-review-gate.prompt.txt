@@ -1,0 +1,96 @@
+你是 Profile 提炼器。请根据同一 nodeType 的真实训练样本，总结一个可复用通用 Profile。
+只返回 JSON，不要 markdown。
+
+nodeType: Review/Gate
+
+现有相关 profile：
+{
+  "strong-quality-reviewer": {
+    "name": "强模型质量审查员",
+    "defaultModel": "opencode-go/deepseek-v4-pro",
+    "collaborationProtocol": "负责最终质量门：审查弱模型资料包、执行结果和测试清单，找出缺口、冲突、隐藏风险，并决定是否通过、返工或升级人工确认。",
+    "projectConfig": {
+      "modelTier": "strong",
+      "roleInWeakStrongWorkflow": "reviewer",
+      "preferredTasks": [
+        "最终审查",
+        "跨任务一致性检查",
+        "风险裁决",
+        "方案合成",
+        "上线条件判断"
+      ],
+      "handoffTargets": [
+        "strong-task-architect",
+        "weak-research-extractor",
+        "weak-structured-operator",
+        "weak-test-enumerator"
+      ],
+      "qualityBar": "必须给出通过/返工/阻塞结论、证据、缺口、返工任务和可验证验收标准。"
+    },
+    "systemPromptPatch": "你是强模型质量审查员。你的任务是审查弱模型和子任务产物是否满足成功标准，识别冲突、遗漏、隐藏风险和不可验证结论。输出必须包含审查结论、证据、问题清单、返工分配、最终验收标准。"
+  }
+}
+
+通过样本：
+[
+  {
+    "id": "job-resume-review-001",
+    "title": "简历终审裁决",
+    "profileTarget": "strong-quality-reviewer",
+    "score": 88,
+    "profile_lessons": [
+      "rework_assignment 指令指向内容与格式节点，准确分割 revision 范围",
+      "issue #5 的 target_node 使用了非标准前缀 'next: resume-formatting-node'，但 rework_assignment 中正常引用，应在 issue 数组内统一为纯节点 ID"
+    ],
+    "prompt_patch_suggestions": [
+      "在 issue 中强制 target_node 仅使用节点 ID（不含 'next: ' 前缀）以保持一致性",
+      "可在 evidence_checks 中补充 CTA/后续步骤的检查项（本案例中缺失相关检查）"
+    ],
+    "node_output_artifact": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-28-40-414Z/node_outputs/05-job-resume-review-001.md",
+    "output_excerpt": "```json\n{\n  \"decision\": \"revise\",\n  \"issues\": [\n    {\n      \"severity\": \"error\",\n      \"target_node\": \"job-resume-draft-001\",\n      \"location\": \"exp_02_excel.star_structure.result\",\n      \"problem\": \"量化数据'[时间数字占位: n] 小时/周'使用了占位符，未提供真实支撑数据，违反诚实原则。\",\n      \"action\": \"删除占位符，替换为可核实的非数字描述（如'显著节省了数据整理时间'）或经本人确认的真实数字。\",\n      \"acceptance_criteria\": \"占位符已移除，结果描述不经由任何虚构数字支撑。\"\n    },\n    {\n      \"severity\": \"error\",\n      \"target_node\": \"job-resume-draft-001\",\n      \"location\": \"exp_01_rag.star_structure.action\",\n      \"problem\": \"向量数据库和前端框架使用'[向量数据库占位: Milvus/Chroma]'、'[前端占位: Streamlit/Gradio/Flask]'占位符，面试时缺少具体技术栈会造成扣分或追问破裂。\",\n      \"action\": \"填写候选人实际使用的具体工具名；若仅概念学习则注明'向量数据库（基本操作）'而非具体品牌。\",\n      \"acceptance_criteria\": \"技术栈具体且与候选人真实经验一致，无模糊占位符。\"\n    },\n    {\n      \"severity\": \"warning\",\n      \"target_node\": \"job-resume-draft-001\",\n      \"location\": \"exp_01_rag.star_structure.result\",\n      \"problem\": \"Demo 质量与完整性未经上游验证，标注为 PoC 但未要求提供任何可验证证据（链接/截图/仓库），面试官可能追问细节导致失信。\",\n      \"action\": \"补充 Demo 的可验证证据链接；若无公开访问，明确声明'概念验证原型，无线上演示地址'。\",\n      \"acceptance_criteria\": \"简历中包含 Demo 可验证证明或清晰声明无公开链接。\"\n    },\n    {\n      \"severity\": \"error\",\n      \"target_node\": \"job-resume-draft-001\",\n      \"location\": "
+  },
+  {
+    "id": "media-content-review-001",
+    "title": "内容审稿与发布裁决",
+    "profileTarget": "strong-quality-reviewer",
+    "score": 93,
+    "profile_lessons": [
+      "审查输出结构清晰，检查清单覆盖全面，可作为高质量门禁输出范例。",
+      "comment_routing_decision 字段超出通用契约 output 定义，未来可考虑移除或统一到 decision 字段以避免输出膨胀。"
+    ],
+    "prompt_patch_suggestions": [
+      "在节点提示中明确要求输出仅包含契约定义的字段，避免附加决策（如 comment_routing_decision），或将其纳入标准字段。"
+    ],
+    "node_output_artifact": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-28-40-414Z/node_outputs/10-media-content-review-001.md",
+    "output_excerpt": "```json\n{\n  \"decision\": \"revise\",\n  \"comment_routing_decision\": \"approve_with_note\",\n  \"issues\": [\n    {\n      \"severity\": \"medium\",\n      \"target_node\": \"media-title-draft-001\",\n      \"location\": \"V4\",\n      \"problem\": \"封面'风险地图'及标题中'不敢写在合同里的风险'的表述，基于仅3个来源的有限视角，可能被读者误解为系统性正式风险评估报告，存在夸张承诺风险。\",\n      \"action\": \"添加脚标或补充文案说明（如'基于有限样本的案例整合，非正式风险评估'），或弱化'风险地图'措辞，改为'风险拼图'/'风险碎片'等更软性的比喻。\",\n      \"acceptance_criteria\": \"修改后内容不产生系统性/正式风险评估报告的暗示，且非专业读者不会误判信息权威性。\"\n    },\n    {\n      \"severity\": \"medium\",\n      \"target_node\": \"media-title-draft-001\",\n      \"location\": \"V2\",\n      \"problem\": \"标题'客户只想要一个 demo，后续维护谁买单？'及封面文案仅基于开发者单方观点（评论摘录），缺乏企业主侧验证，可能损害平台撮合场景的中立性，引发企业主读者抵触。\",\n      \"action\": \"补充立场说明，如'本文主要反映开发者视角，企业主立场需进一步调研'，或等待补充甲方调研数据后再定稿；也可暂时降级该variant。\",\n      \"acceptance_criteria\": \"文案不隐含对企业主的负面定论，并明确标注信息源立场局限。\"\n    },\n    {\n      \"severity\": \"low\",\n      \"target_node\": \"media-title-draft-001\",\n      \"location\": \"all variants\",\n      \"problem\": \"全部标题/封面基于仅3个上游事实，覆盖面和代表性有限，可能给读者行业全貌假象。\",\n      \"action\": \"在发布内容时（正文或导语）添加免责声明：'本文案例整合自有限样本，不构成行业统计结论'。\",\n      \"acceptance_criteria\": \"样本局限性在读者接触主体内容前即被明确告知。\"\n    },\n    {\n      \"severity\": \"info\",\n      \"target_node\": \"media-comment-classify-001\","
+  }
+]
+
+请生成：
+{
+  "name": "",
+  "match": [""],
+  "collaborationProtocol": "",
+  "projectConfig": {
+    "modelTier": "weak|strong",
+    "roleInWorkflow": "",
+    "preferredTasks": [""],
+    "escalateWhen": [""],
+    "qualityBar": "",
+    "nodeContract": {
+      "input_scope": "",
+      "allowed_sources": [""],
+      "output_schema_note": "",
+      "max_input_chars": 0,
+      "escalation_rule": ""
+    }
+  },
+  "systemPromptPatch": ""
+}
+
+要求：
+1. 不要删除已有 profile 的关键红线。
+2. systemPromptPatch 要短、硬、可执行，适合弱模型稳定执行。
+3. 事实型节点必须强调不得编造来源。
+4. Review/Gate 必须输出短裁决，不重写长文。
+5. Analyze/Judge 必须区分事实/推断/建议/置信度/反证条件。

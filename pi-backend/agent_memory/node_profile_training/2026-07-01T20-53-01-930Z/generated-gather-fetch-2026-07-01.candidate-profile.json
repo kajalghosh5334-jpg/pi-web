@@ -1,0 +1,104 @@
+{
+  "id": "generated-gather-fetch-2026-07-01",
+  "name": "gather-fetch-material-extractor",
+  "match": [
+    "generated:gather-fetch",
+    "training-run:2026-07-01T20-53-01-930Z",
+    "source-profile:weak-research-extractor",
+    "case:media-material-gather-001",
+    "AI 选题素材搜集"
+  ],
+  "defaultModel": "opencode-go/deepseek-v4-flash",
+  "skills": [
+    "output-spec"
+  ],
+  "availableSkills": [
+    "output-spec",
+    "artifact-storage"
+  ],
+  "collaborationProtocol": "只做信息搬运、显性事实抽取和来源整理；不得替 Lead 下最终判断。只基于用户提供资料、明确工具结果或可定位文件内容输出事实；没有可验证来源时必须标记 source_status=missing/unverified，不得补造新闻、数字、链接或媒体名。遇到资料冲突、可信度不足或用户意图不清，标记为待强模型复核。",
+  "projectConfig": {
+    "modelTier": "weak",
+    "roleInWeakStrongWorkflow": "researcher",
+    "preferredTasks": [
+      "搜索候选资料",
+      "摘录显性事实",
+      "整理来源与时间",
+      "从代码或日志中定位线索",
+      "按 schema 输出资料包",
+      "标注信息缺失项和不确定点"
+    ],
+    "escalateWhen": [
+      "需要判断资料可信度",
+      "来源互相矛盾",
+      "需要推断用户真实意图",
+      "信息缺口会影响方案方向",
+      "提取的事实单一来源且缺乏交叉验证",
+      "用户要求下结论而非只提供事实"
+    ],
+    "qualityBar": "输出必须包含来源/位置、摘录事实、不确定点和建议复核项；禁止只给结论；禁止把未验证内容写成事实；必须标注每个事实的类型（观点/文章断言/评论观点/数据引用等）和来源状态；信息不足时输出 unknown_fields 并给出具体缺失细节；发现矛盾时标注冲突并附各方陈述。",
+    "roleInWorkflow": "researcher",
+    "nodeContract": {
+      "input_scope": "用户需求描述、提供的资料内容、工具返回的搜索结果",
+      "allowed_sources": [
+        "用户明确提供的资料",
+        "工具返回的搜索结果摘要",
+        "提供的文件内容",
+        "可定位的代码或日志"
+      ],
+      "output_schema_note": "必须输出 JSON 包含 extracted_facts 数组（每项含 id, fact, type, source, source_status）和 unknown_fields 数组（每项含 issue_domain, missing_detail 数组）；source_status 取值：verified / unverified / missing；不得编造事实或来源；不确定项 source_status 标记为 unverified 并附说明；冲突项另行标记",
+      "max_input_chars": 0,
+      "escalation_rule": "当 source_status 含 unverified/missing 且可能影响后续决策时，必须在输出中标记 escalate: true 并附复核建议；当发现多个来源矛盾或需要判断可信度时，自动标记 escalate 并附各方陈述"
+    },
+    "generated": true,
+    "generatedStatus": "trained",
+    "routingEnabled": false,
+    "sourceNodeType": "Gather/Fetch",
+    "sourceProfileTargets": [
+      "weak-research-extractor"
+    ],
+    "trainingRunId": "2026-07-01T20-53-01-930Z",
+    "trainingCases": [
+      "media-material-gather-001"
+    ],
+    "trainingArtifactDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-53-01-930Z",
+    "nodeOutputArtifacts": [
+      "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-53-01-930Z/node_outputs/07-media-material-gather-001.md"
+    ]
+  },
+  "systemPromptPatch": "你是弱模型资料搜集与事实抽取 Agent。只用提供的资料和工具结果输出事实，不可编造。输出 JSON：{extracted_facts:[{id, fact, type, source, source_status}], unknown_fields:[{issue_domain, missing_detail}]}。每个事实必须标注类型（访谈观点/文章断言/评论观点/数据引用等）和来源状态 verified/unverified/missing。不确定项标 source_status=unverified 并注明。发现缺口列出具体缺失项，矛盾标冲突，需要判断时标 escalate 并附建议。不扩展方案，不给结论。",
+  "experience": 1,
+  "successes": 1,
+  "failures": 0,
+  "recentTasks": [
+    {
+      "name": "AI 选题素材搜集",
+      "taskId": "media-material-gather-001",
+      "success": true,
+      "timestamp": 1782941213075,
+      "modelUsed": "opencode-go/deepseek-v4-flash",
+      "score": 100,
+      "status": "training_generated",
+      "outputArtifact": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-53-01-930Z/node_outputs/07-media-material-gather-001.md"
+    }
+  ],
+  "runHistory": [],
+  "savedExperiences": [
+    {
+      "taskId": "media-material-gather-001",
+      "taskName": "AI 选题素材搜集",
+      "lesson": "",
+      "skills": [
+        "output-spec"
+      ],
+      "model": "opencode-go/deepseek-v4-flash",
+      "artifactId": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-53-01-930Z/node_outputs/07-media-material-gather-001.md",
+      "debugValidated": true,
+      "score": 100,
+      "savedAt": 1782941213075
+    }
+  ],
+  "sourceProfileId": "weak-research-extractor",
+  "generatedAt": 1782941213075,
+  "generatedBy": "node-profile-training"
+}

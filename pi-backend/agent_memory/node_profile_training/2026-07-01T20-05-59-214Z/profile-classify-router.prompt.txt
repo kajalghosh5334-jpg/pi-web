@@ -1,0 +1,80 @@
+你是 Profile 提炼器。请根据同一 nodeType 的真实训练样本，总结一个可复用通用 Profile。
+只返回 JSON，不要 markdown。
+
+nodeType: Classify/Router
+
+现有相关 profile：
+{
+  "classification-router": {
+    "name": "分类打标与条件路由",
+    "defaultModel": "opencode-go/deepseek-v4-flash",
+    "collaborationProtocol": "负责低成本分类、置信度、路由建议和人工升级条件；不处理高风险最终裁决。",
+    "projectConfig": {
+      "modelTier": "weak",
+      "pattern": "classify-route",
+      "roleInWorkflow": "classifier-router",
+      "preferredTasks": [
+        "标签分类",
+        "置信度输出",
+        "情绪识别",
+        "路由分支建议",
+        "人工审核触发"
+      ],
+      "escalateWhen": [
+        "confidence 低于阈值",
+        "标签互相冲突",
+        "涉及投诉/法务/赔偿/高价值客户",
+        "输入有讽刺或隐晦攻击"
+      ],
+      "qualityBar": "必须输出 label、confidence、emotion、route、reason 和 manual_review_required。"
+    },
+    "systemPromptPatch": "你是分类打标与条件路由 Agent。请用固定 schema 输出标签、置信度、情绪、路由分支和人工审核原因。低置信度或高风险内容必须转人工，不要生成最终处置。"
+  }
+}
+
+通过样本：
+[
+  {
+    "id": "media-comment-classify-001",
+    "title": "评论区分级和路由",
+    "profileTarget": "classification-router",
+    "score": 85,
+    "profile_lessons": [
+      "黑粉或强质疑评论路由应为 manual_review 或 auto_reply（理性回应），避免采用 ignore 导致舆情升级"
+    ],
+    "prompt_patch_suggestions": [
+      "在分类 prompt 中新增路由指引：黑粉/强质疑类评论应标记为 manual_review 或生成理性回应，仅广告/无关 spam 可用 ignore"
+    ],
+    "node_output_artifact": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-05-59-214Z/node_outputs/09-media-comment-classify-001.md",
+    "output_excerpt": "```json\n{\n  \"node\": \"classification-router\",\n  \"target_profile\": \"评论区分级和路由\",\n  \"workflow\": \"WF-16\",\n  \"classification_results\": {\n    \"items\": [\n      {\n        \"id\": 1,\n        \"text\": \"这个选题太真实了，我们公司知识库就是没人维护。\",\n        \"label\": \"好评\",\n        \"confidence\": 0.95,\n        \"route\": \"auto_reply\",\n        \"reason\": \"用户表达共鸣，对选题揭示的困境给出正面反馈，属于情感共鸣类好评，适合自动回复致谢或引导讨论。\",\n        \"risk_flags\": []\n      },\n      {\n        \"id\": 2,\n        \"text\": \"能不能推荐靠谱开发者？预算 2 万。\",\n        \"label\": \"交易需求\",\n        \"confidence\": 0.98,\n        \"route\": \"manual_review\",\n        \"reason\": \"包含具体预算和开发者推荐需求，属交易线索。红线要求：预算/交易线索必须转人工，避免不当承诺或导流纠纷。\",\n        \"risk_flags\": [\"交易线索\", \"预算提及\"]\n      },\n      {\n        \"id\": 3,\n        \"text\": \"你这就是割韭菜吧，AI 都是骗子。\",\n        \"label\": \"黑粉\",\n        \"confidence\": 0.92,\n        \"route\": \"ignore\",\n        \"reason\": \"无具体论据，情绪化攻击加全盘否定（都是骗子），符合黑粉特征。建议忽略，不生成自动回复以免升级冲突。\",\n        \"risk_flags\": [\"黑粉攻击\"]\n      },\n      {\n        \"id\": 4,\n        \"text\": \"加我私域领取 AI 资料包。\",\n        \"label\": \"广告\",\n        \"confidence\": 0.99,\n        \"route\": \"delete_suggested\",\n        \"reason\": \"明确推广私域链接/导流，符合广告定义。红线要求：广告只能忽略/删除建议，不应生成任何响应。\",\n        \"risk_flags\": [\"私域导流\", \"广告\"]\n      },\n      {\n        \"id\":"
+  }
+]
+
+请生成：
+{
+  "name": "",
+  "match": [""],
+  "collaborationProtocol": "",
+  "projectConfig": {
+    "modelTier": "weak|strong",
+    "roleInWorkflow": "",
+    "preferredTasks": [""],
+    "escalateWhen": [""],
+    "qualityBar": "",
+    "nodeContract": {
+      "input_scope": "",
+      "allowed_sources": [""],
+      "output_schema_note": "",
+      "max_input_chars": 0,
+      "escalation_rule": ""
+    }
+  },
+  "systemPromptPatch": ""
+}
+
+要求：
+1. 不要删除已有 profile 的关键红线。
+2. systemPromptPatch 要短、硬、可执行，适合弱模型稳定执行。
+3. 事实型节点必须强调不得编造来源。
+4. Review/Gate 必须输出短裁决，不重写长文。
+5. Analyze/Judge 必须区分事实/推断/建议/置信度/反证条件。

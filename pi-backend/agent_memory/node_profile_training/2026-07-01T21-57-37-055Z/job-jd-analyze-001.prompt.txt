@@ -1,0 +1,119 @@
+你是 Workflow 中的一个 profile 化节点。请只完成当前节点，不要越权完成下游任务。
+
+节点类型：Analyze/Judge
+目标 Profile：research-report-analyst
+Workflow：WF-4
+任务：JD 匹配分析
+
+上游上下文：
+上游节点 job-background-strategy-001 输出：
+(missing)
+
+---
+
+上游节点 job-company-gather-001 输出：
+```yaml
+node_type: weak-research-extractor
+workflow: WF-3
+task: 公司调研资料搬运
+target_company: 星河智造
+
+# ==================== 搬运结果 ====================
+
+extracted_facts:
+  - fact: 星河智造为制造业客户提供质检自动化和设备数据采集服务。
+    source: 官网片段
+    source_status: given
+  - fact: 技术关键词包含 Python、OpenCV、PLC、轻量化模型部署。
+    source: 官网片段
+    source_status: given
+  - fact: 招聘岗位为初级 AI 工具开发助理，薪资为 5-7k。
+    source: 招聘 JD 片段
+    source_status: given
+  - fact: 要求具备 Python 基础，并能读懂接口文档。
+    source: 招聘 JD 片段
+    source_status: given
+  - fact: 学历要求为大专及以上优先（此为优先条件，非硬性要求）。
+    source: 招聘 JD 片段
+    source_status: given
+  - fact: 面经显示面试会问 Python 文件处理、接口调用、是否做过项目 demo。
+    source: 面经摘录
+    source_status: given
+
+unknown_fields:
+  - 公司注册全称、成立时间、注册资本、法人代表
+  - 融资轮次与金额、投资方
+  - 员工规模、技术团队人数
+  - 核心管理层 / 创始人背景
+  - 主要客户及典型落地案例
+  - 公司官网与社交媒体完整地址
+  - 市场定位（具体制造业子行业、竞品）
+  - 完整的薪资结构与福利
+  - 面试整体流程
+
+evidence_gaps:
+  - gap: 完整官网内容缺失（产品、案例、关于我们）
+    suggestion: 使用浏览器工具全面抓取官网页面
+  - gap: 公司注册信息缺失
+    suggestion: 调用企业信用信息查询 API（如企查查 / 天眼查）
+  - gap: 招聘 JD 仅有摘要，缺乏完整技能列表和福利
+    suggestion: 读取招聘网站 JD 详情页原文
+  - gap: 面经样本单一，结论可能不具普遍性
+    suggestion: 收集更多面经（牛客网 / 脉脉）或标记为个案
+
+handoff_summary: >
+  本节点已完成给定来源的显性事实搬运。星河智造是一家提供制造业质检自动化与
+  设备数据采集的服务商，技术栈涉及 Python、OpenCV、PLC。初级 AI 助理岗
+  薪资 5–7k，要求 Python 基础、懂接口文档，学历大专以上优先，面试偏向基础
+  文件操作、接口调用和 demo 项目。
+
+  可置信度评估：所有事实均直接来自上游给信源（source_status: given），无任何
+  推断成分。但来源稀缺——仅三段摘要。公司基本信息（注册实体、规模、融资、
+  创始人）全部缺失，画像信噪比极低。学历要求已按红线明确标记为“优先条件”，
+  技术栈由原文给出，未凭公司名推断。
+
+  建议下游在完成官网完整抓取和工商信息查询后再做匹配判断，否则当前描摹不足以
+  支持可靠的筛选决策。
+```
+
+当前输入：
+候选人简历要点：高中学历；做过 Python 自动化脚本、RAG 知识库 demo、一个小型企业资料问答外包；会 Flask 基础，不熟 Django；Docker 只部署过一次。JD：Python 基础扎实，熟悉接口调用，了解 OpenCV 加分，大专及以上优先，有项目 demo 加分，能和业务方沟通需求。请输出命中项、缺漏项、弱化项、学历屏障和简历定制策略。
+
+节点通用契约：
+职责：基于事实做可验证判断，输出证据、置信度、反证条件和建议。
+推荐输出字段：
+- analysis_items: 每项含 claim_type(fact|inference|assumption|recommendation), evidence, confidence, counter_evidence, recommendation
+- gap_handling: 对关键缺口的处理策略
+- overall_confidence
+- escalation_flag
+通用红线：
+- 不得对未验证来源下高置信结论
+- 不得把推断写成事实
+- 每个短板/风险必须给可操作处理建议
+
+本样本标签/路由 schema：
+未指定；如需分类，严格使用题目给定标签。
+
+本样本生成/审查专项约束：
+无
+无
+
+输出要求：
+1. 严格遵守当前节点职责。
+2. 输出可供下游使用的结构化结果。
+3. 如信息缺失，写 unknown/missing/unverified，不得补造。
+4. 区分事实、推断、建议和风险。
+5. 遇到红线必须标记 blocked 或 manual_review_required。
+6. 优先按“节点通用契约”的字段输出；若任务要求更具体，以任务要求为准。
+
+评分 Rubric：
+1. 逐条对照 JD 输出命中、缺漏、弱化
+2. 明确学历是优先项而非硬卡
+3. 把 RAG/脚本/外包项目映射到岗位需求
+4. 对不熟 Django、Docker 经验弱等问题给可补策略
+5. 区分事实、推断、建议和置信度
+
+红线：
+1. 不得把未掌握技能写成熟练
+2. 不得建议隐藏或伪造学历
+3. 不得把推断写成已验证事实

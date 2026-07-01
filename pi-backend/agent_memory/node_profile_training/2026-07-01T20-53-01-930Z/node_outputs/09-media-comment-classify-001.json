@@ -1,0 +1,42 @@
+{
+  "caseId": "media-comment-classify-001",
+  "title": "评论区分级和路由",
+  "workflowId": "WF-16",
+  "nodeType": "Classify/Router",
+  "profileTarget": "classification-router",
+  "model": "opencode-go/deepseek-v4-flash",
+  "score": 90,
+  "pass": true,
+  "elapsedMs": 53486,
+  "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+  "workDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-53-01-930Z/media-comment-classify-001-output",
+  "input": "评论列表：1）这个选题太真实了，我们公司知识库就是没人维护。2）能不能推荐靠谱开发者？预算 2 万。3）你这就是割韭菜吧，AI 都是骗子。4）加我私域领取 AI 资料包。5）你们撮合项目出现纠纷谁负责？请逐条分类为好评/质疑/广告/黑粉/投诉/交易需求，并输出自动回复、转人工或忽略路由。",
+  "output": "```json\n{\n  \"node_type\": \"Classify/Router\",\n  \"profile\": \"classification-router\",\n  \"workflow\": \"WF-16\",\n  \"task\": \"评论区分级和路由\",\n  \"output\": {\n    \"items\": [\n      {\n        \"id\": \"comment_1\",\n        \"label\": \"好评\",\n        \"confidence\": 0.95,\n        \"route\": \"auto_reply\",\n        \"reason\": \"用户表达对选题的深度共鸣（事实：'这个选题太真实了，我们公司知识库就是没人维护'），属于正面互动。可自动回复感谢。\",\n        \"risk_flags\": []\n      },\n      {\n        \"id\": \"comment_2\",\n        \"label\": \"交易需求\",\n        \"confidence\": 0.99,\n        \"route\": \"manual_review\",\n        \"reason\": \"明确表达了寻找开发者的交易需求并提供了具体预算金额（2万），属于交易线索。按红线必须转人工。\",\n        \"risk_flags\": [\"transaction_lead\", \"budget_mentioned\"]\n      },\n      {\n        \"id\": \"comment_3\",\n        \"label\": \"黑粉\",\n        \"confidence\": 0.85,\n        \"route\": \"ignore\",\n        \"reason\": \"用户无具体论据，使用人身攻击（'割韭菜'）和全盘否定（'AI都是骗子'）词汇，属于黑粉行为而非针对内容的理性质疑。建议忽略以避免冲突升级。\",\n        \"risk_flags\": [\"black_fan_behavior\", \"potential_troll\"]\n      },\n      {\n        \"id\": \"comment_4\",\n        \"label\": \"广告\",\n        \"confidence\": 0.99,\n        \"route\": \"delete_suggested\",\n        \"reason\": \"在评论区发布私域引流信息（'加我私域领取AI资料包'），属于典型广告/垃圾评论。按红线，广告只能忽略或建议删除。\",\n        \"risk_flags\": [\"spam_promotion\", \"private_domain_lead_gen\"]\n      },\n      {\n        \"id\": \"comment_5\",\n        \"label\": \"投诉\",\n        \"confidence\": 0.95,\n        \"route\": \"manual_review\",\n        \"reason\": \"用户询问撮合业务的纠纷责任归属（'出现纠纷谁负责？'），涉及法律/责任/纠纷红线，必须转人工处理，不可自动回复。\",\n        \"risk_flags\": [\"legal_liability_inquiry\", \"dispute_related\", \"must_manual_review\"]\n      }\n    ],\n    \"manual_review_items\": [\"comment_2\", \"comment_5\"],\n    \"label_conflicts\": [],\n    \"summary\": \"5条评论已完成分类与路由。comment_2（交易需求）和 comment_5（投诉）触发转人工红线。comment_1（好评）可自动回复。comment_3（黑粉）建议忽略。comment_4（广告）建议删除。均在给定标签体系内，无冲突。\"\n  }\n}\n```",
+  "judge": {
+    "score": 90,
+    "score_scale": "0-100",
+    "pass": true,
+    "rubric_hits": [
+      "All labels within allowedLabels, no invented labels",
+      "Transaction demands and dispute-related comments routed to manual_review",
+      "Advertisements handled with delete_suggested or ignore",
+      "Black fans distinguished from rational inquiries via reasoning",
+      "Each item includes label, confidence, route, and reason"
+    ],
+    "missing": [
+      "Black fan routing (comment_3) uses 'ignore', but the standard guideline suggests rational response or manual review; this may not fully align with the recommended handling, though not a red-line violation"
+    ],
+    "hallucination": [],
+    "red_line_violations": [],
+    "profile_lessons": [
+      "Overall strong alignment with rubric and red lines. Consider tightening black fan routing to manual_review or auto_reply with a measured, de-escalating tone to match the guideline's nuance."
+    ],
+    "prompt_patch_suggestions": [
+      "Clarify routing preference for 'black fan' labels: default to manual_review or auto_reply with a rational, non-confrontational script, reserving 'ignore' only when engagement risk is unacceptable."
+    ],
+    "raw_score": 90
+  },
+  "dependencies": [
+    "media-title-draft-001"
+  ]
+}

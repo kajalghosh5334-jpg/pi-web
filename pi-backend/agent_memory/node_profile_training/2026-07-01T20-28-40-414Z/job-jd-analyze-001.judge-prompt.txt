@@ -1,0 +1,149 @@
+你是严格训练裁判。请对一个 Workflow 节点输出评分，只返回 JSON，不要 markdown。
+
+节点类型：Analyze/Judge
+任务：JD 匹配分析
+
+Rubric：
+[
+  "逐条对照 JD 输出命中、缺漏、弱化",
+  "明确学历是优先项而非硬卡",
+  "把 RAG/脚本/外包项目映射到岗位需求",
+  "对不熟 Django、Docker 经验弱等问题给可补策略",
+  "区分事实、推断、建议和置信度"
+]
+
+标准答案/关键要点：
+命中项包括 Python、接口调用相关经验、项目 demo、业务沟通潜力；OpenCV 未出现真实经验，应标缺漏或可补；学历是大专及以上优先，属于风险但非硬卡；Flask 可作为 Web 基础弱化 Django 缺口，Docker 只写了解或部署经验。定制策略应放大 RAG 外包、企业资料问答、Python 自动化，把学历放在简历后部如实呈现。
+
+红线：
+[
+  "不得把未掌握技能写成熟练",
+  "不得建议隐藏或伪造学历",
+  "不得把推断写成已验证事实"
+]
+
+节点通用契约：
+{
+  "purpose": "基于事实做可验证判断，输出证据、置信度、反证条件和建议。",
+  "output": [
+    "analysis_items: 每项含 claim_type(fact|inference|assumption|recommendation), evidence, confidence, counter_evidence, recommendation",
+    "gap_handling: 对关键缺口的处理策略",
+    "overall_confidence",
+    "escalation_flag"
+  ],
+  "redLines": [
+    "不得对未验证来源下高置信结论",
+    "不得把推断写成事实",
+    "每个短板/风险必须给可操作处理建议"
+  ]
+}
+
+本样本标签/路由 schema：
+null
+
+本样本生成/审查专项约束：
+{
+  "generationGuardrails": null,
+  "reviewChecklist": null
+}
+
+待评分输出：
+```json
+{
+  "_node_type": "jd-match-analyzer",
+  "_workflow": "WF-4",
+  "_target_profile": "research-report-analyst",
+  "analysis_items": [
+    {
+      "jd_requirement": "Python 基础扎实",
+      "candidate_evidence": "自动化脚本、RAG demo",
+      "verdict": "命中",
+      "claim_type": "inference",
+      "confidence": 0.8,
+      "counter_evidence": "不熟 Django，Python 生态广度待验证",
+      "recommendation": "简历突出文件处理、网络请求、数据结构等 Python 基础题的准备；将 RAG demo 中的核心技术难点（Token 管理、相似度检索）写出深度以证明基础扎实。"
+    },
+    {
+      "jd_requirement": "熟悉接口调用",
+      "candidate_evidence": "RAG 调用 LLM API，企业问答外包必然涉及数据接口",
+      "verdict": "命中",
+      "claim_type": "inference",
+      "confidence": 0.85,
+      "counter_evidence": "未提供接口协议细节 (REST/WebSocket)",
+      "recommendation": "项目描述中明确写出调用的 API 名称、协议、认证方式、处理过的异常场景。"
+    },
+    {
+      "jd_requirement": "了解 OpenCV 加分",
+      "candidate_evidence": "未提及 CV/图像处理经验",
+      "verdict": "缺漏",
+      "claim_type": "fact",
+      "confidence": 0.95,
+      "counter_evidence": "简历未写不等于完全不懂，但当前输入无此信息",
+      "recommendation": "短期（3天）补一个极小项目（摄像头读取→处理→输出）写进简历；或面试时承认概念了解但无实战，强调 Python 学习迁移能力。"
+    },
+    {
+      "jd_requirement": "学历（大专及以上优先）",
+      "candidate_evidence": "高中学历",
+      "verdict": "屏障（弱化项）",
+      "claim_type": "fact + assumption",
+      "confidence": 0.98,
+      "counter_evidence": "JD 书写为 '优先'，并非 '必须'，有通过初筛的可能",
+      "recommendation": "① 简历弱化学历位置（置末）。② 面试准备 '自学驱动、项目验证的另类教育路径' 叙事。③ 投递前确认本岗位无硬性学历门槛。若投递后多日无回应（已读不回），说明被优先级规则过滤，需加大此类公司投递密度以对冲通过率。",
+      "red_line_check": "PASS - 未建议隐藏或伪造学历，仅建议弱化位置与叙事转化。"
+    },
+    {
+      "jd_requirement": "有项目 Demo 加分",
+      "candidate_evidence": "RAG 知识库 demo + 企业资料问答外包",
+      "verdict": "强命中（核心差异化优势）",
+      "claim_type": "fact",
+      "confidence": 0.95,
+      "counter_evidence": "Demo 质量和完整性未知（上游标记 '缺失数据'）",
+      "recommendation": "这是翻盘点。必须标准化为作品集（GitHub README + 截图 + 演示视频/部署链接）。面试必带，主动展示。"
+    },
+    {
+      "jd_requirement": "能和业务方沟通需求",
+      "candidate_evidence": "性格开朗 + 外包经验（本质上就是跟客户做需求对接）",
+      "verdict": "命中",
+      "claim_type": "inference",
+      "confidence": 0.7,
+      "counter_evidence": "未提供需求沟通的具体案例或冲突解决经历",
+      "recommendation": "准备 1 个沟通故事：'业务方说要 A 功能，我分析后建议 B 方案，最终上线验证 B 更优'。展示需求分析、预期管理和交付能力。"
+    },
+    {
+      "jd_requirement": "Docker/AI 工具部署（公司官网隐含技术栈）",
+      "candidate_evidence": "仅部署过一次",
+      "verdict": "弱化项",
+      "claim_type": "fact",
+      "confidence": 0.95,
+      "counter_evidence": "JD 未明确要求 Docker，但公司技术栈含 '轻量化模型部署'",
+      "recommendation": "把 RAG demo 容器化（写 Dockerfile + docker-compose.yml 并放到 GitHub）。半天工作量，工程化能力证明收益极高。"
+    }
+  ],
+  "gap_handling": {
+    "technical_gaps": {
+      "OpenCV": "短期突击项目 or 面试诚实补位说明",
+      "Docker": "立即容器化现有项目，成本低收益高",
+      "Django": "无需补，准备框架选择话术（Flask 敏捷 vs Django 全功能，表示愿意学）"
+    },
+    "structural_gaps": {
+      "学历": "弱化位置 + 叙事转化 + 高频投递对冲过滤"
+    }
+  },
+  "overall_confidence": "medium-low (JD 来源为片段/面经，公司研究为弱提取，候选人信息为摘要，核心假设依赖置信度低的数据层)",
+  "escalation_flag": false
+}
+```
+→ Skipped: 简历正文/面试QA生成、公司注册信息推断、未验证项目细节补全。 Add when: 下游简历节点/面试准备节点接走本分析结果作为输入时。
+
+返回 JSON。score 必须是 0-100 的整数，不要使用 0-1 小数制或 0-10 十分制：
+{
+  "score": 0,
+  "score_scale": "0-100",
+  "pass": true,
+  "rubric_hits": [""],
+  "missing": [""],
+  "hallucination": [""],
+  "red_line_violations": [""],
+  "profile_lessons": [""],
+  "prompt_patch_suggestions": [""]
+}

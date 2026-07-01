@@ -1,0 +1,25 @@
+{
+  "model": "opencode-go/deepseek-v4-pro",
+  "code": 0,
+  "text": "{\"score\":100,\"score_scale\":\"0-100\",\"pass\":true,\"rubric_hits\":[\"逐条输出固定标签，不发明新标签\",\"对预算、交易需求和撮合纠纷类评论标记转人工\",\"广告标记忽略或删除建议\",\"黑粉和质疑要区分\",\"输出置信度、原因和路由\"],\"missing\":[],\"hallucination\":[],\"red_line_violations\":[],\"profile_lessons\":[],\"prompt_patch_suggestions\":[]}",
+  "usage": {
+    "input": 3449,
+    "output": 4028,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "reasoning": 3921,
+    "totalTokens": 7477,
+    "cost": {
+      "input": 0.0060012600000000004,
+      "output": 0.01401744,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "total": 0.0200187
+    }
+  },
+  "stderr": "",
+  "elapsedMs": 62791,
+  "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+  "workDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T21-57-37-055Z/media-comment-classify-001-judge",
+  "isolatedSessionDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T21-57-37-055Z/media-comment-classify-001-judge/.pi-sessions"
+}

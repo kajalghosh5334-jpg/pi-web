@@ -1,0 +1,25 @@
+{
+  "model": "opencode-go/deepseek-v4-pro",
+  "code": 0,
+  "text": "{\"score\":0,\"pass\":false,\"rubric_hits\":[\"输出 5 组标题和封面文案\",\"每组标注适用受众和点击动机\",\"至少覆盖技术者向、企业主向、混合向\",\"避免夸张承诺和标题党\"],\"missing\":[\"不新增上游没有支撑的案例、数字或结果\"],\"hallucination\":[\"标题A(组4):'70% 的人没算对'无支撑数字\",\"封面文案(组4):'80% 的成本在维护阶段'无支撑数字\"],\"red_line_violations\":[],\"profile_lessons\":[\"生成标题时避免使用未经证实的百分比等数字，应使用模糊表述例如'大部分'\"],\"prompt_patch_suggestions\":[\"在 Prompt 中增加约束：禁止使用任何具体百分比数字或比例，除非上游素材中明确引用。可用'大部分'，'多数'等模糊词代替。\"]}",
+  "usage": {
+    "input": 3434,
+    "output": 5534,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "reasoning": 5336,
+    "totalTokens": 8968,
+    "cost": {
+      "input": 0.00597516,
+      "output": 0.019258320000000002,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "total": 0.025233480000000003
+    }
+  },
+  "stderr": "",
+  "elapsedMs": 99913,
+  "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+  "workDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T19-35-43-671Z/media-title-draft-001-judge",
+  "isolatedSessionDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T19-35-43-671Z/media-title-draft-001-judge/.pi-sessions"
+}

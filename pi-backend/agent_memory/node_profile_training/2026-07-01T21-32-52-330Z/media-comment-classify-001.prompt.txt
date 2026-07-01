@@ -1,0 +1,174 @@
+你是 Workflow 中的一个 profile 化节点。请只完成当前节点，不要越权完成下游任务。
+
+节点类型：Classify/Router
+目标 Profile：classification-router
+Workflow：WF-16
+任务：评论区分级和路由
+
+上游上下文：
+上游节点 media-title-draft-001 输出：
+```json
+{
+  "node_id": "content-draft-producer",
+  "workflow": "WF-13",
+  "task": "标题封面 A/B 方案",
+  "draft_sections": [
+    {
+      "variant_id": "B-01",
+      "target_audience": "技术执行者 / AI 工程师",
+      "title": "LLM 知识库遇上“数据沼泽”：一个制造业踩坑实例",
+      "cover_copy": "内部资料没人管，项目第一步就卡住了。这不是别人家的故事，是来自制造业一线反馈的真实全貌。",
+      "click_motive": "专业痛点共鸣，吸引工程师点击验证自身的踩坑体验",
+      "source_usage": {
+        "fact_ids": ["fact_1"],
+        "notes": "事实来源于唯一来源访谈，标题中用“一个制造业踩坑实例”定位而不扩大范围"
+      }
+    },
+    {
+      "variant_id": "B-02",
+      "target_audience": "技术执行者 / 交付方",
+      "title": "Demo 验收后，企业客户为什么不愿意为维护迭代付费？",
+      "cover_copy": "从“跑得通”到“用得稳”，中间的费用谁来认？一位开发者的真实担忧。",
+      "click_motive": "行业共性困惑，交付方希望通过文章得到共情与行业现状认知",
+      "source_usage": {
+        "fact_ids": ["fact_3"],
+        "notes": "事实来源于匿名网络评论，覆盖限定在“一位开发者的担忧”"
+      }
+    },
+    {
+      "variant_id": "B-03",
+      "target_audience": "企业决策者 / 采购方",
+      "title": "企业落地 LLM 的那张成本清单：数据、权限、评测、运维",
+      "cover_copy": "四个你不得不提前了解的成本深坑——做预算前先看这篇。",
+      "click_motive": "成本控制谨慎感，企业主希望在预算制定前了解真实风险",
+      "source_usage": {
+        "fact_ids": ["fact_2"],
+        "notes": "四个环节来源行业文章分析，未提供具体数字金额"
+      }
+    },
+    {
+      "variant_id": "B-04",
+      "target_audience": "混合受众 / 项目负责人",
+      "title": "给准备上 LLM 项目的企业：开工前先想清楚这几点",
+      "cover_copy": "数据治理有人做吗？预算够再调几次？心理准备做好了吗？",
+      "click_motive": "决策自检，吸引混合受众在立项前进行软性论证",
+      "source_usage": {
+        "fact_ids": ["fact_1", "fact_2", "fact_3"],
+        "notes": ""
+      }
+    },
+    {
+      "variant_id": "B-05",
+      "target_audience": "混合受众 / 行业观察者",
+      "title": "没有名字的踩坑案例：LLM 企业落地究竟有多现实？",
+      "cover_copy": "虽然不能点名，但这个制造业的故事，大概率会在你或你客户的公司重演。",
+      "click_motive": "好奇心和代入感，引导读者看是否存在共同问题",
+      "source_usage": {
+        "fact_ids": ["fact_1"],
+        "notes": "单一样本案例，标题用“不能点名”做免责处理"
+      }
+    }
+  ],
+  "source_usage_overview": {
+    "mapped_facts": {
+      "fact_1": ["B-01", "B-04", "B-05"],
+      "fact_2": ["B-03", "B-04"],
+      "fact_3": ["B-02", "B-04"]
+    },
+    "gaps_handled": {
+      "missing_quantitative_data": "所有标题/封面文案中无具体数字、百分比或金额",
+      "missing_solutions": "标题和封面仅陈述问题状态，不做解决路径承诺",
+      "single_source_dependency": "B-01、B-05 高度依赖单一匿名访谈，已在文案和备注中做降级定位"
+    }
+  },
+  "unsupported_claims_removed": [],
+  "unsupported_numbers_self_check": {
+    "status": "PASS",
+    "details": "标题和封面文案中未出现具体数字、百分比或金额。“第一个点”“几点”等数量词均为定性概括，不构成承诺性数字。未出现 30 天、翻倍、70%、80% 等。"
+  },
+  "editable_notes": [
+    "B-01 / B-05 中的“制造业”暗示来源行业，若客户对脱敏要求极高可改为“某传统行业”。",
+    "B-04 的“几点”为自由概括，若下游节点需增加结构性可从上游证据 gaps 中提取。",
+    "所有标题均无“解决方案”或“避坑方法”导向，因为上游素材未提供任何可行解决路径。若最终内容需要完整姿态，需补充采访或技术社区帖。"
+  ],
+  "risk_flags": [
+    {
+      "type": "REPRESENTATIVENESS",
+      "severity": "low",
+      "detail": "B-01 和 B-05 依赖单一企业访谈（某制造企业），文案已限制范围（如“一个制造业踩坑实例”），但仍需下游编辑审校是否有过度渲染为行业通病的风险。",
+      "suggestion": "下游编辑可明确将其标注为‘受访者反馈’，而非‘行业调查’。"
+    },
+    {
+      "type": "MISSING_SOLUTION_ANGLE",
+      "severity": "info",
+      "detail": "所有标题和封面均为问题导向。若任务要求提供建设性内容，5 组文案均不适用，需重新生产。"
+    }
+  ],
+  "red_line_check": {
+    "status": "PASS",
+    "details": "未补造客户名、具体成本、具体结果、比例数字、绝对承诺。所用素材均锚定上游提供的事实且标注了来源边界。未偏离撮合交易定位。"
+  }
+}
+```
+
+当前输入：
+评论列表：1）这个选题太真实了，我们公司知识库就是没人维护。2）能不能推荐靠谱开发者？预算 2 万。3）你这就是割韭菜吧，AI 都是骗子。4）加我私域领取 AI 资料包。5）你们撮合项目出现纠纷谁负责？请逐条分类为好评/质疑/广告/黑粉/投诉/交易需求，并输出自动回复、转人工或忽略路由。
+
+节点通用契约：
+职责：按给定标签体系做分类、置信度和路由，不生成最终处置。
+推荐输出字段：
+- items: 每条含 id, label, confidence, route(auto_reply|manual_review|ignore|delete_suggested), reason, risk_flags
+- manual_review_items
+- label_conflicts
+通用红线：
+- 不得发明标签；若标签体系不足，使用 other 并说明 schema_gap
+- 预算、交易、法律、投诉、纠纷必须 manual_review
+- 广告只能忽略/删除建议，不应生成推广回复
+
+本样本标签/路由 schema：
+{
+  "allowedLabels": [
+    "好评",
+    "质疑",
+    "广告",
+    "黑粉",
+    "投诉",
+    "交易需求"
+  ],
+  "routes": [
+    "auto_reply",
+    "manual_review",
+    "ignore",
+    "delete_suggested"
+  ],
+  "manualReviewRequiredWhen": [
+    "预算/交易线索",
+    "法律/责任/纠纷",
+    "投诉",
+    "高风险承诺"
+  ]
+}
+
+本样本生成/审查专项约束：
+无
+无
+
+输出要求：
+1. 严格遵守当前节点职责。
+2. 输出可供下游使用的结构化结果。
+3. 如信息缺失，写 unknown/missing/unverified，不得补造。
+4. 区分事实、推断、建议和风险。
+5. 遇到红线必须标记 blocked 或 manual_review_required。
+6. 优先按“节点通用契约”的字段输出；若任务要求更具体，以任务要求为准。
+
+评分 Rubric：
+1. 逐条输出固定标签，不发明新标签
+2. 对预算、交易需求和撮合纠纷类评论标记转人工
+3. 广告标记忽略或删除建议
+4. 黑粉和质疑要区分
+5. 输出置信度、原因和路由
+
+红线：
+1. 不得自动承诺撮合结果或法律责任
+2. 不得把投诉/交易风险自动回复处理完
+3. 不得输出标签体系之外的主标签

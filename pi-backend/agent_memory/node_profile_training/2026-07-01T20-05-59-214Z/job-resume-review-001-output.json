@@ -1,0 +1,25 @@
+{
+  "model": "opencode-go/deepseek-v4-pro",
+  "code": 0,
+  "text": "```json\n{\n  \"node_type\": \"Review/Gate\",\n  \"profile\": \"strong-quality-reviewer\",\n  \"workflow\": \"WF-6\",\n  \"task\": \"简历终审裁决\",\n  \"decision\": \"revise\",\n  \"summary\": \"草稿合规但存在大量占位符和技能缺口，需返工填充后再审。\",\n  \"issues\": [\n    {\n      \"severity\": \"high\",\n      \"target_node\": \"job-resume-draft-001\",\n      \"location\": \"draft_sections[0].editable_notes, draft_sections[1].editable_notes, general_editable_notes\",\n      \"problem\": \"存在大量 [placeholder] 占位符（项目规模、客户名称、量化效果、具体技术选型等），简历不可直接输出含占位符文本。\",\n      \"action\": \"根据真实项目信息替换所有占位符；无法获取真实数据的，删除对应量化声明或改为定性描述。\",\n      \"acceptance_criteria\": \"所有 [placeholder] 文本消失，替换为真实、可验证的信息或移除声明；不得编造数据。\"\n    },\n    {\n      \"severity\": \"high\",\n      \"target_node\": \"job-resume-draft-001\",\n      \"location\": \"draft_sections[0].star.action, draft_sections[1].star.action\",\n      \"problem\": \"STAR 动作描述含 placeholder（文档格式、向量库、LLM API 等），动作要点不完整。\",\n      \"action\": \"准确填写实际使用的技术栈和工具名称，保持与项目事实一致。\",\n      \"acceptance_criteria\": \"STAR 中的技术栈均为实际使用过的明确技术，无虚构。\"\n    },\n    {\n      \"severity\": \"medium\",\n      \"target_node\": \"job-resume-draft-001\",\n      \"location\": \"全套风险标记\",\n      \"problem\": \"已识别的风险（如 RAG Demo 客户数据隐私、OpenCV 技能缺失）仅在 risk_flags 中提示，未在简历正文体现应对措施。\",\n      \"action\": \"隐私类风险必须确保简历正文不含任何敏感信息；技能缺失可在技能总结或补充说明中体现学习意愿。\",\n      \"acceptance_criteria\": \"简历正文不含隐私风险内容；对 JD 要求的加分项有明确回应（技能列表或补充说明）。\"\n    },\n    {\n      \"severity\": \"low\",\n      \"target_node\": \"job-resume-draft-001\",\n      \"location\": \"技能标签与 JD 对齐\",\n      \"problem\": \"针对『星河智造初级 AI 工具开发助理 JD』，OpenCV、Docker、Django 等未体现，弱相关标签未上升为直接技能。\",\n      \"action\": \"建议补充相关学习或简易实践经历；如无，需在技能总结中体现学习意愿。\",\n      \"acceptance_criteria\": \"简历技能列表与 JD 要求的主要技能有对应的陈述，差距明确。\"\n    }\n  ],\n  \"evidence_checks\": {\n    \"claimed_experience\": [\n      {\n        \"item\": \"企业资料智能问答 RAG 系统\",\n        \"status\": \"unverified\",\n        \"reason\": \"无项目链接、客户名称、交付证据；描述依赖占位符，事实无法验证。\"\n      },\n      {\n        \"item\": \"批量 Excel 数据处理自动化\",\n        \"status\": \"unverified\",\n        \"reason\": \"个人协助项目，无具体场景、频率、效果数据，均为占位符，无法验证实际价值。\"\n      }\n    ],\n    \"quantitative_claims\": \"none — 所有量化指标均被占位符替换，未声称具体数字。\",\n    \"source_traceability\": \"部分可追溯至原文，但原文未提供细节，因此细节为合理推断，准确性需人工确认。\"\n  },\n  \"rework_assignment\": {\n    \"primary_node\": \"job-resume-draft-001\",\n    \"action\": \"基于真实项目信息填充所有 [placeholder] 和 [Editable] 标记，删除无法填充的量化声明，确认无虚构内容，并重新提交审核。\",\n    \"secondary_human_review\": \"建议人工审核填充后的简历，确认技术栈准确性、隐私安全及经历归类。\"\n  },\n  \"red_line_review\": {\n    \"no_fabrication\": \"合规 — draft 中已移除虚构声明，但仍有 placeholder 未填充，并非虚构。\",\n    \"no_demo_as_production\": \"合规 — 始终标注为 Demo/原型。\",\n    \"not_final_immutable\": \"合规 — 大量 editable notes 和 placeholder，为可编辑草稿。\"\n  }\n}\n```",
+  "usage": {
+    "input": 4423,
+    "output": 3221,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "reasoning": 2206,
+    "totalTokens": 7644,
+    "cost": {
+      "input": 0.0076960200000000005,
+      "output": 0.01120908,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "total": 0.0189051
+    }
+  },
+  "stderr": "",
+  "elapsedMs": 48668,
+  "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+  "workDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-05-59-214Z/job-resume-review-001-output",
+  "isolatedSessionDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-05-59-214Z/job-resume-review-001-output/.pi-sessions"
+}

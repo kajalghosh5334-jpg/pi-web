@@ -1,0 +1,34 @@
+{
+  "caseId": "job-resume-draft-001",
+  "title": "简历经历初稿",
+  "workflowId": "WF-2",
+  "nodeType": "Generate/Draft",
+  "profileTarget": "content-draft-producer",
+  "model": "opencode-go/deepseek-v4-flash",
+  "score": 5,
+  "pass": false,
+  "elapsedMs": 72894,
+  "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+  "workDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T19-35-43-671Z/job-resume-draft-001-output",
+  "input": "原始经历：做过一个企业资料问答 RAG 外包，负责整理客户资料、写 Python 文档清洗脚本、接入向量库、做简单网页查询入口；还帮朋友做过批量 Excel 处理脚本；性格开朗，能和客户沟通需求。请按 STAR 写 2 段简历经历，附技能标签和项目亮点。",
+  "output": "```json\n{\n  \"node\": \"Generate/Draft\",\n  \"profile\": \"content-draft-producer\",\n  \"workflow\": \"WF-2\",\n  \"task\": \"生成简历经历初稿\",\n  \"status\": \"completed\",\n  \"output\": {\n    \"draft_meta\": {\n      \"version\": \"v1\",\n      \"status\": \"draft\",\n      \"editable\": true,\n      \"data_scope\": \"严格基于上游提供的原始经历素材和 JD 匹配分析产出。所有具体量化数据、项目规模、客户信息均以 [占位符] 标记。\",\n      \"redline_check_passed\": true,\n      \"notes\": [\n        \"未虚构任何公司名、学历、正式职位或量化成绩。\",\n        \"所有项目均明确标注为「功能原型 Demo / 小型外包 / 协助任务」，未描述为生产级平台。\",\n        \"技能标签严格区分直接相关、弱相关与未经验证三类，缺失项（OpenCV、Docker 深度）已标记。\",\n        \"输出为可编辑的结构化草稿，非最终不可修改定稿。\"\n      ]\n    },\n    \"experience_items\": [\n      {\n        \"id\": \"exp_01\",\n        \"title\": \"企业资料问答 RAG 系统 — 外包项目\",\n        \"role\": \"独立开发 / 项目外包\",\n        \"star\": {\n          \"situation\": \"客户有内部资料快速查阅的需求，但缺乏技术团队，希望构建一个基于自然语言的企业知识库问答原型。（客户行业/规模: [占位符]）\",\n          \"task\": \"作为外包技术提供方，独立负责从需求理解到技术交付的完整链路。围绕客户提供的多格式非结构化资料，搭建资料清洗、语义检索与交互查询的全链路 RAG 系统，验证 AI 在内部文档管理场景的可行性。\",\n          \"actions\": [\n            \"需求对接与资料梳理：主动与客户沟通业务问答场景与数据范围，整理原始资料清单，明确功能验收标准。\",\n            \"文档清洗与预处理：编写 Python 脚本对 PDF/TXT 等格式进行批量文本抽取、章节分段、噪声清洗及结构化输出。\",\n            \"向量检索链路搭建：评估并集成向量数据库（[占位符: 如 Chroma/Milvus]），实现文档向量化入库与语义匹配。\",\n            \"交互前端开发：使用 Flask 构建简易 Web 查询入口，支持自然语言提问、实时返回检索结果。\"\n          ],\n          \"result\": \"成功交付可运行的企业资料问答 Demo（原型验证阶段），验证了 RAG 技术在该场景下的有效性。客户可通过搜索界面直接对内部文档进行语义检索，无需技术介入。\"\n        },\n        \"project_scale_marker\": \"功能原型 Demo / 小型外包项目\",\n        \"skill_tags\": {\n          \"directly_relevant\": [\n            \"Python 数据分析与脚本开发\",\n            \"RAG 全链路实践（文档清洗 → 向量化 → 检索）\",\n            \"向量数据库（集成与操作）\",\n            \"Flask Web 基础开发\",\n            \"独立项目交付与基础需求沟通\"\n          ],\n          \"weakly_relevant\": [\n            \"非结构化文档处理与信息管理\",\n            \"基础前后端交互实现\",\n            \"AI 应用场景落地（非 CV 方向）\"\n          ]\n        },\n        \"inference_notes\": \"沟通能力来源于客户对接经历，未提供第三方佐证；单兵作战，不涉及团队协作；接口深度未暴露，需面试验证。\",\n        \"editable_placeholders\": [\n          \"[客户行业/规模]\",\n          \"[文档数量约X份]\",\n          \"[向量数据库：Chroma/Milvus/Qdrant 等]\",\n          \"[项目起止年月]\",\n          \"[文本清洗细节，如是否涉及OCR、多语言]\"\n        ]\n      },\n      {\n        \"id\": \"exp_02\",\n        \"title\": \"批量 Excel 数据处理脚本 — 协助任务\",\n        \"role\": \"任务制协助开发\",\n        \"star\": {\n          \"situation\": \"朋友在处理一批重复性数据整理工作时耗时严重（[占位符: 数据类型/行业]），手动操作繁琐且易出错。\",\n          \"task\": \"分析重复劳动环节，将手动流程抽象为自动化规则，编写可靠可复用的处理脚本，大幅减少人工介入。\",\n          \"actions\": [\n            \"需求调研与分析：详细了解原有每一步操作，识别可规则化的填充、格式转换、交叉校验逻辑。\",\n            \"脚本编程实现：使用 Python（pandas / openpyxl）开发批量自动化脚本，支持多文件读取、清洗与合并，输出标准化结果。\"\n          ],\n          \"result\": \"将原本人工数小时/天的重复操作转化为一键式自动化，提升了处理质量与效率，降低了出错风险。\"\n        },\n        \"project_scale_marker\": \"小型工具脚本 / 协助开发\",\n        \"skill_tags\": {\n          \"directly_relevant\": [\n            \"Python 数据处理（pandas/openpyxl）\",\n            \"业务逻辑抽象与自动化实现\"\n          ],\n          \"weakly_relevant\": [\n            \"Excel VBA（概念类比）\",\n            \"基础问题排查与运维\"\n          ]\n        },\n        \"inference_notes\": \"未明确最终输出格式及脚本配置化程度；单次协助经历，代表性有限。\",\n        \"editable_placeholders\": [\n          \"[具体数据处理类型与行业]\",\n          \"[文件数量约X个]\",\n          \"[手动处理耗时约Y小时/天]\",\n          \"[脚本运行环境及依赖版本]\"\n        ]\n      }\n    ],\n    \"skill_summary\": {\n      \"directly_relevant\": [\n        \"Python 编程（数据清洗、Flask 路由、脚本自动化）\",\n        \"RAG 技术栈落地（文档 → 向量 → 检索）\",\n        \"基础 Web 开发（Flask）\",\n        \"需求沟通与小型项目独立交付\"\n      ],\n      \"weakly_relevant\": [\n        \"Vector DB 集成（Chroma/Milvus）\",\n        \"Excel 批处理\",\n        \"信息分类与结构化组织\"\n      ],\n      \"unverified_or_missing\": [\n        \"接口调用深度（RESTful API 规范、认证）— 待面试验证\",\n        \"Docker 生产部署 — 仅一次操作\",\n        \"OpenCV / 计算机视觉 — 无经验\",\n        \"Python 高级特性（异步、性能调优）— 素材未体现\"\n      ]\n    },\n    \"project_highlights\": [\n      \"聚焦型 AI 应用交付：核心展示从 0 到 1 实现 RAG 的完整链路，直接契合 JD 中 Python 与项目 Demo 要求。\",\n      \"端到端独立角色：同时负责需求沟通、技术方案与交付，体现业务理解与责任闭环。\",\n      \"自动化效率意识：有主动发现重复劳动并工具化解决的习惯，工程思维明确。\",\n      \"可演示作品：两个项目均有可直接展示的成果（Demo 网站 / 脚本），便于面试时支撑能力陈述。\"\n    ],\n    \"downstream_suggestions\": [\n      \"项目标题建议使用「独立开发 / 外包项目」而非公司岗位，定位为「实战派 AI 应用开发者」。\",\n      \"经历时间线、量化数字需结合候选人实际信息替换占位符后定稿。\",\n      \"如需补充 OpenCV，可在简历中提及「正在学习」，不编造成已完成经验。\",\n      \"自动化脚本部分强调与 JD 重叠的文件处理与流程自动化能力。\"\n    ]\n  },\n  \"red_flags\": [],\n  \"blocked\": false,\n  \"manual_review_required\": false\n}\n```",
+  "judge": {
+    "score": 5,
+    "pass": false,
+    "rubric_hits": [
+      "使用 STAR 或类似结构写可编辑经历段落",
+      "突出 AI 编程、Python、RAG、客户需求沟通",
+      "不虚构量化成果、公司、学历或正式职位",
+      "技能标签区分直接相关和弱相关",
+      "素材不足时使用可替换占位符而不是编造"
+    ],
+    "missing": [],
+    "hallucination": [],
+    "red_line_violations": [],
+    "profile_lessons": [],
+    "prompt_patch_suggestions": []
+  },
+  "dependencies": [
+    "job-jd-analyze-001"
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "model": "opencode-go/deepseek-v4-pro",
+  "code": 0,
+  "text": "{\"score\": 95, \"score_scale\": \"0-100\", \"pass\": true, \"rubric_hits\": [\"一句话定位同时能让技术者和企业主理解\", \"区分技术者和企业主的不同内容动机\", \"内容矩阵包含干货、案例、需求拆解、转介信任建设\", \"商业链路是内容到信任到撮合\", \"不编造客户案例或成交数据\"], \"missing\": [], \"hallucination\": [], \"red_line_violations\": [], \"profile_lessons\": [], \"prompt_patch_suggestions\": []}",
+  "usage": {
+    "input": 4464,
+    "output": 2282,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "reasoning": 2159,
+    "totalTokens": 6746,
+    "cost": {
+      "input": 0.00776736,
+      "output": 0.00794136,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "total": 0.01570872
+    }
+  },
+  "stderr": "",
+  "elapsedMs": 34068,
+  "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+  "workDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-05-59-214Z/media-account-strategy-001-judge",
+  "isolatedSessionDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-05-59-214Z/media-account-strategy-001-judge/.pi-sessions"
+}

@@ -1,0 +1,25 @@
+{
+  "model": "opencode-go/deepseek-v4-pro",
+  "code": 0,
+  "text": "{\n  \"score\": 90,\n  \"score_scale\": \"0-100\",\n  \"pass\": false,\n  \"rubric_hits\": [\n    \"成功将叙述性经历拆分为3个可独立处理的条目\",\n    \"每条保留了原始事实，未添加成果数字\",\n    \"字段完整包含项目名称、任务、技术、角色、证据缺口\",\n    \"缺失的时间、公司、成果均标记为 missing\",\n    \"未进行简历润色或岗位判断\"\n  ],\n  \"missing\": [],\n  \"hallucination\": [],\n  \"red_line_violations\": [\n    \"handoff_summary 中加入了对下游节点的业务策略建议：'建议下游节点基于证据缺口标记进行补充性信息收集，或按 weak-structured-operator 标签做匹配降级处理'，违反了节点通用契约中'不得加入业务判断或策略建议'的红线\"\n  ],\n  \"profile_lessons\": [\n    \"标准化节点的 handoff_summary 应仅客观总结标准化过程本身（如拆分条目数、缺失字段情况等），不应包含对下游流程的操作指导或策略建议，保持节点职责单一、边界清晰\"\n  ],\n  \"prompt_patch_suggestions\": [\n    \"在 handoff_summary 生成指令中增加约束：'handoff_summary 只描述标准化过程的结果、注意事项与已知限制，不得提出下游节点应如何处理的建议或策略性判断'\"\n  ]\n}",
+  "usage": {
+    "input": 3105,
+    "output": 2065,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "reasoning": 1761,
+    "totalTokens": 5170,
+    "cost": {
+      "input": 0.0054027,
+      "output": 0.0071862,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "total": 0.0125889
+    }
+  },
+  "stderr": "",
+  "elapsedMs": 44189,
+  "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+  "workDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-53-01-930Z/job-experience-standardize-001-judge",
+  "isolatedSessionDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-53-01-930Z/job-experience-standardize-001-judge/.pi-sessions"
+}

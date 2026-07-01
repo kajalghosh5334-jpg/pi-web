@@ -1,0 +1,25 @@
+{
+  "model": "opencode-go/deepseek-v4-flash",
+  "code": 0,
+  "text": "```json\n[\n  {\n    \"comment\": \"这个选题太真实了，我们公司知识库就是没人维护。\",\n    \"main_tag\": \"好评\",\n    \"confidence\": 0.9,\n    \"reason\": \"表达对选题的认同，并分享自身类似经历，属于正面反馈。\",\n    \"route\": \"auto_reply\",\n    \"auto_reply\": \"感谢您的认可！知识库维护确实是企业落地LLM的常见挑战，后续内容会深入探讨如何规避这类坑。欢迎持续关注。\",\n    \"transfer_to_human\": false\n  },\n  {\n    \"comment\": \"能不能推荐靠谱开发者？预算 2 万。\",\n    \"main_tag\": \"质疑\",\n    \"confidence\": 0.75,\n    \"reason\": \"用户实际为交易需求（预算+推荐请求），非内容质疑，但标签体系内最接近的是'质疑'；需人工介入避免违规承诺。\",\n    \"route\": \"transfer_to_human\",\n    \"auto_reply\": \"感谢您的咨询。我们提供项目撮合服务，您的需求已转专业团队跟进，请保持联系方式畅通。（不承诺具体匹配结果）\",\n    \"transfer_to_human\": true\n  },\n  {\n    \"comment\": \"你这就是割韭菜吧，AI 都是骗子。\",\n    \"main_tag\": \"黑粉\",\n    \"confidence\": 0.85,\n    \"reason\": \"无具体论据的全盘否定和情绪化攻击，属于黑粉行为而非建设性质疑。\",\n    \"route\": \"ignore\",\n    \"auto_reply\": null,\n    \"transfer_to_human\": false\n  },\n  {\n    \"comment\": \"加我私域领取 AI 资料包。\",\n    \"main_tag\": \"广告\",\n    \"confidence\": 0.95,\n    \"reason\": \"明显引导私域流量的营销推广，非内容互动。\",\n    \"route\": \"ignore\",\n    \"auto_reply\": null,\n    \"transfer_to_human\": false\n  },\n  {\n    \"comment\": \"你们撮合项目出现纠纷谁负责？\",\n    \"main_tag\": \"投诉\",\n    \"confidence\": 0.9,\n    \"reason\": \"直接质疑纠纷责任归属，属于交易风险类问题，需人工按规则解释，不可自动答复责任条款。\",\n    \"route\": \"transfer_to_human\",\n    \"auto_reply\": \"已收到您的反馈。关于项目纠纷问题我们非常重视，已转人工客服处理，将为您详细说明现有保障机制。（不承诺具体责任判定）\",\n    \"transfer_to_human\": true\n  }\n]\n```",
+  "usage": {
+    "input": 3461,
+    "output": 2340,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "reasoning": 1784,
+    "totalTokens": 5801,
+    "cost": {
+      "input": 0.00048454000000000005,
+      "output": 0.0006552000000000001,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "total": 0.0011397400000000002
+    }
+  },
+  "stderr": "",
+  "elapsedMs": 29229,
+  "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+  "workDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T19-35-43-671Z/media-comment-classify-001-output",
+  "isolatedSessionDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T19-35-43-671Z/media-comment-classify-001-output/.pi-sessions"
+}

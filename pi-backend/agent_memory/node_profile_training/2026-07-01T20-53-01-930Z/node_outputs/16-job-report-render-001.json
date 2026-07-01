@@ -1,0 +1,36 @@
+{
+  "caseId": "job-report-render-001",
+  "title": "JD 匹配报告渲染",
+  "workflowId": "WF-4",
+  "nodeType": "Artifact/Render",
+  "profileTarget": "weak-structured-operator",
+  "model": "opencode-go/deepseek-v4-flash",
+  "score": 100,
+  "pass": true,
+  "elapsedMs": 73587,
+  "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+  "workDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-53-01-930Z/job-report-render-001-output",
+  "input": "请把上游 JD 匹配分析渲染成人类可读报告：摘要、命中项、缺口项、学历屏障、简历定制建议、待确认信息。不得新增事实。",
+  "output": "```json\n{\n  \"artifact_title\": \"候选人 JD 匹配分析报告 (weak-structured-operator / WF-4)\",\n  \"artifact_body\": \"# JD 匹配分析报告\\n\\n**Profile:** weak-structured-operator\\n**整体置信度:** 85%\\n\\n---\\n\\n## 1. 综合评估\\n- 强命中: 2 项 (有项目demo加分, 能和业务方沟通需求)\\n- 命中: 2 项 (Python基础扎实, 熟悉接口调用)\\n- 弱化项(短期可转化): 1 项 (了解OpenCV加分)\\n- 弱化项(无关): 1 项 (Django/Docker经验)\\n- 屏障风险: 1 项 (学历屏障)\\n- 无需人工介入, 红线段通过。\\n\\n---\\n\\n## 2. 匹配详情（命中项）\\n\\n### ✅ 强命中：有项目 demo 加分\\n- **类型:** Fact (事实)\\n- **证据:** RAG 知识库 Demo 和小型企业资料问答外包均属于可演示项目，有具体代码与效果产出。\\n- **建议:** 立即将 RAG Demo 公开到 GitHub，包含 README 和截图/视频，面试时直接带电脑现场操作。\\n\\n### ✅ 强命中：能和业务方沟通需求\\n- **类型:** Inference (推断)\\n- **证据:** 上游策略节点标注候选人「性格开朗」；外包项目交付必然涉及需求沟通、澄清、确认和交付闭环。\\n- **反证/风险:** 外包沟通深度可能有限；性格开朗不等同于系统化的需求分析与专业沟通能力。\\n- **建议:** 简历中描述为「独立对接业务方，完成需求分析—方案设计—开发—交付全流程」。准备一个具体的沟通案例用于面试回答。\\n\\n### ✅ 命中：Python 基础扎实\\n- **类型:** Fact (事实)\\n- **证据:** 候选人简历要点含 Python 自动化脚本、RAG 知识库 Demo（LangChain）、Flask 基础、外包项目代码。\\n- **反证/风险:** 未经过正式面试或系统性编码考核；数据结构/操作系统等底层掌握程度属于 unknown。\\n- **建议:** 简历量化代码量与项目数。面试前刷 Python 高频基础题（文件处理、异常、装饰器、生成器）。\\n\\n### ✅ 命中：熟悉接口调用\\n- **类型:** Inference (推断)\\n- **证据:** RAG 知识库 Demo 必然调用大模型 API（OpenAI Embedding/Chat 等接口）；外包问答项目需要对接后端服务接口。\\n- **反证:** 简历中未显式标注 requests/httpx 或 RESTful API 设计使用，调用经验由项目类型推断得出。\\n- **建议:** 在项目描述中显式写出接口调用细节，如「封装 OpenAI SDK 实现 Embedding/Chat Completion API 调用」。\\n\\n---\\n\\n## 3. 缺口项与弱化项分析\\n\\n### ⚠️ 弱化项（可短期转化为加分项）：了解 OpenCV 加分\\n- **类型:** Recommendation (建议)\\n- **证据:** 公司技术栈（星河智造）含 OpenCV，JD 标注为加分项。候选人材料中未提及 OpenCV 经验。\\n- **建议:** 强烈建议投入 3-5 天快速上手 OpenCV 基础：图像读取/显示/保存、颜色转换、边缘检测。产出一个 Python 小工具脚本，放入 GitHub。面试时直接展示，将此项从「弱化」转化为「命中」。\\n\\n### ⚠️ 弱化项（对本 JD 无影响）：Django / Docker 经验\\n- **类型:** Fact (事实)\\n- **证据:** JD 全文未出现 Django 或 Docker 要求。候选人 Django 不熟、Docker 仅部署过一次。\\n- **建议:** 不主动暴露短板。若被问及，简洁回应：「Flask 为主，框架设计理念相通，给我 3-5 天可上手 Django 功能开发」「Docker 已有实际部署经验，理解镜像/容器概念，基础命令熟练」。中长期补充 Django 基础与 Docker Compose。\\n\\n### 附加缺口处理要点\\n1. **OpenCV 经验缺失 (Quick Fixable):** 高关联性，短期优先投入 3-5 天学习。\\n2. **Django/Docker 薄弱 (Non-critical):** 低关联性，无需在本岗位压力下补课。\\n3. **计算机基础系统性不足 (Potential Interview Risk):** 中等关联性，面试前 1-2 周快速过 Python 高频面试题、SQL 基础、Linux 常用命令、Git 协作流程。\\n\\n---\\n\\n## 4. 关键屏障：学历屏障\\n- **类型:** Risk (风险)\\n- **证据:** JD 写「大专及以上优先」；候选人高中学历。上游策略节点判定为短期不可逆结构短板。\\n- **反证:** 标注为「优先」而非硬性门槛，说明公司对该岗位的学历包容度较高。\\n- **核心策略（来自上游）:**\\n  1. **红线约束：** 绝不隐藏、不虚构学历。\\n  2. **简历排版：** 技能摘要与项目经验前置，教育背景放在最后一行，弱化视觉权重。\\n  3. **面试话术：** 坦诚早期选择，将焦点转向实际作品质量和交付能力。\\n  4. **投递策略：** 跳过明确「本科硬性」的岗位，对于写「优先」「亦可」的岗位大胆投递。\\n\\n---\\n\\n## 5. 简历定制建议\\n- **目标标题:** 初级 AI 工具开发 | Python / LLM / RAG\\n- **个人摘要:** 独立交付 2 个 AI 应用项目（RAG 知识库 + 企业资料问答）。Python 基础扎实，熟悉 LLM 接口调用与业务需求沟通。关注技术落地与业务价值。\\n- **项目经验顺序:**\\n  1. RAG 知识库问答 Demo (精准命中 JD 核心需求: Python 扎实/接口调用/Demo 加分)\\n  2. 小型企业资料问答外包 (突出沟通与交付能力)\\n  3. Python 自动化脚本集 (体现 Python 基础扎实)\\n- **技能高亮:**\\n  - Python（Flask、自动化脚本、文件处理、异常处理）\\n  - LLM/RAG 实战（LangChain、OpenAI API、Chroma 向量库）\\n  - 项目全流程（需求沟通 → 方案设计 → 开发 → 部署 → 交付）\\n  - Git 基础操作\\n  - OpenCV 基础（若已按策略补课成功，则加入此项）\\n- **学历放置:** 简历最后一行。仅列「教育背景：高中」。不在简历中对学历做额外解释，留到面试中由诚实话术应对。\\n\\n---\\n\\n## 6. 待确认 / 需关注项目\\n| 项目 | 类型 | 当前置信度 | 待确认点 |\\n|------|------|-----------|---------|\\n| 沟通能力 | Inference | 85% | 缺乏系统化需求分析能力的直接证据，需面试时评估真实 depth |\\n| 接口调用深度 | Inference | 95% | 简历未显式展示 API 封装能力，优化建议尚未落地 |\\n| Python 基础 | Fact + Inference | 90% | 简历可靠但缺乏面试考核检验，面试刷题是硬性准备 |\\n| 学历屏障 | Risk | 95% | 策略已圈定，但市场实际反馈未知，简历投递后需跟踪初期筛选转化率 |\\n\\n---\\n\\n## 7. 合规说明\\n- **红线段检查:** pass\\n- **事实/推断边界遵守:** 严格区分 Fact / Inference / Recommendation / Risk，所有项目均附带 Evidence 和 Counter-evidence。\\n- **本渲染声明:** 严格遵循上游数据，未新增任何分析结论、事实、案例或岗位要求。\",\n  \"source_mapping\": {\n    \"综合评估\": \"upstream: overall_confidence, analysis_items[].status\",\n    \"匹配详情(命中项)\": \"upstream: analysis_items[status=hit/strong_hit]\",\n    \"缺口项与弱化项\": \"upstream: analysis_items[status=weak/weak_but_irrelevant], gap_handling\",\n    \"学历屏障\": \"upstream: education_barrier\",\n    \"简历定制建议\": \"upstream: resume_tailoring_strategy\",\n    \"待确认项目\": \"upstream: analysis_items[type=inference/risk], counter_evidence fields\",\n    \"合规说明\": \"upstream: node_compliance\"\n  },\n  \"placeholders\": [\n    \"OpenCV 补课产出脚本是否已放入 GitHub\",\n    \"接口调用细节（requests/httpx/API 封装）是否已在简历中补充\",\n    \"Python 高频基础题、SQL/Linux/Git 面试准备是否完成\",\n    \"学历屏障投递策略执行后的市场初筛反馈\"\n  ],\n  \"render_notes\": \"渲染完成。严格遵循上游结构化数据，未新增任何分析结论或事实。所有推断/风险/弱化项/缺口项均已保留并明确标注。待确认信息整合为表格，便于下游跟踪。符合 WF-4 weak-structured-operator 节点职责要求。\"\n}\n```",
+  "judge": {
+    "score": 100,
+    "score_scale": "0-100",
+    "pass": true,
+    "rubric_hits": [
+      "产物结构清晰，以 Markdown 章节和表格组织，适合作为报告阅读",
+      "保留了命中项（强命中、命中）、缺口项（OpenCV、Django/Docker）、学历屏障和定制建议",
+      "未新增岗位、技能或项目事实，所有论据均引用上游数据和常识推断",
+      "保留了待确认信息和风险，设置独立表格进行跟踪",
+      "仅做渲染，未重做分析，合规声明明确"
+    ],
+    "missing": [],
+    "hallucination": [],
+    "red_line_violations": [],
+    "profile_lessons": [],
+    "prompt_patch_suggestions": [],
+    "raw_score": 100
+  },
+  "dependencies": [
+    "job-jd-analyze-001"
+  ]
+}

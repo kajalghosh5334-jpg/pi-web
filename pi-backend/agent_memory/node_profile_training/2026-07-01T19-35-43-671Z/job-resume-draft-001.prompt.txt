@@ -1,0 +1,208 @@
+你是 Workflow 中的一个 profile 化节点。请只完成当前节点，不要越权完成下游任务。
+
+节点类型：Generate/Draft
+目标 Profile：content-draft-producer
+Workflow：WF-2
+任务：简历经历初稿
+
+上游上下文：
+上游节点 job-jd-analyze-001 输出：
+```json
+{
+  "node": "Analyze/Judge",
+  "profile": "research-report-analyst",
+  "workflow": "WF-4",
+  "task": "JD匹配分析",
+  "status": "completed",
+  "input_summary": {
+    "candidate_profile": "高中学历；Python自动化脚本；RAG知识库demo；小型企业资料问答外包；Flask基础；不熟Django；Docker仅部署一次",
+    "jd_requirements": "Python基础扎实；熟悉接口调用；了解OpenCV加分；大专及以上优先；有项目demo加分；能和业务方沟通需求"
+  },
+  "match_analysis": {
+    "hits": [
+      {
+        "jd_requirement": "Python 基础扎实",
+        "match_status": "likely hit",
+        "evidence": "候选人具有Python自动化脚本、RAG demo和外包项目的实践经验，表明已具备基础Python编程能力",
+        "confidence": "medium",
+        "notes": "深度需面试验证；目前无高级特性使用记录（如异步IO、性能优化）"
+      },
+      {
+        "jd_requirement": "熟悉接口调用",
+        "match_status": "partial hit",
+        "evidence": "候选人使用Flask基础（涉及HTTP路由），RAG外包项目可能涉及外部API调用（如LLM接口）",
+        "confidence": "low",
+        "notes": "未明确展示接口文档阅读或RESTful设计经验；面试宜考察接口调用情景题"
+      },
+      {
+        "jd_requirement": "有项目 demo 加分",
+        "match_status": "hit",
+        "evidence": "候选人拥有RAG知识库demo和企业资料问答外包项目，可直接作为演示作品",
+        "confidence": "high",
+        "notes": "建议提前整理项目演示，包含技术选型、难点与业务价值"
+      },
+      {
+        "jd_requirement": "能和业务方沟通需求",
+        "match_status": "likely hit",
+        "evidence": "候选人自述性格开朗；外包项目经验暗示存在客户沟通经历",
+        "confidence": "low",
+        "notes": "性格开朗为self-reported unverified（上游标记）；沟通能力需面试验证"
+      }
+    ],
+    "gaps": [
+      {
+        "jd_requirement": "了解 OpenCV 加分",
+        "match_status": "gap",
+        "evidence": "候选人简历及上游材料均未涉及OpenCV或计算机视觉经验",
+        "impact": "面试中若涉及视觉任务可能处于劣势；不构成硬性拒绝条件",
+        "mitigation": "面试前快速学习OpenCV基础（图像读取、处理、边缘检测），准备1-2个小案例展示学习能力"
+      },
+      {
+        "jd_requirement": "大专及以上优先",
+        "match_status": "education gap",
+        "evidence": "候选人最高学历为高中",
+        "impact": "可能造成简历筛选劣势，但JD明确为优先项而非硬性要求",
+        "mitigation": "简历前置项目经验、弱化教育板块；若正在进修可诚实说明"
+      }
+    ],
+    "weaknesses": [
+      {
+        "aspect": "Web框架经验偏窄",
+        "detail": "仅会Flask基础，不熟Django",
+        "severity": "low",
+        "note": "JD未指定框架，但通用Python岗位通常期望至少主流框架"
+      },
+      {
+        "aspect": "容器化经验不足",
+        "detail": "Docker仅部署过一次，缺乏编排和生产运维经验",
+        "severity": "low",
+        "note": "JD未要求容器技能，但岗位可能涉及边缘端轻量化部署，当前无相关经验"
+      },
+      {
+        "aspect": "项目规模与商业化验证不足",
+        "detail": "项目均为小型demo或外包，缺乏中大型系统或多团队协作经验",
+        "severity": "medium",
+        "note": "JD期望与业务方沟通，小型项目仍可体现需求理解，但规模小可能说服力不足"
+      }
+    ],
+    "education_barrier": {
+      "status": "存在学历屏障，但为非硬性优先项",
+      "detail": "候选人学历（高中）低于JD优先条件（大专及以上），构成简历筛选劣势",
+      "strength_of_barrier": "中等偏低",
+      "rationale": "公司明确'优先'而非'必须'，结合上游分析该岗位定位为初级/实习助理级别，硬性学历要求可能不严格",
+      "mitigation_strategies": [
+        "简历中教育经历靠后或不占主要篇幅，主体突出项目和技术能力",
+        "在求职信中以'实战派AI开发者'定位，淡化学历权重",
+        "若有正在进行中的学历提升计划（成人教育/在线课程证书），诚实说明以展现上进心"
+      ]
+    },
+    "resume_strategy": [
+      "优化项目描述：RAG demo突出接口调用、数据流处理及与业务方的需求对接过程",
+      "Python自动化脚本部分强调文件处理、流程自动化等与JD重叠技能",
+      "将外包项目定位为'端到端交付经验'，展现独立沟通和解决问题的能力",
+      "若已学习OpenCV基础，可在简历中提一句'正在学习OpenCV并完成XX小案例'",
+      "GitHub/作品链接提前整理，确保代码可读性和README完整"
+    ]
+  },
+  "facts": [
+    "候选人最高学历为高中",
+    "候选人具备Python自动化脚本、RAG知识库demo、小型企业资料问答外包项目经验",
+    "候选人自述熟悉Flask基础，不熟悉Django",
+    "候选人Docker仅有一次部署经验",
+    "JD明确要求：Python基础扎实、熟悉接口调用、了解OpenCV加分、大专及以上优先、有项目demo加分、能和业务方沟通需求",
+    "上游分析显示该岗位薪资5-7k，与候选人期望6k匹配",
+    "上游分析显示学历门槛为'优先条件'非硬性要求"
+  ],
+  "inferences": [
+    {
+      "inference": "候选人的Python基础大概率满足JD基本要求，但深度和规范程度需面试验证",
+      "basis": "多方项目Python使用经验",
+      "confidence": "medium"
+    },
+    {
+      "inference": "候选人通过外包项目积累了基础接口调用经验（可能含API调用和基本HTTP交互）",
+      "basis": "Flask基础 + 外包项目涉及端到端交付",
+      "confidence": "medium"
+    },
+    {
+      "inference": "候选人缺乏OpenCV相关经验，若JD岗位偏机器视觉，需补强",
+      "basis": "候选人未提及OpenCV或视觉项目",
+      "confidence": "high"
+    },
+    {
+      "inference": "候选人沟通能力（外包经验）可能提供一定佐证，但均未经过第三方验证",
+      "basis": "上游信息：性格开朗self-reported；外包项目暗示客户沟通但无细节",
+      "confidence": "low"
+    },
+    {
+      "inference": "候选人学历短板可通过项目展示和主动学习计划部分弥补，但仍可能成为初筛阻力",
+      "basis": "JD明确优先大专及以上",
+      "confidence": "medium"
+    },
+    {
+      "inference": "岗位实际工作内容可能涉及Python后端+轻量化部署+视觉处理，候选人当前技能侧重AI应用（RAG）而非视觉，存在方向偏差",
+      "basis": "上游公司调研：官网技术关键词含OpenCV、PLC、轻量化模型；JD仅要求Python基础和接口调用，暗示初级岗位对技能要求不深但方向偏工业场景",
+      "confidence": "medium"
+    }
+  ],
+  "recommendations": [
+    "候选人应重点准备Python基础、文件处理、接口调用的技术面试，可自备小型Demo演示",
+    "面试前投入约20小时快速入门OpenCV，掌握图像读取、处理、显示等基础操作",
+    "整理一个完整项目的代码仓库和演示视频，用于弥补学历和正式经历不足",
+    "投递时附加自荐信并直接联系技术负责人，规避HR学历筛选",
+    "若存在学历提升计划，在面试中诚实提及，展现持续学习态度"
+  ],
+  "risks": [
+    {
+      "risk": "候选人在HR初筛阶段可能因高中学历被直接过滤，即使JD中为优先项",
+      "likelihood": "medium",
+      "impact": "high",
+      "mitigation": "优先投递明确'学历不限'或'大专及以上优先'的岗位；通过内推或附件作品链接绕过HR"
+    },
+    {
+      "risk": "候选人Python深度和项目复杂度可能达不到岗位实际期望",
+      "likelihood": "medium",
+      "impact": "high",
+      "mitigation": "面试前针对JD重点（文件处理、接口调用）准备实战题目，提前演练"
+    },
+    {
+      "risk": "面试被问及OpenCV或工业视觉内容时可能因知识空白表现不佳",
+      "likelihood": "medium",
+      "impact": "medium",
+      "mitigation": "快速学习OpenCV基础，准备'若被问到如何快速入门'的回答策略"
+    },
+    {
+      "risk": "项目经验若无法提供代码或演示，说服力大幅下降",
+      "likelihood": "low",
+      "impact": "high",
+      "mitigation": "整理并上传项目代码（脱敏后）至GitHub，准备录屏演示"
+    }
+  ],
+  "red_flags": [],
+  "blocked": false,
+  "manual_review_required": false,
+  "output_note": "未对候选人未掌握的技能做熟练假设；未建议隐藏或伪造学历；所有推断均明确标注置信度。缺失信息（如沟通能力具体案例）已标注unverified。"
+}
+```
+
+当前输入：
+原始经历：做过一个企业资料问答 RAG 外包，负责整理客户资料、写 Python 文档清洗脚本、接入向量库、做简单网页查询入口；还帮朋友做过批量 Excel 处理脚本；性格开朗，能和客户沟通需求。请按 STAR 写 2 段简历经历，附技能标签和项目亮点。
+
+输出要求：
+1. 严格遵守当前节点职责。
+2. 输出可供下游使用的结构化结果。
+3. 如信息缺失，写 unknown/missing/unverified，不得补造。
+4. 区分事实、推断、建议和风险。
+5. 遇到红线必须标记 blocked 或 manual_review_required。
+
+评分 Rubric：
+1. 使用 STAR 或类似结构写可编辑经历段落
+2. 突出 AI 编程、Python、RAG、客户需求沟通
+3. 不虚构量化成果、公司、学历或正式职位
+4. 技能标签区分直接相关和弱相关
+5. 素材不足时使用可替换占位符而不是编造
+
+红线：
+1. 不得虚构学历、公司、职位、项目规模或量化成绩
+2. 不得把 demo 写成生产级平台
+3. 不得生成最终不可修改定稿

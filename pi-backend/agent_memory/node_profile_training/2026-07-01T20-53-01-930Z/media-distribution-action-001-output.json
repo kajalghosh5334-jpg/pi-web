@@ -1,0 +1,25 @@
+{
+  "model": "opencode-go/deepseek-v4-flash",
+  "code": 0,
+  "text": "```json\n{\n  \"node_type\": \"Action/Writeback\",\n  \"profile\": \"structured-writeback-operator\",\n  \"workflow\": \"WF-15\",\n  \"task\": \"多平台分发排期 payload\",\n  \"action_payloads\": [\n    {\n      \"platform\": \"douyin\",\n      \"action\": \"schedule_post\",\n      \"parameters\": {\n        \"title\": \"missing — 候选标题见 upstream media-title-draft-001 output.draft_sections，待选定 variant\",\n        \"script\": \"missing\",\n        \"scheduled_time\": \"missing\"\n      },\n      \"blocked\": true,\n      \"block_reason\": \"口播脚本、发布时间缺失；标题未选定 variant。\"\n    },\n    {\n      \"platform\": \"xiaohongshu\",\n      \"action\": \"schedule_post\",\n      \"parameters\": {\n        \"title\": \"missing — 候选标题见 upstream media-title-draft-001 output.draft_sections，待选定 variant\",\n        \"cover_copy\": \"missing — 候选封面文案见 upstream，待选定 variant\",\n        \"body\": \"missing\"\n      },\n      \"blocked\": true,\n      \"block_reason\": \"正文缺失；标题及封面文案未选定 variant。\"\n    },\n    {\n      \"platform\": \"zhihu\",\n      \"action\": \"schedule_post\",\n      \"parameters\": {\n        \"long_title\": \"missing — 需基于选定标题扩展\",\n        \"answer_summary\": \"missing — 需基于选定文案撰写\"\n      },\n      \"blocked\": true,\n      \"block_reason\": \"长标题、回答摘要缺失；且未选定 variant。\"\n    }\n  ],\n  \"idempotency_key\": \"wf-15-distribution-20260702T205301z\",\n  \"validation_result\": {\n    \"status\": \"blocked\",\n    \"summary\": \"所有平台 action_payloads 因关键字段缺失被阻塞，无法加入排期队列。\",\n    \"missing_fields\": {\n      \"douyin\": [\"口播脚本\", \"发布时间\"],\n      \"xiaohongshu\": [\"正文\"],\n      \"zhihu\": [\"长标题\", \"回答摘要\"],\n      \"common\": [\"最终选定 variant\", \"各平台目标排期时间\"]\n    },\n    \"blocked_items\": [\"douyin_payload\", \"xiaohongshu_payload\", \"zhihu_payload\"]\n  },\n  \"blocked_items\": [\n    {\n      \"item\": \"douyin_action_payload\",\n      \"reason\": \"口播脚本、发布时间缺失，标题 variant 待定\"\n    },\n    {\n      \"item\": \"xiaohongshu_action_payload\",\n      \"reason\": \"正文缺失，标题/封面 variant 待定\"\n    },\n    {\n      \"item\": \"zhihu_action_payload\",\n      \"reason\": \"长标题、回答摘要缺失，内容 variant 待定\"\n    }\n  ],\n  \"retry_or_manual_review_advice\": \"需上游补充：(1) 从 5 组 variant 中选定最终标题及封面文案；(2) 抖音口播脚本、小红书正文、知乎长标题及回答摘要；(3) 各平台目标发布时间。补充完毕后重新生成 payload。\",\n  \"notes\": {\n    \"candidate_variants\": \"5 组 variant 详情见 media-title-draft-001 output.draft_sections，此处未重复列出以保持 payload 简洁。\",\n    \"review_status\": \"上游审稿（media-content-review-001）已通过，内容层面无阻塞；当前阻塞仅因排期所需专有字段缺失。\",\n    \"claimed_execution\": false\n  }\n}\n```",
+  "usage": {
+    "input": 5487,
+    "output": 4285,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "reasoning": 3504,
+    "totalTokens": 9772,
+    "cost": {
+      "input": 0.00076818,
+      "output": 0.0011998,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "total": 0.0019679800000000002
+    }
+  },
+  "stderr": "",
+  "elapsedMs": 59984,
+  "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+  "workDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-53-01-930Z/media-distribution-action-001-output",
+  "isolatedSessionDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-53-01-930Z/media-distribution-action-001-output/.pi-sessions"
+}

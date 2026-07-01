@@ -1,0 +1,25 @@
+{
+  "model": "opencode-go/deepseek-v4-pro",
+  "code": 0,
+  "text": "{\n  \"score\": 100,\n  \"score_scale\": \"0-100\",\n  \"pass\": true,\n  \"rubric_hits\": [\n    \"输出 5 组标题和封面文案\",\n    \"每组标注适用受众和点击动机\",\n    \"至少覆盖技术者向、企业主向、混合向\",\n    \"不新增上游没有支撑的案例、数字或结果\",\n    \"避免夸张承诺和标题党\"\n  ],\n  \"missing\": [],\n  \"hallucination\": [],\n  \"red_line_violations\": [],\n  \"profile_lessons\": [\n    \"通过复用有限上游素材（3条事实）可以组合出针对性较强的多角度标题，无需编造新数据。\",\n    \"使用疑问句和场景还原代替断言可降低标题党风险，同时保留吸引力。\",\n    \"在 draft 阶段用 risk_flags 标注表达歧义（如“风险地图”）比直接删除更能提示编辑阶段的人类注意。\"\n  ],\n  \"prompt_patch_suggestions\": []\n}",
+  "usage": {
+    "input": 4029,
+    "output": 2305,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "reasoning": 2085,
+    "totalTokens": 6334,
+    "cost": {
+      "input": 0.0070104600000000005,
+      "output": 0.0080214,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "total": 0.015031860000000001
+    }
+  },
+  "stderr": "",
+  "elapsedMs": 37709,
+  "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+  "workDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-28-40-414Z/media-title-draft-001-judge",
+  "isolatedSessionDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-28-40-414Z/media-title-draft-001-judge/.pi-sessions"
+}

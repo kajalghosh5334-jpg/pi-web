@@ -1,0 +1,25 @@
+{
+  "model": "opencode-go/deepseek-v4-flash",
+  "code": 0,
+  "text": "```json\n{\n  \"draft_sections\": [\n    {\n      \"title\": \"企业资料问答 RAG 系统 — 独立外包项目\",\n      \"type\": \"经历\",\n      \"star\": {\n        \"situation\": \"某企业客户需构建内部知识问答系统，用于快速检索大量企业资料，提升信息获取效率。\",\n        \"task\": \"作为独立开发者，负责项目全周期交付：需求沟通、数据清洗、RAG 系统搭建、Web 查询入口开发。\",\n        \"action\": \"使用 Python 编写文档清洗脚本，对客户提供的原始资料（PDF/Word/文本）进行格式统一、段落分割与元数据标注；将处理后的文档存入向量数据库（[待补充具体向量库，如 Chroma/FAISS]），实现语义检索；基于 Flask 开发简易 Web 问答界面，支持关键词和自然语言查询；独立对接客户，完成需求调研、方案确认、分阶段交付与反馈迭代。\",\n        \"result\": \"项目成功交付，客户投入使用并通过验收。整个过程锻炼了独立交付能力、技术选型与客户沟通能力。成果可在线 Demo 演示：[待补充 Demo 链接]。\"\n      },\n      \"skill_tags\": {\n        \"direct\": [\"Python\", \"RAG\", \"Flask\", \"向量数据库\", \"文档清洗\", \"Web 开发\", \"客户沟通\"],\n        \"weak\": []\n      },\n      \"highlights\": [\n        \"独立完成从需求到交付的全流程外包项目\",\n        \"实现基于语义检索的问答系统，覆盖数据清洗→向量化→检索→Web 展示\",\n        \"直接与客户沟通需求，具备需求分析与迭代协调能力\"\n      ]\n    },\n    {\n      \"title\": \"批量 Excel 数据处理脚本 — 小型工具开发\",\n      \"type\": \"经历\",\n      \"star\": {\n        \"situation\": \"朋友在处理大量 Excel 报表时遇到重复性手工操作，耗时且易出错。\",\n        \"task\": \"编写自动化 Python 脚本，实现数据批量读取、清洗、汇总与输出标准化报表。\",\n        \"action\": \"使用 pandas 与 openpyxl 实现多文件合并、异常值检测、字段重命名、分类汇总等功能，脚本封装为命令行工具，支持灵活配置。\",\n        \"result\": \"脚本大幅缩短处理时间，后续被朋友重复使用于多期数据处理。提升了 Python 数据处理与工具封装能力。\"\n      },\n      \"skill_tags\": {\n        \"direct\": [\"Python\", \"pandas\", \"Excel 自动化\"],\n        \"weak\": []\n      },\n      \"highlights\": [\n        \"用 Python 解决实际重复性劳动问题\",\n        \"封装为可复用的命令行工具\",\n        \"体现问题分析与自动化思维\"\n      ]\n    }\n  ],\n  \"source_usage\": {\n    \"企业资料问答 RAG 系统\": \"原始经历描述 + 上游 context（RAG demo、外包项目、客户沟通）\",\n    \"批量 Excel 处理脚本\": \"原始经历描述\",\n    \"客户沟通\": \"原始经历描述 + 上游 context（能与业务方沟通需求）\",\n    \"项目亮点\": \"根据原始描述和上游策略提炼，无虚构量化数据\"\n  },\n  \"unsupported_claims_removed\": [\n    \"未添加任何公司名称、学历信息、具体客户名称、项目周期、团队规模\",\n    \"未使用任何量化成绩（如“提升效率 50%”）\"\n  ],\n  \"unsupported_numbers_self_check\": \"全部时间、数量、百分比均使用占位符或模糊表达（『多期』『多次』），无上游支持的数字未添加。\",\n  \"editable_notes\": [\n    \"[待补充具体向量数据库名称]：根据实际使用的技术栈填写，如 Chroma/FAISS/Pinecone\",\n    \"[待补充 Demo 链接]：如果已部署可访问的演示环境，请补充链接\",\n    \"[待补充项目周期]：如可回忆，建议补充实际开发时长\",\n    \"[待补充客户名称]：如果脱敏允许，可写行业或公司类型（如『某制造企业』）\",\n    \"批量 Excel 脚本的『朋友』可改为『客户』或『某团队』以更显正式，需根据真实情况调整\"\n  ],\n  \"risk_flags\": [\n    \"RAG 项目描述为『简易 Web 查询入口』，明确为 demo 级别，避免被理解为生产级平台\",\n    \"未虚构任何学历、公司、职位或正式在职经历\",\n    \"所有技能标签基于实际使用或项目涉及，无夸大\",\n    \"无 OpenCV 标签，与当前技能匹配\"\n  ]\n}\n```",
+  "usage": {
+    "input": 4283,
+    "output": 3340,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "reasoning": 2354,
+    "totalTokens": 7623,
+    "cost": {
+      "input": 0.00059962,
+      "output": 0.0009352000000000001,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "total": 0.00153482
+    }
+  },
+  "stderr": "",
+  "elapsedMs": 35865,
+  "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+  "workDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T21-32-52-330Z/job-resume-draft-001-output",
+  "isolatedSessionDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T21-32-52-330Z/job-resume-draft-001-output/.pi-sessions"
+}

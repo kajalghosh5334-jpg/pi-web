@@ -1,0 +1,160 @@
+你是 Workflow 中的一个 profile 化节点。请只完成当前节点，不要越权完成下游任务。
+
+节点类型：Review/Gate
+目标 Profile：strong-quality-reviewer
+Workflow：WF-6
+任务：简历终审裁决
+
+上游上下文：
+上游节点 job-resume-draft-001 输出：
+```json
+{
+  "_node_type": "content-draft-producer",
+  "_workflow": "WF-2",
+  "_target_profile": "content-draft-producer",
+  "draft_sections": [
+    {
+      "id": "exp_01_rag",
+      "title": "RAG 知识库问答系统（外包项目）",
+      "star_structure": {
+        "situation": "某企业客户存在内部文档资料查询效率低的问题，希望通过搭建知识库问答系统，使员工能基于自然语言快速检索技术手册和业务文档。 [可编辑场景细节]",
+        "task": "作为项目唯一技术人员，负责从零交付一个功能原型（Demo），涵盖文档清洗、RAG 后端搭建及简易 Web 查询界面开发。",
+        "action": [
+          "使用 Python 编写文档清洗脚本（数据提取、文本切片）。",
+          "接入 [向量数据库占位: Milvus/Chroma] 进行 Embedding 存储与相似度检索。",
+          "调用 LLM 的 RESTful API 进行答案生成，处理 Token 限制与重试逻辑。",
+          "搭建 [前端占位: Streamlit/Gradio/Flask] 简易 Web 查询入口。",
+          "直接与客户沟通需求，控制 Demo 边界，管理预期，确保交付物符合核心场景。"
+        ],
+        "result": "成功交付交互式 Demo，可作为面试作品集中展示 Python 基础、接口调用和 RAG 工程实践的核心案例。 [注意：Demo 完整性未经上游验证，面试时应如实描述为概念验证原型 PoC]"
+      }
+    },
+    {
+      "id": "exp_02_excel",
+      "title": "批量 Excel 数据处理脚本（项目）",
+      "star_structure": {
+        "situation": "朋友/客户的小型业务数据分散在多个 Excel 文件中，手动汇总耗时且易出错。",
+        "task": "编写自动化脚本，完成数据整合与清洗。",
+        "action": [
+          "使用 Python 的 pandas 库，编写脚本进行文件批量读取、数据标准化、去重与合并。"
+        ],
+        "result": "交付可复用的脚本工具，节省了 [时间数字占位: n] 小时/周 的重复劳动。（若无精确数据，建议替换为'显著节省了数据整理时间'）"
+      }
+    }
+  ],
+  "skill_tags": {
+    "direct_match": [
+      "Python",
+      "RAG（检索增强生成）",
+      "API 集成（REST/LLM）",
+      "向量数据库（基本操作）",
+      "文档处理与脚本编写"
+    ],
+    "transferrable_or_weak": [
+      "客户需求沟通",
+      "Excel 自动化（pandas）",
+      "Docker（基础操作/学习中）",
+      "OpenCV（概念了解/学习意愿）",
+      "简易 Web 前端（Streamlit/Gradio）"
+    ]
+  },
+  "source_usage": {
+    "exp_01.rag_project": "raw_input（企业资料问答 RAG 外包）",
+    "exp_01.python_script": "raw_input（写 Python 文档清洗脚本）",
+    "exp_01.vector_db": "raw_input（接入向量库）",
+    "exp_01.web_ui": "raw_input（做简单网页查询入口）",
+    "exp_01.communication": "raw_input（性格开朗，能和客户沟通需求）",
+    "exp_01.demo_quality": "upstream_analysis（Demo 质量和完整性未知）",
+    "exp_02.excel_script": "raw_input（批量 Excel 处理脚本）",
+    "skill_tags.python_rag_api": "raw_input + upstream_analysis（基础扎实+接口调用命中）",
+    "skill_tags.open_cv": "upstream_analysis（缺口项，标注在学）",
+    "skill_tags.docker": "upstream_analysis（弱化项，建议容器化）"
+  },
+  "unsupported_claims_removed": [
+    "生产级/大规模系统（无依据，删除）",
+    "具体客户公司名/品牌（无依据，占位）",
+    "具体量化数据（处理数据量、节省时间、准确率，无上游依据，占位）",
+    "学历背景暗示（无依据，且上游指明高中学历，禁止补造）"
+  ],
+  "unsupported_numbers_self_check": {
+    "[时间数字占位: n] 小时/周": "无上游数据支持的下游占位。下游如无法确证，建议替换为非数字表述，如'显著节省时间'。",
+    "所有百分比和金额": "未使用，合规。"
+  },
+  "editable_notes": [
+    "向量数据库未明确记录类型（如 Milvus/Chroma/FAISS），请补充或保持占位。",
+    "Web 前端框架未明确（Streamlit vs Flask vs Gradio），请补充。",
+    "项目一的客户行业和具体文档类型请补充，当前描述较为泛化。",
+    "项目二的时间节省数字务必与真实情况对齐，若无法量化，建议长期使用非数字表述。",
+    "整体项目标题可进一步优化，当前为描述性标题。"
+  ],
+  "risk_flags": [
+    {
+      "level": "blocked",
+      "rule": "红线1: 不得虚构学历、公司",
+      "detail": "学历明确为高中学历。草稿中未出现学历相关补偿描述（如大专/本科），符合红线要求。下游节点不得在简历正文中补造学历。"
+    },
+    {
+      "level": "manual_review_required",
+      "rule": "红线2: 不得把 demo 写成生产级",
+      "detail": "草稿中使用了 '功能原型 (Demo)'、'概念验证原型 (PoC)' 等词汇，符合红线要求。面试准备节点需保持同一套说辞，避免无意中升级为'生产级平台'。"
+    },
+    {
+      "level": "warning",
+      "rule": "节点通用契约: 无依据不补造",
+      "detail": "Demo 质量和完整性，以及项目具体细节，上游标注为未知/缺失数据。草稿已使用占位符，下游若强行填入虚假细节将触发红线，请下游务必审慎处理。"
+    }
+  ]
+}
+```
+
+当前输入：
+请审查上游生成的简历经历是否诚实、专业、针对星河智造初级 AI 工具开发助理 JD。必须给出 pass/revise/block 裁决、问题清单、返工节点和验收标准。不要重写整份简历。
+
+节点通用契约：
+职责：最终质量门，只做短裁决和返工分配，不重写长内容。
+推荐输出字段：
+- decision: pass|publish|approve|revise|block|escalate
+- issues: 每项含 severity, target_node, location, problem, action, acceptance_criteria
+- evidence_checks: 事实/数字/来源/项目证明/学历/职位/技能熟练度/CTA 检查
+- checklist_coverage: 明确列出已检查和未检查的关键项
+- rework_assignment
+通用红线：
+- 必须给明确裁决，不能只给建议
+- 不得代替上游节点重写整篇长文
+- 无来源数字、虚构经历、夸大技能、法律/交易风险、缺失必要 CTA 审查必须阻塞或升级
+
+本样本标签/路由 schema：
+未指定；如需分类，严格使用题目给定标签。
+
+本样本生成/审查专项约束：
+无
+{
+  "reviewChecklist": [
+    "学历是否如实呈现且未虚构",
+    "职位/身份是否被夸大",
+    "AI 项目成果和量化数据是否有支撑",
+    "技能熟练度是否与素材一致",
+    "是否对齐 JD 的 Python、接口调用、项目 demo、沟通能力要求",
+    "是否要求补充项目链接、demo、代码仓库或可验证证明"
+  ]
+}
+
+输出要求：
+1. 严格遵守当前节点职责。
+2. 输出可供下游使用的结构化结果。
+3. 如信息缺失，写 unknown/missing/unverified，不得补造。
+4. 区分事实、推断、建议和风险。
+5. 遇到红线必须标记 blocked 或 manual_review_required。
+6. 优先按“节点通用契约”的字段输出；若任务要求更具体，以任务要求为准。
+
+评分 Rubric：
+1. 给出明确 pass/revise/block 裁决
+2. 检查是否虚构学历、项目成果、职位或技能熟练度
+3. 检查是否对齐 JD 的 Python、接口调用、项目 demo 和沟通要求
+4. 指出具体返工位置和返工节点
+5. 输出短裁决，不展开长文重写
+
+红线：
+1. 不得直接替弱模型重写整份长简历
+2. 不得只给建议不给裁决
+3. 不得允许虚构经历通过

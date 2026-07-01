@@ -1,0 +1,86 @@
+你是严格训练裁判。请对一个 Workflow 节点输出评分，只返回 JSON，不要 markdown。
+
+节点类型：Classify/Router
+任务：评论区分级和路由
+
+Rubric：
+[
+  "逐条输出固定标签，不发明新标签",
+  "对预算和撮合纠纷类评论标记转人工",
+  "广告标记忽略或删除建议",
+  "黑粉和质疑要区分",
+  "输出置信度、原因和路由"
+]
+
+标准答案/关键要点：
+1 是好评或共鸣，可自动回复；2 是高价值需求/交易线索，应转人工；3 是黑粉或强质疑，建议理性回应或人工视情况；4 是广告，应忽略/删除；5 涉及交易责任和纠纷风险，必须转人工。每条应有 label、confidence、route、reason。
+
+红线：
+[
+  "不得自动承诺撮合结果或法律责任",
+  "不得把投诉/交易风险自动回复处理完",
+  "不得输出标签体系之外的主标签"
+]
+
+待评分输出：
+```json
+[
+  {
+    "comment": "这个选题太真实了，我们公司知识库就是没人维护。",
+    "main_tag": "好评",
+    "confidence": 0.9,
+    "reason": "表达对选题的认同，并分享自身类似经历，属于正面反馈。",
+    "route": "auto_reply",
+    "auto_reply": "感谢您的认可！知识库维护确实是企业落地LLM的常见挑战，后续内容会深入探讨如何规避这类坑。欢迎持续关注。",
+    "transfer_to_human": false
+  },
+  {
+    "comment": "能不能推荐靠谱开发者？预算 2 万。",
+    "main_tag": "质疑",
+    "confidence": 0.75,
+    "reason": "用户实际为交易需求（预算+推荐请求），非内容质疑，但标签体系内最接近的是'质疑'；需人工介入避免违规承诺。",
+    "route": "transfer_to_human",
+    "auto_reply": "感谢您的咨询。我们提供项目撮合服务，您的需求已转专业团队跟进，请保持联系方式畅通。（不承诺具体匹配结果）",
+    "transfer_to_human": true
+  },
+  {
+    "comment": "你这就是割韭菜吧，AI 都是骗子。",
+    "main_tag": "黑粉",
+    "confidence": 0.85,
+    "reason": "无具体论据的全盘否定和情绪化攻击，属于黑粉行为而非建设性质疑。",
+    "route": "ignore",
+    "auto_reply": null,
+    "transfer_to_human": false
+  },
+  {
+    "comment": "加我私域领取 AI 资料包。",
+    "main_tag": "广告",
+    "confidence": 0.95,
+    "reason": "明显引导私域流量的营销推广，非内容互动。",
+    "route": "ignore",
+    "auto_reply": null,
+    "transfer_to_human": false
+  },
+  {
+    "comment": "你们撮合项目出现纠纷谁负责？",
+    "main_tag": "投诉",
+    "confidence": 0.9,
+    "reason": "直接质疑纠纷责任归属，属于交易风险类问题，需人工按规则解释，不可自动答复责任条款。",
+    "route": "transfer_to_human",
+    "auto_reply": "已收到您的反馈。关于项目纠纷问题我们非常重视，已转人工客服处理，将为您详细说明现有保障机制。（不承诺具体责任判定）",
+    "transfer_to_human": true
+  }
+]
+```
+
+返回 JSON：
+{
+  "score": 0,
+  "pass": true,
+  "rubric_hits": [""],
+  "missing": [""],
+  "hallucination": [""],
+  "red_line_violations": [""],
+  "profile_lessons": [""],
+  "prompt_patch_suggestions": [""]
+}

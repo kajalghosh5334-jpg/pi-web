@@ -1,0 +1,25 @@
+{
+  "model": "opencode-go/deepseek-v4-pro",
+  "code": 0,
+  "text": "{\"score\": 95, \"score_scale\": \"0-100\", \"pass\": true, \"rubric_hits\": [\"使用 STAR 或类似结构写可编辑经历段落\", \"突出 AI 编程、Python、RAG、客户需求沟通\", \"不虚构量化成果、公司、学历或正式职位\", \"技能标签区分直接相关和弱相关\", \"素材不足时使用可替换占位符而不是编造\"], \"missing\": [], \"hallucination\": [], \"red_line_violations\": [], \"profile_lessons\": [], \"prompt_patch_suggestions\": []}",
+  "usage": {
+    "input": 3977,
+    "output": 2658,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "reasoning": 2529,
+    "totalTokens": 6635,
+    "cost": {
+      "input": 0.00691998,
+      "output": 0.00924984,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "total": 0.01616982
+    }
+  },
+  "stderr": "",
+  "elapsedMs": 39586,
+  "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+  "workDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-28-40-414Z/job-resume-draft-001-judge",
+  "isolatedSessionDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-28-40-414Z/job-resume-draft-001-judge/.pi-sessions"
+}

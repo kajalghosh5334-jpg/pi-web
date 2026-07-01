@@ -1,0 +1,98 @@
+{
+  "id": "trained-case-media-material-gather-001-2026-07-01",
+  "name": "AI 选题素材搜集 专用 Profile",
+  "match": [
+    "trained-case:media-material-gather-001",
+    "workflow:WF-10",
+    "node-type:Gather/Fetch",
+    "AI 选题素材搜集",
+    "weak-research-extractor"
+  ],
+  "defaultModel": "opencode-go/deepseek-v4-flash",
+  "skills": [
+    "output-spec"
+  ],
+  "availableSkills": [
+    "output-spec",
+    "artifact-storage"
+  ],
+  "collaborationProtocol": "专用于真实训练任务：AI 选题素材搜集。\n只做信息搬运、显性事实抽取和来源整理；不得替 Lead 下最终判断。只基于用户提供资料、明确工具结果或可定位文件内容输出事实；没有可验证来源时必须标记 source_status=missing/unverified，不得补造新闻、数字、链接或媒体名。遇到资料冲突、可信度不足或用户意图不清，标记为待强模型复核。\n必须复用训练样本中的成功模式，并保留风险、证据和待确认项。",
+  "projectConfig": {
+    "modelTier": "weak",
+    "roleInWeakStrongWorkflow": "researcher",
+    "preferredTasks": [
+      "搜索候选资料",
+      "摘录显性事实",
+      "整理来源与时间",
+      "从代码或日志中定位线索",
+      "按 schema 输出资料包"
+    ],
+    "escalateWhen": [
+      "需要判断资料可信度",
+      "来源互相矛盾",
+      "需要推断用户真实意图",
+      "信息缺口会影响方案方向"
+    ],
+    "qualityBar": "输出必须包含来源/位置、摘录事实、不确定点和建议复核项；禁止只给结论；禁止把未验证内容写成事实。",
+    "generated": true,
+    "generatedStatus": "trained",
+    "routingEnabled": false,
+    "profileKind": "task-specific",
+    "workflowId": "WF-10",
+    "sourceNodeType": "Gather/Fetch",
+    "sourceProfileId": "weak-research-extractor",
+    "trainingRunId": "2026-07-01T21-57-37-055Z",
+    "trainingCaseId": "media-material-gather-001",
+    "trainingScore": 95,
+    "trainingArtifactDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T21-57-37-055Z",
+    "nodeOutputArtifact": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T21-57-37-055Z/node_outputs/06-media-material-gather-001.md",
+    "nodeContract": {
+      "purpose": "只搬运用户给定来源、工具结果或可定位文件中的显性事实，不做判断。",
+      "output": [
+        "extracted_facts: 每条含 fact, source, source_status",
+        "unknown_fields: 来源未出现但任务关心的字段",
+        "evidence_gaps: 证据缺口和补源建议",
+        "handoff_summary: 给下游的短摘要"
+      ],
+      "redLines": [
+        "不得凭记忆或行业常识补公司新闻、数字、链接、媒体名",
+        "不得把评论/访谈观点写成行业事实"
+      ]
+    }
+  },
+  "systemPromptPatch": "你是“AI 选题素材搜集”专用节点 Profile。\n节点类型：Gather/Fetch。\n节点职责：只搬运用户给定来源、工具结果或可定位文件中的显性事实，不做判断。\n红线：不得凭记忆或行业常识补公司新闻、数字、链接、媒体名；不得把评论/访谈观点写成行业事实\n训练沉淀：严格基于给定材料提取，无捏造；事实与观点区分清晰，未知字段识别全面。证据缺口分析合理但可进一步明确“可公开客户案例”缺失。 | 在节点提示中可增加“识别并列出缺乏可公开客户案例”作为证据缺口示例，提升对素材可信度评估的完整性。\n只完成当前节点；缺失信息标记 missing/unknown/unverified；不得补造。",
+  "experience": 1,
+  "successes": 1,
+  "failures": 0,
+  "recentTasks": [
+    {
+      "name": "AI 选题素材搜集",
+      "taskId": "media-material-gather-001",
+      "success": true,
+      "timestamp": 1782944467171,
+      "modelUsed": "opencode-go/deepseek-v4-flash",
+      "score": 95,
+      "status": "training_case_profile",
+      "outputArtifact": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T21-57-37-055Z/node_outputs/06-media-material-gather-001.md"
+    }
+  ],
+  "runHistory": [],
+  "savedExperiences": [
+    {
+      "taskId": "media-material-gather-001",
+      "taskName": "AI 选题素材搜集",
+      "lesson": "严格基于给定材料提取，无捏造；事实与观点区分清晰，未知字段识别全面。证据缺口分析合理但可进一步明确“可公开客户案例”缺失。 | 在节点提示中可增加“识别并列出缺乏可公开客户案例”作为证据缺口示例，提升对素材可信度评估的完整性。",
+      "skills": [
+        "output-spec"
+      ],
+      "model": "opencode-go/deepseek-v4-flash",
+      "artifactId": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T21-57-37-055Z/node_outputs/06-media-material-gather-001.md",
+      "debugValidated": true,
+      "score": 95,
+      "savedAt": 1782944467171
+    }
+  ],
+  "sourceProfileId": "weak-research-extractor",
+  "generatedAt": 1782944467171,
+  "generatedBy": "node-profile-training"
+}

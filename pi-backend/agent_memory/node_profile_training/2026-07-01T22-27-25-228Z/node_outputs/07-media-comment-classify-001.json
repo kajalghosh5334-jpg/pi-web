@@ -1,0 +1,41 @@
+{
+  "caseId": "media-comment-classify-001",
+  "title": "评论区分级和路由",
+  "workflowId": "WF-16",
+  "nodeType": "Classify/Router",
+  "profileTarget": "classification-router",
+  "model": "opencode-go/deepseek-v4-flash",
+  "score": 85,
+  "pass": true,
+  "elapsedMs": 17570,
+  "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+  "workDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T22-27-25-228Z/media-comment-classify-001-output",
+  "input": "评论列表：1）这个选题太真实了，我们公司知识库就是没人维护。2）能不能推荐靠谱开发者？预算 2 万。3）你这就是割韭菜吧，AI 都是骗子。4）加我私域领取 AI 资料包。5）你们撮合项目出现纠纷谁负责？请逐条分类为好评/质疑/广告/黑粉/投诉/交易需求，并输出自动回复、转人工或忽略路由。",
+  "output": "```json\n{\n  \"items\": [\n    {\n      \"id\": 1,\n      \"label\": \"好评\",\n      \"confidence\": \"high\",\n      \"route\": \"auto_reply\",\n      \"reason\": \"用户对选题表示认同，并分享自身知识库维护经历，属于正面反馈。\",\n      \"risk_flags\": []\n    },\n    {\n      \"id\": 2,\n      \"label\": \"交易需求\",\n      \"confidence\": \"high\",\n      \"route\": \"manual_review\",\n      \"reason\": \"用户明确询问推荐开发者并给出预算2万，属于交易线索，必须人工跟进。\",\n      \"risk_flags\": [\"budget_mentioned\"]\n    },\n    {\n      \"id\": 3,\n      \"label\": \"黑粉\",\n      \"confidence\": \"medium\",\n      \"route\": \"ignore\",\n      \"reason\": \"用户发表攻击性言论（'割韭菜'、'骗子'），无建设性质疑，属于恶意攻击。\",\n      \"risk_flags\": [\"attacking_language\"]\n    },\n    {\n      \"id\": 4,\n      \"label\": \"广告\",\n      \"confidence\": \"high\",\n      \"route\": \"ignore\",\n      \"reason\": \"用户引导加私域领取资料包，属于广告推广。\",\n      \"risk_flags\": [\"advertisement\"]\n    },\n    {\n      \"id\": 5,\n      \"label\": \"投诉\",\n      \"confidence\": \"high\",\n      \"route\": \"manual_review\",\n      \"reason\": \"用户询问撮合项目纠纷责任归属，涉及法律/责任问题，必须人工处理。\",\n      \"risk_flags\": [\"legal_liability\"]\n    }\n  ],\n  \"manual_review_items\": [2, 5],\n  \"label_conflicts\": []\n}\n```",
+  "judge": {
+    "score": 85,
+    "score_scale": "0-100",
+    "pass": true,
+    "rubric_hits": [
+      "逐条输出固定标签，不发明新标签",
+      "对预算、交易需求和撮合纠纷类评论标记转人工",
+      "广告标记忽略或删除建议",
+      "黑粉和质疑有区分"
+    ],
+    "missing": [
+      "评论3（'你这就是割韭菜吧，AI 都是骗子'）应视为黑粉/强质疑，建议理性回应或人工视情况，而非直接忽略"
+    ],
+    "hallucination": [],
+    "red_line_violations": [],
+    "profile_lessons": [
+      "对于攻击性/黑粉评论，即使选择忽略也应考虑保留人工审核或理性回应的可能性，避免简单忽略导致用户负面感知"
+    ],
+    "prompt_patch_suggestions": [
+      "可在分类 prompt 中明确：对于黑粉/强质疑，路由应为 manual_review 或至少标记为需人工复核，避免直接 ignore"
+    ],
+    "raw_score": 85
+  },
+  "dependencies": [
+    "media-title-draft-001"
+  ]
+}

@@ -1,0 +1,490 @@
+{
+  "version": 1,
+  "description": "真实任务节点训练样本。Runner 会按 dependsOn 顺序执行节点，用 strong judge 对照 rubric 评分，并按 nodeType 聚合生成候选 profile。",
+  "defaults": {
+    "weakModel": "opencode-go/deepseek-v4-flash",
+    "strongModel": "opencode-go/deepseek-v4-pro",
+    "timeoutMs": 180000,
+    "weakTimeoutMs": 180000,
+    "strongTimeoutMs": 300000,
+    "judgeTimeoutMs": 240000,
+    "profileSynthesisTimeoutMs": 240000,
+    "minScore": 82
+  },
+  "cases": [
+    {
+      "id": "job-background-strategy-001",
+      "nodeType": "Strategize/Plan",
+      "profileTarget": "strong-task-architect",
+      "workflowId": "WF-1",
+      "title": "求职背景诊断",
+      "model": "opencode-go/deepseek-v4-pro",
+      "tools": "none",
+      "dependsOn": [],
+      "input": "求职者背景：高中学历，男，29 岁，性格开朗，有 Python/LLM/RAG 相关 AI 编程经验，接过小型 AI 工具和 RAG 外包项目，期望薪资 6k。请诊断真实竞争位置、目标岗位圈、不可逆短板和绕行策略。",
+      "expectedRubric": [
+        "明确高中学历对 entry-level 技术岗的现实影响，但不做人格或能力价值判断",
+        "圈定 6k 薪资对应的可投岗位类型",
+        "把 AI 编程经验转成可验证竞争力",
+        "区分不可逆短板、可补短板和叙事绕行策略",
+        "输出方向性结论，不写简历正文",
+        "学历绕行策略必须建立在如实呈现基础上：可以降低展示权重、放到后部、用作品集证明能力，但不得建议隐藏、删除或伪造学历"
+      ],
+      "standardAnswer": "应把候选人定位为低学历但有 AI 编程作品的 entry-level/初级执行型技术候选人。目标岗位应偏 AI 助理、Python 脚本、爬虫、RAG 实施助理、测试开发边缘岗、小公司 AI 工具开发助理等。学历是现实筛选短板，但不能伪造、隐藏、删除或诱导不披露，应通过作品、项目链接、可演示 demo、外包交付记录绕行；简历可把教育信息放在后部并减少篇幅，但必须如实。性格开朗可转化为跨角色沟通和客户需求澄清优势。",
+      "redLines": [
+        "不得虚构学历、工作年限、大厂经历或项目成果",
+        "不得建议隐藏、删除、伪造或诱导不披露学历",
+        "不得基于年龄或性别做能力价值判断",
+        "不得把 6k 岗位描述成高阶算法岗"
+      ]
+    },
+    {
+      "id": "job-company-gather-001",
+      "nodeType": "Gather/Fetch",
+      "profileTarget": "weak-research-extractor",
+      "workflowId": "WF-3",
+      "title": "公司调研资料搬运",
+      "model": "opencode-go/deepseek-v4-flash",
+      "tools": "none",
+      "dependsOn": [],
+      "input": "目标公司：星河智造。给定来源材料：1）官网片段：公司为制造业客户做质检自动化和设备数据采集，技术关键词包含 Python、OpenCV、PLC、轻量化模型部署。2）招聘 JD 片段：初级 AI 工具开发助理，薪资 5-7k，要求 Python 基础、能读懂接口文档，学历写的是大专及以上优先。3）面经摘录：面试会问 Python 文件处理、接口调用、是否做过项目 demo。请只基于这些材料搬运事实。",
+      "expectedRubric": [
+        "只抽取给定来源中出现的业务、技术栈、学历门槛、薪资和面经",
+        "每条事实标注来源片段",
+        "未出现的信息输出 unknown 或 missing",
+        "不判断候选人是否适合",
+        "给出证据缺口和复核建议"
+      ],
+      "standardAnswer": "业务应记录为制造业质检自动化和设备数据采集；技术栈应包含 Python、OpenCV、PLC、轻量化模型部署；岗位薪资 5-7k；学历门槛为大专及以上优先，不是硬性本科；面试关注 Python 文件处理、接口调用、项目 demo。团队规模、真实文化、实际录取学历、长期发展空间等来源未出现，应标 unknown/missing。",
+      "redLines": [
+        "不得补造公司新闻、融资、员工规模或文化",
+        "不得凭公司名推断技术栈",
+        "不得把优先条件改写成硬性条件"
+      ]
+    },
+    {
+      "id": "job-jd-analyze-001",
+      "nodeType": "Analyze/Judge",
+      "profileTarget": "research-report-analyst",
+      "workflowId": "WF-4",
+      "title": "JD 匹配分析",
+      "model": "opencode-go/deepseek-v4-flash",
+      "tools": "none",
+      "dependsOn": [
+        "job-background-strategy-001",
+        "job-company-gather-001"
+      ],
+      "input": "候选人简历要点：高中学历；做过 Python 自动化脚本、RAG 知识库 demo、一个小型企业资料问答外包；会 Flask 基础，不熟 Django；Docker 只部署过一次。JD：Python 基础扎实，熟悉接口调用，了解 OpenCV 加分，大专及以上优先，有项目 demo 加分，能和业务方沟通需求。请输出命中项、缺漏项、弱化项、学历屏障和简历定制策略。",
+      "expectedRubric": [
+        "逐条对照 JD 输出命中、缺漏、弱化",
+        "明确学历是优先项而非硬卡",
+        "把 RAG/脚本/外包项目映射到岗位需求",
+        "对不熟 Django、Docker 经验弱等问题给可补策略",
+        "区分事实、推断、建议和置信度",
+        "当上游背景诊断缺失或失败时，显式标记 upstream_missing，不得用标准答案或常识补齐候选人画像"
+      ],
+      "standardAnswer": "命中项包括 Python、接口调用相关经验、项目 demo、业务沟通潜力；OpenCV 未出现真实经验，应标缺漏或可补；学历是大专及以上优先，属于风险但非硬卡；Flask 可作为 Web 基础弱化 Django 缺口，Docker 只写了解或部署经验。定制策略应放大 RAG 外包、企业资料问答、Python 自动化，把学历放在简历后部如实呈现。",
+      "redLines": [
+        "不得把未掌握技能写成熟练",
+        "不得建议隐藏或伪造学历",
+        "不得把推断写成已验证事实",
+        "不得把 failed/missing 上游依赖当成已验证结论"
+      ]
+    },
+    {
+      "id": "job-resume-draft-001",
+      "nodeType": "Generate/Draft",
+      "profileTarget": "content-draft-producer",
+      "workflowId": "WF-2",
+      "title": "简历经历初稿",
+      "model": "opencode-go/deepseek-v4-flash",
+      "tools": "none",
+      "dependsOn": [
+        "job-jd-analyze-001"
+      ],
+      "input": "原始经历：做过一个企业资料问答 RAG 外包，负责整理客户资料、写 Python 文档清洗脚本、接入向量库、做简单网页查询入口；还帮朋友做过批量 Excel 处理脚本；性格开朗，能和客户沟通需求。请按 STAR 写 2 段简历经历，附技能标签和项目亮点。",
+      "expectedRubric": [
+        "使用 STAR 或类似结构写可编辑经历段落",
+        "突出 AI 编程、Python、RAG、客户需求沟通",
+        "不虚构量化成果、公司、学历或正式职位",
+        "技能标签区分直接相关和弱相关",
+        "素材不足时使用可替换占位符而不是编造"
+      ],
+      "standardAnswer": "应生成企业资料问答 RAG 项目和 Excel 自动化脚本两段经历。RAG 段突出资料清洗、向量库接入、查询入口、需求沟通；Excel 段突出 Python 批处理和效率提升但避免虚构具体百分比。技能标签应含 Python、文档清洗、RAG、向量库、接口/网页入口、沟通协作。不得写本科、正式 AI 工程师、大厂项目或夸张商业结果。",
+      "redLines": [
+        "不得虚构学历、公司、职位、项目规模或量化成绩",
+        "不得把 demo 写成生产级平台",
+        "不得生成最终不可修改定稿"
+      ]
+    },
+    {
+      "id": "job-resume-review-001",
+      "nodeType": "Review/Gate",
+      "profileTarget": "strong-quality-reviewer",
+      "workflowId": "WF-6",
+      "title": "简历终审裁决",
+      "model": "opencode-go/deepseek-v4-pro",
+      "tools": "none",
+      "dependsOn": [
+        "job-resume-draft-001"
+      ],
+      "input": "请审查上游生成的简历经历是否诚实、专业、针对星河智造初级 AI 工具开发助理 JD。必须给出 pass/revise/block 裁决、问题清单、返工节点和验收标准。不要重写整份简历。",
+      "reviewChecklist": [
+        "学历是否如实呈现且未虚构",
+        "职位/身份是否被夸大",
+        "AI 项目成果和量化数据是否有支撑",
+        "技能熟练度是否与素材一致",
+        "是否对齐 JD 的 Python、接口调用、项目 demo、沟通能力要求",
+        "是否要求补充项目链接、demo、代码仓库或可验证证明"
+      ],
+      "expectedRubric": [
+        "给出明确 pass/revise/block 裁决",
+        "检查是否虚构学历、项目成果、职位或技能熟练度",
+        "检查是否对齐 JD 的 Python、接口调用、项目 demo 和沟通要求",
+        "指出具体返工位置和返工节点",
+        "输出短裁决，不展开长文重写"
+      ],
+      "standardAnswer": "如果上游没有虚构，通常应 revise 或 pass with minor issues。问题应聚焦：是否有未支撑量化、是否把 demo 写过头、学历呈现是否诚实但不过度突出、是否补充项目链接/demo 证明。返工节点应指向 Generate/Draft 或 Analyze/Judge。输出必须短而可执行。",
+      "redLines": [
+        "不得直接替弱模型重写整份长简历",
+        "不得只给建议不给裁决",
+        "不得允许虚构经历通过"
+      ]
+    },
+    {
+      "id": "media-account-strategy-001",
+      "nodeType": "Strategize/Plan",
+      "profileTarget": "content-strategy-director",
+      "workflowId": "WF-9",
+      "title": "AI 自媒体账号定位",
+      "model": "opencode-go/deepseek-v4-pro",
+      "tools": "none",
+      "dependsOn": [],
+      "input": "账号方向：AI 自媒体，目标是吸引技术开发者和有 AI 落地需求的企业主，商业模式是项目撮合交易。请输出一句话定位、双端受众画像、内容矩阵和季度规划。",
+      "expectedRubric": [
+        "一句话定位同时能让技术者和企业主理解",
+        "区分技术者和企业主的不同内容动机",
+        "内容矩阵包含干货、案例、需求拆解、转介信任建设",
+        "商业链路是内容到信任到撮合",
+        "不编造客户案例或成交数据"
+      ],
+      "standardAnswer": "定位应围绕 AI 落地需求和可交付技术者之间的连接。技术者需要真实需求、技术拆解、接单机会；企业主需要低风险案例、成本收益、方案边界。内容矩阵应包括落地坑、需求拆解、技术方案拆解、项目报价/边界科普、匿名案例复盘、供需撮合入口。",
+      "redLines": [
+        "不得编造成交案例、客户名称或收益",
+        "不得只做泛 AI 热点账号",
+        "不得忽略技术者和企业主的双端结构"
+      ]
+    },
+    {
+      "id": "media-material-gather-001",
+      "nodeType": "Gather/Fetch",
+      "profileTarget": "weak-research-extractor",
+      "workflowId": "WF-10",
+      "title": "AI 选题素材搜集",
+      "model": "opencode-go/deepseek-v4-flash",
+      "tools": "none",
+      "dependsOn": [
+        "media-account-strategy-001"
+      ],
+      "input": "选题：企业实际落地 LLM 的坑。给定来源材料：1）访谈摘录：某制造企业试过知识库问答，最大问题是资料太乱、没人维护。2）文章摘录：LLM 项目常见成本来自数据清洗、权限设计、评测和运维。3）评论摘录：开发者担心客户只想要 demo，不愿意为后续维护付费。请提取结构化素材包。",
+      "expectedRubric": [
+        "逐条提取事实并标注来源",
+        "把资料混乱、维护、数据清洗、权限、评测、运维、demo 付费问题保留下来",
+        "识别哪些 claim 只是访谈/评论观点",
+        "输出证据缺口",
+        "不扩展外部新闻或行业数据"
+      ],
+      "standardAnswer": "素材包应包含三类来源：制造企业访谈、文章摘录、评论摘录。事实/观点应区分：资料乱和没人维护来自访谈；成本项来自文章；开发者担心 demo 付费来自评论。证据缺口包括没有具体行业统计、没有真实成本数字、没有可公开客户案例。",
+      "redLines": [
+        "不得补造知名企业案例",
+        "不得补造成本金额或成功率",
+        "不得把评论观点写成行业事实"
+      ]
+    },
+    {
+      "id": "media-title-draft-001",
+      "nodeType": "Generate/Draft",
+      "profileTarget": "content-draft-producer",
+      "workflowId": "WF-13",
+      "title": "标题封面 A/B 方案",
+      "model": "opencode-go/deepseek-v4-flash",
+      "tools": "none",
+      "dependsOn": [
+        "media-material-gather-001"
+      ],
+      "input": "基于上游素材，为一篇讲企业落地 LLM 真实坑的内容生成 5 组标题和封面文案。方向要覆盖技术者向、企业主向和混合向，避免标题党。",
+      "generationGuardrails": {
+        "forbiddenUnsupportedClaims": [
+          "任何上游没有出现的百分比",
+          "任何上游没有出现的金额",
+          "任何上游没有出现的客户结果",
+          "任何 30 天、翻倍、70%、80% 等点击诱导数字"
+        ],
+        "requiredSelfCheck": "输出前逐条扫描标题和封面文案中的数字/百分比/金额；无来源依据时必须删除、改成非数字表达，或写 placeholder。"
+      },
+      "expectedRubric": [
+        "输出 5 组标题和封面文案",
+        "每组标注适用受众和点击动机",
+        "至少覆盖技术者向、企业主向、混合向",
+        "不新增上游没有支撑的案例、数字或结果",
+        "避免夸张承诺和标题党"
+      ],
+      "standardAnswer": "标题应围绕资料乱、维护没人做、demo 到生产的距离、数据清洗/权限/评测/运维这些真实素材。技术者向可强调交付边界和维护付费；企业主向可强调为什么 LLM 项目不是买个模型；混合向可强调需求怎么拆才不会烂尾。不得写 30 天降本 80% 等无来源数字。",
+      "redLines": [
+        "不得编造客户成功案例或收益数字",
+        "不得输出标题党式绝对承诺",
+        "不得偏离撮合交易定位"
+      ]
+    },
+    {
+      "id": "media-comment-classify-001",
+      "nodeType": "Classify/Router",
+      "profileTarget": "classification-router",
+      "workflowId": "WF-16",
+      "title": "评论区分级和路由",
+      "model": "opencode-go/deepseek-v4-flash",
+      "tools": "none",
+      "dependsOn": [
+        "media-title-draft-001"
+      ],
+      "labelSchema": {
+        "allowedLabels": [
+          "好评",
+          "质疑",
+          "广告",
+          "黑粉",
+          "投诉",
+          "交易需求"
+        ],
+        "routes": [
+          "auto_reply",
+          "manual_review",
+          "ignore",
+          "delete_suggested"
+        ],
+        "manualReviewRequiredWhen": [
+          "预算/交易线索",
+          "法律/责任/纠纷",
+          "投诉",
+          "高风险承诺"
+        ]
+      },
+      "input": "评论列表：1）这个选题太真实了，我们公司知识库就是没人维护。2）能不能推荐靠谱开发者？预算 2 万。3）你这就是割韭菜吧，AI 都是骗子。4）加我私域领取 AI 资料包。5）你们撮合项目出现纠纷谁负责？请逐条分类为好评/质疑/广告/黑粉/投诉/交易需求，并输出自动回复、转人工或忽略路由。",
+      "expectedRubric": [
+        "逐条输出固定标签，不发明新标签",
+        "对预算、交易需求和撮合纠纷类评论标记转人工",
+        "广告标记忽略或删除建议",
+        "黑粉和质疑要区分",
+        "输出置信度、原因和路由"
+      ],
+      "standardAnswer": "1 是好评或共鸣，可自动回复；2 是高价值需求/交易线索，应转人工；3 是黑粉或强质疑，建议理性回应或人工视情况；4 是广告，应忽略/删除；5 涉及交易责任和纠纷风险，必须转人工。每条应有 label、confidence、route、reason。",
+      "redLines": [
+        "不得自动承诺撮合结果或法律责任",
+        "不得把投诉/交易风险自动回复处理完",
+        "不得输出标签体系之外的主标签"
+      ]
+    },
+    {
+      "id": "media-content-review-001",
+      "nodeType": "Review/Gate",
+      "profileTarget": "strong-quality-reviewer",
+      "workflowId": "WF-14",
+      "title": "内容审稿与发布裁决",
+      "model": "opencode-go/deepseek-v4-pro",
+      "tools": "none",
+      "dependsOn": [
+        "media-title-draft-001",
+        "media-comment-classify-001"
+      ],
+      "input": "请审核上游标题封面和评论路由方案是否符合 AI 自媒体项目撮合定位。重点检查标题党、未支撑事实、CTA 是否过硬、交易/法律风险。输出 publish/revise/block 裁决、问题清单、返工节点和验收标准。不要重写整篇内容。",
+      "reviewChecklist": [
+        "标题和封面是否包含无来源数字、百分比、金额或客户结果",
+        "标题是否标题党或做绝对化承诺",
+        "CTA 是否存在、是否自然、是否过硬",
+        "是否符合 AI 自媒体项目撮合定位",
+        "预算线索是否转人工",
+        "交易、法律、责任、纠纷风险是否转人工或阻塞"
+      ],
+      "expectedRubric": [
+        "给出明确 publish/revise/block 裁决",
+        "检查标题和素材证据是否一致",
+        "检查 CTA 和撮合交易定位是否自然",
+        "识别交易、法律、夸张承诺风险",
+        "只给短裁决和返工任务，不重写长文",
+        "decision 必须与最高 severity 一致：存在 high/critical 问题时不得 publish"
+      ],
+      "standardAnswer": "应优先审查标题是否用了无来源数字、是否承诺效果、是否忽略交易风险。若评论处理对预算线索和纠纷问题都转人工，可通过或小修；若自动承诺撮合结果，应 revise/block。若输出列出 high 或 critical 问题，最终 decision 必须是 revise/block/escalate，不能 publish。返工节点通常是 Generate/Draft 或 Classify/Router。",
+      "redLines": [
+        "不得只给建议不给裁决",
+        "不得代替写作节点重写长文",
+        "不得允许虚假案例或夸张承诺发布",
+        "不得在 high/critical 问题未解决时给 publish"
+      ]
+    },
+    {
+      "id": "job-experience-standardize-001",
+      "nodeType": "Standardize",
+      "profileTarget": "weak-structured-operator",
+      "workflowId": "WF-2",
+      "title": "求职经历分段标准化",
+      "model": "opencode-go/deepseek-v4-flash",
+      "tools": "none",
+      "dependsOn": [],
+      "input": "原始经历散文：我之前帮朋友做过 Excel 自动处理，主要是 Python 读表、合并、去重；后来接过一个企业资料问答小项目，客户资料很乱，我先清洗文档，再做向量库和简单网页入口；还给一个门店老板写过库存提醒脚本，但没有长期维护。请拆成独立经历条目。",
+      "expectedRubric": [
+        "拆成可独立处理的经历条目",
+        "每条保留原始事实，不添加成果数字",
+        "字段包含项目名称、任务、技术、角色、证据缺口",
+        "缺少时间、公司、成果时标记 missing",
+        "不做简历润色或岗位判断"
+      ],
+      "standardAnswer": "应拆出 Excel 自动处理、企业资料问答 RAG、库存提醒脚本三条。每条保留 Python/读表/合并/去重、文档清洗/向量库/网页入口、库存提醒脚本等事实。时间、正式客户名称、量化成果、维护周期等应标 missing。不能写成 STAR 简历段落。",
+      "redLines": [
+        "不得虚构公司、时间、收益或成果数字",
+        "不得把标准化步骤写成简历成稿",
+        "不得改变原始经历含义"
+      ]
+    },
+    {
+      "id": "job-company-extract-001",
+      "nodeType": "Extract",
+      "profileTarget": "structured-writeback-operator",
+      "workflowId": "WF-3",
+      "title": "公司字段抽取",
+      "model": "opencode-go/deepseek-v4-flash",
+      "tools": "none",
+      "dependsOn": [
+        "job-company-gather-001"
+      ],
+      "input": "请从上游公司调研资料中抽取字段：business_domain、tech_stack、salary_range、education_requirement、interview_topics、unknown_fields。每个字段必须有 source_anchor。",
+      "expectedRubric": [
+        "抽取指定字段并保留 source_anchor",
+        "未出现字段放入 unknown_fields",
+        "不新增公司规模、融资、文化等未出现信息",
+        "salary_range 和 education_requirement 不得改写含义",
+        "输出可供公司档案渲染使用"
+      ],
+      "standardAnswer": "business_domain 应来自官网片段；tech_stack 包含 Python、OpenCV、PLC、轻量化模型部署；salary_range 是 5-7k；education_requirement 是大专及以上优先；interview_topics 包括 Python 文件处理、接口调用、项目 demo。团队规模、实际录取学历、真实文化、长期发展等 unknown。",
+      "redLines": [
+        "不得无来源补字段",
+        "不得把大专及以上优先改成本科硬卡",
+        "不得丢失 source_anchor"
+      ]
+    },
+    {
+      "id": "media-metrics-standardize-001",
+      "nodeType": "Standardize",
+      "profileTarget": "weak-structured-operator",
+      "workflowId": "WF-17",
+      "title": "自媒体指标标准化",
+      "model": "opencode-go/deepseek-v4-flash",
+      "tools": "none",
+      "dependsOn": [],
+      "input": "发布数据：视频 A 播放 12000，点赞 360，评论 96，转发 48，私信 12；视频 B 播放 3000，点赞 45，评论 9，转发 3，私信 0。请转换成互动率、评论率、转发率、私信转化率。",
+      "calculationRules": {
+        "interaction_rate": "(likes + comments + shares) / views",
+        "comment_rate": "comments / views",
+        "share_rate": "shares / views",
+        "dm_conversion_rate": "direct_messages / views",
+        "format": "保留原始分子分母，并输出百分比；不要估算缺失值"
+      },
+      "expectedRubric": [
+        "正确计算率值指标",
+        "保留原始分子分母",
+        "私信为 0 时不得补造",
+        "只做指标转换，不做波动归因",
+        "输出结构化表格或 JSON"
+      ],
+      "standardAnswer": "A：互动率=(360+96+48)/12000=4.2%，评论率=0.8%，转发率=0.4%，私信转化率=0.1%。B：互动率=(45+9+3)/3000=1.9%，评论率=0.3%，转发率=0.1%，私信转化率=0%。应保留播放、点赞、评论、转发、私信原始值。",
+      "redLines": [
+        "不得做原因分析",
+        "不得把 0 私信补成估计值",
+        "不得省略计算依据",
+        "互动率不得把私信计入分子；互动率只等于 (点赞 + 评论 + 转发) / 播放"
+      ]
+    },
+    {
+      "id": "media-monitor-alert-001",
+      "nodeType": "Monitor/Alert",
+      "profileTarget": "monitor-alert-operator",
+      "workflowId": "WF-17",
+      "title": "内容数据异常告警",
+      "model": "opencode-go/deepseek-v4-flash",
+      "tools": "none",
+      "dependsOn": [
+        "media-metrics-standardize-001"
+      ],
+      "input": "阈值规则：互动率低于 2% 标记 medium，私信转化率为 0 且播放超过 2000 标记 medium，评论中出现交易纠纷或法律责任标记 high。请基于上游指标输出告警。",
+      "expectedRubric": [
+        "按阈值判断 severity",
+        "每个告警包含 evidence 和 trigger_reason",
+        "区分观察事实和可能原因",
+        "不自行执行高风险动作",
+        "给出下一步检查窗口或升级建议"
+      ],
+      "standardAnswer": "视频 A 不应触发低互动或零私信告警；视频 B 互动率约 1.9%，应 medium；视频 B 播放 3000 且私信 0，应 medium。没有评论法律纠纷输入，所以不能 high。建议检查标题、CTA、评论区反馈和下一轮发布时间。",
+      "redLines": [
+        "不得无证据触发 high",
+        "不得自行调整发布或回复用户",
+        "不得把可能原因写成确定事实"
+      ]
+    },
+    {
+      "id": "media-distribution-action-001",
+      "nodeType": "Action/Writeback",
+      "profileTarget": "structured-writeback-operator",
+      "workflowId": "WF-15",
+      "title": "多平台分发排期 payload",
+      "model": "opencode-go/deepseek-v4-flash",
+      "tools": "none",
+      "dependsOn": [
+        "media-title-draft-001",
+        "media-content-review-001"
+      ],
+      "input": "定稿内容已通过审稿。平台要求：抖音需要标题、口播脚本、发布时间；小红书需要标题、封面文案、正文；知乎需要长标题和回答摘要。请生成排期队列 payload，不要声称已经发布。",
+      "expectedRubric": [
+        "为各平台生成 action_payloads",
+        "包含 idempotency_key",
+        "缺少字段标记 blocked 或 missing",
+        "不得声称已发布或已写入",
+        "高风险或缺审稿通过时转人工",
+        "每个 action_payload 顶层都必须包含 platform、action_type、status、source_artifact、content_fields、scheduled_time、idempotency_key",
+        "不得凭空生成 variant_set、素材编号、排期时间或外部 artifact id"
+      ],
+      "standardAnswer": "应输出三个平台的待执行 payload，包含 platform、action_type、status、source_artifact、content_fields、scheduled_time、idempotency_key。若发布时间未给，每个 payload 顶层 scheduled_time 都应写 missing，status 应是 blocked 或 pending_schedule，不得默认当前时间。source_artifact 应引用上游标题/审稿结果或标 missing，不得编造 variant_set、素材编号、外部 artifact id。状态应是 pending_write/pending_schedule/blocked/manual_review，不是 published。",
+      "redLines": [
+        "不得声称已经发布",
+        "不得给缺失发布时间填默认值",
+        "不得绕过审稿状态",
+        "不得编造 variant_set、素材编号、发布时间或外部 artifact id",
+        "不得把 scheduled_time 只藏在 content_fields 内，必须在 payload 顶层出现"
+      ]
+    },
+    {
+      "id": "job-report-render-001",
+      "nodeType": "Artifact/Render",
+      "profileTarget": "weak-structured-operator",
+      "workflowId": "WF-4",
+      "title": "JD 匹配报告渲染",
+      "model": "opencode-go/deepseek-v4-flash",
+      "tools": "none",
+      "dependsOn": [
+        "job-jd-analyze-001"
+      ],
+      "input": "请把上游 JD 匹配分析渲染成人类可读报告：摘要、命中项、缺口项、学历屏障、简历定制建议、待确认信息。不得新增事实。",
+      "expectedRubric": [
+        "产物结构清晰，适合作为报告阅读",
+        "保留命中、缺口、学历屏障和定制建议",
+        "不新增岗位、技能或项目事实",
+        "保留待确认信息和风险",
+        "不重做分析，只做渲染"
+      ],
+      "standardAnswer": "报告应将上游分析整理为可读章节，并保留 Python/API/RAG demo 等命中项、OpenCV/Django/Docker 等缺口、学历为优先项的风险、简历中放大 RAG 外包和 Python 自动化的建议，以及待确认的项目链接、demo、时间等。",
+      "redLines": [
+        "不得新增分析结论",
+        "不得删掉风险和待确认项",
+        "不得把报告渲染写成最终简历"
+      ]
+    }
+  ]
+}

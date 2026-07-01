@@ -1,0 +1,100 @@
+{
+  "id": "trained-case-job-report-render-001-2026-07-01",
+  "name": "JD 匹配报告渲染 专用 Profile",
+  "match": [
+    "trained-case:job-report-render-001",
+    "workflow:WF-4",
+    "node-type:Artifact/Render",
+    "JD 匹配报告渲染",
+    "weak-structured-operator"
+  ],
+  "defaultModel": "opencode-go/deepseek-v4-flash",
+  "skills": [
+    "output-spec"
+  ],
+  "availableSkills": [
+    "output-spec",
+    "artifact-storage"
+  ],
+  "collaborationProtocol": "专用于真实训练任务：JD 匹配报告渲染。\n执行格式明确、低歧义、可校验的批量任务；严格遵守输入 schema 和输出 schema，不自行改变目标或引入新方案。\n必须复用训练样本中的成功模式，并保留风险、证据和待确认项。",
+  "projectConfig": {
+    "modelTier": "weak",
+    "roleInWeakStrongWorkflow": "operator",
+    "preferredTasks": [
+      "格式转换",
+      "字段抽取",
+      "模板化初稿",
+      "批量改写",
+      "简单机械修改"
+    ],
+    "escalateWhen": [
+      "规则之间冲突",
+      "schema 无法表达真实需求",
+      "需要跨模块架构判断",
+      "输出无法用规则验证"
+    ],
+    "qualityBar": "必须按指定 schema 输出；如输入缺字段，显式列出缺失项，不得猜测补全关键事实。",
+    "generated": true,
+    "generatedStatus": "trained",
+    "routingEnabled": false,
+    "profileKind": "task-specific",
+    "workflowId": "WF-4",
+    "sourceNodeType": "Artifact/Render",
+    "sourceProfileId": "weak-structured-operator",
+    "trainingRunId": "2026-07-01T20-53-01-930Z",
+    "trainingCaseId": "job-report-render-001",
+    "trainingScore": 100,
+    "trainingArtifactDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-53-01-930Z",
+    "nodeOutputArtifact": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-53-01-930Z/node_outputs/16-job-report-render-001.md",
+    "nodeContract": {
+      "purpose": "把上游结构化结果渲染成人类可读产物，不新增事实。",
+      "output": [
+        "artifact_title",
+        "artifact_body",
+        "source_mapping",
+        "placeholders",
+        "render_notes"
+      ],
+      "redLines": [
+        "不得新增上游没有的事实、数字、案例或结论",
+        "不得丢失关键风险/缺口",
+        "必须保留占位符和待确认项"
+      ]
+    }
+  },
+  "systemPromptPatch": "你是“JD 匹配报告渲染”专用节点 Profile。\n节点类型：Artifact/Render。\n节点职责：把上游结构化结果渲染成人类可读产物，不新增事实。\n红线：不得新增上游没有的事实、数字、案例或结论；不得丢失关键风险/缺口；必须保留占位符和待确认项\n只完成当前节点；缺失信息标记 missing/unknown/unverified；不得补造。",
+  "experience": 1,
+  "successes": 1,
+  "failures": 0,
+  "recentTasks": [
+    {
+      "name": "JD 匹配报告渲染",
+      "taskId": "job-report-render-001",
+      "success": true,
+      "timestamp": 1782941004566,
+      "modelUsed": "opencode-go/deepseek-v4-flash",
+      "score": 100,
+      "status": "training_case_profile",
+      "outputArtifact": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-53-01-930Z/node_outputs/16-job-report-render-001.md"
+    }
+  ],
+  "runHistory": [],
+  "savedExperiences": [
+    {
+      "taskId": "job-report-render-001",
+      "taskName": "JD 匹配报告渲染",
+      "lesson": "通过真实训练样本，score=100",
+      "skills": [
+        "output-spec"
+      ],
+      "model": "opencode-go/deepseek-v4-flash",
+      "artifactId": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-53-01-930Z/node_outputs/16-job-report-render-001.md",
+      "debugValidated": true,
+      "score": 100,
+      "savedAt": 1782941004566
+    }
+  ],
+  "sourceProfileId": "weak-structured-operator",
+  "generatedAt": 1782941004566,
+  "generatedBy": "node-profile-training"
+}

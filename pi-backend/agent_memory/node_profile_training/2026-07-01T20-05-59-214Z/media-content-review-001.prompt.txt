@@ -1,0 +1,203 @@
+你是 Workflow 中的一个 profile 化节点。请只完成当前节点，不要越权完成下游任务。
+
+节点类型：Review/Gate
+目标 Profile：strong-quality-reviewer
+Workflow：WF-14
+任务：内容审稿与发布裁决
+
+上游上下文：
+上游节点 media-title-draft-001 输出：
+```json
+{
+  "draft_sections": [
+    {
+      "section_id": "ab-test-001",
+      "title": "制造企业做知识库，最大的一笔钱花在了你可能想不到的地方",
+      "cover_copy": "LLM 项目不是没钱，是钱花在了模型之外：数据清洗、权限设计、评测、运维。一位制造企业的尝试说，第一步就卡在没人管资料。",
+      "audience": "企业主向",
+      "click_motivation": "揭示隐性成本，触发管理者对项目预算的重新审视",
+      "source_usage": {
+        "制造企业知识库卡在资料混乱、缺乏维护": "fact from 上游 extracted_facts[0]",
+        "常见成本来自数据清洗、权限设计、评测和运维": "fact from 上游 extracted_facts[1]",
+        "未使用": "任何具体百分比或企业名称"
+      }
+    },
+    {
+      "section_id": "ab-test-002",
+      "title": "LLM 项目 70% 的时间在洗数据？一位一线开发者的真实感受",
+      "cover_copy": "数据清洗、权限设计……这些名字听着像前期准备，实际上占了项目大半预算。客户说先看看 Demo，开发者却知道后面还有运维这座山。",
+      "audience": "技术者向",
+      "click_motivation": "引起开发者共鸣，转发至同行或老板以争取资源",
+      "source_usage": {
+        "成本来自数据清洗、权限、评测、运维": "fact from 上游 extracted_facts[1]",
+        "客户只要 Demo 不愿为维护付费": "fact from 上游 extracted_facts[2]",
+        "70% 时间洗数据": "unsupported_claims_removed（未在素材中出现，已标记为待替换）"
+      },
+      "editable_notes": "标题中「70%」为暂用占位，上游无定量数据。建议替换为「大量」「多数」等定性词，或补充调研后填入真实比例。",
+      "risk_flags": "标题含具体数字 70%，可能造成数据引用风险。已标为占位，需决策是否为最终文案接受模糊表述。",
+      "unsupported_claims_removed": ["70% 数字无上游依据，标记 placeholder"]
+    },
+    {
+      "section_id": "ab-test-003",
+      "title": "客户只要 Demo，你却要陪跑运维：LLM 项目里谁为谁买单？",
+      "cover_copy": "客户说『先做个 Demo 看看』，开发者心想『Demo 上线后的维护费谁出？』一位评论者的担心，可能是每笔订单的最终结局。",
+      "audience": "混合向（企业主 + 技术者）",
+      "click_motivation": "呈现供需双方的核心矛盾，激发对商业模式和交付模式的讨论",
+      "source_usage": {
+        "开发者担心客户只愿为 Demo 付费，不愿为持续维护付费": "fact from 上游 extracted_facts[2]"
+      },
+      "unsupported_claims_removed": [],
+      "risk_flags": "无标题党风险，陈述基于上游观点，需注意不代表行业共识。"
+    },
+    {
+      "section_id": "ab-test-004",
+      "title": "数据清洗、权限设计、评测、运维——LLM 项目里谁才是成本大头？",
+      "cover_copy": "模型选型只占一部分，真正的预算黑洞往往在后头。四笔常见开销，哪一笔最容易被低估？",
+      "audience": "技术者向",
+      "click_motivation": "列出四项核心成本，引导读者对号入座并引发讨论",
+      "source_usage": {
+        "四类常见成本": "fact from 上游 extracted_facts[1]"
+      },
+      "unsupported_claims_removed": [
+        "未表达「某项目实际XX万元」等无依据数字"
+      ],
+      "editable_notes": "文案中的「黑洞」「最容易被低估」为定性推测，无上游数据支撑。如需更严谨，可调整为「值得关注」",
+      "risk_flags": "无。"
+    },
+    {
+      "section_id": "ab-test-005",
+      "title": "制造企业 LLM 落地：从知识库到生产，第一关不是技术，是资料",
+      "cover_copy": "受访者说『资料混乱、没人维护』——这六个字可能是整个项目最真实的写照。技术方案再漂亮，洗不干净的数据也会让一切归零。",
+      "audience": "混合向（企业主 + 技术者）",
+      "click_motivation": "以真实困境为切入点，拉拢企业主和技术的注意力，强调数据基础的重要性",
+      "source_usage": {
+        "制造企业知识库落地卡在资料混乱、缺乏专人持续维护": "fact from 上游 extracted_facts[0]",
+        "成本包含数据清洗": "fact from 上游 extracted_facts[1]"
+      },
+      "unsupported_claims_removed": [],
+      "editable_notes": "「洗不干净的数据会让一切归零」为推断性表达，无上游直接支持，可降级为「可能导致项目停滞」",
+      "risk_flags": "轻微推测，但属于合理推断，非虚构数据。"
+    }
+  ],
+  "coverage_checklist": {
+    "技术者向": "section ab-test-002（需替换 70% 占位）、ab-test-004",
+    "企业主向": "section ab-test-001",
+    "混合向": "section ab-test-003、ab-test-005"
+  },
+  "source_usage": "每个 draft_section 内已标注引用的上游事实 id",
+  "unsupported_claims_removed": "ab-test-002 中的 70% 数字已标记为待替换。ab-test-004/005 中极少数的定性推断也已标注 editable_notes",
+  "editable_notes": "全篇无任何新增企业名称、行业、金额、案例细节。ab-test-002 的 70% 需决策：保留定性表述或引入调研数据。ab-test-003 的『每笔订单的最终结局』为修辞推测，可替换为更中性的表述",
+  "risk_flags": "仅 ab-test-002 含数字 placeholder，禁止直接发布。其余 section 无红线违规。所有标题未使用绝对承诺或标题党句式"
+}
+```
+
+---
+
+上游节点 media-comment-classify-001 输出：
+```json
+{
+  "node": "classification-router",
+  "target_profile": "评论区分级和路由",
+  "workflow": "WF-16",
+  "classification_results": {
+    "items": [
+      {
+        "id": 1,
+        "text": "这个选题太真实了，我们公司知识库就是没人维护。",
+        "label": "好评",
+        "confidence": 0.95,
+        "route": "auto_reply",
+        "reason": "用户表达共鸣，对选题揭示的困境给出正面反馈，属于情感共鸣类好评，适合自动回复致谢或引导讨论。",
+        "risk_flags": []
+      },
+      {
+        "id": 2,
+        "text": "能不能推荐靠谱开发者？预算 2 万。",
+        "label": "交易需求",
+        "confidence": 0.98,
+        "route": "manual_review",
+        "reason": "包含具体预算和开发者推荐需求，属交易线索。红线要求：预算/交易线索必须转人工，避免不当承诺或导流纠纷。",
+        "risk_flags": ["交易线索", "预算提及"]
+      },
+      {
+        "id": 3,
+        "text": "你这就是割韭菜吧，AI 都是骗子。",
+        "label": "黑粉",
+        "confidence": 0.92,
+        "route": "ignore",
+        "reason": "无具体论据，情绪化攻击加全盘否定（都是骗子），符合黑粉特征。建议忽略，不生成自动回复以免升级冲突。",
+        "risk_flags": ["黑粉攻击"]
+      },
+      {
+        "id": 4,
+        "text": "加我私域领取 AI 资料包。",
+        "label": "广告",
+        "confidence": 0.99,
+        "route": "delete_suggested",
+        "reason": "明确推广私域链接/导流，符合广告定义。红线要求：广告只能忽略/删除建议，不应生成任何响应。",
+        "risk_flags": ["私域导流", "广告"]
+      },
+      {
+        "id": 5,
+        "text": "你们撮合项目出现纠纷谁负责？",
+        "label": "投诉",
+        "confidence": 0.90,
+        "route": "manual_review",
+        "reason": "涉及撮合平台法律责任和纠纷归属，属高风险法律/责任问询。红线要求：法律/纠纷/投诉必须转人工，严禁自动回复承诺。",
+        "risk_flags": ["法律风险", "纠纷责任", "撮合投诉"]
+      }
+    ],
+    "manual_review_items": [2, 5],
+    "label_conflicts": [
+      {
+        "item_id": 3,
+        "conflict": "黑粉 vs 质疑",
+        "resolution": "选黑粉。全盘否定（都是骗子）和人身攻击（割韭菜）无建设性，情绪和否定程度远超质疑范畴。"
+      },
+      {
+        "item_id": 5,
+        "conflict": "投诉 vs 质疑",
+        "resolution": "选投诉。虽以疑问句式出现，内容直接指向平台责任归属，属于潜在投诉/法律问询，按红线归为投诉处理。"
+      }
+    ]
+  }
+}
+```
+
+当前输入：
+请审核上游标题封面和评论路由方案是否符合 AI 自媒体项目撮合定位。重点检查标题党、未支撑事实、CTA 是否过硬、交易/法律风险。输出 publish/revise/block 裁决、问题清单、返工节点和验收标准。不要重写整篇内容。
+
+节点通用契约：
+职责：最终质量门，只做短裁决和返工分配，不重写长内容。
+推荐输出字段：
+- decision: pass|publish|approve|revise|block|escalate
+- issues: 每项含 severity, target_node, location, problem, action, acceptance_criteria
+- evidence_checks: 事实/数字/来源/项目证明检查
+- rework_assignment
+通用红线：
+- 必须给明确裁决，不能只给建议
+- 不得代替上游节点重写整篇长文
+- 无来源数字、虚构经历、法律/交易风险必须阻塞或升级
+
+本样本标签/路由 schema：
+未指定；如需分类，严格使用题目给定标签。
+
+输出要求：
+1. 严格遵守当前节点职责。
+2. 输出可供下游使用的结构化结果。
+3. 如信息缺失，写 unknown/missing/unverified，不得补造。
+4. 区分事实、推断、建议和风险。
+5. 遇到红线必须标记 blocked 或 manual_review_required。
+6. 优先按“节点通用契约”的字段输出；若任务要求更具体，以任务要求为准。
+
+评分 Rubric：
+1. 给出明确 publish/revise/block 裁决
+2. 检查标题和素材证据是否一致
+3. 检查 CTA 和撮合交易定位是否自然
+4. 识别交易、法律、夸张承诺风险
+5. 只给短裁决和返工任务，不重写长文
+
+红线：
+1. 不得只给建议不给裁决
+2. 不得代替写作节点重写长文
+3. 不得允许虚假案例或夸张承诺发布

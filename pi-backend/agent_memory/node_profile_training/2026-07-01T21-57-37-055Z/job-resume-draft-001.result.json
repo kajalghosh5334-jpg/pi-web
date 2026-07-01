@@ -1,0 +1,106 @@
+{
+  "testCase": {
+    "id": "job-resume-draft-001",
+    "nodeType": "Generate/Draft",
+    "profileTarget": "content-draft-producer",
+    "workflowId": "WF-2",
+    "title": "简历经历初稿",
+    "model": "opencode-go/deepseek-v4-flash",
+    "tools": "none",
+    "dependsOn": [
+      "job-jd-analyze-001"
+    ],
+    "input": "原始经历：做过一个企业资料问答 RAG 外包，负责整理客户资料、写 Python 文档清洗脚本、接入向量库、做简单网页查询入口；还帮朋友做过批量 Excel 处理脚本；性格开朗，能和客户沟通需求。请按 STAR 写 2 段简历经历，附技能标签和项目亮点。",
+    "expectedRubric": [
+      "使用 STAR 或类似结构写可编辑经历段落",
+      "突出 AI 编程、Python、RAG、客户需求沟通",
+      "不虚构量化成果、公司、学历或正式职位",
+      "技能标签区分直接相关和弱相关",
+      "素材不足时使用可替换占位符而不是编造"
+    ],
+    "standardAnswer": "应生成企业资料问答 RAG 项目和 Excel 自动化脚本两段经历。RAG 段突出资料清洗、向量库接入、查询入口、需求沟通；Excel 段突出 Python 批处理和效率提升但避免虚构具体百分比。技能标签应含 Python、文档清洗、RAG、向量库、接口/网页入口、沟通协作。不得写本科、正式 AI 工程师、大厂项目或夸张商业结果。",
+    "redLines": [
+      "不得虚构学历、公司、职位、项目规模或量化成绩",
+      "不得把 demo 写成生产级平台",
+      "不得生成最终不可修改定稿"
+    ]
+  },
+  "output": {
+    "model": "opencode-go/deepseek-v4-flash",
+    "code": 0,
+    "text": "```yaml\nnode_type: generate-draft\ntarget_profile: content-draft-producer\n\ndraft_sections:\n  - section_label: 项目经历 1\n    title: 企业知识库 RAG 问答系统（外包 / Freelance）\n    content:\n      situation: 为 {客户公司/行业} 构建内部文档智能问答原型。客户需求是从大量非结构化资料（PDF / Word）中快速检索准确信息。\n      task: 独立承接并交付全链路——客户需求沟通、文档清洗与向量化、后端检索逻辑、Web 查询界面。\n      actions:\n        - \"【需求↔沟通】与客户对接确认文档范围和问答场景，产出需求确认清单。\"\n        - \"【Python 数据处理】编写清洗脚本，完成文档格式转换、去重、内容结构化提取。\"\n        - \"【RAG 核心链路】调用 Embedding API 实现文档向量化，构建向量索引库（ChromaDB），对接 LLM 生成答案。\"\n        - \"【前端交付】基于 Flask 搭建 Web 查询入口，支持结果溯源与关键词高亮。\"\n        - \"【迭代闭环】收集客户试用反馈，调整 Top-K 检索策略与 Prompt 模板。\"\n      result: \"交付可运行 Demo，客户验收完成；输出部署说明，确保系统可独立复现。\"\n      skill_tags: [Python, RAG, Embedding, Flask, 向量数据库, API 调用, 需求沟通, 原型开发]\n      project_highlight: \"RAG 全流程独立交付，直接匹配 JD‘有项目 demo 加分’要求。\"\n\n  - section_label: 项目经历 2\n    title: Excel 报表批量处理脚本（Freelance）\n    content:\n      situation: 朋友所在 {部门} 需定期汇总多来源 Excel 报表，格式不统一、手工操作耗时 {X 小时} 且易错。\n      task: 开发 Python 自动化脚本，替代重复性数据处理操作。\n      actions:\n        - \"分析报表结构，明确合并逻辑与数据校验规则。\"\n        - \"利用 pandas 编写脚本，实现数据合并、格式统一、关键字段提取、空值填充。\"\n        - \"设计配置文件接口，支持不同模板的参数化调用，提升复用性。\"\n      result: \"脚本将单次处理时间缩短至 {X 分钟}，在该部门后续月度任务中持续复用。\"\n      skill_tags: [Python, pandas, 数据处理, 办公自动化, 流程优化]\n      project_highlight: \"短平快解决实际业务痛点，体现自动化思维与落地能力。\"\n\nsource_usage:\n  \"企业资料 RAG 外包（全流程）\": \"上游 analysis_items[0][2]（Python 基础 HIT / 项目 demo HIT）\"\n  \"Python 文档清洗脚本\": \"上游 analysis_items[0]（Python 基础 HIT）\"\n  \"调用 Embedding API 实现向量化\": \"上游 analysis_items[1]（接口调用 WEAK_HIT，推断性描述，需面试验证）\"\n  \"Flask 搭建 Web 查询入口\": \"上游 analysis_items[0][2]（Python 基础 / 项目 demo HIT）\"\n  \"Excel 批量处理脚本\": \"原始 prompt 输入事实，上游无直接匹配项\"\n  \"客户需求沟通闭环\": \"上游 analysis_items[4]（业务沟通 WEAK，转化为项目行动中的沟通动作）\"\n\nunsupported_claims_removed:\n  - claim: 团队规模 / 正式岗位头衔\n    reason: 原始输入与上游均无依据，未添加“项目经理”“技术负责人”等头衔。使用“负责/独立承接”等事实描述。\n  - claim: 客户企业名称 / 具体产品名\n    reason: 未提供，统一使用占位符 {客户公司/行业}。\n  - claim: 项目周期 / 版本号\n    reason: 未提供，不编写。\n  - claim: “生产级”“高并发”“线上服务”等修饰\n    reason: 上游红线“不得把 demo 写成生产级成果”，严格使用“原型/Demo”。\n\nunsupported_numbers_self_check:\n  - number: {X 小时}\n    status: PLACEHOLDER（上游无来源，不可填入具体数值）\n  - number: {X 分钟}\n    status: PLACEHOLDER（上游无来源，不可填入具体数值）\n  - number: 缩短 / 提升\n    status: 定性表述或占位符，无伪造数字。\n\neditable_notes:\n  - note: \"客户背景需确认：{客户公司/行业} 请候选人补全实际信息。\"\n  - note: \"Excel 场景需补全：朋友所在 {部门} 及具体 {报表类型} 请补充。\"\n  - note: \"接口调用细节：面试前需准备好 Embedding API 的具体调用流程与参数说明。\"\n  - note: \"RAG 文档规模：若有真实文档数量（如 500 页）可替换占位，无则保留定性。\"\n  - note: \"自我评价 / 学历引导：上游建议在自我评价中主动提及学历与自学的匹配经验，本阶段未生成该字段，下游若整合请参考上游 recommendation。\"\n\nrisk_flags:\n  - flag: \"学历屏障（HIGH_RISK_ITEM）\"\n    description: \"高中学历 vs 大专优先。本节点未生成教育字段，下游 resume-formatter 生成教育栏时须如实填写高中，不得隐藏或篡改。\"\n    action: \"下游 render 时务必遵守上游红线规则。\"\n  - flag: \"接口调用推断性（WEAK_HIT）\"\n    description: \"简历文本写‘调用 Embedding API’属于合理推断（RAG 项目必然包含），但上游标注 WEAK_HIT，需面试能支撑细节。\"\n    action: \"建议候选人在面试前练习具体 API 的调用代码与参数说明。\"\n  - flag: \"量化成果缺失\"\n    description: \"所有数字均为占位符。若有真实可验证数据（处理文档数、节省工时）可替换，否则建议删除占位改为纯定性描述（如‘显著缩短处理时间’）。\"\n    action: \"定稿前请候选人提供真实数字，或删除占位符。\"\n```",
+    "usage": {
+      "input": 4427,
+      "output": 6759,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "reasoning": 5395,
+      "totalTokens": 11186,
+      "cost": {
+        "input": 0.00061978,
+        "output": 0.0018925200000000002,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "total": 0.0025123000000000003
+      }
+    },
+    "stderr": "",
+    "elapsedMs": 77104,
+    "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+    "workDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T21-57-37-055Z/job-resume-draft-001-output",
+    "isolatedSessionDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T21-57-37-055Z/job-resume-draft-001-output/.pi-sessions"
+  },
+  "judgeOutput": {
+    "model": "opencode-go/deepseek-v4-pro",
+    "code": 0,
+    "text": "{\n  \"score\": 90,\n  \"score_scale\": \"0-100\",\n  \"pass\": true,\n  \"rubric_hits\": [\n    \"使用 STAR 或类似结构写可编辑经历段落\",\n    \"突出 AI 编程、Python、RAG、客户需求沟通\",\n    \"不虚构量化成果、公司、学历或正式职位\",\n    \"素材不足时使用可替换占位符而不是编造\"\n  ],\n  \"missing\": [\n    \"技能标签未区分直接相关和弱相关\"\n  ],\n  \"hallucination\": [],\n  \"red_line_violations\": [],\n  \"profile_lessons\": [\n    \"技能标签若需区分强弱相关性，需在生成结构中显式标注\"\n  ],\n  \"prompt_patch_suggestions\": [\n    \"在节点提示中加入要求 skill_tags 区分直接相关与弱相关的字段规范\"\n  ]\n}",
+    "usage": {
+      "input": 4110,
+      "output": 2565,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "reasoning": 2374,
+      "totalTokens": 6675,
+      "cost": {
+        "input": 0.0071514000000000005,
+        "output": 0.0089262,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "total": 0.0160776
+      }
+    },
+    "stderr": "",
+    "elapsedMs": 42266,
+    "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+    "workDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T21-57-37-055Z/job-resume-draft-001-judge",
+    "isolatedSessionDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T21-57-37-055Z/job-resume-draft-001-judge/.pi-sessions"
+  },
+  "judge": {
+    "score": 90,
+    "score_scale": "0-100",
+    "pass": true,
+    "rubric_hits": [
+      "使用 STAR 或类似结构写可编辑经历段落",
+      "突出 AI 编程、Python、RAG、客户需求沟通",
+      "不虚构量化成果、公司、学历或正式职位",
+      "素材不足时使用可替换占位符而不是编造"
+    ],
+    "missing": [
+      "技能标签未区分直接相关和弱相关"
+    ],
+    "hallucination": [],
+    "red_line_violations": [],
+    "profile_lessons": [
+      "技能标签若需区分强弱相关性，需在生成结构中显式标注"
+    ],
+    "prompt_patch_suggestions": [
+      "在节点提示中加入要求 skill_tags 区分直接相关与弱相关的字段规范"
+    ],
+    "raw_score": 90
+  },
+  "minScore": 82,
+  "nodeOutputArtifact": {
+    "markdownPath": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T21-57-37-055Z/node_outputs/04-job-resume-draft-001.md",
+    "jsonPath": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T21-57-37-055Z/node_outputs/04-job-resume-draft-001.json"
+  }
+}

@@ -1,0 +1,93 @@
+你是 Profile 提炼器。请根据同一 nodeType 的真实训练样本，总结一个可复用通用 Profile。
+只返回 JSON，不要 markdown。
+
+nodeType: Gather/Fetch
+
+现有相关 profile：
+{
+  "weak-research-extractor": {
+    "name": "弱模型资料搜集与事实抽取",
+    "defaultModel": "opencode-go/deepseek-v4-flash",
+    "collaborationProtocol": "只做信息搬运、显性事实抽取和来源整理；不得替 Lead 下最终判断。只基于用户提供资料、明确工具结果或可定位文件内容输出事实；没有可验证来源时必须标记 source_status=missing/unverified，不得补造新闻、数字、链接或媒体名。遇到资料冲突、可信度不足或用户意图不清，标记为待强模型复核。",
+    "projectConfig": {
+      "modelTier": "weak",
+      "roleInWeakStrongWorkflow": "researcher",
+      "preferredTasks": [
+        "搜索候选资料",
+        "摘录显性事实",
+        "整理来源与时间",
+        "从代码或日志中定位线索",
+        "按 schema 输出资料包"
+      ],
+      "escalateWhen": [
+        "需要判断资料可信度",
+        "来源互相矛盾",
+        "需要推断用户真实意图",
+        "信息缺口会影响方案方向"
+      ],
+      "qualityBar": "输出必须包含来源/位置、摘录事实、不确定点和建议复核项；禁止只给结论；禁止把未验证内容写成事实。"
+    },
+    "systemPromptPatch": "你是弱模型资料搜集与事实抽取 Agent。你的优势是覆盖、摘录、整理和结构化，不负责最终判断。请按来源、事实、不确定点、复核建议输出。只引用用户提供资料、实际工具结果或可定位文件；没有来源时输出 source_status=missing/unverified 和补源建议，不要凭记忆生成新闻、融资数字、链接或媒体名。不要扩展成方案设计；发现冲突或缺口时交给强模型。"
+  }
+}
+
+通过样本：
+[
+  {
+    "id": "job-company-gather-001",
+    "title": "公司调研资料搬运",
+    "profileTarget": "weak-research-extractor",
+    "score": 90,
+    "profile_lessons": [
+      "evidence_gaps 机制可替代事实级 unknown 标记，但需注意下游客服用场景是否期望结构化 missing 字段",
+      "inferences 与 facts 分离良好，减少混淆"
+    ],
+    "prompt_patch_suggestions": [],
+    "node_output_artifact": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T19-35-43-671Z/node_outputs/02-job-company-gather-001.md",
+    "output_excerpt": "```json\n{\n  \"node\": \"Gather/Fetch\",\n  \"profile\": \"weak-research-extractor\",\n  \"task\": \"公司调研资料搬运\",\n  \"target_company\": \"星河智造\",\n  \"extracted_facts\": [\n    {\n      \"category\": \"业务\",\n      \"fact\": \"为制造业客户做质检自动化和设备数据采集\",\n      \"source\": \"官网片段\"\n    },\n    {\n      \"category\": \"技术栈\",\n      \"fact\": \"技术关键词包含 Python、OpenCV、PLC、轻量化模型部署\",\n      \"source\": \"官网片段\"\n    },\n    {\n      \"category\": \"技术栈\",\n      \"fact\": \"招聘 JD 要求 Python 基础、能读懂接口文档\",\n      \"source\": \"招聘 JD 片段\"\n    },\n    {\n      \"category\": \"技术栈\",\n      \"fact\": \"面试考察 Python 文件处理、接口调用、是否做过项目 demo\",\n      \"source\": \"面经摘录\"\n    },\n    {\n      \"category\": \"学历门槛\",\n      \"fact\": \"大专及以上优先（优先条件，非硬性要求）\",\n      \"source\": \"招聘 JD 片段\"\n    },\n    {\n      \"category\": \"薪资\",\n      \"fact\": \"月薪 5-7k\",\n      \"source\": \"招聘 JD 片段\"\n    },\n    {\n      \"category\": \"面经\",\n      \"fact\": \"面试会问 Python 文件处理、接口调用、是否做过项目 demo\",\n      \"source\": \"面经摘录\"\n    }\n  ],\n  \"inferences\": [\n    {\n      \"inference\": \"轻量化模型部署与 PLC 结合 OpenCV 指向工业边缘端侧视觉质检场景\",\n      \"basis\": \"官网技术关键词组合\",\n      \"confidence\": \"medium\"\n    },\n    {\n      \"inference\": \"薪资 5-7k 与「大专及以上优先」共同暗示该岗位为初级/实习助理级别\",\n      \"basis\": \"招聘 JD 内容\",\n      \"confidence\": \"high\"\n    },\n    {\n      \"inference\": \"面试题目侧重基础 Python"
+  },
+  {
+    "id": "media-material-gather-001",
+    "title": "AI 选题素材搜集",
+    "profileTarget": "weak-research-extractor",
+    "score": 100,
+    "profile_lessons": [
+      "严格遵循指令，逐条提取并标注来源与性质",
+      "准确区分事实/观点，未将观点升格为事实",
+      "详尽列出证据缺口与未知项，未编造具体企业与金额",
+      "主动标注红线风险，避免下游误用"
+    ],
+    "prompt_patch_suggestions": [],
+    "node_output_artifact": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T19-35-43-671Z/node_outputs/07-media-material-gather-001.md",
+    "output_excerpt": "# 素材包：企业实际落地 LLM 的坑\n\n## 已提取事实（逐条标注来源）\n\n| # | 陈述 | 来源 | 性质 |\n|---|------|------|------|\n| 1 | 某制造企业尝试知识库问答，最大问题是资料太乱、没人维护 | 访谈摘录 | 事实（一手经验，单一案例） |\n| 2 | LLM 项目常见成本来自数据清洗、权限设计、评测、运维 | 文章摘录 | 观点/行业总结 |\n| 3 | 开发者担心客户只想 demo，不愿为后续维护付费 | 评论摘录 | 观点（开发者主观担忧） |\n\n## 关键点保留\n- 资料混乱（知识库）\n- 维护缺失（知识库/持续运营）\n- 数据清洗、权限设计、评测、运维（四项成本分类）\n- demo vs 维护付费（开发者对客户预期的判断）\n\n## 事实 vs 观点/推断 明确区分\n\n- **事实（可信证据）**：条目 1——受访企业真实反馈，可引用，但仅代表单个案例，不可泛化为所有制造业。\n- **观点/总结性推断**：条目 2——文章提出的成本分类，无金额、无样本量，属作者归纳。\n- **主观观点**：条目 3——开发者单方面担心，不代表客户真实意愿，无数据支撑。\n\n## 证据缺口\n\n| 缺口 | 涉及来源 | 缺失内容 |\n|------|---------|---------|\n| 资料乱的具体表现（格式、系统） | 访谈 | 未描述 |\n| 为什么没人维护（组织/资源原因） | 访谈 | 未描述 |\n| 成本分类的依据（行业调研/个案） | 文章 | 未说明；无金额范围 |\n| 四类成本的相对权重 | 文章 | unknown |\n| 开发者担心的普遍性 | 评论 | 无样本量或重复证据 |\n| 客户对维护付费的真实态度 | 评论 | 只有开发者单方观点 |\n\n## 风险 / 红线触发\n\n- **红线3**：若下游将条目 3 的开发者观点表述为行业事实或客户真实行为，则违规。必须保留“开发者担忧”标签。\n- **红线1**：不得补造条目 1 中的企业名称、规模、行业细节；不得将其美化或引申为知名企业案例。\n- **红线2**：不得补造条目 2 中任何成本金额或项目成功率。\n\n## 标记状态\n- 条目 1 企业信息：`unverified`（匿名访谈，不公开）\n- 条目 2 成本金额：`unknown`（无数据，不得补造）\n- 条目 3 开发者背景：`unknown`\n- 所有材料的可复现性：`missing`（无原文链接、时间、上下文）\n\n---\n\n**节点完成**。下游可据此进行选题细化或内容框架搭建。素材缺口已在证据缺口中标明，补充需通过额外调研。"
+  }
+]
+
+请生成：
+{
+  "name": "",
+  "match": [""],
+  "collaborationProtocol": "",
+  "projectConfig": {
+    "modelTier": "weak|strong",
+    "roleInWorkflow": "",
+    "preferredTasks": [""],
+    "escalateWhen": [""],
+    "qualityBar": "",
+    "nodeContract": {
+      "input_scope": "",
+      "allowed_sources": [""],
+      "output_schema_note": "",
+      "max_input_chars": 0,
+      "escalation_rule": ""
+    }
+  },
+  "systemPromptPatch": ""
+}
+
+要求：
+1. 不要删除已有 profile 的关键红线。
+2. systemPromptPatch 要短、硬、可执行，适合弱模型稳定执行。
+3. 事实型节点必须强调不得编造来源。
+4. Review/Gate 必须输出短裁决，不重写长文。
+5. Analyze/Judge 必须区分事实/推断/建议/置信度/反证条件。

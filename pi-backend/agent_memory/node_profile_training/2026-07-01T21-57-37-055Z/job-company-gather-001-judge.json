@@ -1,0 +1,25 @@
+{
+  "model": "opencode-go/deepseek-v4-pro",
+  "code": 0,
+  "text": "{\n  \"score\": 100,\n  \"score_scale\": \"0-100\",\n  \"pass\": true,\n  \"rubric_hits\": [\n    \"只抽取给定来源中出现的业务、技术栈、学历门槛、薪资和面经\",\n    \"每条事实标注来源片段\",\n    \"未出现的信息输出 unknown 或 missing\",\n    \"不判断候选人是否适合\",\n    \"给出证据缺口和复核建议\"\n  ],\n  \"missing\": [],\n  \"hallucination\": [],\n  \"red_line_violations\": [],\n  \"profile_lessons\": [],\n  \"prompt_patch_suggestions\": []\n}",
+  "usage": {
+    "input": 3371,
+    "output": 2448,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "reasoning": 2314,
+    "totalTokens": 5819,
+    "cost": {
+      "input": 0.00586554,
+      "output": 0.00851904,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "total": 0.014384580000000001
+    }
+  },
+  "stderr": "",
+  "elapsedMs": 41348,
+  "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+  "workDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T21-57-37-055Z/job-company-gather-001-judge",
+  "isolatedSessionDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T21-57-37-055Z/job-company-gather-001-judge/.pi-sessions"
+}

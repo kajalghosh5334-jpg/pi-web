@@ -1,0 +1,25 @@
+{
+  "model": "opencode-go/deepseek-v4-pro",
+  "code": 0,
+  "text": "{\"score\": 80, \"score_scale\": \"0-100\", \"pass\": true, \"rubric_hits\": [\"给出明确 publish/revise/block 裁决\", \"检查标题和素材证据是否一致\", \"识别交易、法律、夸张承诺风险\", \"只给短裁决和返工任务，不重写长文\"], \"missing\": [\"检查 CTA 和撮合交易定位是否自然：输出仅检查了评论区路由和风险，未对正文中是否存在 CTA、CTA 是否自然、是否夸大承诺进行审查\"], \"hallucination\": [], \"red_line_violations\": [], \"profile_lessons\": [\"Review/Gate 节点输出应覆盖所有 rubric 维度；缺失 CTA 审查可能导致未发现的误导性内容\"], \"prompt_patch_suggestions\": [\"增加 CTA/撮合相关检查项，要求节点明确审查正文中的行动号召是否过度承诺或与交易风险不一致\"]}",
+  "usage": {
+    "input": 3552,
+    "output": 2919,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "reasoning": 2716,
+    "totalTokens": 6471,
+    "cost": {
+      "input": 0.00618048,
+      "output": 0.01015812,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "total": 0.0163386
+    }
+  },
+  "stderr": "",
+  "elapsedMs": 46754,
+  "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+  "workDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-05-59-214Z/media-content-review-001-judge",
+  "isolatedSessionDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-05-59-214Z/media-content-review-001-judge/.pi-sessions"
+}

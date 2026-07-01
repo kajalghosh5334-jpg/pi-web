@@ -1,0 +1,105 @@
+{
+  "id": "generated-classify-router-2026-07-01",
+  "name": "分类打标与条件路由",
+  "match": [
+    "generated:classify-router",
+    "training-run:2026-07-01T20-05-59-214Z",
+    "source-profile:classification-router",
+    "case:media-comment-classify-001",
+    "评论区分级和路由"
+  ],
+  "defaultModel": "opencode-go/deepseek-v4-flash",
+  "skills": [
+    "output-spec"
+  ],
+  "availableSkills": [
+    "output-spec",
+    "artifact-storage"
+  ],
+  "collaborationProtocol": "负责低成本分类、置信度、路由建议和人工升级条件；不处理高风险最终裁决。",
+  "projectConfig": {
+    "modelTier": "weak",
+    "pattern": "classify-route",
+    "roleInWorkflow": "classifier-router",
+    "preferredTasks": [
+      "标签分类",
+      "置信度输出",
+      "情绪识别",
+      "路由分支建议",
+      "人工审核触发",
+      "评论分拣",
+      "意图识别",
+      "内容分级"
+    ],
+    "escalateWhen": [
+      "confidence 低于阈值（默认 0.8）",
+      "标签互相冲突",
+      "涉及投诉/法务/赔偿/高价值客户",
+      "输入有讽刺或隐晦攻击",
+      "黑粉或强质疑类评论（避免 ignore，应转 manual_review 或生成理性自动回复）",
+      "包含预算/交易线索"
+    ],
+    "qualityBar": "必须输出 label、confidence、emotion、route、reason 和 manual_review_required。",
+    "nodeContract": {
+      "input_scope": "单条或多条用户文本（如评论、消息、帖子），长度通常 < 2000 字符。",
+      "allowed_sources": [
+        "用户输入",
+        "上游Agent输出",
+        "系统消息"
+      ],
+      "output_schema_note": "JSON 对象包含 items 数组，每项含 id, label, confidence, emotion, route, reason, risk_flags；全局 manual_review_required。",
+      "max_input_chars": 5000,
+      "escalation_rule": "confidence < 0.8 或 标签冲突 或 高风险类别（黑粉、投诉、法务、赔偿、交易线索、私域导流）必须设置 manual_review_required=true 且 route 为 manual_review。"
+    },
+    "generated": true,
+    "generatedStatus": "trained",
+    "routingEnabled": false,
+    "sourceNodeType": "Classify/Router",
+    "sourceProfileTargets": [
+      "classification-router"
+    ],
+    "trainingRunId": "2026-07-01T20-05-59-214Z",
+    "trainingCases": [
+      "media-comment-classify-001"
+    ],
+    "trainingArtifactDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-05-59-214Z",
+    "nodeOutputArtifacts": [
+      "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-05-59-214Z/node_outputs/09-media-comment-classify-001.md"
+    ]
+  },
+  "systemPromptPatch": "你是分类打标与条件路由 Agent。请用固定 schema 输出标签、置信度、情绪、路由分支和人工审核原因。低置信度或高风险内容必须转人工。黑粉/强质疑类评论不得 ignore，必须标记为 manual_review 或生成理性自动回复。仅广告/无关 spam 可使用 ignore/delete。不要生成最终处置。",
+  "experience": 1,
+  "successes": 1,
+  "failures": 0,
+  "recentTasks": [
+    {
+      "name": "评论区分级和路由",
+      "taskId": "media-comment-classify-001",
+      "success": true,
+      "timestamp": 1782937649751,
+      "modelUsed": "opencode-go/deepseek-v4-flash",
+      "score": 85,
+      "status": "training_generated",
+      "outputArtifact": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-05-59-214Z/node_outputs/09-media-comment-classify-001.md"
+    }
+  ],
+  "runHistory": [],
+  "savedExperiences": [
+    {
+      "taskId": "media-comment-classify-001",
+      "taskName": "评论区分级和路由",
+      "lesson": "黑粉或强质疑评论路由应为 manual_review 或 auto_reply（理性回应），避免采用 ignore 导致舆情升级 | 在分类 prompt 中新增路由指引：黑粉/强质疑类评论应标记为 manual_review 或生成理性回应，仅广告/无关 spam 可用 ignore",
+      "skills": [
+        "output-spec"
+      ],
+      "model": "opencode-go/deepseek-v4-flash",
+      "artifactId": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-05-59-214Z/node_outputs/09-media-comment-classify-001.md",
+      "debugValidated": true,
+      "score": 85,
+      "savedAt": 1782937649751
+    }
+  ],
+  "sourceProfileId": "classification-router",
+  "generatedAt": 1782937649751,
+  "generatedBy": "node-profile-training"
+}

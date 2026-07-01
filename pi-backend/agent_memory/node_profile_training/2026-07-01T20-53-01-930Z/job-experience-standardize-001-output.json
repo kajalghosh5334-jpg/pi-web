@@ -1,0 +1,25 @@
+{
+  "model": "opencode-go/deepseek-v4-flash",
+  "code": 0,
+  "text": "```json\n{\n  \"normalized_items\": [\n    {\n      \"project_name\": \"Excel 自动处理\",\n      \"task\": \"使用 Python 对 Excel 表格进行读取、合并、去重\",\n      \"technology\": [\"Python\"],\n      \"role\": \"开发者（帮朋友）\",\n      \"evidence_gap\": \"缺少代码仓库、项目具体耗時、实际效果截图等可验证材料\",\n      \"company\": \"missing\",\n      \"time_period\": \"missing\",\n      \"achievement\": \"missing\"\n    },\n    {\n      \"project_name\": \"企业资料问答小项目\",\n      \"task\": \"清洗客户提供的散乱文档，构建向量库，开发简单网页入口\",\n      \"technology\": [\"向量数据库技术\", \"网页开发技术\"],\n      \"role\": \"开发者\",\n      \"evidence_gap\": \"缺少客户名称、项目规模、部署链接、数据量等可验证材料\",\n      \"company\": \"missing（原文提及客户，未提供具体名称）\",\n      \"time_period\": \"missing\",\n      \"achievement\": \"missing\"\n    },\n    {\n      \"project_name\": \"库存提醒脚本\",\n      \"task\": \"为门店老板开发库存提醒脚本\",\n      \"technology\": [\"unverified（原文未指定技术栈）\"],\n      \"role\": \"开发者（无后续维护）\",\n      \"evidence_gap\": \"缺少脚本文件、运行截图、使用时长等可验证材料\",\n      \"company\": \"missing（原文提及门店老板，未提供门店名称）\",\n      \"time_period\": \"missing\",\n      \"achievement\": \"missing\"\n    }\n  ],\n  \"field_mapping\": {\n    \"项目名称\": \"project_name\",\n    \"任务描述\": \"task\",\n    \"技术栈\": \"technology\",\n    \"角色\": \"role\",\n    \"证据缺口\": \"evidence_gap\",\n    \"公司/雇佣方\": \"company\",\n    \"时间\": \"time_period\",\n    \"成果\": \"achievement\"\n  },\n  \"missing_fields\": {\n    \"Excel 自动处理\": [\"company\", \"time_period\", \"achievement\"],\n    \"企业资料问答小项目\": [\"company\", \"time_period\", \"achievement\", \"tech_stack_detail\"],\n    \"库存提醒脚本\": [\"company\", \"time_period\", \"achievement\", \"tech_stack\"]\n  },\n  \"format_warnings\": [\n    \"原文为散文叙事，时间线与雇佣关系模糊，无法拆分出具体日期或所属单位\",\n    \"第三条经历明确标注‘没有长期维护’，属于未完成/终止项目，角色字段已相应标注\",\n    \"第二条经历中‘向量库’的具体技术产品（如 FAISS / Pinecone / Milvus）未指定，technology 字段保留泛称\",\n    \"所有条目均无可量化成果描述，achievement 全部标记为 missing\"\n  ],\n  \"handoff_summary\": \"成功将散文式经历拆分为 3 个独立条目。所有条目均缺失公司名称、时间范围和可量化成果。角色根据上下文直接映射，未做业务判断或简历润色。建议下游节点基于证据缺口标记进行补充性信息收集，或按 weak-structured-operator 标签做匹配降级处理。\"\n}\n```",
+  "usage": {
+    "input": 2395,
+    "output": 3191,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "reasoning": 2511,
+    "totalTokens": 5586,
+    "cost": {
+      "input": 0.0003353,
+      "output": 0.0008934800000000001,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "total": 0.00122878
+    }
+  },
+  "stderr": "",
+  "elapsedMs": 34860,
+  "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+  "workDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-53-01-930Z/job-experience-standardize-001-output",
+  "isolatedSessionDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-53-01-930Z/job-experience-standardize-001-output/.pi-sessions"
+}

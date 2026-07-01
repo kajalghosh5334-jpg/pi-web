@@ -1,0 +1,25 @@
+{
+  "model": "opencode-go/deepseek-v4-pro",
+  "code": 0,
+  "text": "{\n  \"score\": 92,\n  \"score_scale\": \"0-100\",\n  \"pass\": true,\n  \"rubric_hits\": [\n    \"逐条对照 JD 输出命中、缺漏、弱化\",\n    \"明确学历是优先项而非硬卡\",\n    \"把 RAG/脚本/外包项目映射到岗位需求\",\n    \"对不熟 Django、Docker 经验弱等问题给可补策略\",\n    \"区分事实、推断、建议和置信度\"\n  ],\n  \"missing\": [],\n  \"hallucination\": [],\n  \"red_line_violations\": [],\n  \"profile_lessons\": [\n    \"分析项均携带证据、反证和可操作建议，可复现性强\",\n    \"使用 claim_type 区分 fact/inference/recommendation 以控制可信度\",\n    \"对于学历等敏感点给出合规且实用的处理策略\"\n  ],\n  \"prompt_patch_suggestions\": [\n    \"提示词/Schema 中应显式约束 analysis_items 的 claim_type 取值范围为 fact|inference|assumption|recommendation，与节点契约一致\"\n  ]\n}",
+  "usage": {
+    "input": 4805,
+    "output": 3306,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "reasoning": 3061,
+    "totalTokens": 8111,
+    "cost": {
+      "input": 0.0083607,
+      "output": 0.01150488,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "total": 0.01986558
+    }
+  },
+  "stderr": "",
+  "elapsedMs": 64620,
+  "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+  "workDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-53-01-930Z/job-jd-analyze-001-judge",
+  "isolatedSessionDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-53-01-930Z/job-jd-analyze-001-judge/.pi-sessions"
+}

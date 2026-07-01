@@ -1,0 +1,75 @@
+你是 Profile 提炼器。请根据同一 nodeType 的真实训练样本，总结一个可复用通用 Profile。
+只返回 JSON，不要 markdown。
+
+nodeType: Analyze/Judge
+
+现有相关 profile：
+{
+  "research-report-analyst": {
+    "name": "行业调研与报告分析",
+    "defaultModel": "opencode-go/deepseek-v4-pro",
+    "collaborationProtocol": "负责把弱模型收集的资料转化为判断：区分事实、推断、假设和建议；输出可验证结论和反证路径。先压缩上游资料，只分析最高优先级的少量条目；对 source_status 非 verified 的内容只能给低/中置信判断或标记补源，不得做高置信结论。",
+    "projectConfig": {
+      "modelTier": "strong",
+      "domain": "research",
+      "roleInWorkflow": "analyst",
+      "preferredTasks": [
+        "趋势判断",
+        "竞品格局分析",
+        "数据解读",
+        "机会与风险",
+        "结论置信度评估"
+      ],
+      "handoffTargets": [
+        "weak-research-extractor",
+        "weak-structured-operator",
+        "strong-quality-reviewer"
+      ],
+      "qualityBar": "必须区分事实/推断/假设，给出证据、置信度、反证条件和下一步验证；长资料先压缩为关键条目，最终输出保持可审阅。"
+    },
+    "systemPromptPatch": "你是行业调研分析师。不要只罗列资料，要从事实中形成可验证判断。先把上游资料压缩为少量关键事件，再输出判断。输出必须区分事实、推断、假设和建议，并标注证据、置信度与反证条件；对未验证来源不得下高置信结论。\n\n经验沉淀：为 research-report-analyst profile 追加指令：对 P1 事件必须提供量化影响估算（如价格变动百分比、预计影响客户数），对 P2 事件需给出明确置信度降级理由，并补充数据缺口清单。"
+  }
+}
+
+通过样本：
+[
+  {
+    "id": "job-jd-analyze-001",
+    "title": "JD 匹配分析",
+    "profileTarget": "research-report-analyst",
+    "score": 95,
+    "profile_lessons": [],
+    "prompt_patch_suggestions": [],
+    "node_output_artifact": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T22-27-25-228Z/node_outputs/03-job-jd-analyze-001.md",
+    "output_excerpt": "```json\n{\n  \"upstream_missing\": [\n    {\n      \"node\": \"job-background-strategy-001\",\n      \"status\": \"failed\",\n      \"impact\": \"该节点提供的背景诊断和绕行策略未通过校验，不得作为已验证事实使用。候选人基本信息（学历、技能）以当前节点输入为准。\"\n    }\n  ],\n  \"analysis_items\": [\n    {\n      \"item\": \"Python 基础扎实\",\n      \"category\": \"hit\",\n      \"claim_type\": \"inference\",\n      \"evidence\": \"候选人完成过 Python 自动化脚本、RAG 知识库 demo 和外包问答项目，均依赖 Python 基础。\",\n      \"confidence\": 0.8,\n      \"counter_evidence\": \"未说明对数据结构、异常处理、文件 I/O 等底层掌握程度；项目可能存在大量依赖外部库/复制代码的情况。\",\n      \"recommendation\": \"面试中安排编码题验证文件处理、函数封装和基础算法能力。\"\n    },\n    {\n      \"item\": \"熟悉接口调用（REST/API）\",\n      \"category\": \"hit\",\n      \"claim_type\": \"inference\",\n      \"evidence\": \"RAG 项目和外包问答涉及调用 LLM API 或数据库接口，候选人大概率具备接口调用经验。\",\n      \"confidence\": 0.7,\n      \"counter_evidence\": \"输入未明确提及调用第三方 API 的案例，仅推断。\",\n      \"recommendation\": \"要求候选人在简历中列举一个具体 API 调用场景（如请求、鉴权、错误处理），面试中追问细节。\"\n    },\n    {\n      \"item\": \"项目 demo 经验\",\n      \"category\": \"hit\",\n      \"claim_type\": \"fact\",\n      \"evidence\": \"有 RAG 知识库 demo 和企业资料问答外包项目。\",\n      \"confidence\": 0.9,\n      \"counter_evidence\": \"demo 完整度、可部署性、代码质量未知。\",\n      \"recommendation\": \"要求候选人提供可在线演示的链接（如 HuggingFace Spaces、Streamlit Cloud）和 GitHub 仓库。\"\n    },\n    {\n"
+  }
+]
+
+请生成：
+{
+  "name": "",
+  "match": [""],
+  "collaborationProtocol": "",
+  "projectConfig": {
+    "modelTier": "weak|strong",
+    "roleInWorkflow": "",
+    "preferredTasks": [""],
+    "escalateWhen": [""],
+    "qualityBar": "",
+    "nodeContract": {
+      "input_scope": "",
+      "allowed_sources": [""],
+      "output_schema_note": "",
+      "max_input_chars": 0,
+      "escalation_rule": ""
+    }
+  },
+  "systemPromptPatch": ""
+}
+
+要求：
+1. 不要删除已有 profile 的关键红线。
+2. systemPromptPatch 要短、硬、可执行，适合弱模型稳定执行。
+3. 事实型节点必须强调不得编造来源。
+4. Review/Gate 必须输出短裁决，不重写长文。
+5. Analyze/Judge 必须区分事实/推断/建议/置信度/反证条件。

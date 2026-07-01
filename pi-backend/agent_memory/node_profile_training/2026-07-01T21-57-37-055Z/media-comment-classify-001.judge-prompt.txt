@@ -1,0 +1,173 @@
+你是严格训练裁判。请对一个 Workflow 节点输出评分，只返回 JSON，不要 markdown。
+
+节点类型：Classify/Router
+任务：评论区分级和路由
+
+当前输入：
+评论列表：1）这个选题太真实了，我们公司知识库就是没人维护。2）能不能推荐靠谱开发者？预算 2 万。3）你这就是割韭菜吧，AI 都是骗子。4）加我私域领取 AI 资料包。5）你们撮合项目出现纠纷谁负责？请逐条分类为好评/质疑/广告/黑粉/投诉/交易需求，并输出自动回复、转人工或忽略路由。
+
+Rubric：
+[
+  "逐条输出固定标签，不发明新标签",
+  "对预算、交易需求和撮合纠纷类评论标记转人工",
+  "广告标记忽略或删除建议",
+  "黑粉和质疑要区分",
+  "输出置信度、原因和路由"
+]
+
+标准答案/关键要点：
+1 是好评或共鸣，可自动回复；2 是高价值需求/交易线索，应转人工；3 是黑粉或强质疑，建议理性回应或人工视情况；4 是广告，应忽略/删除；5 涉及交易责任和纠纷风险，必须转人工。每条应有 label、confidence、route、reason。
+
+红线：
+[
+  "不得自动承诺撮合结果或法律责任",
+  "不得把投诉/交易风险自动回复处理完",
+  "不得输出标签体系之外的主标签"
+]
+
+节点通用契约：
+{
+  "purpose": "按给定标签体系做分类、置信度和路由，不生成最终处置。",
+  "output": [
+    "items: 每条含 id, label, confidence, route(auto_reply|manual_review|ignore|delete_suggested), reason, risk_flags",
+    "manual_review_items",
+    "label_conflicts"
+  ],
+  "redLines": [
+    "不得发明标签；若标签体系不足，使用 other 并说明 schema_gap",
+    "预算、交易、法律、投诉、纠纷必须 manual_review",
+    "广告只能忽略/删除建议，不应生成推广回复"
+  ]
+}
+
+本样本标签/路由 schema：
+{
+  "allowedLabels": [
+    "好评",
+    "质疑",
+    "广告",
+    "黑粉",
+    "投诉",
+    "交易需求"
+  ],
+  "routes": [
+    "auto_reply",
+    "manual_review",
+    "ignore",
+    "delete_suggested"
+  ],
+  "manualReviewRequiredWhen": [
+    "预算/交易线索",
+    "法律/责任/纠纷",
+    "投诉",
+    "高风险承诺"
+  ]
+}
+
+本样本生成/审查专项约束：
+{
+  "generationGuardrails": null,
+  "reviewChecklist": null,
+  "calculationRules": null
+}
+
+裁判注意：
+1. 当前输入中明确出现的实体、公司名、数字或事实，不应判为编造。
+2. 只有输出新增了当前输入、上游输出、标准答案都未支持的信息，才算 hallucination。
+3. red_line_violations 如果没有，请返回空数组 []，不要返回 ["无"]。
+
+待评分输出：
+```json
+{
+  "node": "classification-router",
+  "profile": "Comment Classify/Router for WF-16",
+  "input_summary": "5 comments from audience on upstream media-title-draft-001 output.",
+  "output": {
+    "items": [
+      {
+        "id": "comment-1",
+        "label": "好评",
+        "confidence": 0.95,
+        "route": "auto_reply",
+        "reason": "用户表达对选题的强烈共鸣（自家公司知识库无人维护），属于正面反馈。",
+        "risk_flags": []
+      },
+      {
+        "id": "comment-2",
+        "label": "交易需求",
+        "confidence": 0.98,
+        "route": "manual_review",
+        "reason": "明确提出具体预算（2万）和撮合需求（推荐开发者），触犯红线规则：预算/交易线索必须转人工。",
+        "risk_flags": [
+          {
+            "risk": "预算/交易线索",
+            "level": "high",
+            "action": "转人工跟进，不得自动回复报价、推荐人选或承诺撮合结果。"
+          }
+        ]
+      },
+      {
+        "id": "comment-3",
+        "label": "黑粉",
+        "confidence": 0.90,
+        "route": "ignore",
+        "reason": "无根据的全盘否定性攻击（'割韭菜'、'AI都是骗子'），非建设性质疑。建议忽略冷处理。",
+        "risk_flags": [
+          {
+            "risk": "非建设性攻击",
+            "level": "low",
+            "action": "可忽略，避免公开争论引发二次传播。"
+          }
+        ]
+      },
+      {
+        "id": "comment-4",
+        "label": "广告",
+        "confidence": 0.99,
+        "route": "delete_suggested",
+        "reason": "以'领取资料包'为诱饵诱导私域引流，典型的社区广告/垃圾信息。",
+        "risk_flags": [
+          {
+            "risk": "广告引流",
+            "level": "medium",
+            "action": "建议删除评论，并观察用户后续行为决定是否禁言。不得自动回复推广内容。"
+          }
+        ]
+      },
+      {
+        "id": "comment-5",
+        "label": "投诉",
+        "confidence": 0.97,
+        "route": "manual_review",
+        "reason": "涉及撮合服务纠纷/法律责任归属问题，触犯红线规则：法律/责任/纠纷必须转人工。",
+        "risk_flags": [
+          {
+            "risk": "法律/责任/纠纷",
+            "level": "high",
+            "action": "转人工客服/法务处理，不得自动回复赔偿责任认定。"
+          }
+        ]
+      }
+    ],
+    "manual_review_items": ["comment-2", "comment-5"],
+    "label_conflicts": []
+  },
+  "blocked": false,
+  "manual_review_required": true
+}
+```
+
+→ 分类完成。5 条评论覆盖 5 个标签（好评/交易/黑粉/广告/投诉），质疑未出现。预算和纠纷两条严格转人工。无标签冲突，无 schema 缺口。
+
+返回 JSON。score 必须是 0-100 的整数，不要使用 0-1 小数制或 0-10 十分制：
+{
+  "score": 0,
+  "score_scale": "0-100",
+  "pass": true,
+  "rubric_hits": [""],
+  "missing": [""],
+  "hallucination": [""],
+  "red_line_violations": [""],
+  "profile_lessons": [""],
+  "prompt_patch_suggestions": [""]
+}

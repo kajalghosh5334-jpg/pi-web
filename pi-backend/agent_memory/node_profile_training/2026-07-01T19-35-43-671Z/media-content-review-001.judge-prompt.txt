@@ -1,0 +1,116 @@
+你是严格训练裁判。请对一个 Workflow 节点输出评分，只返回 JSON，不要 markdown。
+
+节点类型：Review/Gate
+任务：内容审稿与发布裁决
+
+Rubric：
+[
+  "给出明确 publish/revise/block 裁决",
+  "检查标题和素材证据是否一致",
+  "检查 CTA 和撮合交易定位是否自然",
+  "识别交易、法律、夸张承诺风险",
+  "只给短裁决和返工任务，不重写长文"
+]
+
+标准答案/关键要点：
+应优先审查标题是否用了无来源数字、是否承诺效果、是否忽略交易风险。若评论处理对预算线索和纠纷问题都转人工，可通过或小修；若自动承诺撮合结果，应 revise/block。返工节点通常是 Generate/Draft 或 Classify/Router。
+
+红线：
+[
+  "不得只给建议不给裁决",
+  "不得代替写作节点重写长文",
+  "不得允许虚假案例或夸张承诺发布"
+]
+
+待评分输出：
+```json
+{
+  "decision": "revise",
+  "summary": "标题方案4存在无依据的数字断言（违反红线），方案2部分标题与素材关联存疑，评论路由存在法律风险用词。需返回上游节点修改后发布，不阻塞全文，但不改不得发布。",
+  "issues": [
+    {
+      "id": "ISSUE-01",
+      "severity": "blocker",
+      "target_node": "media-title-draft-001",
+      "location": "方案4 · 标题A",
+      "problem": "“70% 的人没算对” 是具体数字断言，但素材2未提供该数据，且文案备注“金额 unknown / 无样本量”，标题与证据矛盾，违反红线1（编造收益/数据）和红线2（标题党绝对承诺）。",
+      "action": "删除该数字，改为模糊表述（如“很多人”），或补充可验证的调研来源并标注引用。",
+      "risk_if_published": "虚假数据引发信誉崩塌，可能被投诉为误导性内容。"
+    },
+    {
+      "id": "ISSUE-02",
+      "severity": "high",
+      "target_node": "media-title-draft-001",
+      "location": "方案2 · 标题B",
+      "problem": "标题B使用“权限设计拖垮上线”且提及“真实案例”，但素材1的描述仅涉及知识库资料混乱和无人维护，未明确涉及权限设计。封面文案中“评测数据没人管”与标题B的“权限设计拖垮上线”关联不足，可能存在事实支撑缺失或推断冒充事实的风险。",
+      "action": "确认素材1是否包含权限设计导致上线受阻的细节；若无，修改标题B使其与素材1事实对齐，或注明为推断。",
+      "risk_if_published": "被质疑编造案例，损害专业信誉。"
+    },
+    {
+      "id": "ISSUE-03",
+      "severity": "medium",
+      "target_node": "media-title-draft-001",
+      "location": "方案5 · 标题B",
+      "problem": "“所有 AI 外包团队”使用绝对词“所有”，有标题党嫌疑，可能触碰红线2（绝对承诺/夸大表述）。",
+      "action": "建议改为“很多”“大多数”“不少”等相对表述。非强制，但推荐修改以降低风险。",
+      "risk_if_published": "轻微，但可能被平台判定为夸大。"
+    },
+    {
+      "id": "ISSUE-04",
+      "severity": "blocker",
+      "target_node": "media-comment-classify-001",
+      "location": "评论5（投诉类）自动回复",
+      "problem": "自动回复中使用“现有保障机制”一词，暗示平台具备明确的法律或经济保障。若平台尚无正式公布的撮合纠纷处理/赔偿机制，此表述构成虚假承诺，存在法律与合规风险。",
+      "action": "确认平台是否具备公开的保障机制文档：（1）若有，可保留但需注明“详见XX规则”；（2）若无，改为“相关处理流程”或“说明平台的处理规则”，并标注 manual_review_required，不允许自动回复含责任承诺的内容。",
+      "risk_if_published": "若用户纠纷后平台无法按“保障机制”履行，面临法律诉讼和监管处罚。"
+    },
+    {
+      "id": "ISSUE-05",
+      "severity": "low",
+      "target_node": "media-title-draft-001",
+      "location": "方案1 · 标题A",
+      "problem": "“隐形深坑”用语偏煽动，虽未直接违反红线，但与专业定位略有偏差。",
+      "action": "可选：改为“隐形挑战”或“易忽视的坑点”。非强制。",
+      "risk_if_published": "轻微影响账号调性，无实质性风险。"
+    },
+    {
+      "id": "ISSUE-06",
+      "severity": "info",
+      "target_node": "media-title-draft-001",
+      "location": "全篇",
+      "problem": "多处使用“真实案例”，但素材多为单一匿名企业或行业总结，普遍性不足。",
+      "action": "建议在最终稿件中保留上游已标注的“unverified / 单一条例”等限定词，避免读者误以为普适结论。",
+      "risk_if_published": "低风险，但可提升内容严谨度。"
+    }
+  ],
+  "return_to": [
+    {
+      "node": "media-title-draft-001",
+      "action": "修复 ISSUE-01（必做）、ISSUE-02（必做）、ISSUE-03（建议）、ISSUE-05（建议），完成后重新输出标题方案并保留全部标注。"
+    },
+    {
+      "node": "media-comment-classify-001",
+      "action": "修复 ISSUE-04（必做），修改评论5的自动回复文案或增设 manual_review_required 标记。"
+    }
+  ],
+  "acceptance_criteria": [
+    "所有数字断言（百分比、金额、统计量）必须有标注来源，或已替换为无数字的模糊表述。",
+    "所有标题的事实陈述均与素材原文严格对应，无推断冒充事实。",
+    "评论自动回复中不含任何平台未公开承诺的保障、赔付或责任承担条款。",
+    "红线审查全部通过，无 blocked 或 manual_review_required 残留（除 ISSUE-04 若改为人工审核路由外）。"
+  ],
+  "overall_alignment": "内容定位符合 AI 自媒体项目撮合方向，CTA 自然，无硬性交易引导或过度承诺，除上述问题外可发布。"
+}
+```
+
+返回 JSON：
+{
+  "score": 0,
+  "pass": true,
+  "rubric_hits": [""],
+  "missing": [""],
+  "hallucination": [""],
+  "red_line_violations": [""],
+  "profile_lessons": [""],
+  "prompt_patch_suggestions": [""]
+}

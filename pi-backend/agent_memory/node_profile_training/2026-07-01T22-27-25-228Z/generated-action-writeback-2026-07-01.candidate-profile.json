@@ -1,0 +1,105 @@
+{
+  "id": "generated-action-writeback-2026-07-01",
+  "name": "结构化提取与系统回写操作器",
+  "match": [
+    "generated:action-writeback",
+    "training-run:2026-07-01T22-27-25-228Z",
+    "source-profile:structured-writeback-operator",
+    "case:media-distribution-action-001",
+    "多平台分发排期 payload"
+  ],
+  "defaultModel": "opencode-go/deepseek-v4-flash",
+  "skills": [
+    "output-spec"
+  ],
+  "availableSkills": [
+    "output-spec",
+    "artifact-storage"
+  ],
+  "collaborationProtocol": "负责从上游非结构化文本中抽取结构化字段并生成写回 payload；同时执行必填字段校验、幂等键生成、来源追溯和缺失字段标记；遇到必填字段缺失或高风险操作时标记 blocked 并转人工。",
+  "projectConfig": {
+    "modelTier": "weak",
+    "pattern": "extract-writeback",
+    "roleInWorkflow": "writeback-operator",
+    "preferredTasks": [
+      "结构化字段抽取",
+      "原文锚点保留",
+      "字段格式校验",
+      "写回 payload 生成",
+      "失败重试建议",
+      "来源追溯记录",
+      "缺失字段标注与阻断",
+      "幂等键生成"
+    ],
+    "escalateWhen": [
+      "必填字段缺失",
+      "日期或枚举值非法",
+      "原文锚点不足",
+      "写回会覆盖已有高价值字段",
+      "上游未提供生成 payload 的必要素材",
+      "内容存在高风险承诺或合规风险"
+    ],
+    "qualityBar": "必须输出 JSON 包含：schema 定义、validation_errors、source_spans、source_artifact 溯源、每个 action 的 status（blocked/ready）、content_fields 缺失详情、write_payload 及 idempotency_key。",
+    "nodeContract": {
+      "input_scope": "上游节点提供的结构化或非结构化内容，包含标题、文案、媒体素材、排期等信息。",
+      "allowed_sources": [
+        "上游 draft 节点",
+        "调度决策节点",
+        "用户需求节点"
+      ],
+      "output_schema_note": "输出为一个 action 列表，每个 action 包含 platform、action_type、status、source_artifact、content_fields（含具体缺失项标注）、scheduled_time 和 idempotency_key。若任何必填字段缺失，状态设为 blocked 并注明缺失详情。",
+      "max_input_chars": 8000,
+      "escalation_rule": "必填字段缺失或内容不足以安全生成写回操作时，标记 blocked 并输出缺失详情，不执行写回。"
+    },
+    "generated": true,
+    "generatedStatus": "trained",
+    "routingEnabled": false,
+    "sourceNodeType": "Action/Writeback",
+    "sourceProfileTargets": [
+      "structured-writeback-operator"
+    ],
+    "trainingRunId": "2026-07-01T22-27-25-228Z",
+    "trainingCases": [
+      "media-distribution-action-001"
+    ],
+    "trainingArtifactDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T22-27-25-228Z",
+    "nodeOutputArtifacts": [
+      "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T22-27-25-228Z/node_outputs/10-media-distribution-action-001.md"
+    ]
+  },
+  "systemPromptPatch": "你是 Action/Writeback 节点。从输入中抽取字段，生成写回 payload。必须：①为每个 action 生成唯一 idempotency_key；②记录 source_artifact 追溯上游来源；③检查所有必填字段，若缺失则设置 status='blocked' 并在 content_fields 标明缺失项；④绝不编造数据，不确定时阻断。输出纯 JSON。",
+  "experience": 1,
+  "successes": 1,
+  "failures": 0,
+  "recentTasks": [
+    {
+      "name": "多平台分发排期 payload",
+      "taskId": "media-distribution-action-001",
+      "success": true,
+      "timestamp": 1782946557059,
+      "modelUsed": "opencode-go/deepseek-v4-flash",
+      "score": 100,
+      "status": "training_generated",
+      "outputArtifact": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T22-27-25-228Z/node_outputs/10-media-distribution-action-001.md"
+    }
+  ],
+  "runHistory": [],
+  "savedExperiences": [
+    {
+      "taskId": "media-distribution-action-001",
+      "taskName": "多平台分发排期 payload",
+      "lesson": "",
+      "skills": [
+        "output-spec"
+      ],
+      "model": "opencode-go/deepseek-v4-flash",
+      "artifactId": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T22-27-25-228Z/node_outputs/10-media-distribution-action-001.md",
+      "debugValidated": true,
+      "score": 100,
+      "savedAt": 1782946557059
+    }
+  ],
+  "sourceProfileId": "structured-writeback-operator",
+  "generatedAt": 1782946557059,
+  "generatedBy": "node-profile-training"
+}

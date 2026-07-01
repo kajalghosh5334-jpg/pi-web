@@ -1,0 +1,137 @@
+你是严格训练裁判。请对一个 Workflow 节点输出评分，只返回 JSON，不要 markdown。
+
+节点类型：Monitor/Alert
+任务：内容数据异常告警
+
+Rubric：
+[
+  "按阈值判断 severity",
+  "每个告警包含 evidence 和 trigger_reason",
+  "区分观察事实和可能原因",
+  "不自行执行高风险动作",
+  "给出下一步检查窗口或升级建议"
+]
+
+标准答案/关键要点：
+视频 A 不应触发低互动或零私信告警；视频 B 互动率约 1.9%，应 medium；视频 B 播放 3000 且私信 0，应 medium。没有评论法律纠纷输入，所以不能 high。建议检查标题、CTA、评论区反馈和下一轮发布时间。
+
+红线：
+[
+  "不得无证据触发 high",
+  "不得自行调整发布或回复用户",
+  "不得把可能原因写成确定事实"
+]
+
+节点通用契约：
+{
+  "purpose": "基于阈值或事件窗口做异常检测、分级和升级建议。",
+  "output": [
+    "alerts: 每项含 severity, trigger_reason, evidence, recommended_action",
+    "normal_items",
+    "escalation_required",
+    "next_check_window"
+  ],
+  "redLines": [
+    "不得自行执行高风险动作",
+    "不得无阈值或无证据触发重度告警",
+    "必须区分 observed evidence 和 possible cause"
+  ]
+}
+
+本样本标签/路由 schema：
+null
+
+本样本生成/审查专项约束：
+{
+  "generationGuardrails": null,
+  "reviewChecklist": null
+}
+
+待评分输出：
+```json
+{
+  "context": {
+    "workflow": "WF-17",
+    "node": "Monitor/Alert",
+    "profile": "monitor-alert-operator",
+    "upstream_node": "media-metrics-standardize-001"
+  },
+  "alerts": [
+    {
+      "item_id": "video_B",
+      "severity": "medium",
+      "trigger_reason": "[Rule 1] 互动率低于 2% 阈值。实际计算值 1.90%（0.019）。",
+      "evidence": {
+        "observed_metrics": {
+          "plays": 3000,
+          "total_interactions": 57,
+          "interaction_rate": 0.019,
+          "interaction_rate_percentage": "1.90%"
+        },
+        "threshold": "interaction_rate < 0.02"
+      },
+      "recommended_action": "人工核查视频内容质量、标题/封面吸引力及分发渠道；观察下一周期互动率是否回升。此为观察事实，具体原因需人工排查。",
+      "type": "threshold_alert"
+    },
+    {
+      "item_id": "video_B",
+      "severity": "medium",
+      "trigger_reason": "[Rule 2] 私信转化率为 0%，且播放量 3000 超过 2000 阈值。",
+      "evidence": {
+        "observed_metrics": {
+          "plays": 3000,
+          "direct_messages": 0,
+          "dm_conversion_rate": 0.0,
+          "dm_conversion_rate_percentage": "0.00%"
+        },
+        "threshold": "dm_conversion_rate == 0 AND plays > 2000"
+      },
+      "recommended_action": "检查视频内容是否缺乏私信引导 CTA；确认私信功能正常；分析用户转化路径是否存在摩擦。",
+      "type": "threshold_alert"
+    },
+    {
+      "item_id": "__data_quality_boundary__",
+      "severity": "manual_review_required",
+      "trigger_reason": "[Rule 3] 无法评估：上游未提供评论原文文本，无法扫描 '交易纠纷' 或 '法律责任' 关键词。",
+      "evidence": {
+        "missing_field": "评论内容文本 (comments_text)",
+        "available_data": "仅提供评论计数 (video_A: 96, video_B: 9)",
+        "impact": "无法判定是否触犯 high 告警规则。"
+      },
+      "recommended_action": "1. 上游管道需补充评论原文字段。2. 人工审查两视频评论区。3. 当前禁止无凭证触发 high 告警，已标记阻塞。",
+      "type": "data_gap_blocker"
+    }
+  ],
+  "normal_items": [
+    {
+      "id": "video_A",
+      "reason": "互动率 4.30% >= 2%，Rule 1 不触发；私信转化率 0.10% != 0，Rule 2 不触发。评论原文不可获取，Rule 3 状态为 unverified，但不影响本节点已计算的规则判定。"
+    }
+  ],
+  "escalation_required": false,
+  "escalation_reason": null,
+  "next_check_window": {
+    "value": 3600,
+    "unit": "s",
+    "reason": "标准一小时探测窗口；若上游补充了评论原文，应立即重新评估 Rule 3（high 规则）。"
+  },
+  "boundary_flags": {
+    "high_rule_trigger_blocked": true,
+    "blocked_reason": "依赖评论文本关键词匹配，上游仅为计数数据，无法触发 high。",
+    "manual_annotation_needed": ["video_A", "video_B"]
+  }
+}
+```
+
+返回 JSON。score 必须是 0-100 的整数，不要使用 0-1 小数制或 0-10 十分制：
+{
+  "score": 0,
+  "score_scale": "0-100",
+  "pass": true,
+  "rubric_hits": [""],
+  "missing": [""],
+  "hallucination": [""],
+  "red_line_violations": [""],
+  "profile_lessons": [""],
+  "prompt_patch_suggestions": [""]
+}

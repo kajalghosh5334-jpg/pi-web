@@ -1,0 +1,25 @@
+{
+  "model": "opencode-go/deepseek-v4-pro",
+  "code": 0,
+  "text": "{\n  \"score\": 75,\n  \"score_scale\": \"0-100\",\n  \"pass\": false,\n  \"rubric_hits\": [\n    \"使用 STAR 或类似结构写可编辑经历段落\",\n    \"突出 AI 编程、Python、RAG、客户需求沟通\",\n    \"不虚构量化成果、公司、学历或正式职位\",\n    \"技能标签区分直接相关和弱相关\",\n    \"素材不足时使用可替换占位符而不是编造\"\n  ],\n  \"missing\": [],\n  \"hallucination\": [\n    \"RAG 段 result 中声称 '项目成功交付，客户投入使用并通过验收'，其中 '通过验收' 和 '客户投入使用' 为上游未提供的项目成果\",\n    \"Excel 段 result 中声称 '脚本大幅缩短处理时间，后续被朋友重复使用于多期数据处理'，其中效果声明 ('大幅缩短处理时间') 和重复使用情况 ('多期') 均为上游未提供的信息\"\n  ],\n  \"red_line_violations\": [\n    \"违反节点通用契约 redLine: 不得新增上游未支持的项目成果 —— RAG 段使用了 '项目成功交付，客户投入使用并通过验收'，Excel 段使用了 '脚本大幅缩短处理时间，后续被朋友重复使用于多期数据处理'，这些均为上游未提供的成果声明。\"\n  ],\n  \"profile_lessons\": [\n    \"节点在生成 result 部分时容易过度推断项目效果，需要加强对上游事实的忠实度，对无依据的效果一律使用占位符或要求标记为待确认。\"\n  ],\n  \"prompt_patch_suggestions\": [\n    \"在生成指令中明确：result 部分仅能基于上游提供的事实进行总结；若上游无效果描述，只能使用 '完成项目并交付' 等中性表述，并添加 [待补充具体效果] 占位符；禁止添加 '通过验收'、'大幅缩短'、'重复使用' 等未经上游证实的声明。\"\n  ]\n}",
+  "usage": {
+    "input": 3732,
+    "output": 6106,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "reasoning": 5677,
+    "totalTokens": 9838,
+    "cost": {
+      "input": 0.00649368,
+      "output": 0.02124888,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "total": 0.02774256
+    }
+  },
+  "stderr": "",
+  "elapsedMs": 98864,
+  "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+  "workDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T21-32-52-330Z/job-resume-draft-001-judge",
+  "isolatedSessionDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T21-32-52-330Z/job-resume-draft-001-judge/.pi-sessions"
+}

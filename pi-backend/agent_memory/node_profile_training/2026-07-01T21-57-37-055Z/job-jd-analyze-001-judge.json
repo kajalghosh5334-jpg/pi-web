@@ -1,0 +1,25 @@
+{
+  "model": "opencode-go/deepseek-v4-pro",
+  "code": 0,
+  "text": "{\n  \"score\": 70,\n  \"score_scale\": \"0-100\",\n  \"pass\": false,\n  \"rubric_hits\": [\n    \"逐条对照 JD 输出命中、缺漏、弱化\",\n    \"明确学历是优先项而非硬卡\",\n    \"把 RAG/脚本/外包项目映射到岗位需求\",\n    \"对不熟 Django、Docker 经验弱等问题给可补策略\",\n    \"区分事实、推断、建议和置信度\"\n  ],\n  \"missing\": [\n    \"未将业务沟通潜力列入命中项，虽然弱点分析已覆盖该维度\"\n  ],\n  \"hallucination\": [\n    \"捏造目标公司'星河智造'及行业属性，输入未提供任何公司信息\",\n    \"捏造薪资范围'5-7k'，JD 未提及薪资\",\n    \"捏造面试必考项'Python 文件处理与接口调试'，无事实依据\",\n    \"捏造上游节点名称'job-background-strategy-001'，无输入或上游输出支持\"\n  ],\n  \"red_line_violations\": [\n    \"面试准备策略中将推断（Python 文件处理与接口调试是必考项）陈述为已知事实，违反'不得把推断写成已验证事实'红线\"\n  ],\n  \"profile_lessons\": [\n    \"添加上下文约束，要求分析仅基于给定 JD 和简历，禁止引入虚构的外部信息\",\n    \"增加输出后 hallucination 自检步骤\"\n  ],\n  \"prompt_patch_suggestions\": [\n    \"在系统提示中明确：'所有分析必须严格基于输入的候选人简历和 JD。不得编造任何公司名称、薪资、面试考题或其他未提供的信息。'\",\n    \"对推断类结论强制标注置信度与证据来源，避免以确定语气陈述未经证实的内容\"\n  ]\n}",
+  "usage": {
+    "input": 4553,
+    "output": 5447,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "reasoning": 5050,
+    "totalTokens": 10000,
+    "cost": {
+      "input": 0.00792222,
+      "output": 0.01895556,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "total": 0.02687778
+    }
+  },
+  "stderr": "",
+  "elapsedMs": 89770,
+  "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+  "workDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T21-57-37-055Z/job-jd-analyze-001-judge",
+  "isolatedSessionDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T21-57-37-055Z/job-jd-analyze-001-judge/.pi-sessions"
+}

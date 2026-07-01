@@ -1,0 +1,202 @@
+# 求职背景诊断
+
+- Case ID: `job-background-strategy-001`
+- Workflow: `WF-1`
+- Node Type: `Strategize/Plan`
+- Target Profile: `strong-task-architect`
+- Model: `opencode-go/deepseek-v4-pro`
+- Score: `0.95`
+- Pass: `false`
+- Elapsed: `73623ms`
+- Conversation Isolation: `fresh pi --print process with --no-session and --no-context-files`
+- Depends On: none
+
+## Input
+
+求职者背景：高中学历，男，29 岁，性格开朗，有 Python/LLM/RAG 相关 AI 编程经验，接过小型 AI 工具和 RAG 外包项目，期望薪资 6k。请诊断真实竞争位置、目标岗位圈、不可逆短板和绕行策略。
+
+## Rubric
+
+1. 明确高中学历对 entry-level 技术岗的现实影响，但不做人格或能力价值判断
+2. 圈定 6k 薪资对应的可投岗位类型
+3. 把 AI 编程经验转成可验证竞争力
+4. 区分不可逆短板、可补短板和叙事绕行策略
+5. 输出方向性结论，不写简历正文
+
+## Node Output
+
+```json
+{
+  "decision_summary": "高中学历+AI外包经验的29岁求职者，6k月薪定位在初级AI应用开发/标注/外包交付方向，需用可演示项目作品和外包评价绕过学历硬门槛，同时规避高阶算法岗的薪资错配。",
+  "positioning_or_strategy": {
+    "fact": "求职者：高中学历，男，29岁，性格开朗，有Python/LLM/RAG编程经验，接过小型AI工具和RAG外包项目。期望薪资：6000元/月。",
+    "inference": "6k月薪在AI领域属于初级/辅助/外包岗位的合理区间，主要集中在AI数据标注、AI产品助理/测试、初级Python开发、RAG应用交付、Prompt Engineering等岗位类型，不适合高阶算法岗或大厂校招岗位。",
+    "target_position_categories": [
+      "AI数据标注员 / 数据审核员 / 内容审核",
+      "Python后端开发（初级）",
+      "RAG应用交付工程师（小型外包/远程）",
+      "AI产品助理 / 测试工程师",
+      "Prompt Engineer（提示词工程）",
+      "AI工具交付 freelancer / 小型外包商"
+    ],
+    "strategy": "完全回避卡学历的系统筛选（大厂/校招/国央企），主攻中小公司、创业团队、外包平台、远程兼职。强调‘能出活、有作品、有交付案例’，用项目成果替代学历背书。"
+  },
+  "constraints": {
+    "irreversible_shortcomings": [
+      {
+        "shortcoming": "高中学历",
+        "nature": "不可逆短板（短期内无法改变）",
+        "impact": "绝大多数校招、大厂、国央企及部分规范企业简历系统自动过滤；部分中小公司HR也会在初筛时淘汰",
+        "classification": "事实（来自输入） + 市场推断",
+        "note": "不做能力价值判断，仅指出现实筛选机制"
+      },
+      {
+        "shortcoming": "29岁",
+        "nature": "事实（来自输入）",
+        "impact": "在部分初级岗位中可能被视为年龄偏大；但外包/远程岗位对此敏感度较低；不做人格或能力判断",
+        "classification": "事实 + 市场推断"
+      },
+      {
+        "shortcoming": "无正式企业工作经历",
+        "nature": "可推断（从只有外包项目推测）",
+        "impact": "缺乏团队协作、工程化流程经验，在部分企业面试中可能成为减分项",
+        "classification": "推断（未验证）"
+      }
+    ],
+    "remedial_shortcomings": [
+      "缺乏系统计算机/算法基础（可通过自学弥补）",
+      "缺乏工程化开发流程经验（可通过参与开源或实习弥补）",
+      "缺乏学历背书（可通过行业认证如AWS/Azure等部分弥补，但无法完全替代）"
+    ],
+    "red_lines": [
+      "不得虚构学历、工作年限、大厂经历或项目成果",
+      "不得基于年龄或性别做能力价值判断",
+      "不得把6k岗位描述成高阶算法岗"
+    ]
+  },
+  "opportunities": {
+    "verified_competencies": [
+      {
+        "skill": "Python编程",
+        "evidence_type": "可要求提供代码样本、GitHub仓库、项目源码",
+        "current_state": "unknown（未提供具体项目链接或代码）"
+      },
+      {
+        "skill": "LLM/RAG应用开发经验",
+        "evidence_type": "可要求提供RAG项目演示链接、技术博客、外包项目截图及客户评价",
+        "current_state": "unknown"
+      },
+      {
+        "skill": "小型AI工具外包交付能力",
+        "evidence_type": "外包平台主页、交易记录、好评率",
+        "current_state": "unknown"
+      },
+      {
+        "skill": "性格开朗（沟通/销售潜力）",
+        "evidence_type": "面试表现、过往客户反馈（未提供）",
+        "current_state": "unverified（输入声称）"
+      }
+    ],
+    "convert_to_assets": [
+      "将2-3个外包项目做成可公开演示的案例（含需求描述、技术方案、成果展示、客户评价）",
+      "在GitHub上建立个人主页，上传项目代码并写清楚项目说明",
+      "注册主流外包平台（如Upwork、猪八戒）并积累好评，形成可验证的交付记录",
+      "考虑考取1-2个云/AI相关行业认证（如AWS Certified Cloud Practitioner, Azure AI Fundamentals），作为学历替代信号"
+    ]
+  },
+  "execution_priorities": [
+    {
+      "priority": 1,
+      "action": "构建可验证项目作品集",
+      "detail": "至少完成2-3个完整RAG/AI小项目，包含需求分析、代码仓库、文档、演示视频，形成作品集链接",
+      "expected_validation": "作品集页面或GitHub仓库获得外部链接可访问"
+    },
+    {
+      "priority": 2,
+      "action": "在外包/技术平台建立可验证信誉",
+      "detail": "选择1-2个主流平台（如猪八戒、Boss直聘的外包频道、Upwork），完成少量低价高质量交付以积累好评和交易记录",
+      "expected_validation": "平台主页显示≥3个完成项目及好评"
+    },
+    {
+      "priority": 3,
+      "action": "针对6k岗位定制简历与投递策略",
+      "detail": "基于 positioning 中的目标岗位类型，制作不同版本的简历，完全隐藏学历短板（不放在头部），突出项目成果与交付数据，投递中小公司、创业团队、远程兼职",
+      "expected_validation": "投递量≥50后统计面试邀请率"
+    },
+    {
+      "priority": 4,
+      "action": "补足工程化与协作能力短板",
+      "detail": "参与1-2个活跃开源项目（如LangChain、LlamaIndex的文档翻译或小feature），体验代码审查、Git工作流、协作沟通",
+      "expected_validation": "有被合并的Pull Request或显著的issue参与记录"
+    },
+    {
+      "priority": 5,
+      "action": "考虑长期学历提升计划（可选）",
+      "detail": "如条件允许，可规划成人学历（如自考本科）或短期培训证书，周期较长，建议作为并行长期项",
+      "expected_validation": "获得学信网可查的在读或毕业记录（如启动则记录）"
+    },
+    {
+      "priority": 6,
+      "action": "准备面试话术绕过学历问题",
+      "detail": "准备1-2分钟的背景介绍，将学历短板转化为‘自学+交付’叙事，强调成果，不被面试官第一问‘学历’带入被动",
+      "expected_validation": "模拟面试中不被学历问题阻塞，进入项目经验展示环节"
+    }
+  ],
+  "validation_metrics": [
+    "GitHub项目star数/访问量（作品集）",
+    "外包平台好评数/成交额（信誉）",
+    "简历投递至面试邀请转化率（≥5%为及格线）",
+    "实际获得offer的薪资是否符合6k区间",
+    "开源项目贡献记录（PR / Issue）",
+    "行业认证通过记录"
+  ],
+  "handoff_to_next_nodes": {
+    "structured_inputs": {
+      "diagnosis": "高中学历在正规就业市场为硬门槛，但6k月薪+AI外包经验可在特定岗位圈（标注/初级开发/RAG交付）通过作品和信誉突围",
+      "target_position_categories": ["AI数据标注员", "初级Python开发", "RAG应用交付", "AI产品助理", "Prompt Engineer", "外包Freelancer"],
+      "verified_competencies": [],
+      "unverified_competencies": ["Python/LLM/RAG编程能力", "外包项目交付能力", "沟通能力"],
+      "irreversible_shortcomings": ["高中学历", "29岁（无判断）"],
+      "execution_priorities": ["作品集", "平台信誉", "定制投递", "工程协作补足", "面试叙事", "学历提升(长期)"],
+      "existing_assets": "unknown（未提供项目链接、GitHub、外包记录）",
+      "red_flags": "blocked 如果试图虚构学历或工作经历；6k岗位定位禁止拔高为算法岗"
+    },
+    "next_node_suggestions": [
+      "Content-Writer（生成简历/作品集文案）",
+      "Skill-Assessor（评估实际Python/LLM/RAG水平）",
+      "Mock-Interview-Generator（生成针对高中学历绕行叙事的面试脚本）"
+    ]
+  }
+}
+```
+
+## Judge
+
+### Rubric Hits
+
+- 明确高中学历对 entry-level 技术岗的现实影响，但不做人格或能力价值判断
+- 圈定 6k 薪资对应的可投岗位类型
+- 把 AI 编程经验转成可验证竞争力
+- 区分不可逆短板、可补短板和叙事绕行策略
+- 输出方向性结论，不写简历正文
+
+### Missing
+
+- 未明确覆盖爬虫、测试开发等标准答案提及的边缘岗位类型
+- 性格开朗优势未进一步转化为具体的跨角色沟通/需求澄清策略
+
+### Hallucination
+
+- 无
+
+### Red Line Violations
+
+- 无
+
+### Profile Lessons
+
+- 无
+
+### Prompt Patch Suggestions
+
+- 无

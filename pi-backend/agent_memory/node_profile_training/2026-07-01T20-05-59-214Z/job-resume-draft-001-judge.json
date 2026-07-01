@@ -1,0 +1,25 @@
+{
+  "model": "opencode-go/deepseek-v4-pro",
+  "code": 0,
+  "text": "{\n  \"score\": 95,\n  \"score_scale\": \"0-100\",\n  \"pass\": true,\n  \"rubric_hits\": [\n    \"使用STAR结构写可编辑经历段落：两段经历均包含Situation/Task/Action/Result，并嵌入可编辑占位符与修改提示\",\n    \"突出Python、RAG、客户需求沟通：技能标签覆盖Python、RAG、文档清洗、向量库、网页入口、沟通协作等关键点，叙事行为中明确体现需求沟通\",\n    \"未虚构量化成果、公司、学历或正式职位：所有量化指标使用[placeholder: …]占位，未出现具体公司名、学位或正式职位\",\n    \"技能标签区分直接相关和弱相关：每个项目均列出directly_related和weakly_related分组，区分JD核心技能与迁移能力\",\n    \"素材不足时使用可替换占位符而非编造：缺失的具体数据（文档量、效率提升率、客户名称等）均以[placeholder]或[Editable: …]形式明示，未自行填补\"\n  ],\n  \"missing\": [],\n  \"hallucination\": [],\n  \"red_line_violations\": [],\n  \"profile_lessons\": [\n    \"输出完全符合节点通用契约：包含draft_sections、source_usage、unsupported_claims_removed、editable_notes、risk_flags\",\n    \"红线自查清单与正文一致，未发现虚构、夸大或不可修改问题\",\n    \"两段经历覆盖了上游素材提及的全部技术栈与能力维度，未遗漏关键要素\"\n  ],\n  \"prompt_patch_suggestions\": [\n    \"RAG段落result中“秒级返回”虽非量化业绩，但可能被视为隐含速度承诺；可建议统一使用“快速”或替换为占位符以进一步降低风险。\",\n    \"技能标签中“Python（基础扎实）”倾向于自我评价，可建议改为纯技术词，如“Python（熟练）”或直接“Python”。\"\n  ]\n}",
+  "usage": {
+    "input": 4487,
+    "output": 1764,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "reasoning": 1328,
+    "totalTokens": 6251,
+    "cost": {
+      "input": 0.00780738,
+      "output": 0.00613872,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "total": 0.0139461
+    }
+  },
+  "stderr": "",
+  "elapsedMs": 29420,
+  "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+  "workDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-05-59-214Z/job-resume-draft-001-judge",
+  "isolatedSessionDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-05-59-214Z/job-resume-draft-001-judge/.pi-sessions"
+}

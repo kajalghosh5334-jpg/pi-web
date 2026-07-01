@@ -1,0 +1,25 @@
+{
+  "model": "opencode-go/deepseek-v4-pro",
+  "code": 0,
+  "text": "{\n  \"score\": 85,\n  \"score_scale\": \"0-100\",\n  \"pass\": true,\n  \"rubric_hits\": [\n    \"输出 5 组标题和封面文案\",\n    \"每组标注适用受众和点击动机\",\n    \"至少覆盖技术者向、企业主向、混合向\",\n    \"避免夸张承诺和标题党（整体无数字型标题党，语气基本克制）\"\n  ],\n  \"missing\": [\n    \"Rubric第4条未完全满足：方案三封面A“这不是个案”为无依据的普遍性暗示，方案三标题B“三类成本”与上游明确的四项成本不完全一致\",\n    \"节点通用契约要求的 editable_notes 字段在输出中缺失\",\n    \"方案四封面“一位工程师的观察”未明确对应上游素材来源，可能造成误解\"\n  ],\n  \"hallucination\": [\n    \"“这不是个案”暗示范畴普遍性，上游素材仅包含单一个案评论，无任何普遍性数据\",\n    \"“三类成本”的概括与上游成本项（数据清洗、权限设计、评测、运维共四类）不一致\"\n  ],\n  \"red_line_violations\": [],\n  \"profile_lessons\": [\n    \"标题封面文案应避免使用暗示普遍性的绝对语气（如'不是个案''真实经历'），即使附加备注下游仍可能将其作为事实传播\",\n    \"对上游事实的归类/概括须确保数量与范围准确，不应无依据地更改分类数\",\n    \"生成类节点应严格遵循节点契约输出字段结构，包括必填的 editable_notes\"\n  ],\n  \"prompt_patch_suggestions\": [\n    \"在 generationGuardrails 中增加：'禁止使用\\\"不是个案\\\"\\\"行业常态\\\"\\\"普遍现象\\\"等无数据支撑的普遍性暗示语'\",\n    \"要求所有概括性表述（如'三类成本')必须与上游数据严格对应，若需合并分类应明确说明归并逻辑\",\n    \"显式在 prompt 模板中加入 editable_notes 字段，强制输出即使为空\"\n  ]\n}",
+  "usage": {
+    "input": 5142,
+    "output": 8027,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "reasoning": 7581,
+    "totalTokens": 13169,
+    "cost": {
+      "input": 0.00894708,
+      "output": 0.02793396,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "total": 0.036881040000000004
+    }
+  },
+  "stderr": "",
+  "elapsedMs": 169351,
+  "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+  "workDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T22-27-25-228Z/media-title-draft-001-judge",
+  "isolatedSessionDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T22-27-25-228Z/media-title-draft-001-judge/.pi-sessions"
+}

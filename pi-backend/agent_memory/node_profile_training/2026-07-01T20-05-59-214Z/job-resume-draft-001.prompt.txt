@@ -1,0 +1,158 @@
+你是 Workflow 中的一个 profile 化节点。请只完成当前节点，不要越权完成下游任务。
+
+节点类型：Generate/Draft
+目标 Profile：content-draft-producer
+Workflow：WF-2
+任务：简历经历初稿
+
+上游上下文：
+上游节点 job-jd-analyze-001 输出：
+```json
+{
+  "node_type": "Analyze/Judge",
+  "profile": "research-report-analyst",
+  "workflow": "WF-4",
+  "task": "JD 匹配分析",
+  "analysis_items": [
+    {
+      "jd_requirement": "Python 基础扎实",
+      "claim_type": "inference",
+      "evidence": "候选人完成过 Python 自动化脚本、RAG 知识库 demo、小型企业资料问答外包项目，且会 Flask 基础，说明有实际 Python 编写经验。",
+      "confidence": "medium",
+      "counter_evidence": "未提及数据结构/算法等基础概念掌握程度，项目规模、代码质量未知。",
+      "recommendation": "在简历中列出具体 Python 库 (requests, flask, langchain 等) 和项目细节，展示基础扎实程度。"
+    },
+    {
+      "jd_requirement": "熟悉接口调用",
+      "claim_type": "inference",
+      "evidence": "RAG 知识库 demo 和小型企业问答外包很可能涉及调用 LLM API 或外部数据接口，但未明确说明。",
+      "confidence": "medium",
+      "counter_evidence": "未直接提及 API 调用经验，也无代码仓库可验证。",
+      "recommendation": "在简历中明确描述如何调用 API（如 OpenAI、本地模型接口），并补充接口文档阅读能力。"
+    },
+    {
+      "jd_requirement": "了解 OpenCV 加分",
+      "claim_type": "fact",
+      "evidence": "候选人简历中未提到任何 OpenCV 经验。",
+      "confidence": "high",
+      "counter_evidence": "可能学习过但未写在简历中。",
+      "recommendation": "如时间允许，完成一个小型 OpenCV 入门项目（如边缘检测/文字识别 demo）；否则在简历中注明「愿意快速学习并已开始了解」。"
+    },
+    {
+      "jd_requirement": "大专及以上优先",
+      "claim_type": "fact",
+      "evidence": "JD 明确写「大专及以上优先」，上游公司信息节点确认非硬性门槛。候选人学历为高中，不满足优先项。",
+      "confidence": "high",
+      "counter_evidence": "无。",
+      "recommendation": "不要隐藏学历，在简历中将项目经验和作品集置于教育背景之前，用实战能力弥补。"
+    },
+    {
+      "jd_requirement": "有项目 demo 加分",
+      "claim_type": "fact",
+      "evidence": "候选人有 RAG 知识库 demo 和企业资料问答外包项目，可直接作为 demo 展示。",
+      "confidence": "high",
+      "counter_evidence": "demo 是否可公开查看/运行未知，需要确认版权与可展示权限。",
+      "recommendation": "将 demo 整理为 GitHub 仓库（README、截图、运行说明）或部署到 Hugging Face Space，在简历中附上链接。"
+    },
+    {
+      "jd_requirement": "能和业务方沟通需求",
+      "claim_type": "inference",
+      "evidence": "候选人有外包项目经验，性格开朗（上游推断），推测具备与业务方沟通的基本能力。",
+      "confidence": "medium",
+      "counter_evidence": "无具体客户评价或沟通场景描述，面试验证后方可确认。",
+      "recommendation": "在简历中用 STAR 法则描述一个与客户沟通需求并完成交付的案例，突出理解和转化能力。"
+    }
+  ],
+  "mapped_hits": [
+    "Python 基础：有实际项目（自动化脚本、RAG demo、Flask 应用）",
+    "接口调用：项目涉及 API 调用的可能性高",
+    "项目 demo：已有多个可展示项目",
+    "沟通能力：外包经历暗示具备基本沟通能力"
+  ],
+  "mapped_misses": [
+    "OpenCV：无任何经验",
+    "学历：高中，不满足优先条件"
+  ],
+  "mapped_weaknesses": [
+    "Django：不熟悉（JD 未要求，但可能涉及内部框架）",
+    "Docker：仅部署一次，经验薄弱（JD 未要求，但可能用于部署）",
+    "项目细节：未提供代码仓库、客户评价等可验证材料"
+  ],
+  "education_barrier": {
+    "type": "soft_preference",
+    "description": "JD 写「大专及以上优先」，上游证实为非硬性门槛。高中不满足优先项，但不构成硬性拒绝条件。",
+    "strategy": "项目优先展示，教育放末尾；面试中主动将话题引向技术能力和交付成果。"
+  },
+  "resume_customization_strategy": [
+    "1. 项目经验优先：将 RAG demo、企业问答外包、自动化脚本按相关性排序放在教育之前，每个项目包含：目标、技术栈、个人职责、成果，附 GitHub 链接或 Demo URL。",
+    "2. 接口调用突出：在项目描述中写明调用了哪些 API（如 GPT-4、文心一言、Elasticsearch 接口），强调「能独立阅读接口文档并实现调用」。",
+    "3. 沟通能力举例：选择一个外包项目写一段「客户需求→方案沟通→交付验收」的简短案例，体现业务理解与沟通。",
+    "4. 弱项处理：开视频或「技能」区注明「了解基本概念，可快速上手」应对 OpenCV、Docker；对 Django 不写也不提，除非面试问起。",
+    "5. 学历：放在简历最后，只写「高中」，不模糊处理。",
+    "6. 关键词对齐：在技能摘要中直接使用 JD 用语：「Python 基础扎实」「接口调用」「项目 demo」「沟通需求」。"
+  ],
+  "gap_handling": [
+    {
+      "gap": "OpenCV 无经验",
+      "action": "若有一周以上准备时间，完成一个入门 demo（如图像灰度化、轮廓检测）并加到 GitHub。否则在面试中主动表达学习意愿，并用过往学习 Python/LLM 的速度作为佐证。"
+    },
+    {
+      "gap": "Django / Docker 不熟",
+      "action": "JD 未要求，但可花 2-3 天完成 Django 官方教程和 Docker 部署 Flask 练习，补充简历中的「了解」描述。非紧急可忽略。"
+    },
+    {
+      "gap": "项目可验证性不足",
+      "action": "尽快整理代码到 GitHub（脱敏后），每个项目写 README 和运行指南；若有客户评价截图（脱敏），加入作品集。"
+    }
+  ],
+  "overall_confidence": "medium",
+  "escalation_flag": {
+    "required": false,
+    "reason": "未触发任何红线（不隐瞒学历、不伪造技能、区分事实/推断）。无需人工审查。"
+  },
+  "red_line_checklist": [
+    {"rule": "不得把未掌握技能写成熟练", "status": "合规，弱项均如实标注「无经验」「不熟悉」"},
+    {"rule": "不得建议隐藏或伪造学历", "status": "合规，策略明确建议不隐藏、不伪造"},
+    {"rule": "不得把推断写成已验证事实", "status": "合规，所有推断均标注 claim_type=inference 并提供证据和置信度"}
+  ]
+}
+```
+
+当前输入：
+原始经历：做过一个企业资料问答 RAG 外包，负责整理客户资料、写 Python 文档清洗脚本、接入向量库、做简单网页查询入口；还帮朋友做过批量 Excel 处理脚本；性格开朗，能和客户沟通需求。请按 STAR 写 2 段简历经历，附技能标签和项目亮点。
+
+节点通用契约：
+职责：依据上游事实和策略生成可编辑初稿，不承担最终事实责任。
+推荐输出字段：
+- draft_sections: 草稿分段或变体列表
+- source_usage: 每个事实/数字对应的上游依据；无依据必须写 placeholder 或删除
+- unsupported_claims_removed: 删除或占位的无依据表达
+- editable_notes: 需要人类补充或确认的占位项
+- risk_flags
+通用红线：
+- 不得新增上游未支持的数字、案例、客户名、项目成果、学历、职位
+- 不得把 demo 写成生产级成果
+- 不得输出不可修改的最终定稿
+
+本样本标签/路由 schema：
+未指定；如需分类，严格使用题目给定标签。
+
+输出要求：
+1. 严格遵守当前节点职责。
+2. 输出可供下游使用的结构化结果。
+3. 如信息缺失，写 unknown/missing/unverified，不得补造。
+4. 区分事实、推断、建议和风险。
+5. 遇到红线必须标记 blocked 或 manual_review_required。
+6. 优先按“节点通用契约”的字段输出；若任务要求更具体，以任务要求为准。
+
+评分 Rubric：
+1. 使用 STAR 或类似结构写可编辑经历段落
+2. 突出 AI 编程、Python、RAG、客户需求沟通
+3. 不虚构量化成果、公司、学历或正式职位
+4. 技能标签区分直接相关和弱相关
+5. 素材不足时使用可替换占位符而不是编造
+
+红线：
+1. 不得虚构学历、公司、职位、项目规模或量化成绩
+2. 不得把 demo 写成生产级平台
+3. 不得生成最终不可修改定稿

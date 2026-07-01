@@ -1,0 +1,11 @@
+{
+  "model": "opencode-go/deepseek-v4-pro",
+  "code": null,
+  "text": "",
+  "usage": null,
+  "stderr": "",
+  "elapsedMs": 180100,
+  "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+  "workDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T21-57-37-055Z/job-background-strategy-001-output",
+  "isolatedSessionDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T21-57-37-055Z/job-background-strategy-001-output/.pi-sessions"
+}

@@ -1,0 +1,25 @@
+{
+  "model": "opencode-go/deepseek-v4-pro",
+  "code": 0,
+  "text": "{\n  \"score\": 75,\n  \"score_scale\": \"0-100\",\n  \"pass\": false,\n  \"rubric_hits\": [\n    \"给出明确 pass/revise/block 裁决（revise）\",\n    \"指出具体返工位置和返工节点（issues 含 target_node 和具体 location）\",\n    \"输出短裁决，不展开长文重写（summary 简洁，无重写长文）\",\n    \"检查虚构项目成果（red_line_review 确认无虚构声明）\"\n  ],\n  \"missing\": [\n    \"未明确检查学历（教育背景）是否虚构或过度突出\",\n    \"未明确检查职位是否虚构或夸大\",\n    \"未明确检查技能熟练度是否有虚假宣称\",\n    \"未明确对齐 JD 的沟通能力要求\",\n    \"未明确检查接口调用（API 调用）相关要求是否对齐\"\n  ],\n  \"hallucination\": [],\n  \"red_line_violations\": [],\n  \"profile_lessons\": [\n    \"Review/Gate 节点应在 evidence_checks 和 issues 中逐项核实学历、职位、技能熟练度等关键点，并显式记录 JD 软技能（如沟通）的对齐情况。\"\n  ],\n  \"prompt_patch_suggestions\": [\n    \"在 Review/Gate 的 prompt 模板中增加强制检查项：学历真实性、职位真实性、技能熟练度真实性、JD 沟通要求对齐、接口调用经验对齐。\"\n  ]\n}",
+  "usage": {
+    "input": 3476,
+    "output": 3327,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "reasoning": 3007,
+    "totalTokens": 6803,
+    "cost": {
+      "input": 0.00604824,
+      "output": 0.01157796,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "total": 0.0176262
+    }
+  },
+  "stderr": "",
+  "elapsedMs": 54023,
+  "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+  "workDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-05-59-214Z/job-resume-review-001-judge",
+  "isolatedSessionDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-05-59-214Z/job-resume-review-001-judge/.pi-sessions"
+}

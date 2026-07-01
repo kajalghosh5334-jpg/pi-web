@@ -1,0 +1,25 @@
+{
+  "model": "opencode-go/deepseek-v4-pro",
+  "code": 0,
+  "text": "{\n  \"score\": 90,\n  \"pass\": true,\n  \"rubric_hits\": [\n    \"逐条对照 JD 输出命中、缺漏、弱化\",\n    \"明确学历是优先项而非硬卡\",\n    \"把 RAG/脚本/外包项目映射到岗位需求\",\n    \"区分事实、推断、建议和置信度\"\n  ],\n  \"missing\": [\n    \"对不熟 Django、Docker 经验弱等问题给可补策略\"\n  ],\n  \"hallucination\": [],\n  \"red_line_violations\": [],\n  \"profile_lessons\": [\n    \"未验证的信息（如性格开朗）应尽量在profile中减少依赖，或明确其来源状态\",\n    \"技能弱项不仅要分析影响，还需给出具体的简历或面试应对策略\"\n  ],\n  \"prompt_patch_suggestions\": [\n    \"在提示中增加要求：对于候选人技能短板（如不熟某些技术），必须提供针对性弥补策略，例如强调替代技能或学习路径\",\n    \"提示词应要求为每项weakness给出至少一条可操作的补强建议\"\n  ]\n}",
+  "usage": {
+    "input": 4402,
+    "output": 3682,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "reasoning": 3443,
+    "totalTokens": 8084,
+    "cost": {
+      "input": 0.007659480000000001,
+      "output": 0.012813360000000001,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "total": 0.020472840000000003
+    }
+  },
+  "stderr": "",
+  "elapsedMs": 70598,
+  "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+  "workDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T19-35-43-671Z/job-jd-analyze-001-judge",
+  "isolatedSessionDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T19-35-43-671Z/job-jd-analyze-001-judge/.pi-sessions"
+}

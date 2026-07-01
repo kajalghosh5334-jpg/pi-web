@@ -1,0 +1,25 @@
+{
+  "model": "opencode-go/deepseek-v4-pro",
+  "code": 0,
+  "text": "{\n  \"score\": 90,\n  \"pass\": true,\n  \"rubric_hits\": [\n    \"只抽取给定来源中出现的业务、技术栈、学历门槛、薪资和面经\",\n    \"每条事实标注来源片段\",\n    \"未出现的信息输出通过 evidence_gaps 列出，满足 unknown/missing 要求\",\n    \"不判断候选人是否适合\",\n    \"给出证据缺口和复核建议\"\n  ],\n  \"missing\": [\n    \"未在 extracted_facts 中为缺失类别（如团队规模、文化）显式标注 unknown，但 evidence_gaps 已覆盖\"\n  ],\n  \"hallucination\": [],\n  \"red_line_violations\": [],\n  \"profile_lessons\": [\n    \"evidence_gaps 机制可替代事实级 unknown 标记，但需注意下游客服用场景是否期望结构化 missing 字段\",\n    \"inferences 与 facts 分离良好，减少混淆\"\n  ],\n  \"prompt_patch_suggestions\": []\n}",
+  "usage": {
+    "input": 3063,
+    "output": 1942,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "reasoning": 1731,
+    "totalTokens": 5005,
+    "cost": {
+      "input": 0.00532962,
+      "output": 0.00675816,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "total": 0.01208778
+    }
+  },
+  "stderr": "",
+  "elapsedMs": 35960,
+  "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+  "workDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T19-35-43-671Z/job-company-gather-001-judge",
+  "isolatedSessionDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T19-35-43-671Z/job-company-gather-001-judge/.pi-sessions"
+}

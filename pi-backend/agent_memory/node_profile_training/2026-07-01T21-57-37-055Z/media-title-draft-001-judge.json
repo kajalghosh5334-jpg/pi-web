@@ -1,0 +1,25 @@
+{
+  "model": "opencode-go/deepseek-v4-pro",
+  "code": 0,
+  "text": "{\n  \"score\": 100,\n  \"score_scale\": \"0-100\",\n  \"pass\": true,\n  \"rubric_hits\": [\n    \"输出 5 组标题和封面文案\",\n    \"每组标注适用受众和点击动机\",\n    \"至少覆盖技术者向、企业主向、混合向\",\n    \"不新增上游没有支撑的案例、数字或结果\",\n    \"避免夸张承诺和标题党\"\n  ],\n  \"missing\": [],\n  \"hallucination\": [],\n  \"red_line_violations\": [],\n  \"profile_lessons\": [\n    \"所有输出主动声明素材局限性和来源状态，是一种良好的防幻觉实践\",\n    \"unsupported_numbers_self_check 机制可普遍推广到 Generate 类节点\"\n  ],\n  \"prompt_patch_suggestions\": []\n}",
+  "usage": {
+    "input": 4348,
+    "output": 1636,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "reasoning": 1460,
+    "totalTokens": 5984,
+    "cost": {
+      "input": 0.00756552,
+      "output": 0.00569328,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "total": 0.013258800000000001
+    }
+  },
+  "stderr": "",
+  "elapsedMs": 30487,
+  "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+  "workDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T21-57-37-055Z/media-title-draft-001-judge",
+  "isolatedSessionDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T21-57-37-055Z/media-title-draft-001-judge/.pi-sessions"
+}
