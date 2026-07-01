@@ -29,22 +29,16 @@ interface Props {
   inputAccessory?: React.ReactNode;
 }
 
-function isToolOnlyAssistantMessage(msg: AgentMessage): boolean {
-  if (msg.role !== "assistant") return false;
-  const content = msg.content;
-  if (!Array.isArray(content)) return false;
-  // thinking-only messages should remain visible so users can inspect reasoning
-  if (content.some((b) => b.type === "thinking")) return false;
-  return content.length > 0 && content.every((b) => b.type === "toolCall");
-}
-
 function isCollaborationProgressMessage(msg: AgentMessage): boolean {
   return msg.role === "custom" && msg.customType === "collaboration_progress";
 }
 
 function hasAssistantText(msg: AgentMessage): boolean {
   if (msg.role !== "assistant" || !Array.isArray(msg.content)) return false;
-  return msg.content.some((block) => block.type === "text" && String(block.text || "").trim());
+  return msg.content.some((block) => {
+    if (block.type !== "text") return false;
+    return String(block.text || "").replace(/<thinking>[\s\S]*?<\/thinking>/gi, "").trim();
+  });
 }
 
 const TYPEWRITER_PHRASES = [
@@ -108,7 +102,7 @@ const ChatWindow = memo(function ChatWindow({ session, newSessionCwd, onAgentEnd
     agentRunning, modelNames, modelList, modelThinkingLevels, modelThinkingLevelMaps, toolPreset, thinkingLevel,
     retryInfo, contextUsage, forkingEntryId,
     isCompacting, compactError, compactResult, displayModel: displayModelValue, sessionStats,
-    isAutoModelSelection,
+    loadingFullHistory, isAutoModelSelection,
     finalOutputStarted,
     isNew,
     messagesEndRef, scrollContainerRef,
@@ -174,65 +168,7 @@ const ChatWindow = memo(function ChatWindow({ session, newSessionCwd, onAgentEnd
     [messages, externalMessages],
   );
 
-  // ponytail: accumulate thinking/toolCall steps across the current agent run (since last user message)
-  const { runSteps, lastAssistantIdxInRun } = useMemo(() => {
-    let lastUserIdx = -1;
-    for (let i = renderMessages.length - 1; i >= 0; i--) {
-      if (renderMessages[i].role === "user") { lastUserIdx = i; break; }
-    }
-    if (lastUserIdx === -1) return { runSteps: [] as Step[], lastAssistantIdxInRun: -1 };
-    const toolResultsMap = new Map<string, ToolResultMessage>();
-    for (const m of renderMessages) {
-      if (m.role === "toolResult") {
-        toolResultsMap.set((m as ToolResultMessage).toolCallId, m as ToolResultMessage);
-      }
-    }
-    const steps: Step[] = [];
-    let lastAssistantIdx = -1;
-    for (let i = lastUserIdx + 1; i < renderMessages.length; i++) {
-      const msg = renderMessages[i];
-      if (msg.role === "assistant") {
-        lastAssistantIdx = i;
-        steps.push(...deriveSteps((msg as AssistantMessage).content ?? [], toolResultsMap));
-      }
-    }
-    return { runSteps: steps, lastAssistantIdxInRun: lastAssistantIdx };
-  }, [renderMessages]);
-
   const isStreamingMsg = useCallback((m: AgentMessage) => (m as AgentMessage & { _streamId?: string })._streamId === currentStreamingMessageId, [currentStreamingMessageId]);
-  const hasVisibleStreamingContent = useCallback((m: AgentMessage) => {
-    if (m.role !== "assistant") return true;
-    const content = m.content;
-    if (!Array.isArray(content)) return true;
-    return content.some((b) => b.type === "thinking" || b.type === "text");
-  }, []);
-  const { visibleMessages, finalTextAssistantIndexes } = useMemo(() => {
-    const finalTextAssistantIndexes = new Set<number>();
-    let seenAssistantTextInTurn = false;
-
-    for (let i = renderMessages.length - 1; i >= 0; i--) {
-      const msg = renderMessages[i];
-      if (msg.role === "user") {
-        seenAssistantTextInTurn = false;
-        continue;
-      }
-      if (hasAssistantText(msg)) {
-        if (!seenAssistantTextInTurn) finalTextAssistantIndexes.add(i);
-        seenAssistantTextInTurn = true;
-      }
-    }
-
-    const visibleMessages = renderMessages.filter((m, idx) =>
-      m.role === "user"
-      || (m.role === "assistant" && (
-        (isStreamingMsg(m) && hasVisibleStreamingContent(m))
-        || finalTextAssistantIndexes.has(idx)
-      ))
-      || (m.role === "custom" && m.display !== false)
-    );
-    return { visibleMessages, finalTextAssistantIndexes };
-  }, [hasVisibleStreamingContent, isStreamingMsg, renderMessages]);
-  const messageRefs = useMessageRefs(visibleMessages.length);
   const toolResultsCacheRef = useRef<{ key: string; map: Map<string, ToolResultMessage> }>({
     key: "",
     map: new Map(),
@@ -257,33 +193,60 @@ const ChatWindow = memo(function ChatWindow({ session, newSessionCwd, onAgentEnd
     return map;
   }, [renderMessages]);
 
-  const renderItems = useMemo(() => {
-    type RenderItem =
-      | { type: "message"; msg: AgentMessage; idx: number }
-      | { type: "toolGroup"; msgs: AssistantMessage[]; startIdx: number };
+  const displayItems = useMemo(() => {
+    type DisplayItem = { msg: AgentMessage; idx: number; runSteps?: Step[] };
+    const items: DisplayItem[] = [];
+    let assistantCandidate: { msg: AssistantMessage; idx: number } | null = null;
+    let turnSteps: Step[] = [];
 
-    const items: RenderItem[] = [];
-    let i = 0;
-    while (i < renderMessages.length) {
+    const flushAssistant = () => {
+      if (!assistantCandidate) {
+        turnSteps = [];
+        return;
+      }
+      items.push({
+        msg: assistantCandidate.msg,
+        idx: assistantCandidate.idx,
+        runSteps: turnSteps.length > 0 ? [...turnSteps] : undefined,
+      });
+      assistantCandidate = null;
+      turnSteps = [];
+    };
+
+    for (let i = 0; i < renderMessages.length; i++) {
       const msg = renderMessages[i];
-      if (isToolOnlyAssistantMessage(msg) && !isStreaming) {
-        const groupMsgs: AssistantMessage[] = [msg as AssistantMessage];
-        let j = i + 1;
-        while (j < renderMessages.length) {
-          const next = renderMessages[j];
-          if (next.role === "toolResult") { j++; continue; }
-          if (isToolOnlyAssistantMessage(next)) { groupMsgs.push(next as AssistantMessage); j++; continue; }
-          break;
-        }
-        items.push({ type: "toolGroup", msgs: groupMsgs, startIdx: i });
-        i = j;
-      } else {
-        items.push({ type: "message", msg, idx: i });
-        i++;
+      if (msg.role === "user") {
+        flushAssistant();
+        items.push({ msg, idx: i });
+        continue;
+      }
+      if (msg.role === "custom") {
+        flushAssistant();
+        if (msg.display !== false) items.push({ msg, idx: i });
+        continue;
+      }
+      if (msg.role === "toolResult") continue;
+      if (msg.role !== "assistant") continue;
+
+      const assistant = msg as AssistantMessage;
+      const steps = deriveSteps(assistant.content ?? [], toolResultsMap);
+      if (steps.length > 0) turnSteps.push(...steps);
+
+      if (hasAssistantText(msg) || isStreamingMsg(msg) || steps.length > 0) {
+        assistantCandidate = { msg: assistant, idx: i };
       }
     }
+    flushAssistant();
     return items;
-  }, [isStreaming, renderMessages]);
+  }, [isStreamingMsg, renderMessages, toolResultsMap]);
+
+  const minimapMessages = useMemo(
+    () => displayItems
+      .filter((item) => item.msg.role === "user" || item.msg.role === "assistant")
+      .map((item) => item.msg),
+    [displayItems],
+  );
+  const messageRefs = useMessageRefs(minimapMessages.length);
 
   const lastUserIdx = useMemo(() => {
     for (let i = renderMessages.length - 1; i >= 0; i--) {
@@ -405,16 +368,14 @@ const ChatWindow = memo(function ChatWindow({ session, newSessionCwd, onAgentEnd
         <div className="flex flex-1 flex-col items-center justify-center overflow-y-auto px-4 py-8">
           <div className="w-full max-w-[820px]">
             <div
-              className="mb-3 codex-card"
+              className="mb-3"
               style={{
                 display: "flex",
                 alignItems: "center",
-                justifyContent: "space-between",
                 gap: 12,
                 marginLeft: 4,
-                marginRight: 40,
+                marginRight: 4,
                 fontFamily: "var(--font-mono)",
-                borderRadius: 24,
                 padding: "18px 20px",
               }}
             >
@@ -422,14 +383,6 @@ const ChatWindow = memo(function ChatWindow({ session, newSessionCwd, onAgentEnd
                 <img src="/pi-web-app-icon.png" alt="Pi Web.app" style={{ width: 40, height: 40, borderRadius: 10, display: "block", flexShrink: 0 }} />
                 <span style={{ fontSize: 14, flex: "1 1 0", minWidth: 0, overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis", display: "block" }}>
                   <Typewriter phrases={TYPEWRITER_PHRASES} />
-                </span>
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 2, flexShrink: 0 }}>
-                <span style={{ fontSize: 11, color: "var(--text-muted)" }}>
-                  web <span style={{ color: "var(--text)" }}>v{process.env.NEXT_PUBLIC_APP_VERSION ?? "0.0.0"}</span>
-                </span>
-                <span style={{ fontSize: 11, color: "var(--text-muted)" }}>
-                  pi <span style={{ color: "var(--text)" }}>v{process.env.NEXT_PUBLIC_PI_VERSION ?? "0.0.0"}</span>
                 </span>
               </div>
             </div>
@@ -442,7 +395,7 @@ const ChatWindow = memo(function ChatWindow({ session, newSessionCwd, onAgentEnd
         <div ref={scrollContainerRef} className="flex-1 overflow-y-auto [scrollbar-width:none] codex-scroll-column">
           <div style={{ width: "100%", padding: "0 28px 0 24px" }}>
             {session && (
-              <div className="chat-session-hover-info" style={{ marginBottom: 12, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "0 4px" }}>
+              <div className="chat-session-hover-info" style={{ marginBottom: 8, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "0 4px" }}>
                 <div>
                   <div style={{ fontSize: 12, fontWeight: 750, color: "var(--text)", letterSpacing: "-0.01em" }}>
                     {session.name || session.firstMessage || "Current Session"}
@@ -454,35 +407,26 @@ const ChatWindow = memo(function ChatWindow({ session, newSessionCwd, onAgentEnd
                 </div>
               </div>
             )}
+            {loadingFullHistory && (
+              <div style={{ margin: "0 0 8px", textAlign: "center", fontSize: 11, color: "var(--text-dim)" }}>
+                Loading earlier messages...
+              </div>
+            )}
 
             {(() => {
               let refIdx = 0;
-              return renderItems.map((item) => {
-                if (item.type === "toolGroup") {
-                  return null;
-                }
-
+              return displayItems.map((item) => {
                 const msg = item.msg;
                 const idx = item.idx;
-                const streamingHere = isStreamingMsg(msg);
-                const finalTextHere = finalTextAssistantIndexes.has(idx);
-                if (msg.role === "assistant" && !streamingHere && !finalTextHere) {
-                  return null;
-                }
                 const prevAssistantEntryId =
                   (msg as import("@/lib/types").AgentMessage).role === "user" && idx > 0 && renderMessages[idx - 1].role === "assistant"
                     ? entryIds[idx - 1]
                     : undefined;
-                const isVisible = msg.role === "user" || (msg.role === "assistant" && (streamingHere || finalTextHere));
-                const currentRefIdx = isVisible ? refIdx++ : -1;
-                let showTimestamp = false;
+                const hasMinimapRef = msg.role === "user" || msg.role === "assistant";
+                const currentRefIdx = hasMinimapRef ? refIdx++ : -1;
+                let showTimestamp = msg.role === "custom";
                 if (msg.role === "assistant") {
                   showTimestamp = true;
-                  for (let j2 = idx + 1; j2 < renderMessages.length; j2++) {
-                    const r = renderMessages[j2].role;
-                    if (r === "user") break;
-                    if (r === "assistant") { showTimestamp = false; break; }
-                  }
                   if (showTimestamp && isStreaming && idx === renderMessages.length - 1) {
                     showTimestamp = false;
                   }
@@ -506,10 +450,10 @@ const ChatWindow = memo(function ChatWindow({ session, newSessionCwd, onAgentEnd
                     prevAssistantEntryId={agentRunning ? undefined : prevAssistantEntryId}
                     onEditContent={(content) => chatInputRef?.current?.insertIfEmpty(content)}
                     showTimestamp={showTimestamp}
-                    runSteps={msg.role === "assistant" && idx === lastAssistantIdxInRun ? runSteps : undefined}
+                    runSteps={msg.role === "assistant" ? item.runSteps : undefined}
                   />
                 );
-                if (!isVisible) return view;
+                if (!hasMinimapRef) return view;
                 return (
                   <div key={messageKey} ref={(el) => {
                     messageRefs.current[currentRefIdx] = el;
@@ -533,7 +477,7 @@ const ChatWindow = memo(function ChatWindow({ session, newSessionCwd, onAgentEnd
               />
             )}
             {agentRunning && renderMessages.some((message) => message.role === "user") && !renderMessages.some((message) => message.role === "assistant") && (
-              <div style={{ marginBottom: 18, display: "flex", alignItems: "center" }}>
+              <div style={{ marginBottom: 12, display: "flex", alignItems: "center" }}>
                 <div
                   style={{
                     maxWidth: 420,
@@ -550,7 +494,7 @@ const ChatWindow = memo(function ChatWindow({ session, newSessionCwd, onAgentEnd
           </div>
         </div>
         <ChatMinimap
-          messages={visibleMessages}
+          messages={minimapMessages}
           streamingMessage={null}
           scrollContainer={scrollContainerRef}
           messageRefs={messageRefs}

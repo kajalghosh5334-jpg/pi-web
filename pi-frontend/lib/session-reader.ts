@@ -15,7 +15,7 @@ export {
 } from "./session-list";
 
 const RECENT_CONTEXT_MAX_BYTES = 512 * 1024;
-const RECENT_CONTEXT_MAX_MESSAGES = 80;
+const RECENT_CONTEXT_MAX_MESSAGES = 10;
 
 function parseJsonLine(line: string): Record<string, unknown> | null {
   if (!line.trim()) return null;
@@ -147,10 +147,10 @@ export function buildSessionContext(entries: SessionEntry[], leafId?: string | n
   };
 }
 
-export async function buildRecentSessionContext(filePath: string, maxMessages = RECENT_CONTEXT_MAX_MESSAGES): Promise<SessionContext & { leafId: string | null }> {
+export async function buildRecentSessionContext(filePath: string, maxMessages = RECENT_CONTEXT_MAX_MESSAGES): Promise<SessionContext & { leafId: string | null; partial: boolean }> {
   const fileStats = await stat(filePath).catch(() => null);
   if (!fileStats || fileStats.size === 0) {
-    return { messages: [], entryIds: [], thinkingLevel: "off", model: null, leafId: null };
+    return { messages: [], entryIds: [], thinkingLevel: "off", model: null, leafId: null, partial: false };
   }
 
   const start = Math.max(0, fileStats.size - RECENT_CONTEXT_MAX_BYTES);
@@ -173,7 +173,7 @@ export async function buildRecentSessionContext(filePath: string, maxMessages = 
   }
 
   if (entries.length === 0) {
-    return { messages: [], entryIds: [], thinkingLevel: "off", model: null, leafId: null };
+    return { messages: [], entryIds: [], thinkingLevel: "off", model: null, leafId: null, partial: false };
   }
 
   const byId = new Map<string, SessionEntry>();
@@ -232,6 +232,8 @@ export async function buildRecentSessionContext(filePath: string, maxMessages = 
     }
   }
 
+  const partial = messages.length > maxMessages || Boolean(path[0]?.parentId);
+
   if (messages.length > maxMessages) {
     return {
       messages: messages.slice(-maxMessages),
@@ -239,10 +241,11 @@ export async function buildRecentSessionContext(filePath: string, maxMessages = 
       thinkingLevel,
       model,
       leafId: leaf.id,
+      partial,
     };
   }
 
-  return { messages, entryIds, thinkingLevel, model, leafId: leaf.id };
+  return { messages, entryIds, thinkingLevel, model, leafId: leaf.id, partial };
 }
 
 export function getLeafId(entries: SessionEntry[]): string | null {

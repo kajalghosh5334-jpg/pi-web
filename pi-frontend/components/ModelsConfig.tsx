@@ -239,6 +239,8 @@ const MODEL_CAPABILITIES = [
   { id: "tool-use", label: "Tool Use" },
   { id: "long-context", label: "Long Context" },
 ] as const;
+const AUTO_MODEL_CAPABILITY_IDS = new Set(["reasoning", "vision", "image-generation", "long-context"]);
+const MANUAL_MODEL_CAPABILITIES = MODEL_CAPABILITIES.filter((capability) => !AUTO_MODEL_CAPABILITY_IDS.has(capability.id));
 const PROFILE_HINTS = [
   { id: "lead-agent", label: "Lead" },
   { id: "general-executor", label: "General" },
@@ -487,6 +489,21 @@ function toggleString(values: string[] | undefined, value: string): string[] | u
 function splitTags(value: string): string[] | undefined {
   const tags = value.split(",").map((part) => part.trim()).filter(Boolean);
   return tags.length ? Array.from(new Set(tags)) : undefined;
+}
+
+function deriveModelCapabilities(model: ModelEntry): string[] {
+  const capabilities: string[] = [];
+  if (model.reasoning) capabilities.push("reasoning");
+  if (model.input?.includes("image")) capabilities.push("vision");
+  if (model.output?.includes("image")) capabilities.push("image-generation");
+  if ((model.contextWindow ?? 0) >= 128000) capabilities.push("long-context");
+  return capabilities;
+}
+
+function normalizeModelCapabilities(model: ModelEntry): ModelEntry {
+  const manual = (model.capabilities ?? []).filter((capability) => !AUTO_MODEL_CAPABILITY_IDS.has(capability));
+  const capabilities = Array.from(new Set([...manual, ...deriveModelCapabilities(model)]));
+  return { ...model, capabilities: capabilities.length ? capabilities : undefined };
 }
 
 function modelKey(providerName: string, modelId: string): string {
@@ -1059,7 +1076,7 @@ function ModelDetail({
   onDelete: () => void;
 }) {
   const [testState, setTestState] = useState<ModelTestState>({ phase: "idle" });
-  const set = <K extends keyof ModelEntry>(k: K, v: ModelEntry[K]) => onChange({ ...model, [k]: v });
+  const set = <K extends keyof ModelEntry>(k: K, v: ModelEntry[K]) => onChange(normalizeModelCapabilities({ ...model, [k]: v }));
   const costVal = (k: keyof NonNullable<ModelEntry["cost"]>) => model.cost?.[k] !== undefined ? String(model.cost[k]) : "";
   const setCost = (k: keyof NonNullable<ModelEntry["cost"]>, v: string) => {
     const n = parseFloat(v);
@@ -1217,16 +1234,7 @@ function ModelDetail({
         <Check label="Image input" checked={model.input?.includes("image") ?? false}
           onChange={(v) => set("input", v ? ["text", "image"] : undefined)} />
         <Check label="Image output" checked={model.output?.includes("image") ?? false}
-          onChange={(v) => {
-            const nextCapabilities = v
-              ? Array.from(new Set([...(model.capabilities ?? []), "image-generation"]))
-              : model.capabilities?.filter((capability) => capability !== "image-generation");
-            onChange({
-              ...model,
-              output: v ? ["image"] : undefined,
-              capabilities: nextCapabilities?.length ? nextCapabilities : undefined,
-            });
-          }}
+          onChange={(v) => set("output", v ? ["image"] : undefined)}
         />
       </div>
 
@@ -1318,7 +1326,19 @@ function ModelDetail({
           <div>
             <div style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 6 }}>Capability tags</div>
             <div style={{ display: "flex", gap: 7, flexWrap: "wrap" }}>
-              {MODEL_CAPABILITIES.map((capability) => (
+              {deriveModelCapabilities(model).map((capabilityId) => {
+                const capability = MODEL_CAPABILITIES.find((item) => item.id === capabilityId);
+                return (
+                  <TogglePill
+                    key={capabilityId}
+                    label={capability?.label ?? capabilityId}
+                    active
+                    disabled
+                    title="Derived from model fields"
+                  />
+                );
+              })}
+              {MANUAL_MODEL_CAPABILITIES.map((capability) => (
                 <TogglePill
                   key={capability.id}
                   label={capability.label}
@@ -2057,7 +2077,7 @@ function InitialApiSetup({
       const models = (catalog.models ?? [])
         .filter((model) => model.id.trim())
         .slice(0, 12)
-        .map((model, index): ModelEntry => ({
+        .map((model, index): ModelEntry => normalizeModelCapabilities({
           id: model.id,
           name: model.name && model.name !== model.id ? model.name : undefined,
           contextWindow: model.contextWindow,
@@ -2217,7 +2237,7 @@ function ModelRoleSetupPanel({
           const canBeStrong = isStrongEligibleModel(item.providerName, item.model.id);
           const modelAvailability = availabilityInfo(availability, item.providerName, item.model.id);
           const statusText = modelAvailability.status === "unavailable" ? "offline" : modelAvailability.status;
-          const setModel = (patch: Partial<ModelEntry>) => onUpdateModel(item.providerName, item.index, { ...item.model, ...patch });
+          const setModel = (patch: Partial<ModelEntry>) => onUpdateModel(item.providerName, item.index, normalizeModelCapabilities({ ...item.model, ...patch }));
           return (
             <div key={key} style={{ display: "grid", gridTemplateColumns: "minmax(180px, 1fr) minmax(150px, 0.9fr) minmax(220px, 1.2fr) 72px", gap: 10, alignItems: "center", padding: "9px 12px", borderBottom: "1px solid var(--border)" }}>
               <button
@@ -2239,7 +2259,7 @@ function ModelRoleSetupPanel({
                 }} />
               </div>
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                {MODEL_CAPABILITIES.slice(0, 5).map((capability) => (
+                {MANUAL_MODEL_CAPABILITIES.slice(0, 5).map((capability) => (
                   <TogglePill
                     key={capability.id}
                     label={capability.label}
@@ -2381,8 +2401,7 @@ export function ModelsConfig({ cwd, onClose, onOpenGuide }: { cwd?: string | nul
       .finally(() => setLoading(false));
     loadOAuthProviders();
     loadApiKeyProviders();
-    loadAvailableModels();
-  }, [loadOAuthProviders, loadApiKeyProviders, loadAvailableModels]);
+  }, [loadOAuthProviders, loadApiKeyProviders]);
 
   const addCustomProvider = useCallback(() => {
     let finalName = "new-provider";
@@ -2403,7 +2422,7 @@ export function ModelsConfig({ cwd, onClose, onOpenGuide }: { cwd?: string | nul
         [finalName]: {
           api: preset.api,
           baseUrl: preset.baseUrl,
-          models: [{ id: "", role: "weak", capabilities: ["classification", "summarization"] }],
+          models: [normalizeModelCapabilities({ id: "", role: "weak", capabilities: ["classification", "summarization"] })],
         },
       },
     }));
@@ -2466,7 +2485,7 @@ export function ModelsConfig({ cwd, onClose, onOpenGuide }: { cwd?: string | nul
         contextWindow: catalogModel.contextWindow,
         role: "weak",
       };
-      const models = [...(provider.models ?? []), nextModel];
+      const models = [...(provider.models ?? []), normalizeModelCapabilities(nextModel)];
       return { ...prev, providers: { ...(prev.providers ?? {}), [providerName]: { ...provider, models } } };
     });
     setConfig((prev) => {
@@ -2480,7 +2499,7 @@ export function ModelsConfig({ cwd, onClose, onOpenGuide }: { cwd?: string | nul
     setConfig((prev) => {
       const provider = prev.providers?.[providerName] ?? {};
       const models = [...(provider.models ?? [])];
-      models[index] = m;
+      models[index] = normalizeModelCapabilities(m);
       return { ...prev, providers: { ...(prev.providers ?? {}), [providerName]: { ...provider, models } } };
     });
   }, []);
@@ -2515,7 +2534,13 @@ export function ModelsConfig({ cwd, onClose, onOpenGuide }: { cwd?: string | nul
   }, [config.providers, config.modelSetup?.guideModel]);
 
   const normalizeForSave = useCallback((draft: ModelsJson): ModelsJson => {
-    const providers = { ...(draft.providers ?? {}) };
+    const providers = Object.fromEntries(Object.entries(draft.providers ?? {}).map(([providerName, provider]) => [
+      providerName,
+      {
+        ...provider,
+        models: provider.models?.map(normalizeModelCapabilities),
+      },
+    ]));
     const entries = Object.entries(providers).flatMap(([providerName, provider]) => (provider.models ?? [])
       .map((model, index) => ({ providerName, provider, model, index }))
       .filter(({ model }) => model.id.trim()));

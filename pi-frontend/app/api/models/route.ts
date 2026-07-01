@@ -1,10 +1,39 @@
 import { readFile, stat } from "fs/promises";
+import { join } from "path";
 import { createAgentSessionServices, getAgentDir, type SettingsManager } from "@earendil-works/pi-coding-agent";
 import { getSupportedThinkingLevels } from "@earendil-works/pi-ai";
 
 export const dynamic = "force-dynamic";
 
 const modelNameCollator = new Intl.Collator(undefined, { numeric: true, sensitivity: "base" });
+
+type ConfiguredModel = {
+  id?: string;
+  name?: string;
+  reasoning?: boolean;
+  thinkingLevelMap?: Record<string, string | null>;
+};
+
+type ModelsJson = {
+  providers?: Record<string, { models?: ConfiguredModel[] }>;
+};
+
+type SettingsJson = {
+  defaultProvider?: string;
+  defaultModel?: string;
+};
+
+type ModelEntry = { id: string; name: string; provider: string };
+
+const EXTENDED_THINKING_LEVELS = ["off", "minimal", "low", "medium", "high", "xhigh"] as const;
+
+async function readJsonFile<T>(path: string, fallback: T): Promise<T> {
+  try {
+    return JSON.parse(await readFile(path, "utf-8")) as T;
+  } catch {
+    return fallback;
+  }
+}
 
 async function readConfiguredModels(agentDir: string): Promise<Set<string>> {
   try {
@@ -20,6 +49,62 @@ async function readConfiguredModels(agentDir: string): Promise<Set<string>> {
   } catch {
     return new Set();
   }
+}
+
+function getConfiguredThinkingLevels(model: ConfiguredModel): string[] {
+  if (!model.reasoning) return ["off"];
+  return EXTENDED_THINKING_LEVELS.filter((level) => {
+    const mapped = model.thinkingLevelMap?.[level];
+    if (mapped === null) return false;
+    if (level === "xhigh") return mapped !== undefined;
+    return true;
+  });
+}
+
+async function readFastConfiguredModels(agentDir: string): Promise<{
+  models: Record<string, string>;
+  modelList: ModelEntry[];
+  defaultModel: { provider: string; modelId: string } | null;
+  thinkingLevels: Record<string, string[]>;
+  thinkingLevelMaps: Record<string, Record<string, string | null>>;
+} | null> {
+  const config = await readJsonFile<ModelsJson>(join(agentDir, "models.json"), { providers: {} });
+  const configured: Array<{ provider: string; model: ConfiguredModel }> = [];
+  for (const [provider, providerConfig] of Object.entries(config.providers ?? {})) {
+    for (const model of providerConfig.models ?? []) {
+      if (typeof model.id === "string" && model.id.trim()) {
+        configured.push({ provider, model });
+      }
+    }
+  }
+  if (configured.length === 0) return null;
+
+  const modelList = configured.map(({ provider, model }) => ({
+    id: model.id!.trim(),
+    name: typeof model.name === "string" && model.name.trim() ? model.name.trim() : model.id!.trim(),
+    provider,
+  })).sort(compareModelEntries);
+
+  const models: Record<string, string> = {};
+  const thinkingLevels: Record<string, string[]> = {};
+  const thinkingLevelMaps: Record<string, Record<string, string | null>> = {};
+  for (const { provider, model } of configured) {
+    const id = model.id!.trim();
+    const key = `${provider}:${id}`;
+    models[key] = typeof model.name === "string" && model.name.trim() ? model.name.trim() : id;
+    thinkingLevels[key] = getConfiguredThinkingLevels(model);
+    if (model.thinkingLevelMap) thinkingLevelMaps[key] = model.thinkingLevelMap;
+  }
+
+  const settings = await readJsonFile<SettingsJson>(join(agentDir, "settings.json"), {});
+  const savedDefault = settings.defaultProvider && settings.defaultModel
+    ? { provider: settings.defaultProvider, modelId: settings.defaultModel }
+    : null;
+  const defaultModel = savedDefault && modelList.some((model) => model.provider === savedDefault.provider && model.id === savedDefault.modelId)
+    ? savedDefault
+    : (modelList[0] ? { provider: modelList[0].provider, modelId: modelList[0].id } : null);
+
+  return { models, modelList, defaultModel, thinkingLevels, thinkingLevelMaps };
 }
 
 function compareModelEntries(
@@ -51,6 +136,9 @@ export async function GET(req: Request) {
 
   try {
     const agentDir = getAgentDir();
+    const fastConfigured = await readFastConfiguredModels(agentDir);
+    if (fastConfigured) return Response.json(fastConfigured);
+
     const services = await createAgentSessionServices({ cwd, agentDir });
     const registry = services.modelRegistry;
     const available = registry.getAvailable();

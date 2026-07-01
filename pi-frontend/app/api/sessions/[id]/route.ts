@@ -137,7 +137,7 @@ export async function GET(
           thinkingLevel: recent.thinkingLevel,
           model: recent.model,
         },
-        partial: true,
+        partial: recent.partial,
       });
     }
 

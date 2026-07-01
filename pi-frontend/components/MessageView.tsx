@@ -136,7 +136,7 @@ function UserMessageView({ message, entryId, onFork, forking, onNavigate, prevAs
 
   return (
     <div
-      style={{ marginBottom: 18, display: "flex", flexDirection: "column", alignItems: "flex-end" }}
+      style={{ marginBottom: 10, display: "flex", flexDirection: "column", alignItems: "flex-end" }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
@@ -145,14 +145,14 @@ function UserMessageView({ message, entryId, onFork, forking, onNavigate, prevAs
           style={{
             flex: 1,
             minWidth: 0,
-            fontSize: 14,
-            lineHeight: 1.6,
+            fontSize: 13,
+            lineHeight: 1,
             color: "var(--text)",
             wordBreak: "break-word",
           }}
         >
           {imageBlocks.length > 0 && (
-            <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: content ? 8 : 0 }}>
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: content ? 6 : 0 }}>
               {imageBlocks.map((img, i) => {
                 // lib/types.ts ImageContent uses {source:{type,data,media_type,url}}
                 // pi-ai on-disk format uses flat {data, mimeType} — handle both
@@ -185,7 +185,7 @@ function UserMessageView({ message, entryId, onFork, forking, onNavigate, prevAs
       {(time || canFork || canNavigate || true) && (
         <div style={{
           display: "flex", alignItems: "center", justifyContent: "flex-end",
-          gap: 6, marginTop: 3,
+          gap: 6, marginTop: 1,
         }}>
           <div style={{
             display: "flex", gap: 3,
@@ -308,16 +308,16 @@ function CustomMessageView({ message, showTimestamp }: { message: Extract<AgentM
   const time = showTimestamp ? formatTime(message.timestamp) : null;
   const isProgress = message.customType === "collaboration_progress";
   return (
-    <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
+    <div style={{ marginBottom: 10, display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
       <div style={{ maxWidth: "100%", width: "fit-content", minWidth: 320, borderLeft: isProgress ? "2px solid #f59e0b" : "none", paddingLeft: isProgress ? 10 : 0 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
           <span style={{ fontSize: 12, fontWeight: 700, color: isProgress ? "#f59e0b" : "var(--text)" }}>{isProgress ? "协作进展" : "系统消息"}</span>
         </div>
-        <div style={{ fontSize: 14, lineHeight: 1.65, color: "var(--text)" }}>
+        <div style={{ fontSize: 13, lineHeight: 1, color: "var(--text)" }}>
           <MarkdownBody>{text}</MarkdownBody>
         </div>
       </div>
-      {time ? <span style={{ fontSize: 10, color: "var(--text-dim)", marginTop: 4 }}>{time}</span> : null}
+      {time ? <span style={{ fontSize: 10, color: "var(--text-dim)", marginTop: 2 }}>{time}</span> : null}
     </div>
   );
 }
@@ -364,14 +364,14 @@ function AssistantMessageView({
 
   return (
     <div
-      style={{ marginBottom: 20 }}
+      style={{ marginBottom: 12 }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
       {/* Execution trace — single-node status line, collapsible history.
           Only the last assistant message in the run gets the status line;
           earlier messages skip it so history shows exactly one per agent run. */}
-      {((orderedSteps.length > 0 || isStreaming) && runSteps !== undefined) && (
+      {((orderedSteps.length > 0 || (runSteps?.length ?? 0) > 0 || isStreaming) && runSteps !== undefined) && (
         <ThinkingStatusLine
           steps={orderedSteps}
           runSteps={runSteps}
@@ -382,7 +382,7 @@ function AssistantMessageView({
       )}
 
       {/* Text blocks — the final summary */}
-      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
         <div style={{ maxWidth: "100%" }}>
           {resultBlocks.map((block, index) => (
             <TextBlock key={`result-${index}`} block={block} isStreaming={isStreaming} />
@@ -391,7 +391,7 @@ function AssistantMessageView({
       </div>
 
       <div style={{
-        display: "flex", alignItems: "center", gap: 8, marginTop: 4,
+        display: "flex", alignItems: "center", gap: 8, marginTop: 2,
       }}>
         {textContent && !isStreaming && (
           <button
@@ -532,7 +532,7 @@ export function ThinkingStatusLine({
   const historySteps = runSteps ?? steps;
 
   // ponytail: track duration with a tick counter (avoids setState inside interval causing infinite loops)
-  const [tick, setTick] = useState(0);
+  const [, setTick] = useState(0);
   useEffect(() => {
     if (!showStatusLine) return;
     startedAtRef.current ??= Date.now();
@@ -584,12 +584,7 @@ export function ThinkingStatusLine({
     }
 
     const placeholder = currentStep.type === "thinking" ? "思考中…" : "调用工具…";
-    // ponytail: while a thinking block is still streaming, keep the placeholder so
-    // partial first-sentence extraction doesn't flash meaningless fragments.
-    // When streaming ends, still use the placeholder to avoid long text overflowing the status line.
-    const targetText = currentStep.type === "thinking"
-      ? placeholder
-      : currentStep.statusText || placeholder;
+    const targetText = currentStep.statusText || placeholder;
 
     if (currentId !== currentIdRef.current) {
       currentIdRef.current = currentId;
@@ -603,180 +598,155 @@ export function ThinkingStatusLine({
     return () => timersRef.current.forEach(clearTimeout);
   }, [steps, showStatusLine]);
 
-  if (!showStatusLine && steps.length === 0) return null;
+  if (!showStatusLine && historySteps.length === 0) return null;
+
+  const canExpand = historySteps.length > 0;
+  const collapsedDetail = displayText && displayText !== "思考中…" && displayText !== "调用工具…"
+    ? displayText
+    : "当前步骤";
+  const collapsedLabel = showStatusLine
+    ? `思考中 · ${collapsedDetail}`
+    : `运行步骤 · ${duration}s · ${historySteps.length} 步`;
 
   return (
-    <div style={{ marginBottom: 10 }}>
-      {showStatusLine && (
-        <div
+    <div style={{ marginBottom: 8 }}>
+      <button
+        onClick={canExpand ? () => setExpanded((v) => !v) : undefined}
+        className="thinking-summary"
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 7,
+          width: "100%",
+          padding: "6px 0",
+          background: "none",
+          border: "none",
+          color: "var(--text-muted)",
+          textAlign: "left",
+          fontSize: 12,
+          cursor: canExpand ? "pointer" : "default",
+          userSelect: "none",
+        }}
+      >
+        <span
           style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 10,
-            fontSize: 13,
-            color: "var(--text-muted)",
-            lineHeight: 1.5,
-            minHeight: 34,
-            width: "fit-content",
-            maxWidth: "100%",
-            padding: "7px 11px",
-            borderRadius: 999,
-            border: "1px solid rgba(10,132,255,0.18)",
-            background: "linear-gradient(90deg, rgba(10,132,255,0.09), color-mix(in srgb, var(--bg) 92%, rgba(10,132,255,0.03)))",
-            boxShadow: "0 8px 24px -18px rgba(10,132,255,0.55)",
+            width: 14,
+            textAlign: "center",
+            fontSize: 12,
+            color: showStatusLine ? "var(--accent)" : "var(--text-muted)",
+            flex: "0 0 auto",
           }}
         >
+          ◆
+        </span>
+        <span
+          style={{
+            flex: 1,
+            minWidth: 0,
+            whiteSpace: "nowrap",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            opacity: showStatusLine && fading ? 0.55 : 1,
+            transition: "opacity .18s ease",
+          }}
+        >
+          {collapsedLabel}
+        </span>
+        {canExpand && (
           <span
             style={{
-              width: 8,
-              height: 8,
-              borderRadius: "50%",
-              background: "#0a84ff",
+              fontSize: 10,
+              color: "var(--text-muted)",
+              transform: expanded ? "rotate(90deg)" : "rotate(0deg)",
+              transition: "transform .15s ease",
               flex: "0 0 auto",
-              animation: "thinking-dot-pulse 1.1s ease-in-out infinite",
-            }}
-          />
-          <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase", color: "#0a84ff", flex: "0 0 auto" }}>Running</span>
-          <span
-            style={{
-              transition: "opacity .18s ease",
-              whiteSpace: "nowrap",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              opacity: fading ? 0 : 1,
-              minWidth: 0,
-              flex: "1 1 auto",
             }}
           >
-            {displayText}
+            ›
           </span>
-        </div>
-      )}
+        )}
+      </button>
 
-      {!showStatusLine && (
-        <>
-          <button
-            onClick={() => setExpanded((v) => !v)}
-            className="thinking-summary"
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 9,
-              width: "100%",
-              fontSize: 13,
-              padding: "7px 10px",
-              margin: "0 -8px",
-              borderRadius: 10,
-              cursor: "pointer",
-              userSelect: "none",
-              background: "none",
-              border: "none",
-              color: "inherit",
-              textAlign: "left",
-            }}
-          >
-            <span style={{ color: "#22c55e", fontSize: 13, fontWeight: 800, flex: "0 0 auto" }}>✓</span>
-            <span>
-              <span style={{ color: "var(--text)", fontWeight: 650 }}>运行步骤</span>
-              <span style={{ color: "var(--text-muted)" }}> · {duration}s · {historySteps.length} 步</span>
-            </span>
-            <span
-              style={{
-                marginLeft: "auto",
-                fontSize: 11,
-                color: "var(--text-muted)",
-                transform: expanded ? "rotate(90deg)" : "rotate(0deg)",
-                transition: "transform .2s ease",
-              }}
-            >
-              ▸
-            </span>
-          </button>
-
-          {expanded && (
-            <div
-              className="thinking-scroll"
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: 6,
-                padding: "10px 12px 8px 28px",
-                fontSize: 12.5,
-                color: "var(--text-muted)",
-                borderLeft: "1px solid var(--border)",
-                marginLeft: 9,
-                maxHeight: 220,
-                overflowY: "auto",
-              }}
-            >
-              {historySteps.map((step, i) => {
-                const isOpen = openEntries.has(i);
-                const isTool = step.type === "tool_call";
-                return (
-                  <div key={i} style={{ display: "flex", flexDirection: "column" }}>
-                    <div
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setOpenEntries((prev) => {
-                          const next = new Set(prev);
-                          if (next.has(i)) next.delete(i);
-                          else next.add(i);
-                          return next;
-                        });
-                      }}
-                      style={{ display: "flex", alignItems: "center", gap: 8, padding: "3px 0", cursor: "pointer" }}
-                    >
-                      <span
-                        style={{
-                          width: 14,
-                          textAlign: "center",
-                          fontSize: 11,
-                          flex: "0 0 auto",
-                          color: isTool ? "#636366" : "#86868b",
-                        }}
-                      >
-                        {isTool ? "⚙" : "◆"}
-                      </span>
-                      <span
-                        style={{
-                          flex: 1,
-                          whiteSpace: "nowrap",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          fontFamily: isTool ? "var(--font-mono)" : "inherit",
-                          fontSize: isTool ? 12 : 12.5,
-                        }}
-                      >
-                        {step.summary}
-                      </span>
-
-                    </div>
-                    {isOpen && (
-                      <div
-                        className="thinking-scroll"
-                        style={{
-                          fontSize: isTool ? 12 : 12.5,
-                          color: "var(--text)",
-                          lineHeight: 1.6,
-                          background: "var(--bg-subtle)",
-                          borderRadius: 8,
-                          padding: "8px 10px",
-                          margin: "2px 0 6px",
-                          whiteSpace: "pre-wrap",
-                          maxHeight: 140,
-                          overflowY: "auto",
-                          fontFamily: isTool ? "var(--font-mono)" : "inherit",
-                        }}
-                      >
-                        {step.full}
-                      </div>
-                    )}
+      {expanded && canExpand && (
+        <div
+          className="thinking-scroll"
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 0,
+            maxHeight: 220,
+            overflowY: "auto",
+            marginTop: 2,
+            paddingTop: 4,
+            borderTop: "1px solid var(--border)",
+          }}
+        >
+          {historySteps.map((step, i) => {
+            const isOpen = openEntries.has(i);
+            const isTool = step.type === "tool_call";
+            return (
+              <div key={i} style={{ display: "flex", flexDirection: "column" }}>
+                <div
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setOpenEntries((prev) => {
+                      const next = new Set(prev);
+                      if (next.has(i)) next.delete(i);
+                      else next.add(i);
+                      return next;
+                    });
+                  }}
+                  style={{ display: "flex", alignItems: "center", gap: 7, padding: "6px 2px", cursor: "pointer", color: "var(--text-muted)" }}
+                >
+                  <span
+                    style={{
+                      width: 14,
+                      textAlign: "center",
+                      fontSize: 11,
+                      flex: "0 0 auto",
+                      color: "var(--text-muted)",
+                    }}
+                  >
+                    {isTool ? "⚙" : "◆"}
+                  </span>
+                  <span
+                    style={{
+                      flex: 1,
+                      minWidth: 0,
+                      whiteSpace: "nowrap",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      fontFamily: isTool ? "var(--font-mono)" : "inherit",
+                      fontSize: isTool ? 11 : 11.5,
+                    }}
+                  >
+                    {step.summary}
+                  </span>
+                </div>
+                {isOpen && (
+                  <div
+                    className="thinking-scroll"
+                    style={{
+                      fontSize: isTool ? 11 : 11.5,
+                      color: "var(--text)",
+                      lineHeight: 1.35,
+                      background: "var(--bg-subtle)",
+                      borderRadius: 8,
+                      padding: "6px 8px",
+                      margin: "0 0 6px 21px",
+                      whiteSpace: "pre-wrap",
+                      maxHeight: 140,
+                      overflowY: "auto",
+                      fontFamily: isTool ? "var(--font-mono)" : "inherit",
+                    }}
+                  >
+                    {step.full}
                   </div>
-                );
-              })}
-            </div>
-          )}
-        </>
+                )}
+              </div>
+            );
+          })}
+        </div>
       )}
     </div>
   );

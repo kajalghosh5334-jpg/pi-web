@@ -62,6 +62,7 @@ export type ThinkingLevelOption = "auto" | "off" | "minimal" | "low" | "medium" 
 
 const PROGRAMMATIC_SCROLL_IGNORE_MS = 700;
 const USER_SCROLL_INTENT_MS = 1200;
+const HISTORY_LOAD_TOP_THRESHOLD_PX = 32;
 const SCROLL_KEYS = new Set(["ArrowUp", "ArrowDown", "PageUp", "PageDown", "Home", "End", " ", "Space", "Spacebar"]);
 
 function readCompactResult(result: unknown, reason: string): CompactResultInfo | null {
@@ -100,6 +101,7 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
   } = opts;
 
   const isNew = session === null && newSessionCwd !== null;
+  const activeSessionId = session?.id ?? null;
 
   const [data, setData] = useState<SessionData | null>(null);
   const [loading, setLoading] = useState(!isNew);
@@ -130,6 +132,8 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
   const [compactResult, setCompactResult] = useState<CompactResultInfo | null>(null);
   const [agentPhase, setAgentPhase] = useState<AgentPhase>(null);
   const [finalOutputStarted, setFinalOutputStarted] = useState(false);
+  const [hasMoreHistory, setHasMoreHistory] = useState(false);
+  const [loadingFullHistory, setLoadingFullHistory] = useState(false);
 
   const eventSourceRef = useRef<EventSource | null>(null);
   const sessionIdRef = useRef<string | null>(session?.id ?? null);
@@ -207,7 +211,12 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
       }
       if (!d.context) return d.agentState ?? null;
       const context = d.context;
-      if (mode === "full") fullSessionLoadTokenRef.current = token;
+      if (mode === "full") {
+        fullSessionLoadTokenRef.current = token;
+        setHasMoreHistory(false);
+      } else if (mode === "light") {
+        setHasMoreHistory(Boolean(d.partial));
+      }
       setData({ ...d, context } as SessionData);
       setActiveLeafId(d.leafId ?? null);
       setMessages((prev) => mergeOptimisticMessages(prev, context.messages));
@@ -673,20 +682,37 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
     container.scrollTo({ top: Math.max(0, elAbsTop), behavior: "smooth" });
   }, []);
 
+  const loadFullHistoryIfAtTop = useCallback(() => {
+    const container = scrollContainerRef.current;
+    if (!container || !hasMoreHistory || loadingFullHistory) return;
+    if (container.scrollTop > HISTORY_LOAD_TOP_THRESHOLD_PX) return;
+    const sid = sessionIdRef.current;
+    if (!sid) return;
+    setLoadingFullHistory(true);
+    completionScrollAllowedRef.current = false;
+    void loadSession(sid, false, false, "full", sessionLoadTokenRef.current).finally(() => {
+      if (sessionIdRef.current === sid) setLoadingFullHistory(false);
+    });
+  }, [hasMoreHistory, loadSession, loadingFullHistory]);
+
   const markUserScrollIntent = useCallback((event: Event) => {
     if (event instanceof KeyboardEvent) {
       if (!SCROLL_KEYS.has(event.key)) return;
       if (event.target instanceof Element && event.target.closest("input, textarea, [contenteditable='true']")) return;
     }
     userScrollIntentUntilRef.current = Date.now() + USER_SCROLL_INTENT_MS;
-  }, []);
+    const isUpwardWheel = event instanceof WheelEvent && event.deltaY < 0;
+    const isUpwardKey = event instanceof KeyboardEvent && ["ArrowUp", "PageUp", "Home"].includes(event.key);
+    if (isUpwardWheel || isUpwardKey) loadFullHistoryIfAtTop();
+  }, [loadFullHistoryIfAtTop]);
 
   const handleScrollPositionChange = useCallback(() => {
+    loadFullHistoryIfAtTop();
     if (!agentRunningRef.current) return;
     if (Date.now() < ignoreProgrammaticScrollUntilRef.current) return;
     if (Date.now() > userScrollIntentUntilRef.current) return;
     completionScrollAllowedRef.current = false;
-  }, []);
+  }, [loadFullHistoryIfAtTop]);
 
   // Load session when the active conversation changes.
   useEffect(() => {
@@ -704,10 +730,12 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
     setCompactResult(null);
     setIsCompacting(false);
     initialScrollDoneRef.current = false;
+    setHasMoreHistory(false);
+    setLoadingFullHistory(false);
     pendingScrollToUserRef.current = false;
     completionScrollAllowedRef.current = true;
 
-    if (session) {
+    if (activeSessionId) {
       pendingStreamingMessageRef.current = null;
       if (streamingMessageFlushTimerRef.current) {
         clearTimeout(streamingMessageFlushTimerRef.current);
@@ -717,26 +745,26 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
       sessionLoadTokenRef.current = loadToken;
       fullSessionLoadTokenRef.current = -1;
       branchTreeLoadedForRef.current = null;
-      sessionIdRef.current = session.id;
+      sessionIdRef.current = activeSessionId;
       setData(null);
       setActiveLeafId(null);
       setMessages((prev) => prev.filter((msg) => (msg as OptimisticAgentMessage)._optimistic));
       setEntryIds([]);
       setLoading(false);
       setError(null);
-      void loadSession(session.id, false, false, "light", loadToken);
+      void loadSession(activeSessionId, false, false, "light", loadToken);
 
       // Load live agent state in the background so the chat UI doesn't block on get_state.
-      void fetch(`/api/agent/${encodeURIComponent(session.id)}`)
+      void fetch(`/api/agent/${encodeURIComponent(activeSessionId)}`)
         .then((r) => r.json())
         .then((agentState: { running?: boolean; state?: { isStreaming?: boolean; isCompacting?: boolean; contextUsage?: { percent: number | null; contextWindow: number; tokens: number | null } | null; systemPrompt?: string; thinkingLevel?: string } }) => {
-          if (sessionIdRef.current !== session.id) return;
+          if (sessionIdRef.current !== activeSessionId) return;
           if (agentState?.running) {
-            void loadTools(session.id);
+            void loadTools(activeSessionId);
             if (agentState.state?.isStreaming) {
               setAgentRunning(true);
               setAgentPhase({ kind: "waiting_model" });
-              connectEvents(session.id);
+              connectEvents(activeSessionId);
             }
           }
           if (agentState?.state) {
@@ -763,6 +791,8 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
       setEntryIds([]);
       setLoading(false);
       setError(null);
+      setHasMoreHistory(false);
+      setLoadingFullHistory(false);
     }
     return () => {
       pendingStreamingMessageRef.current = null;
@@ -773,7 +803,11 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
       eventSourceRef.current?.close();
       eventSourceRef.current = null;
     };
-  }, [session?.id, newSessionCwd, loadSession, loadTools, connectEvents]);
+  }, [activeSessionId, newSessionCwd, loadSession, loadTools, connectEvents]);
+
+  const handleLoadFullHistory = useCallback(async () => {
+    loadFullHistoryIfAtTop();
+  }, [loadFullHistoryIfAtTop]);
 
   useEffect(() => {
     if (!loadBranchTree || !session?.id) return;
@@ -852,23 +886,6 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
         setNewSessionDefaultModel(displayModel ? { provider: displayModel.provider, modelId: displayModel.id } : null);
       };
       applyDefaultModel(nextModelList);
-
-      if (nextModelList.length > 0) {
-        fetch("/api/models/health", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ cwd: modelCwd || "", models: nextModelList }),
-        })
-          .then((r) => r.ok ? r.json() : null)
-          .then((health) => {
-            const ok = new Set((health?.results || []).filter((x: { ok: boolean }) => x.ok).map((x: { provider: string; id: string }) => `${x.provider}:${x.id}`));
-            if (ok.size === 0) return;
-            const healthyModels = nextModelList.filter((m) => ok.has(`${m.provider}:${m.id}`));
-            setModelList(healthyModels);
-            applyDefaultModel(healthyModels);
-          })
-          .catch(() => {});
-      }
     }).catch((e) => {
       if (e instanceof DOMException && e.name === "AbortError") return;
     });
@@ -894,6 +911,7 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
     agentRunning, modelNames, modelList, modelThinkingLevels, modelThinkingLevelMaps, newSessionModel, toolPreset, thinkingLevel,
     retryInfo, contextUsage, systemPrompt, forkingEntryId,
     isCompacting, compactError, compactResult, currentModel, displayModel, sessionStats,
+    hasMoreHistory, loadingFullHistory,
     isAutoModelSelection: isNew && newSessionModel === null,
     agentPhase,
     finalOutputStarted,
@@ -903,7 +921,7 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
     lastUserMsgRef, pendingScrollToUserRef, initialScrollDoneRef,
     // Actions
     handleSend, handleAbort, handleFork, handleNavigate, handleModelChange,
-    handleCompact, handleSteer, handleFollowUp, handleAbortCompaction,
+    handleCompact, handleSteer, handleFollowUp, handleAbortCompaction, handleLoadFullHistory,
     handleToolPresetChange, handleThinkingLevelChange, loadTools, setActiveLeafId, setData, setMessages,
     setAgentRunning, setForkingEntryId,
     // Subscriptions
