@@ -57,6 +57,15 @@ interface WorkflowRecommendationResult {
   guidance?: string[];
 }
 
+interface GuardianDecision {
+  complexity?: "L0_chat" | "L1_simple" | "L2_complex" | string;
+  shouldUseMultiAgent?: boolean;
+  requiresClarification?: boolean;
+  clarificationQuestion?: string;
+  handoffToLead?: boolean;
+  reason?: string;
+}
+
 const ChatWindow = dynamic(() => import("./ChatWindow").then((mod) => mod.ChatWindow), { ssr: false });
 const FileViewer = dynamic(() => import("./FileViewer").then((mod) => mod.FileViewer), { ssr: false });
 const ApiGuide = dynamic(() => import("./ApiGuide").then((mod) => mod.ApiGuide), { ssr: false });
@@ -524,6 +533,20 @@ export function AppShell() {
     return /不满意|不太满意|继续调教|调教|改得不对|结果不对|这部分不对|不符合|再优化|重新优化|修正这个结果|teach|coach|not satisfied/i.test(message);
   }, []);
 
+  const askGuardianForRouting = useCallback(async (message: string, sessionId: string): Promise<GuardianDecision | null> => {
+    try {
+      const res = await fetch("/api/guardian/decide", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ input: message, sessionId }),
+      });
+      if (!res.ok) return null;
+      return await res.json().catch(() => null) as GuardianDecision | null;
+    } catch {
+      return null;
+    }
+  }, []);
+
   const getMultiAgentAssistantText = useCallback(() => {
     return orchestrateState.mainOutput || "";
   }, [orchestrateState.mainOutput]);
@@ -589,10 +612,26 @@ export function AppShell() {
       return;
     }
 
-    // Workflow 开关打开时，用户的下一条任务总是进入编排层：
-    // Guardian 会根据任务选择已有 Workflow、模板或 Profile 组合，并把协作状态展示在输入框上方。
-    await handleMultiAgentSend(message);
-  }, [multiAgentMode, runMultiAgentInBackground, selectedSession?.id, newSessionCwd, activeCwd, isCoachingIntent, handleMultiAgentSend]);
+    // Workflow 开关打开时只启用 Guardian 路由；普通问答仍走当前主模型聊天。
+    // 只有 Guardian 明确判定需要多 Agent/Lead 时，才进入编排层。
+    const sessionId = selectedSession?.id;
+    if (!sessionId) {
+      void defaultSend(message, images);
+      return;
+    }
+    const decision = await askGuardianForRouting(message, sessionId);
+    const shouldUseWorkflow = Boolean(
+      decision?.shouldUseMultiAgent ||
+      decision?.handoffToLead ||
+      decision?.complexity === "L2_complex"
+    );
+    if (shouldUseWorkflow) {
+      await handleMultiAgentSend(message);
+      return;
+    }
+
+    void defaultSend(message, images);
+  }, [multiAgentMode, runMultiAgentInBackground, selectedSession?.id, newSessionCwd, activeCwd, isCoachingIntent, askGuardianForRouting, handleMultiAgentSend]);
 
   const pickDraftCwd = useCallback(async () => {
     const res = await fetch("/api/cwd/pick", { method: "POST" }).catch(() => null);
