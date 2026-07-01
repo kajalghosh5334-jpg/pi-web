@@ -59,6 +59,7 @@ interface WorkflowRecommendationResult {
 
 const ChatWindow = dynamic(() => import("./ChatWindow").then((mod) => mod.ChatWindow), { ssr: false });
 const FileViewer = dynamic(() => import("./FileViewer").then((mod) => mod.FileViewer), { ssr: false });
+const ApiGuide = dynamic(() => import("./ApiGuide").then((mod) => mod.ApiGuide), { ssr: false });
 const ModelsConfig = dynamic(() => import("./ModelsConfig").then((mod) => mod.ModelsConfig), { ssr: false });
 const SkillsConfig = dynamic(() => import("./SkillsConfig").then((mod) => mod.SkillsConfig), { ssr: false });
 const ProfilesPanel = dynamic(() => import("./ProfilesPanel").then((mod) => mod.ProfilesPanel), { ssr: false });
@@ -290,6 +291,7 @@ export function AppShell() {
   const [draftChatOpen, setDraftChatOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const [sessionKey, setSessionKey] = useState(0);
+  const [apiGuideOpen, setApiGuideOpen] = useState(false);
   const [modelsConfigOpen, setModelsConfigOpen] = useState(false);
   const [modelsRefreshKey, setModelsRefreshKey] = useState(0);
   const [skillsConfigOpen, setSkillsConfigOpen] = useState(false);
@@ -1514,20 +1516,20 @@ export function AppShell() {
       <div style={{ padding: "8px", flexShrink: 0, display: "flex", justifyContent: "space-between", gap: 4 }}>
         {([
           {
-            label: "Models",
-            onClick: () => setModelsConfigOpen(true),
+            label: "API",
+            onClick: () => setApiGuideOpen(true),
             disabled: false,
             icon: (
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="4" y="4" width="16" height="16" rx="2" /><rect x="9" y="9" width="6" height="6" />
-                <line x1="9" y1="1" x2="9" y2="4" /><line x1="15" y1="1" x2="15" y2="4" />
-                <line x1="9" y1="20" x2="9" y2="23" /><line x1="15" y1="20" x2="15" y2="23" />
-                <line x1="20" y1="9" x2="23" y2="9" /><line x1="20" y1="14" x2="23" y2="14" />
-                <line x1="1" y1="9" x2="4" y2="9" /><line x1="1" y1="14" x2="4" y2="14" />
+                <path d="M12 3v18" />
+                <path d="M5 8h14" />
+                <path d="M5 16h14" />
+                <circle cx="7" cy="8" r="2" />
+                <circle cx="17" cy="16" r="2" />
               </svg>
             ),
           },
-          {
+          ...(mainView === "workflow" ? [{
             label: "Profiles",
             onClick: () => setProfilesPanelOpen(true),
             disabled: false,
@@ -1539,8 +1541,8 @@ export function AppShell() {
                 <path d="M6 20v-1a4 4 0 0 1 4-4" />
               </svg>
             ),
-          },
-          {
+          }] : []),
+          ...(mainView === "workflow" ? [] : [{
             label: "Skills",
             onClick: () => setSkillsConfigOpen(true),
             disabled: !activeCwd && !selectedSession?.cwd && !newSessionCwd,
@@ -1551,7 +1553,7 @@ export function AppShell() {
                 <path d="M2 12l10 5 10-5" />
               </svg>
             ),
-          },
+          }]),
         ] as { label: string; onClick: () => void; disabled: boolean; icon: React.ReactNode }[]).map(({ label, onClick, disabled, icon }) => (
           <button
             key={label}
@@ -2091,7 +2093,27 @@ export function AppShell() {
     </div>
     </div>
 
-    {modelsConfigOpen && <ModelsConfig onClose={() => { setModelsConfigOpen(false); setModelsRefreshKey((k) => k + 1); }} />}
+    {apiGuideOpen && (
+      <ApiGuide
+        panel
+        onClose={() => setApiGuideOpen(false)}
+        onApplied={() => setModelsRefreshKey((k) => k + 1)}
+        onOpenModels={() => {
+          setApiGuideOpen(false);
+          setModelsConfigOpen(true);
+        }}
+      />
+    )}
+    {modelsConfigOpen && (
+      <ModelsConfig
+        cwd={activeCwd ?? selectedSession?.cwd ?? newSessionCwd}
+        onClose={() => { setModelsConfigOpen(false); setModelsRefreshKey((k) => k + 1); }}
+        onOpenGuide={() => {
+          setModelsConfigOpen(false);
+          setApiGuideOpen(true);
+        }}
+      />
+    )}
     {profilesPanelOpen && <ProfilesPanel onClose={() => setProfilesPanelOpen(false)} />}
     {skillsConfigOpen && (activeCwd ?? selectedSession?.cwd ?? newSessionCwd) && (
       <SkillsConfig cwd={(activeCwd ?? selectedSession?.cwd ?? newSessionCwd)!} onClose={() => setSkillsConfigOpen(false)} />

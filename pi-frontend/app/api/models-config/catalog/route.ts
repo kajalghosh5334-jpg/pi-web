@@ -50,10 +50,11 @@ function normalizeHeaderValues(headers: unknown): Record<string, string> {
     .filter((entry): entry is [string, string] => typeof entry[1] === "string" && Boolean(entry[1].trim())));
 }
 
-function authHeaders(apiKey?: string, extraHeaders?: unknown): Record<string, string> {
+function authHeaders(apiKey?: string, extraHeaders?: unknown, authHeader?: unknown): Record<string, string> {
   const headers = normalizeHeaderValues(extraHeaders);
   const resolved = resolveApiKey(apiKey);
-  if (resolved && !headers.Authorization && !headers.authorization) headers.Authorization = `Bearer ${resolved}`;
+  const shouldSetAuthHeader = authHeader !== false;
+  if (resolved && shouldSetAuthHeader && !headers.Authorization && !headers.authorization) headers.Authorization = `Bearer ${resolved}`;
   return headers;
 }
 
@@ -97,7 +98,7 @@ function normalizeModels(payload: unknown): CatalogModel[] {
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json() as { providerName?: unknown; baseUrl?: unknown; apiKey?: unknown; headers?: unknown };
+    const body = await req.json() as { providerName?: unknown; baseUrl?: unknown; apiKey?: unknown; headers?: unknown; authHeader?: unknown };
     const providerName = typeof body.providerName === "string" ? body.providerName.trim() : "";
     const baseUrl = typeof body.baseUrl === "string" ? body.baseUrl.trim() : "";
     const apiKey = typeof body.apiKey === "string" && body.apiKey.trim()
@@ -109,7 +110,7 @@ export async function POST(req: Request) {
     const timeout = setTimeout(() => controller.abort(), 15000);
     try {
       const res = await fetch(`${normalizeBaseUrl(baseUrl)}/models`, {
-        headers: authHeaders(apiKey, body.headers),
+        headers: authHeaders(apiKey, body.headers, body.authHeader),
         cache: "no-store",
         signal: controller.signal,
       });

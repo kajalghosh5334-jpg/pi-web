@@ -179,14 +179,20 @@ type ModelTestState =
   | { phase: "success"; latencyMs?: number; status?: number; responseText?: string }
   | { phase: "error"; message: string; latencyMs?: number; status?: number };
 
+type AvailabilityState = {
+  available: Set<string>;
+  checked: Map<string, { ok: boolean; status?: "available" | "slow" | "unavailable"; error?: string; durationMs?: number }>;
+  loading: boolean;
+  error?: string;
+  checkedAt?: number;
+};
+
 type Selection =
   | { type: "provider"; name: string }
   | { type: "model"; providerName: string; index: number }
   | { type: "oauth"; providerId: string }
   | { type: "apikey"; providerId: string }
   | { type: "capabilities" };
-
-type GuideMode = "manual" | "assisted";
 
 interface LedgerEvent {
   id?: string;
@@ -245,6 +251,7 @@ const AGGREGATOR_PRESETS = [
   { id: "openrouter", name: "OpenRouter", baseUrl: "https://openrouter.ai/api/v1", api: "openai-completions" },
   { id: "siliconflow", name: "SiliconFlow", baseUrl: "https://api.siliconflow.cn/v1", api: "openai-completions" },
   { id: "aihubmix", name: "AiHubMix", baseUrl: "https://aihubmix.com/v1", api: "openai-completions" },
+  { id: "10vip", name: "10VIP", baseUrl: "https://10vip.vip/v1", api: "openai-responses" },
   { id: "together", name: "Together", baseUrl: "https://api.together.xyz/v1", api: "openai-completions" },
   { id: "custom-openai-compatible", name: "OpenAI-compatible", baseUrl: "https://api.example.com/v1", api: "openai-completions" },
 ] as const;
@@ -445,10 +452,12 @@ function Check({ label, checked, onChange }: { label: string; checked: boolean; 
   );
 }
 
-function TogglePill({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
+function TogglePill({ label, active, onClick, disabled = false, title }: { label: string; active: boolean; onClick: () => void; disabled?: boolean; title?: string }) {
   return (
     <button
       type="button"
+      title={title}
+      disabled={disabled}
       onClick={onClick}
       style={{
         height: 26,
@@ -456,46 +465,14 @@ function TogglePill({ label, active, onClick }: { label: string; active: boolean
         border: `1px solid ${active ? "var(--accent)" : "var(--border)"}`,
         borderRadius: 6,
         background: active ? "color-mix(in srgb, var(--accent) 14%, var(--bg-panel))" : "var(--bg-panel)",
-        color: active ? "var(--accent)" : "var(--text-muted)",
-        cursor: "pointer",
+        color: disabled ? "var(--text-dim)" : active ? "var(--accent)" : "var(--text-muted)",
+        cursor: disabled ? "not-allowed" : "pointer",
+        opacity: disabled ? 0.58 : 1,
         fontSize: 11,
         fontWeight: active ? 600 : 400,
       }}
     >
       {label}
-    </button>
-  );
-}
-
-function GuideAiToggle({ enabled, onToggle, title }: { enabled: boolean; onToggle: () => void; title?: string }) {
-  return (
-    <button
-      type="button"
-      onClick={onToggle}
-      aria-pressed={enabled}
-      title={title}
-      style={{
-        height: 28,
-        padding: "0 10px 0 5px",
-        border: `1px solid ${enabled ? "#0a84ff" : "var(--border)"}`,
-        borderRadius: 999,
-        background: enabled ? "#0a84ff" : "var(--bg-panel)",
-        color: enabled ? "#fff" : "var(--text-muted)",
-        cursor: "pointer",
-        fontSize: 12,
-        fontWeight: 750,
-        display: "inline-flex",
-        alignItems: "center",
-        gap: 7,
-        boxShadow: enabled ? "0 8px 18px rgba(10,132,255,0.16)" : "none",
-        transition: "background 0.16s ease, color 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease",
-        whiteSpace: "nowrap",
-      }}
-    >
-      <span style={{ position: "relative", width: 26, height: 18, borderRadius: 999, background: enabled ? "rgba(255,255,255,0.22)" : "var(--border)", display: "inline-block", flexShrink: 0 }}>
-        <span style={{ position: "absolute", top: 3, left: enabled ? 11 : 3, width: 12, height: 12, borderRadius: 999, background: enabled ? "#fff" : "var(--bg)", transition: "left 0.16s ease, background 0.16s ease" }} />
-      </span>
-      <span>Guide AI</span>
     </button>
   );
 }
@@ -514,6 +491,58 @@ function splitTags(value: string): string[] | undefined {
 
 function modelKey(providerName: string, modelId: string): string {
   return `${providerName}/${modelId}`;
+}
+
+function isStrongEligibleModel(providerName: string, modelId: string): boolean {
+  const text = `${providerName} ${modelId}`.toLowerCase();
+  return /\b(?:openai|anthropic|gpt-|chatgpt|o1|o3|o4|claude|opus|sonnet)\b/.test(text)
+    || /(?:^|[/:\s-])(?:gpt|o[134])[-\d]/.test(text);
+}
+
+function availableKey(providerName: string, modelId: string): string {
+  return `${providerName}:${modelId}`;
+}
+
+function providerHasAuth(provider: ProviderEntry): boolean {
+  if (provider.apiKeyConfigured) return true;
+  if (provider.apiKey?.trim()) return true;
+  const headers = provider.headers ?? {};
+  return ["authorization", "x-api-key", "x-goog-api-key", "cf-aig-authorization"].some((name) =>
+    Object.entries(headers).some(([key, value]) => key.toLowerCase() === name && value.trim().length > 0)
+  );
+}
+
+function availabilityInfo(availability: AvailabilityState, providerName: string, modelId: string): { color: string; title: string; known: boolean; available: boolean; status: "available" | "slow" | "unavailable" | "unknown" } {
+  if (!modelId.trim()) return { color: "transparent", title: "No model id", known: false, available: false, status: "unknown" };
+  const key = availableKey(providerName, modelId);
+  const checked = availability.checked.get(key);
+  if (checked) {
+    if (checked.status === "slow") {
+      return { color: "#f59e0b", title: `Slow${checked.durationMs ? ` · ${checked.durationMs}ms` : ""}`, known: true, available: false, status: "slow" };
+    }
+    return checked.ok
+      ? { color: "#16a34a", title: `Available${checked.durationMs ? ` · ${checked.durationMs}ms` : ""}`, known: true, available: true, status: "available" }
+      : { color: "#ef4444", title: checked.error ? `Unavailable · ${checked.error}` : "Unavailable", known: true, available: false, status: "unavailable" };
+  }
+  if (availability.loading) {
+    const available = availability.available.has(key);
+    return {
+      color: available ? "#16a34a" : "var(--border)",
+      title: available ? "Listed in session model picker; refreshing availability..." : "Refreshing availability...",
+      known: available,
+      available,
+      status: available ? "available" : "unknown",
+    };
+  }
+  if (availability.error) return { color: "#ef4444", title: `Availability refresh failed: ${availability.error}`, known: true, available: false, status: "unavailable" };
+  const available = availability.available.has(key);
+  return {
+    color: "var(--border)",
+    title: available ? "Listed in session model picker; click refresh to verify availability" : "Not checked yet",
+    known: false,
+    available: false,
+    status: "unknown",
+  };
 }
 
 function dimensionLabel(id: string): string {
@@ -542,30 +571,18 @@ function resultGlyph(result: CapabilityResult): string {
   }
 }
 
-function profileHasCapable(profile?: CapabilityProfile): boolean {
-  return Boolean(profile && Object.values(profile.dimensions ?? {}).some((dimension) => dimension.result === "capable"));
-}
-
-function profileHasOnlyNonCapableResults(profile?: CapabilityProfile): boolean {
-  if (!profile) return false;
-  const dimensions = Object.values(profile.dimensions ?? {});
-  return dimensions.length > 0 && dimensions.every((dimension) => dimension.result !== "capable" && dimension.result !== "pending");
-}
-
-function isProfileTested(profile?: CapabilityProfile): boolean {
-  return Boolean(profile && profile.status !== "untested" && profile.status !== "testing" && profile.status !== "pending_judgement");
-}
-
-function capabilityTooltip(profile?: CapabilityProfile): string {
-  if (!profile) return "Guide AI has not generated a capability profile yet.";
-  const summary = CAPABILITY_DIMENSIONS
-    .map((dimension) => {
-      const item = profile.dimensions?.[dimension.id];
-      return item ? `${dimension.label}: ${resultLabel(item.result)}` : null;
-    })
-    .filter(Boolean)
-    .join(" · ");
-  return summary || profile.summary || profile.status;
+function profileActivityLabel(event: LedgerEvent): string {
+  const typeLabel: Record<string, string> = {
+    capability_probe_started: "Guide AI profile started",
+    capability_probe_case_started: "Evidence lookup started",
+    capability_probe_case_finished: "Evidence lookup finished",
+    capability_probe_finished: "Guide AI profile updated",
+  };
+  return [
+    typeLabel[event.type] ?? event.type,
+    event.stage ? dimensionLabel(event.stage) : null,
+    event.status,
+  ].filter(Boolean).join(" · ");
 }
 
 function buildPendingCapabilityProfile(providerName: string, model: ModelEntry, guideModel?: string): CapabilityProfile {
@@ -582,51 +599,10 @@ function buildPendingCapabilityProfile(providerName: string, model: ModelEntry, 
     dimensions: Object.fromEntries(CAPABILITY_DIMENSIONS.map((dimension) => [dimension.id, {
       result: "pending",
       confidence: "low",
-      notes: "等待 Guide AI profile 生成结果。",
+      notes: "等待 Guide AI 搜索公开资料并生成画像。",
       tests: [{ id: `${dimension.id}-probe-1`, status: "pending" }],
     } satisfies CapabilityDimension])),
   };
-}
-
-function collectModelsNeedingProbe(draft: ModelsJson, previous?: ModelsJson): string[] {
-  const keys = new Set<string>();
-  for (const [providerName, provider] of Object.entries(draft.providers ?? {})) {
-    for (const model of provider.models ?? []) {
-      if (!model.id.trim()) continue;
-      const key = modelKey(providerName, model.id);
-      const profile = draft.modelSetup?.capabilityProfiles?.[key];
-      const previousProfile = previous?.modelSetup?.capabilityProfiles?.[key];
-      const previousEntry = previous ? findModelInConfig(previous, key) : null;
-      const modelChanged = Boolean(previousEntry && modelProbeFingerprint(model, provider) !== modelProbeFingerprint(previousEntry.model, previousEntry.provider));
-      if (!previousProfile || !profile || profile.testSuiteVersion !== CAPABILITY_TEST_SUITE_VERSION || profile.status === "untested" || modelChanged) {
-        keys.add(key);
-      }
-    }
-  }
-  return [...keys];
-}
-
-function findModelInConfig(draft: ModelsJson, key: string): { providerName: string; provider: ProviderEntry; model: ModelEntry } | null {
-  for (const [providerName, provider] of Object.entries(draft.providers ?? {})) {
-    const model = (provider.models ?? []).find((item) => modelKey(providerName, item.id) === key);
-    if (model) return { providerName, provider, model };
-  }
-  return null;
-}
-
-function modelProbeFingerprint(model: ModelEntry, provider?: ProviderEntry): string {
-  return JSON.stringify({
-    providerApi: provider?.api ?? "",
-    providerBaseUrl: provider?.baseUrl ?? "",
-    modelApi: model.api ?? "",
-    role: model.role ?? "",
-    capabilities: [...(model.capabilities ?? [])].sort(),
-    profileHints: [...(model.profileHints ?? [])].sort(),
-    reasoning: Boolean(model.reasoning),
-    input: [...(model.input ?? [])].sort(),
-    output: [...(model.output ?? [])].sort(),
-    compat: model.compat ?? null,
-  });
 }
 
 function scrubClientSecrets(draft: ModelsJson): ModelsJson {
@@ -1069,8 +1045,6 @@ function ModelDetail({
   isProbing,
   onChange,
   onSetGuide,
-  onRunProbe,
-  onRetryDimension,
   onDelete,
 }: {
   providerName: string;
@@ -1082,12 +1056,11 @@ function ModelDetail({
   isProbing: boolean;
   onChange: (m: ModelEntry) => void;
   onSetGuide: () => void;
-  onRunProbe: () => void;
-  onRetryDimension: (dimension: string) => void;
   onDelete: () => void;
 }) {
   const [testState, setTestState] = useState<ModelTestState>({ phase: "idle" });
   const set = <K extends keyof ModelEntry>(k: K, v: ModelEntry[K]) => onChange({ ...model, [k]: v });
+  const canBeGuide = isStrongEligibleModel(providerName, model.id);
   const costVal = (k: keyof NonNullable<ModelEntry["cost"]>) => model.cost?.[k] !== undefined ? String(model.cost[k]) : "";
   const setCost = (k: keyof NonNullable<ModelEntry["cost"]>, v: string) => {
     const n = parseFloat(v);
@@ -1203,16 +1176,16 @@ function ModelDetail({
           </button>
           <button
             onClick={onSetGuide}
-            disabled={!model.id.trim() || isGuide}
-            title={isGuide ? "Current guide model" : "Set as guide model"}
+            disabled={!model.id.trim() || isGuide || !canBeGuide}
+            title={isGuide ? "Current guide model" : canBeGuide ? "Set as guide model" : "Only GPT and Claude models can be guide models"}
             style={{
               height: 24,
               padding: "0 8px",
               background: isGuide ? "#0a84ff" : "none",
               border: `1px solid ${isGuide ? "#0a84ff" : "var(--border)"}`,
               borderRadius: 4,
-              color: isGuide ? "#fff" : !model.id.trim() ? "var(--text-dim)" : "var(--text-muted)",
-              cursor: (!model.id.trim() || isGuide) ? "default" : "pointer",
+              color: isGuide ? "#fff" : (!model.id.trim() || !canBeGuide) ? "var(--text-dim)" : "var(--text-muted)",
+              cursor: (!model.id.trim() || isGuide || !canBeGuide) ? "default" : "pointer",
               fontSize: 11,
               boxSizing: "border-box",
             }}
@@ -1308,25 +1281,7 @@ function ModelDetail({
       </div>
 
       <div>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
-          <SectionTitle>Role and capability</SectionTitle>
-          <button
-            onClick={onRunProbe}
-            disabled={!model.id.trim() || isProbing}
-            style={{
-              height: 26,
-              padding: "0 9px",
-              border: "1px solid var(--border)",
-              borderRadius: 5,
-              background: "var(--bg-panel)",
-              color: model.id.trim() && !isProbing ? "var(--text-muted)" : "var(--text-dim)",
-              cursor: model.id.trim() && !isProbing ? "pointer" : "not-allowed",
-              fontSize: 11,
-            }}
-          >
-            {isProbing ? "Generating..." : capabilityProfile ? "Refresh profile" : "Generate profile"}
-          </button>
-        </div>
+        <SectionTitle>Role and capability</SectionTitle>
         <div style={{ display: "grid", gap: 12, marginBottom: 12, padding: 12, border: "1px solid var(--border)", borderRadius: 7, background: "color-mix(in srgb, var(--bg-panel) 74%, transparent)" }}>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
             <div>
@@ -1408,19 +1363,10 @@ function ModelDetail({
                   <div style={{ padding: "8px 10px", borderBottom: "1px solid var(--border)", fontSize: 12, color: "var(--text)" }}>{dimension.label}</div>
                   <div style={{ padding: "8px 10px", borderBottom: "1px solid var(--border)", fontSize: 11, color: "var(--text-muted)", whiteSpace: "nowrap" }}>
                     <span style={{ fontSize: 14, marginRight: 6, color: result === "capable" ? "#16a34a" : result === "inconclusive" ? "#f59e0b" : "var(--text-dim)" }}>{resultGlyph(result)}</span>
-                    {isProbing && (result === "pending" || runningCount > 0) ? "Guide AI generating" : resultLabel(result)}
+                    {isProbing && (result === "pending" || runningCount > 0) ? "Guide AI researching" : resultLabel(result)}
                   </div>
                   <div style={{ padding: "8px 10px", borderBottom: "1px solid var(--border)", fontSize: 11, color: "var(--text-dim)", lineHeight: 1.45 }}>
-                    {result === "inconclusive" ? (
-                      <button
-                        type="button"
-                        onClick={() => onRetryDimension(dimension.id)}
-                        disabled={isProbing}
-                        style={{ height: 24, padding: "0 8px", border: "1px solid var(--border)", borderRadius: 5, background: "var(--bg)", color: isProbing ? "var(--text-dim)" : "var(--text-muted)", cursor: isProbing ? "not-allowed" : "pointer", fontSize: 11 }}
-                      >
-                        Refresh this profile
-                      </button>
-                    ) : item?.confidence ? (
+                    {item?.confidence ? (
                       `confidence: ${item.confidence}`
                     ) : "confidence: -"}
                     {item?.notes && result !== "inconclusive" ? <div style={{ marginTop: 3 }}>{item.notes}</div> : null}
@@ -1443,7 +1389,7 @@ function ModelDetail({
           {capabilityProfile ? (
             <details style={{ borderTop: "1px solid var(--border)", padding: "8px 10px" }}>
               <summary style={{ cursor: "pointer", fontSize: 11, color: "var(--text-muted)" }}>
-                View profile evidence ({Object.values(capabilityProfile.dimensions ?? {}).flatMap((dimension) => dimension.tests ?? []).length} items)
+                View research evidence ({Object.values(capabilityProfile.dimensions ?? {}).flatMap((dimension) => dimension.tests ?? []).length} signals)
               </summary>
               <div style={{ display: "grid", gap: 8, marginTop: 8 }}>
                 {Object.entries(capabilityProfile.dimensions ?? {}).flatMap(([dimension, item]) => (item.tests ?? []).map((test) => (
@@ -1468,7 +1414,7 @@ function ModelDetail({
                   <span style={{ width: 7, height: 7, borderRadius: 999, background: event.status === "failed" ? "#ef4444" : event.status === "running" ? "#f59e0b" : "#16a34a", flexShrink: 0 }} />
                   <span style={{ fontFamily: "var(--font-mono)", color: "var(--text-dim)", flexShrink: 0 }}>{event.isoTime?.slice(11, 19) ?? "--:--:--"}</span>
                   <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                    {[event.type, event.stage, event.taskId, event.status].filter(Boolean).join(" · ")}
+                    {profileActivityLabel(event)}
                   </span>
                 </div>
               ))}
@@ -2066,177 +2012,6 @@ function AddProviderPicker({
   );
 }
 
-function GuideAiConfigPanel({
-  enabled,
-  guideLabel,
-  providerCount,
-  modelCount,
-  weakCount,
-  strongCount,
-  profiledCount,
-  isGenerating,
-  onToggle,
-  onAddProvider,
-  onSelectFirstModel,
-  onGenerateProfiles,
-}: {
-  enabled: boolean;
-  guideLabel: string | null;
-  providerCount: number;
-  modelCount: number;
-  weakCount: number;
-  strongCount: number;
-  profiledCount: number;
-  isGenerating: boolean;
-  onToggle: () => void;
-  onAddProvider: () => void;
-  onSelectFirstModel: () => void;
-  onGenerateProfiles: (message?: string) => void;
-}) {
-  const [message, setMessage] = useState("");
-  const [messages, setMessages] = useState<Array<{ role: "guide" | "user"; text: string }>>([
-    {
-      role: "guide",
-      text: "把 API URL、模型列表页面、官方文档或配置说明贴给我。我会整理 provider、strong/weak 模型、能力标签和 workflow routing 建议。",
-    },
-  ]);
-  const canGenerate = enabled && modelCount > 0 && !isGenerating;
-
-  const submit = () => {
-    const text = message.trim();
-    if (!text && !canGenerate) return;
-    if (text) {
-      setMessages((prev) => [
-        ...prev,
-        { role: "user", text },
-        { role: "guide", text: "收到。我会结合当前 API 内的模型资料生成 strong/weak、capability tags 和 workflow 角色建议。" },
-      ]);
-      setMessage("");
-    }
-    if (canGenerate) onGenerateProfiles(text || undefined);
-  };
-
-  return (
-    <div style={{ marginBottom: 16, border: "1px solid var(--border)", borderRadius: 8, background: "color-mix(in srgb, var(--bg-panel) 82%, transparent)", overflow: "hidden" }}>
-      <div style={{ padding: "10px 12px", borderBottom: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
-        <div style={{ minWidth: 0 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <span style={{ width: 8, height: 8, borderRadius: 999, background: enabled ? "#0a84ff" : "var(--border)", boxShadow: enabled ? "0 0 0 4px rgba(10,132,255,0.12)" : "none" }} />
-            <div style={{ fontSize: 12, fontWeight: 750, color: "var(--text)" }}>Guide AI configuration</div>
-          </div>
-          <div title={guideLabel || undefined} style={{ marginTop: 3, fontSize: 11, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-            {guideLabel ? `Guide model: ${guideLabel}` : "Select a model and mark it Strong to let Guide AI complete profiles."}
-          </div>
-        </div>
-        <GuideAiToggle enabled={enabled} onToggle={onToggle} title={guideLabel || "Guide AI configuration"} />
-      </div>
-      {enabled ? (
-        <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) 210px", gap: 12, padding: 12 }}>
-          <div style={{ display: "grid", gap: 8, minWidth: 0 }}>
-            <div style={{ maxHeight: 132, overflowY: "auto", display: "grid", gap: 7, paddingRight: 2 }}>
-              {messages.slice(-5).map((item, index) => (
-                <div
-                  key={`${item.role}-${index}-${item.text}`}
-                  style={{
-                    justifySelf: item.role === "user" ? "end" : "start",
-                    maxWidth: "86%",
-                    padding: "7px 9px",
-                    border: "1px solid var(--border)",
-                    borderRadius: 7,
-                    background: item.role === "user" ? "color-mix(in srgb, var(--accent) 10%, var(--bg))" : "var(--bg)",
-                    color: item.role === "user" ? "var(--text)" : "var(--text-muted)",
-                    fontSize: 12,
-                    lineHeight: 1.45,
-                  }}
-                >
-                  {item.text}
-                </div>
-              ))}
-            </div>
-            <div style={{ display: "flex", gap: 8 }}>
-              <textarea
-                value={message}
-                onChange={(event) => setMessage(event.target.value)}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) submit();
-                }}
-                placeholder="Paste API docs, model list URLs, provider notes, or routing preferences..."
-                style={{ ...inputStyle, minHeight: 54, resize: "vertical", lineHeight: 1.45, flex: 1 }}
-              />
-              <button
-                type="button"
-                onClick={submit}
-                disabled={!canGenerate && !message.trim()}
-                style={{
-                  width: 104,
-                  border: "none",
-                  borderRadius: 6,
-                  background: canGenerate || message.trim() ? "var(--accent)" : "var(--bg-panel)",
-                  color: canGenerate || message.trim() ? "#fff" : "var(--text-dim)",
-                  cursor: canGenerate || message.trim() ? "pointer" : "not-allowed",
-                  fontSize: 12,
-                  fontWeight: 700,
-                }}
-              >
-                {isGenerating ? "Generating..." : "Send"}
-              </button>
-            </div>
-          </div>
-          <div style={{ display: "grid", gap: 8, alignContent: "start" }}>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 7 }}>
-              {([
-                ["API", providerCount],
-                ["Models", modelCount],
-                ["Strong", strongCount],
-                ["Weak", weakCount],
-              ] as const).map(([label, count]) => (
-                <button
-                  key={label}
-                  type="button"
-                  onClick={label === "API" && providerCount === 0 ? onAddProvider : label === "Models" ? onSelectFirstModel : undefined}
-                  style={{
-                    minHeight: 42,
-                    border: "1px solid var(--border)",
-                    borderRadius: 7,
-                    background: "var(--bg)",
-                    color: "var(--text)",
-                    cursor: label === "API" && providerCount === 0 ? "pointer" : label === "Models" ? "pointer" : "default",
-                    textAlign: "left",
-                    padding: "6px 8px",
-                  }}
-                >
-                  <span style={{ display: "block", fontSize: 10, color: "var(--text-dim)" }}>{label}</span>
-                  <span style={{ display: "block", marginTop: 3, fontSize: 13, fontWeight: 750 }}>{count}</span>
-                </button>
-              ))}
-            </div>
-            <button
-              type="button"
-              onClick={() => onGenerateProfiles(message.trim() || undefined)}
-              disabled={!canGenerate}
-              style={{
-                height: 30,
-                border: "1px solid var(--border)",
-                borderRadius: 6,
-                background: canGenerate ? "var(--bg)" : "var(--bg-panel)",
-                color: canGenerate ? "var(--text)" : "var(--text-dim)",
-                cursor: canGenerate ? "pointer" : "not-allowed",
-                fontSize: 12,
-                fontWeight: 650,
-              }}
-            >
-              Generate model tags
-            </button>
-            <div style={{ fontSize: 11, color: "var(--text-dim)", lineHeight: 1.45 }}>
-              {profiledCount}/{modelCount || 0} profiles ready
-            </div>
-          </div>
-        </div>
-      ) : null}
-    </div>
-  );
-}
-
 type OnboardingState =
   | { phase: "idle" }
   | { phase: "saving"; message: string }
@@ -2402,6 +2177,7 @@ function InitialApiSetup({
 function ModelRoleSetupPanel({
   items,
   guideLabel,
+  availability,
   onSelectModel,
   onSetGuide,
   onUpdateModel,
@@ -2409,6 +2185,7 @@ function ModelRoleSetupPanel({
 }: {
   items: Array<{ providerName: string; index: number; model: ModelEntry; profile?: CapabilityProfile; isProbing: boolean }>;
   guideLabel: string | null;
+  availability: AvailabilityState;
   onSelectModel: (providerName: string, index: number) => void;
   onSetGuide: (providerName: string, index: number) => void;
   onUpdateModel: (providerName: string, index: number, model: ModelEntry) => void;
@@ -2423,7 +2200,7 @@ function ModelRoleSetupPanel({
         <div style={{ minWidth: 0 }}>
           <div style={{ fontSize: 12, fontWeight: 750, color: "var(--text)" }}>Role and capability</div>
           <div title={guideLabel || undefined} style={{ marginTop: 2, fontSize: 11, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-            {guideLabel ? `Guide: ${guideLabel}` : "Pick one strong guide, then mark worker models and boundaries."}
+            {guideLabel ? `Guide: ${guideLabel}` : "Only GPT and Claude models can be marked strong; other models use weak plus capability tags."}
           </div>
         </div>
         <button
@@ -2438,9 +2215,9 @@ function ModelRoleSetupPanel({
         {configuredItems.slice(0, 8).map((item) => {
           const key = modelKey(item.providerName, item.model.id);
           const isGuide = guideLabel === key;
-          const tested = isProfileTested(item.profile);
-          const testing = item.isProbing || item.profile?.status === "testing";
-          const statusText = testing ? "generating" : tested ? "profiled" : "pending";
+          const canBeStrong = isStrongEligibleModel(item.providerName, item.model.id);
+          const modelAvailability = availabilityInfo(availability, item.providerName, item.model.id);
+          const statusText = modelAvailability.status === "unavailable" ? "offline" : modelAvailability.status;
           const setModel = (patch: Partial<ModelEntry>) => onUpdateModel(item.providerName, item.index, { ...item.model, ...patch });
           return (
             <div key={key} style={{ display: "grid", gridTemplateColumns: "minmax(180px, 1fr) minmax(150px, 0.9fr) minmax(220px, 1.2fr) 72px", gap: 10, alignItems: "center", padding: "9px 12px", borderBottom: "1px solid var(--border)" }}>
@@ -2454,7 +2231,8 @@ function ModelRoleSetupPanel({
               </button>
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                 <TogglePill label="Weak" active={item.model.role === "weak"} onClick={() => setModel({ role: item.model.role === "weak" ? undefined : "weak" })} />
-                <TogglePill label="Strong" active={item.model.role === "strong"} onClick={() => {
+                <TogglePill label="Strong" active={item.model.role === "strong"} disabled={!canBeStrong} title={canBeStrong ? undefined : "Only GPT and Claude models can be strong"} onClick={() => {
+                  if (!canBeStrong) return;
                   setModel({ role: item.model.role === "strong" && !isGuide ? undefined : "strong" });
                   if (!isGuide) onSetGuide(item.providerName, item.index);
                 }} />
@@ -2469,7 +2247,7 @@ function ModelRoleSetupPanel({
                   />
                 ))}
               </div>
-              <span style={{ justifySelf: "end", fontSize: 10, color: testing ? "#f59e0b" : tested ? "#16a34a" : "var(--text-dim)", border: "1px solid var(--border)", borderRadius: 5, padding: "2px 6px" }}>
+              <span title={modelAvailability.title} style={{ justifySelf: "end", fontSize: 10, color: modelAvailability.known ? modelAvailability.color : "var(--text-dim)", border: "1px solid var(--border)", borderRadius: 5, padding: "2px 6px" }}>
                 {statusText}
               </span>
             </div>
@@ -2488,11 +2266,9 @@ function ModelRoleSetupPanel({
 function CapabilitySummaryView({
   items,
   onSelectModel,
-  onRunProbe,
 }: {
   items: Array<{ providerName: string; index: number; model: ModelEntry; profile?: CapabilityProfile; isProbing: boolean }>;
   onSelectModel: (providerName: string, index: number) => void;
-  onRunProbe: (providerName: string, index: number) => void;
 }) {
   const weakItems = items.filter((item) => item.model.id.trim() && item.model.role === "weak");
 
@@ -2502,20 +2278,19 @@ function CapabilitySummaryView({
         <div>
           <SectionTitle>Guide AI profile overview</SectionTitle>
           <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 3 }}>
-            Compare weak models by generated capability profile.
+            Compare weak models by Guide AI research profile.
           </div>
         </div>
       </div>
       <div style={{ border: "1px solid var(--border)", borderRadius: 8, overflow: "hidden", background: "var(--bg-panel)" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "minmax(180px, 1.2fr) repeat(4, minmax(76px, 0.6fr)) 94px", gap: 0, padding: "8px 10px", borderBottom: "1px solid var(--border)", fontSize: 10, color: "var(--text-dim)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "minmax(180px, 1.2fr) repeat(4, minmax(76px, 0.6fr))", gap: 0, padding: "8px 10px", borderBottom: "1px solid var(--border)", fontSize: 10, color: "var(--text-dim)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
           <span>Model</span>
           {CAPABILITY_DIMENSIONS.slice(0, 4).map((dimension) => <span key={dimension.id}>{dimension.label}</span>)}
-          <span>Action</span>
         </div>
         {weakItems.length ? weakItems.map((item) => (
           <div
             key={`${item.providerName}/${item.model.id || item.index}`}
-            style={{ display: "grid", gridTemplateColumns: "minmax(180px, 1.2fr) repeat(4, minmax(76px, 0.6fr)) 94px", alignItems: "center", gap: 0, minHeight: 44, padding: "7px 10px", borderBottom: "1px solid var(--border)" }}
+            style={{ display: "grid", gridTemplateColumns: "minmax(180px, 1.2fr) repeat(4, minmax(76px, 0.6fr))", alignItems: "center", gap: 0, minHeight: 44, padding: "7px 10px", borderBottom: "1px solid var(--border)" }}
           >
             <button
               type="button"
@@ -2534,14 +2309,6 @@ function CapabilitySummaryView({
                 </span>
               );
             })}
-            <button
-              type="button"
-              disabled={!item.model.id.trim() || item.isProbing}
-              onClick={() => onRunProbe(item.providerName, item.index)}
-              style={{ height: 26, border: "1px solid var(--border)", borderRadius: 5, background: "var(--bg)", color: item.isProbing ? "var(--text-dim)" : "var(--text-muted)", cursor: item.isProbing ? "not-allowed" : "pointer", fontSize: 11 }}
-            >
-              {item.isProbing ? "Generating" : item.profile ? "Refresh" : "Generate"}
-            </button>
           </div>
         )) : (
           <div style={{ padding: 18, textAlign: "center", fontSize: 12, color: "var(--text-dim)" }}>No weak models yet.</div>
@@ -2553,7 +2320,7 @@ function CapabilitySummaryView({
 
 // ── Main component ────────────────────────────────────────────────────────────
 
-export function ModelsConfig({ onClose }: { onClose: () => void }) {
+export function ModelsConfig({ cwd, onClose, onOpenGuide }: { cwd?: string | null; onClose: () => void; onOpenGuide?: () => void }) {
   const [config, setConfig] = useState<ModelsJson>({ providers: {} });
   const [savedSnapshot, setSavedSnapshot] = useState("");
   const [loading, setLoading] = useState(true);
@@ -2564,9 +2331,7 @@ export function ModelsConfig({ onClose }: { onClose: () => void }) {
   const [oauthProviders, setOauthProviders] = useState<OAuthProvider[]>([]);
   const [apiKeyProviders, setApiKeyProviders] = useState<ApiKeyProvider[]>([]);
   const [pickerOpen, setPickerOpen] = useState(false);
-  const [probeBusyByKey, setProbeBusyByKey] = useState<Record<string, boolean>>({});
-  const [ledgerEventsByModel, setLedgerEventsByModel] = useState<Record<string, LedgerEvent[]>>({});
-  const [guideMode, setGuideMode] = useState<GuideMode>("assisted");
+  const [availability, setAvailability] = useState<AvailabilityState>({ available: new Set(), checked: new Map(), loading: false });
 
   const loadOAuthProviders = useCallback(() => {
     fetch("/api/auth/providers")
@@ -2582,17 +2347,21 @@ export function ModelsConfig({ onClose }: { onClose: () => void }) {
       .catch(() => {});
   }, []);
 
-  const loadLedgerEvents = useCallback(async (key: string) => {
-    try {
-      const res = await fetch(`/api/models-config/ledger?modelKey=${encodeURIComponent(key)}&limit=40`, { cache: "no-store" });
-      const d = await res.json() as { ok?: boolean; events?: LedgerEvent[] };
-      if (res.ok && d.ok) {
-        setLedgerEventsByModel((prev) => ({ ...prev, [key]: d.events ?? [] }));
-      }
-    } catch {
-      // Ledger is diagnostic only; do not block configuration.
-    }
-  }, []);
+  const loadAvailableModels = useCallback(() => {
+    setAvailability((prev) => ({ ...prev, loading: true, error: undefined }));
+    const modelsUrl = cwd ? `/api/models?cwd=${encodeURIComponent(cwd)}` : "/api/models";
+    fetch(modelsUrl, { cache: "no-store" })
+      .then((r) => r.json())
+      .then((d: { modelList?: Array<{ provider: string; id: string }> }) => {
+        setAvailability({
+          available: new Set((d.modelList ?? []).map((model) => availableKey(model.provider, model.id))),
+          checked: new Map(),
+          loading: false,
+          checkedAt: Date.now(),
+        });
+      })
+      .catch((error) => setAvailability((prev) => ({ ...prev, loading: false, error: error instanceof Error ? error.message : String(error) })));
+  }, [cwd]);
 
   useEffect(() => {
     fetch("/api/models-config")
@@ -2611,7 +2380,8 @@ export function ModelsConfig({ onClose }: { onClose: () => void }) {
       .finally(() => setLoading(false));
     loadOAuthProviders();
     loadApiKeyProviders();
-  }, [loadOAuthProviders, loadApiKeyProviders]);
+    loadAvailableModels();
+  }, [loadOAuthProviders, loadApiKeyProviders, loadAvailableModels]);
 
   const addCustomProvider = useCallback(() => {
     let finalName = "new-provider";
@@ -2748,6 +2518,7 @@ export function ModelsConfig({ onClose }: { onClose: () => void }) {
       const provider = prev.providers?.[providerName];
       const model = provider?.models?.[index];
       if (!provider || !model?.id) return prev;
+      if (!isStrongEligibleModel(providerName, model.id)) return prev;
       const models = [...(provider.models ?? [])];
       models[index] = { ...model, role: "strong" };
       return {
@@ -2771,12 +2542,11 @@ export function ModelsConfig({ onClose }: { onClose: () => void }) {
     let guideModel = draft.modelSetup?.guideModel;
     const capabilityProfiles = { ...(draft.modelSetup?.capabilityProfiles ?? {}) };
 
-    if (!guideModel && entries.length > 0) {
-      const first = entries[0];
-      guideModel = modelKey(first.providerName, first.model.id);
-      const models = [...(first.provider.models ?? [])];
-      models[first.index] = { ...first.model, role: "strong" };
-      providers[first.providerName] = { ...first.provider, models };
+    if (guideModel) {
+      const [guideProvider, guideModelId] = guideModel.split("/", 2);
+      if (!guideProvider || !guideModelId || !isStrongEligibleModel(guideProvider, guideModelId)) {
+        guideModel = undefined;
+      }
     }
 
     for (const { providerName, model } of entries) {
@@ -2798,108 +2568,12 @@ export function ModelsConfig({ onClose }: { onClose: () => void }) {
     };
   }, []);
 
-  const triggerCapabilityProbe = useCallback(async (key: string, dimensions?: string[], sourceConfig = config) => {
-    const runningConfig = normalizeForSave(sourceConfig);
-    const found = findModelInConfig(runningConfig, key);
-    if (!found || !found.model.id.trim()) return;
-
-    setProbeBusyByKey((prev) => ({ ...prev, [key]: true }));
-    setSaveError(null);
-    setConfig((prev) => {
-      const latest = findModelInConfig(prev, key);
-      if (!latest) return prev;
-      const profile = {
-        ...buildPendingCapabilityProfile(latest.providerName, latest.model, prev.modelSetup?.guideModel),
-        status: "testing" as const,
-        summary: "Guide AI 正在生成能力画像，完成后会写入 Profile Ledger。",
-      };
-      return {
-        ...prev,
-        modelSetup: {
-          ...(prev.modelSetup ?? {}),
-          testSuiteVersion: CAPABILITY_TEST_SUITE_VERSION,
-          guideModel: prev.modelSetup?.guideModel,
-          capabilityProfiles: {
-            ...(prev.modelSetup?.capabilityProfiles ?? {}),
-            [key]: profile,
-          },
-        },
-      };
-    });
-    try {
-      const res = await fetch("/api/models-config/probe", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ modelKey: key, dimensions }),
-      });
-      const d = await res.json() as { ok?: boolean; error?: string; profile?: CapabilityProfile; config?: ModelsJson };
-      if (!res.ok || !d.ok || !d.profile) {
-        throw new Error(d.error ?? `HTTP ${res.status}`);
-      }
-      setConfig((prev) => {
-        const nextProfiles = {
-          ...(prev.modelSetup?.capabilityProfiles ?? {}),
-          [key]: d.profile!,
-        };
-        return {
-          ...prev,
-          modelSetup: {
-            ...(prev.modelSetup ?? {}),
-            ...(d.config?.modelSetup ?? {}),
-            capabilityProfiles: {
-              ...(d.config?.modelSetup?.capabilityProfiles ?? {}),
-              ...nextProfiles,
-            },
-          },
-        };
-      });
-      if (d.config) setSavedSnapshot(JSON.stringify(d.config));
-      await loadLedgerEvents(key);
-    } catch (error) {
-      setSaveError(error instanceof Error ? error.message : String(error));
-      await loadLedgerEvents(key);
-    } finally {
-      setProbeBusyByKey((prev) => {
-        const next = { ...prev };
-        delete next[key];
-        return next;
-      });
-    }
-  }, [config, loadLedgerEvents, normalizeForSave]);
-
-  const runCapabilityProbe = useCallback(async (providerName: string, index: number, dimensions?: string[]) => {
-    const nextConfig = normalizeForSave(config);
-    const model = nextConfig.providers?.[providerName]?.models?.[index];
-    if (!model?.id.trim()) return;
-    const key = modelKey(providerName, model.id);
-    setSaving(true);
-    setSaveError(null);
-    try {
-      const res = await fetch("/api/models-config", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(nextConfig),
-      });
-      const d = await res.json() as { success?: boolean; error?: string };
-      if (!res.ok || d.error) throw new Error(d.error ?? `HTTP ${res.status}`);
-      const clientConfig = scrubClientSecrets(nextConfig);
-      setConfig(clientConfig);
-      setSavedSnapshot(JSON.stringify(clientConfig));
-      await triggerCapabilityProbe(key, dimensions);
-    } catch (error) {
-      setSaveError(error instanceof Error ? error.message : String(error));
-    } finally {
-      setSaving(false);
-    }
-  }, [config, normalizeForSave, triggerCapabilityProbe]);
-
   const handleSave = useCallback(async () => {
     setSaving(true);
     setSaveError(null);
     setSavedOk(false);
     try {
       const nextConfig = normalizeForSave(config);
-      const weakProbeKeys = collectModelsNeedingProbe(nextConfig, config);
       setConfig(nextConfig);
       const res = await fetch("/api/models-config", {
         method: "PUT",
@@ -2913,30 +2587,24 @@ export function ModelsConfig({ onClose }: { onClose: () => void }) {
         setConfig(clientConfig);
         setSavedSnapshot(JSON.stringify(clientConfig));
         setSavedOk(true);
+        loadAvailableModels();
         setTimeout(() => setSavedOk(false), 2000);
-        void (async () => {
-          for (const key of weakProbeKeys) {
-            await triggerCapabilityProbe(key);
-          }
-        })();
       }
     } catch (e) {
       setSaveError(String(e));
     } finally {
       setSaving(false);
     }
-  }, [config, normalizeForSave, triggerCapabilityProbe]);
+  }, [config, loadAvailableModels, normalizeForSave]);
 
   const providers = Object.entries(config.providers ?? {});
+  const configuredProviders = providers.filter(([, provider]) => providerHasAuth(provider));
   const dirty = JSON.stringify(config) !== savedSnapshot;
   const modelInventory = providers.flatMap(([providerName, provider]) => (provider.models ?? []).map((model, index) => {
     const key = model.id ? modelKey(providerName, model.id) : "";
     return { providerName, index, model, key, profile: key ? config.modelSetup?.capabilityProfiles?.[key] : undefined };
   }));
   const validModelCount = modelInventory.filter(({ model }) => model.id.trim()).length;
-  const weakCount = modelInventory.filter(({ model }) => model.role === "weak" && model.id.trim()).length;
-  const strongCount = modelInventory.filter(({ model }) => model.role === "strong" && model.id.trim()).length;
-  const profiledCount = modelInventory.filter(({ model, profile }) => model.id.trim() && isProfileTested(profile)).length;
   const guideLabel = config.modelSetup?.guideModel ?? null;
   const activeOAuth = oauthProviders.filter((p) => p.loggedIn);
   const activeApiKey = apiKeyProviders.filter((p) => p.configured);
@@ -2945,38 +2613,49 @@ export function ModelsConfig({ onClose }: { onClose: () => void }) {
     setConfig(nextConfig);
     setSavedSnapshot(JSON.stringify(nextConfig));
     setSavedOk(true);
-    setGuideMode("assisted");
     setSelection({ type: "model", providerName, index: modelIndex });
     setTimeout(() => setSavedOk(false), 2000);
-    void (async () => {
-      for (const model of nextConfig.providers?.[providerName]?.models ?? []) {
-        if (model.id.trim()) await triggerCapabilityProbe(modelKey(providerName, model.id), undefined, nextConfig);
-      }
-    })();
   };
-  const selectFirstProvider = () => {
-    const first = providers[0]?.[0];
-    if (first) setSelection({ type: "provider", name: first });
-  };
-  const selectFirstModel = () => {
-    for (const [providerName, provider] of providers) {
-      const index = (provider.models ?? []).findIndex((model) => model.id.trim());
-      if (index >= 0) {
-        setSelection({ type: "model", providerName, index });
+
+  const refreshAvailability = useCallback(async () => {
+    const targets = Object.entries(config.providers ?? {}).flatMap(([providerName, provider]) => (provider.models ?? [])
+      .filter(() => providerHasAuth(provider))
+      .filter((model) => model.id.trim())
+      .map((model) => ({ provider: providerName, id: model.id, name: model.name })));
+    setAvailability((prev) => ({ ...prev, loading: true, error: undefined }));
+    try {
+      if (!targets.length) {
+        setAvailability((prev) => ({ ...prev, checked: new Map(), loading: false, checkedAt: Date.now() }));
         return;
       }
+
+      const healthRes = await fetch("/api/models/health", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cwd: cwd || undefined, models: targets }),
+      });
+      const healthData = await healthRes.json() as {
+        results?: Array<{ provider: string; id: string; ok: boolean; status?: "available" | "slow" | "unavailable"; error?: string; durationMs?: number }>;
+        error?: string;
+        checkedAt?: number;
+      };
+      if (!healthRes.ok || healthData.error) throw new Error(healthData.error ?? `HTTP ${healthRes.status}`);
+      const checked = new Map((healthData.results ?? []).map((result) => [
+        availableKey(result.provider, result.id),
+        { ok: result.ok, status: result.status, error: result.error, durationMs: result.durationMs },
+      ]));
+      const available = new Set([
+        ...availability.available,
+        ...(healthData.results ?? [])
+          .filter((result) => result.ok)
+          .map((result) => availableKey(result.provider, result.id)),
+      ]);
+      setAvailability({ available, checked, loading: false, checkedAt: healthData.checkedAt ?? Date.now() });
+    } catch (error) {
+      setAvailability((prev) => ({ ...prev, loading: false, error: error instanceof Error ? error.message : String(error) }));
     }
-    selectFirstProvider();
-  };
-  const generateAllProfiles = useCallback((message?: string) => {
-    if (message?.trim()) setSaveError(null);
-    const targets = modelInventory.filter((item) => item.model.id.trim());
-    void (async () => {
-      for (const item of targets) {
-        await runCapabilityProbe(item.providerName, item.index);
-      }
-    })();
-  }, [modelInventory, runCapabilityProbe]);
+  }, [availability.available, config.providers, cwd]);
+
   const selectionTitle = (() => {
     if (!selection) return "Nothing selected";
     if (selection.type === "provider") return `Provider · ${selection.name}`;
@@ -3009,9 +2688,8 @@ export function ModelsConfig({ onClose }: { onClose: () => void }) {
     if (selection.type === "capabilities") {
       return (
         <CapabilitySummaryView
-          items={modelInventory.map((item) => ({ ...item, isProbing: Boolean(item.key && probeBusyByKey[item.key]) }))}
+          items={modelInventory.map((item) => ({ ...item, isProbing: false }))}
           onSelectModel={(providerName, index) => setSelection({ type: "model", providerName, index })}
-          onRunProbe={(providerName, index) => void runCapabilityProbe(providerName, index)}
         />
       );
     }
@@ -3047,12 +2725,10 @@ export function ModelsConfig({ onClose }: { onClose: () => void }) {
         model={model}
         isGuide={config.modelSetup?.guideModel === modelKey(selection.providerName, model.id)}
         capabilityProfile={model.id ? config.modelSetup?.capabilityProfiles?.[modelKey(selection.providerName, model.id)] : undefined}
-        ledgerEvents={model.id ? ledgerEventsByModel[modelKey(selection.providerName, model.id)] ?? [] : []}
-        isProbing={model.id ? Boolean(probeBusyByKey[modelKey(selection.providerName, model.id)]) : false}
+        ledgerEvents={[]}
+        isProbing={false}
         onChange={(m) => updateModel(selection.providerName, selection.index, m)}
         onSetGuide={() => setGuideModel(selection.providerName, selection.index)}
-        onRunProbe={() => void runCapabilityProbe(selection.providerName, selection.index)}
-        onRetryDimension={(dimension) => void runCapabilityProbe(selection.providerName, selection.index, [dimension])}
         onDelete={() => removeModel(selection.providerName, selection.index)}
       />
     );
@@ -3071,15 +2747,17 @@ export function ModelsConfig({ onClose }: { onClose: () => void }) {
               <span style={{ fontSize: 15, fontWeight: 700, color: "var(--text)" }}>Models</span>
               <code style={{ fontSize: 11, color: "var(--text-muted)", fontFamily: "var(--font-mono)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>~/.pi/agent/models.json</code>
             </div>
-            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-              <GuideAiToggle
-                enabled={guideMode === "assisted"}
-                onToggle={() => setGuideMode((mode) => mode === "assisted" ? "manual" : "assisted")}
-                title={guideLabel || "No guide model"}
-              />
-            </div>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
+            {onOpenGuide && (
+              <button
+                type="button"
+                onClick={onOpenGuide}
+                style={{ height: 30, padding: "0 10px", border: "1px solid var(--border)", borderRadius: 7, background: "var(--bg-panel)", color: "var(--text-muted)", cursor: "pointer", fontSize: 12, fontWeight: 650 }}
+              >
+                Guide AI
+              </button>
+            )}
             <span title={selectionTitle} style={{ maxWidth: 260, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: 11, color: "var(--text-muted)" }}>{selectionTitle}</span>
             <button onClick={onClose} style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", fontSize: 20, lineHeight: 1, padding: "2px 6px" }}>×</button>
           </div>
@@ -3094,6 +2772,36 @@ export function ModelsConfig({ onClose }: { onClose: () => void }) {
 
           {/* Left: tree */}
           <div style={{ width: 210, borderRight: "1px solid var(--border)", display: "flex", flexDirection: "column", flexShrink: 0, background: "var(--bg-panel)" }}>
+            <div style={{ height: 34, padding: "6px 8px 4px 10px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, borderBottom: "1px solid var(--border)" }}>
+              <span style={{ fontSize: 11, fontWeight: 750, color: "var(--text-muted)", letterSpacing: "0.02em" }}>API models</span>
+              <button
+                type="button"
+                onClick={() => void refreshAvailability()}
+                disabled={availability.loading}
+                aria-label="Refresh model availability"
+                title={availability.checkedAt ? `Last checked ${new Date(availability.checkedAt).toLocaleTimeString()}` : "Refresh model availability"}
+                style={{
+                  width: 24,
+                  height: 24,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  border: "none",
+                  borderRadius: 5,
+                  background: "transparent",
+                  color: availability.loading ? "var(--text-dim)" : "var(--text-muted)",
+                  cursor: availability.loading ? "not-allowed" : "pointer",
+                  padding: 0,
+                }}
+                onMouseEnter={(e) => { if (!availability.loading) { e.currentTarget.style.background = "var(--bg-hover)"; e.currentTarget.style.color = "var(--text)"; } }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = availability.loading ? "var(--text-dim)" : "var(--text-muted)"; }}
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ animation: availability.loading ? "spin 0.9s linear infinite" : undefined }}>
+                  <path d="M21 12a9 9 0 1 1-2.64-6.36" />
+                  <path d="M21 3v6h-6" />
+                </svg>
+              </button>
+            </div>
             <div style={{ flex: 1, overflowY: "auto", padding: "8px 6px" }}>
               {/* Active OAuth subscriptions */}
               {activeOAuth.map((p) => {
@@ -3130,14 +2838,14 @@ export function ModelsConfig({ onClose }: { onClose: () => void }) {
               })}
 
               {/* Divider before custom providers, only when there are active managed providers */}
-              {(activeOAuth.length > 0 || activeApiKey.length > 0) && providers.length > 0 && (
+              {(activeOAuth.length > 0 || activeApiKey.length > 0) && configuredProviders.length > 0 && (
                 <div style={{ margin: "4px 8px", borderTop: "1px solid var(--border)" }} />
               )}
 
               {/* Custom providers */}
               {loading ? (
                 <div style={{ padding: "10px 8px", fontSize: 12, color: "var(--text-muted)" }}>Loading…</div>
-              ) : providers.map(([pName, pData]) => {
+              ) : configuredProviders.length ? configuredProviders.map(([pName, pData]) => {
                 const isProviderSelected = selection?.type === "provider" && selection.name === pName;
                 const models = pData.models ?? [];
                 return (
@@ -3165,17 +2873,7 @@ export function ModelsConfig({ onClose }: { onClose: () => void }) {
                     {models.map((m, i) => {
                       const isModelSelected = selection?.type === "model" && selection.providerName === pName && selection.index === i;
                       const key = m.id ? modelKey(pName, m.id) : "";
-                      const profile = key ? config.modelSetup?.capabilityProfiles?.[key] : undefined;
-                      const testing = Boolean(key && probeBusyByKey[key]) || profile?.status === "testing";
-                      const dotColor = !profile
-                        ? "transparent"
-                        : testing
-                          ? "#f59e0b"
-                          : profileHasCapable(profile)
-                            ? "#16a34a"
-                            : profileHasOnlyNonCapableResults(profile)
-                              ? "#f59e0b"
-                              : "var(--border)";
+                      const modelAvailability = availabilityInfo(availability, pName, m.id);
                       return (
                         <div
                           key={i}
@@ -3185,13 +2883,13 @@ export function ModelsConfig({ onClose }: { onClose: () => void }) {
                           onMouseLeave={(e) => { if (!isModelSelected) e.currentTarget.style.background = "none"; }}
                         >
                           <span
-                            title={capabilityTooltip(profile)}
+                            title={modelAvailability.title}
                             style={{
                               width: 8,
                               height: 8,
                               borderRadius: 999,
-                              border: profile ? `1px solid ${dotColor}` : "1px solid transparent",
-                              background: profile && !testing ? dotColor : "transparent",
+                              border: modelAvailability.known ? `1px solid ${modelAvailability.color}` : "1px solid var(--border)",
+                              background: modelAvailability.known ? modelAvailability.color : "transparent",
                               flexShrink: 0,
                             }}
                           />
@@ -3227,7 +2925,9 @@ export function ModelsConfig({ onClose }: { onClose: () => void }) {
                     </div>
                   </div>
                 );
-              })}
+              }) : (
+                <div style={{ padding: "10px 8px", fontSize: 12, color: "var(--text-dim)", lineHeight: 1.45 }}>No configured API providers.</div>
+              )}
             </div>
 
             {/* Add provider */}
@@ -3250,20 +2950,6 @@ export function ModelsConfig({ onClose }: { onClose: () => void }) {
             <div style={{ flex: 1, overflowY: "auto", padding: 20, minWidth: 0 }}>
               {loading ? null : (
                 <>
-                  <GuideAiConfigPanel
-                    enabled={guideMode === "assisted"}
-                    guideLabel={guideLabel}
-                    providerCount={providers.length}
-                    modelCount={validModelCount}
-                    weakCount={weakCount}
-                    strongCount={strongCount}
-                    profiledCount={profiledCount}
-                    isGenerating={Object.keys(probeBusyByKey).length > 0 || saving}
-                    onToggle={() => setGuideMode((mode) => mode === "assisted" ? "manual" : "assisted")}
-                    onAddProvider={() => setPickerOpen(true)}
-                    onSelectFirstModel={selectFirstModel}
-                    onGenerateProfiles={generateAllProfiles}
-                  />
                   {detailContent ?? (
                     <div style={{ height: "100%", display: "grid", alignContent: "center", justifyItems: "center", gap: 10, color: "var(--text-dim)", fontSize: 13, textAlign: "center" }}>
                       <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)" }}>Select a provider or model</div>
@@ -3280,8 +2966,9 @@ export function ModelsConfig({ onClose }: { onClose: () => void }) {
                   {validModelCount > 0 && (
                     <div style={{ marginTop: 16 }}>
                       <ModelRoleSetupPanel
-                        items={modelInventory.map((item) => ({ ...item, isProbing: Boolean(item.key && probeBusyByKey[item.key]) }))}
+                        items={modelInventory.map((item) => ({ ...item, isProbing: false }))}
                         guideLabel={guideLabel}
+                        availability={availability}
                         onSelectModel={(providerName, index) => setSelection({ type: "model", providerName, index })}
                         onSetGuide={setGuideModel}
                         onUpdateModel={updateModel}

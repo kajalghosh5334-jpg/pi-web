@@ -61,6 +61,18 @@ function compareModelOptions(a: ModelOption, b: ModelOption): number {
     || MODEL_OPTION_COLLATOR.compare(a.modelId, b.modelId);
 }
 
+function modelOptionFromNameEntry(entryKey: string, name: string, fallbackProvider = "unknown"): ModelOption {
+  const separator = entryKey.indexOf(":");
+  if (separator > 0) {
+    return {
+      provider: entryKey.slice(0, separator),
+      modelId: entryKey.slice(separator + 1),
+      name,
+    };
+  }
+  return { provider: fallbackProvider, modelId: entryKey, name };
+}
+
 const THINKING_LEVELS = ["auto", "off", "minimal", "low", "medium", "high", "xhigh"] as const;
 const THINKING_LEVEL_DESC: Record<typeof THINKING_LEVELS[number], string> = {
   auto: "Auto (pi default)",
@@ -297,18 +309,16 @@ export const ChatInput = forwardRef<ChatInputHandle, Props>(function ChatInput({
     if (modelList && modelList.length > 0) {
       return modelList.map((m) => ({ provider: m.provider, modelId: m.id, name: m.name })).sort(compareModelOptions);
     }
-    return Object.entries(modelNames ?? {}).map(([modelId, name]) => ({
-      provider: model?.provider ?? "unknown",
-      modelId,
-      name,
-    })).sort(compareModelOptions);
+    return Object.entries(modelNames ?? {})
+      .map(([modelKey, name]) => modelOptionFromNameEntry(modelKey, name, model?.provider ?? "unknown"))
+      .sort(compareModelOptions);
   })() ?? [];
 
   const hiddenModelOptions: ModelOption[] = (() => {
     if (!modelList || modelList.length === 0) return [];
     const known = new Set(modelList.map((m) => `${m.provider}:${m.id}`));
     return Object.entries(modelNames ?? {})
-      .map(([modelId, name]) => ({ provider: model?.provider ?? "unknown", modelId, name }))
+      .map(([modelKey, name]) => modelOptionFromNameEntry(modelKey, name, model?.provider ?? "unknown"))
       .filter((opt) => !known.has(`${opt.provider}:${opt.modelId}`))
       .sort(compareModelOptions);
   })();
