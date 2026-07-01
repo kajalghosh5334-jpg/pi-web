@@ -189,6 +189,12 @@ function macDefaultBrowserPreference() {
 function browserCandidates() {
   const chrome = {
     id: "chrome",
+    appPaths: process.platform === "darwin"
+      ? [
+          "/Applications/Google Chrome.app",
+          join(homedir(), "Applications", "Google Chrome.app"),
+        ]
+      : [],
     paths: process.platform === "darwin"
       ? [
           "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
@@ -209,6 +215,14 @@ function browserCandidates() {
 
   const quark = {
     id: "quark",
+    appPaths: process.platform === "darwin"
+      ? [
+          "/Applications/Quark.app",
+          join(homedir(), "Applications", "Quark.app"),
+          "/Applications/夸克.app",
+          join(homedir(), "Applications", "夸克.app"),
+        ]
+      : [],
     paths: process.platform === "darwin"
       ? [
           "/Applications/Quark.app/Contents/MacOS/Quark",
@@ -232,12 +246,53 @@ function browserCandidates() {
   return [chrome, quark];
 }
 
-function findAppModeBrowser() {
-  for (const browser of browserCandidates()) {
-    const executable = browser.paths.find((candidate) => typeof candidate === "string" && existsSync(candidate));
-    if (executable) return { id: browser.id, executable };
+function restoreAppWindow(browser) {
+  if (process.platform !== "darwin") return false;
+
+  const appName = browser.id === "quark" ? "Quark" : "Google Chrome";
+  const script = `
+set targetHost to "${url}"
+tell application "${appName}"
+  repeat with browserWindow in windows
+    try
+      set tabIndex to 1
+      repeat with browserTab in tabs of browserWindow
+        set currentUrl to URL of browserTab
+        if currentUrl starts with targetHost then
+          set minimized of browserWindow to false
+          set active tab index of browserWindow to tabIndex
+          set index of browserWindow to 1
+          activate
+          return "found"
+        end if
+        set tabIndex to tabIndex + 1
+      end repeat
+    end try
+  end repeat
+end tell
+return "not-found"
+`;
+
+  const result = spawnSync("osascript", ["-e", script], {
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "pipe"],
+  });
+  return result.status === 0 && String(result.stdout || "").includes("found");
+}
+
+function openBrowserAppWindow(browser) {
+  if (process.platform === "darwin") {
+    const appPath = browser.appPaths.find((candidate) => existsSync(candidate));
+    if (appPath) {
+      spawnDetached("open", ["-na", appPath, "--args", `--app=${url}`]);
+      return true;
+    }
   }
-  return null;
+
+  const executable = browser.paths.find((candidate) => typeof candidate === "string" && existsSync(candidate));
+  if (!executable) return false;
+  spawnDetached(executable, [`--app=${url}`]);
+  return true;
 }
 
 function startServer() {
@@ -269,10 +324,12 @@ function startServer() {
 }
 
 function openAppWindow() {
-  const browser = findAppModeBrowser();
-  if (browser) {
-    spawnDetached(browser.executable, [`--app=${url}`]);
-    return;
+  for (const browser of browserCandidates()) {
+    if (restoreAppWindow(browser)) return;
+  }
+
+  for (const browser of browserCandidates()) {
+    if (openBrowserAppWindow(browser)) return;
   }
 
   if (process.platform === "win32") {

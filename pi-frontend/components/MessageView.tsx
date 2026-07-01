@@ -566,24 +566,10 @@ export function ThinkingStatusLine({
   const [fading, setFading] = useState(false);
   const currentIdRef = useRef<string>("");
   const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
-  const startedAtRef = useRef<number | null>(null);
 
   const showStatusLine = isStreaming || (agentRunning && !finalOutputStarted);
   // ponytail: expanded history shows the whole agent-run trace, not just this message
   const historySteps = runSteps ?? steps;
-
-  // ponytail: track duration with a tick counter (avoids setState inside interval causing infinite loops)
-  const [, setTick] = useState(0);
-  useEffect(() => {
-    if (!showStatusLine) return;
-    startedAtRef.current ??= Date.now();
-    const id = setInterval(() => setTick((t) => t + 1), 1000);
-    return () => clearInterval(id);
-  }, [showStatusLine]);
-  // ponytail: duration derived from tick counter, stable across renders
-  const duration = startedAtRef.current
-    ? Math.max(1, Math.round((Date.now() - startedAtRef.current) / 1000))
-    : 0;
 
   // Collapse when the thinking phase ends.
   useEffect(() => {
@@ -655,7 +641,7 @@ export function ThinkingStatusLine({
     : activeStep?.statusText || "当前步骤";
   const collapsedLabel = showStatusLine
     ? `思考中 · ${collapsedDetail}`
-    : `运行步骤 · ${duration}s · ${historySteps.length} 步`;
+    : `运行步骤 · ${historySteps.length} 步`;
 
   return (
     <div style={{ marginBottom: 8 }}>
