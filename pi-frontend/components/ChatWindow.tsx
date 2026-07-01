@@ -1,8 +1,8 @@
 "use client";
 
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { AgentMessage, AssistantMessage, ToolResultMessage, SessionInfo, SessionTreeNode } from "@/lib/types";
-import { MessageView, ThinkingStatusLine, deriveSteps, type Step } from "./MessageView";
+import type { AgentMessage, AssistantMessage, ToolResultMessage, CustomMessage, SessionInfo, SessionTreeNode } from "@/lib/types";
+import { MessageView, ThinkingStatusLine, deriveSteps, deriveStepFromCustomMessage, type Step } from "./MessageView";
 
 import { ChatInput, type ChatInputHandle, type AttachedImage } from "./ChatInput";
 import { ChatMinimap, useMessageRefs } from "./ChatMinimap";
@@ -193,24 +193,40 @@ const ChatWindow = memo(function ChatWindow({ session, newSessionCwd, onAgentEnd
     return map;
   }, [renderMessages]);
 
+  const lastUserIdx = useMemo(() => {
+    for (let i = renderMessages.length - 1; i >= 0; i--) {
+      if (renderMessages[i].role === "user") return i;
+    }
+    return -1;
+  }, [renderMessages]);
+
+  const pendingRunSteps = useMemo(() => {
+    const steps: Step[] = [];
+    for (let i = Math.max(0, lastUserIdx + 1); i < renderMessages.length; i++) {
+      const msg = renderMessages[i];
+      if (msg.role === "assistant") {
+        steps.push(...deriveSteps((msg as AssistantMessage).content ?? [], toolResultsMap));
+      } else if (msg.role === "custom") {
+        const customStep = deriveStepFromCustomMessage(msg as CustomMessage);
+        if (customStep) steps.push(customStep);
+      }
+    }
+    return steps;
+  }, [lastUserIdx, renderMessages, toolResultsMap]);
+
   const displayItems = useMemo(() => {
     type DisplayItem = { msg: AgentMessage; idx: number; runSteps?: Step[] };
     const items: DisplayItem[] = [];
     let assistantCandidate: { msg: AssistantMessage; idx: number } | null = null;
-    let turnSteps: Step[] = [];
 
     const flushAssistant = () => {
-      if (!assistantCandidate) {
-        turnSteps = [];
-        return;
-      }
+      if (!assistantCandidate) return;
       items.push({
         msg: assistantCandidate.msg,
         idx: assistantCandidate.idx,
-        runSteps: turnSteps.length > 0 ? [...turnSteps] : undefined,
+        runSteps: pendingRunSteps.length > 0 ? [...pendingRunSteps] : undefined,
       });
       assistantCandidate = null;
-      turnSteps = [];
     };
 
     for (let i = 0; i < renderMessages.length; i++) {
@@ -221,7 +237,6 @@ const ChatWindow = memo(function ChatWindow({ session, newSessionCwd, onAgentEnd
         continue;
       }
       if (msg.role === "custom") {
-        flushAssistant();
         if (msg.display !== false) items.push({ msg, idx: i });
         continue;
       }
@@ -230,15 +245,13 @@ const ChatWindow = memo(function ChatWindow({ session, newSessionCwd, onAgentEnd
 
       const assistant = msg as AssistantMessage;
       const steps = deriveSteps(assistant.content ?? [], toolResultsMap);
-      if (steps.length > 0) turnSteps.push(...steps);
-
       if (hasAssistantText(msg) || isStreamingMsg(msg) || steps.length > 0) {
         assistantCandidate = { msg: assistant, idx: i };
       }
     }
     flushAssistant();
     return items;
-  }, [isStreamingMsg, renderMessages, toolResultsMap]);
+  }, [isStreamingMsg, pendingRunSteps, renderMessages, toolResultsMap]);
 
   const minimapMessages = useMemo(
     () => displayItems
@@ -247,13 +260,6 @@ const ChatWindow = memo(function ChatWindow({ session, newSessionCwd, onAgentEnd
     [displayItems],
   );
   const messageRefs = useMessageRefs(minimapMessages.length);
-
-  const lastUserIdx = useMemo(() => {
-    for (let i = renderMessages.length - 1; i >= 0; i--) {
-      if (renderMessages[i].role === "user") return i;
-    }
-    return -1;
-  }, [renderMessages]);
 
   const isEmptyNew = isNew && renderMessages.length === 0 && !isStreaming && !agentRunning;
 
@@ -469,8 +475,8 @@ const ChatWindow = memo(function ChatWindow({ session, newSessionCwd, onAgentEnd
             {/* Standalone status line before the first streaming message arrives */}
             {agentRunning && !currentStreamingMessageId && (
               <ThinkingStatusLine
-                steps={[]}
-                runSteps={undefined}
+                steps={pendingRunSteps}
+                runSteps={pendingRunSteps.length > 0 ? pendingRunSteps : undefined}
                 isStreaming={false}
                 agentRunning={true}
                 finalOutputStarted={false}

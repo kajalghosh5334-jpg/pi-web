@@ -79,6 +79,7 @@ const PROVIDER_ICONS: Record<string, { Icon: IconComponent; hasColor: boolean }>
   "perplexity":             { Icon: PerplexityColorIcon,  hasColor: true },
   "together":               { Icon: TogetherColorIcon,    hasColor: true },
   "grok":                   { Icon: GrokIcon,             hasColor: false },
+  "stepfun":                { Icon: OpenAIIcon,           hasColor: false },
 };
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -250,6 +251,7 @@ const PROFILE_HINTS = [
   { id: "memory-curator", label: "Memory" },
 ] as const;
 const AGGREGATOR_PRESETS = [
+  { id: "stepfun", name: "StepFun", baseUrl: "https://api.stepfun.com/v1", api: "openai-completions" },
   { id: "openrouter", name: "OpenRouter", baseUrl: "https://openrouter.ai/api/v1", api: "openai-completions" },
   { id: "siliconflow", name: "SiliconFlow", baseUrl: "https://api.siliconflow.cn/v1", api: "openai-completions" },
   { id: "aihubmix", name: "AiHubMix", baseUrl: "https://aihubmix.com/v1", api: "openai-completions" },
@@ -257,6 +259,7 @@ const AGGREGATOR_PRESETS = [
   { id: "together", name: "Together", baseUrl: "https://api.together.xyz/v1", api: "openai-completions" },
   { id: "custom-openai-compatible", name: "OpenAI-compatible", baseUrl: "https://api.example.com/v1", api: "openai-completions" },
 ] as const;
+
 const CAPABILITY_TEST_SUITE_VERSION = "model-capability-v1";
 const CAPABILITY_DIMENSIONS = [
   { id: "coding", label: "代码生成能力" },
@@ -506,6 +509,30 @@ function normalizeModelCapabilities(model: ModelEntry): ModelEntry {
   return { ...model, capabilities: capabilities.length ? capabilities : undefined };
 }
 
+function defaultPresetModels(preset: typeof AGGREGATOR_PRESETS[number]): ModelEntry[] {
+  if (preset.id === "stepfun") {
+    return [
+      normalizeModelCapabilities({
+        id: "step-1o-turbo-vision",
+        name: "Step-1o Turbo Vision",
+        role: "strong",
+        input: ["text", "image"],
+        contextWindow: 32768,
+        maxTokens: 8192,
+      }),
+      normalizeModelCapabilities({
+        id: "step-image-edit-2",
+        name: "Step Image Edit 2",
+        role: "weak",
+        output: ["image"],
+        capabilities: ["image-generation"],
+        routingNotes: "Use the built-in generate_image tool for actual StepFun image generation.",
+      }),
+    ];
+  }
+  return [normalizeModelCapabilities({ id: "", role: "weak", capabilities: ["classification", "summarization"] })];
+}
+
 function modelKey(providerName: string, modelId: string): string {
   return `${providerName}/${modelId}`;
 }
@@ -513,7 +540,8 @@ function modelKey(providerName: string, modelId: string): string {
 function isStrongEligibleModel(providerName: string, modelId: string): boolean {
   const text = `${providerName} ${modelId}`.toLowerCase();
   return /\b(?:openai|anthropic|gpt-|chatgpt|o1|o3|o4|claude|opus|sonnet)\b/.test(text)
-    || /(?:^|[/:\s-])(?:gpt|o[134])[-\d]/.test(text);
+    || /(?:^|[/:\s-])(?:gpt|o[134])[-\d]/.test(text)
+    || /\bstepfun\b|step-1o|step-3/.test(text);
 }
 
 function availableKey(providerName: string, modelId: string): string {
@@ -589,6 +617,7 @@ function resultGlyph(result: CapabilityResult): string {
 }
 
 function profileActivityLabel(event: LedgerEvent): string {
+  const eventType = event.type ?? "event";
   const typeLabel: Record<string, string> = {
     capability_probe_started: "Guide AI profile started",
     capability_probe_case_started: "Evidence lookup started",
@@ -596,7 +625,7 @@ function profileActivityLabel(event: LedgerEvent): string {
     capability_probe_finished: "Guide AI profile updated",
   };
   return [
-    typeLabel[event.type] ?? event.type,
+    typeLabel[eventType] ?? eventType,
     event.stage ? dimensionLabel(event.stage) : null,
     event.status,
   ].filter(Boolean).join(" · ");
@@ -1334,6 +1363,7 @@ function ModelDetail({
                     label={capability?.label ?? capabilityId}
                     active
                     disabled
+                    onClick={() => {}}
                     title="Derived from model fields"
                   />
                 );
@@ -2422,7 +2452,7 @@ export function ModelsConfig({ cwd, onClose, onOpenGuide }: { cwd?: string | nul
         [finalName]: {
           api: preset.api,
           baseUrl: preset.baseUrl,
-          models: [normalizeModelCapabilities({ id: "", role: "weak", capabilities: ["classification", "summarization"] })],
+          models: defaultPresetModels(preset),
         },
       },
     }));

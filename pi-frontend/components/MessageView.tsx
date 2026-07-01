@@ -2,6 +2,7 @@
 
 import { memo, useState, useEffect, useMemo, useRef } from "react";
 import { MarkdownBody } from "./MarkdownBody";
+import { isCommentaryTextBlock } from "@/lib/normalize";
 import type {
   AgentMessage,
   UserMessage,
@@ -12,6 +13,7 @@ import type {
   ImageContent,
   ToolCallContent,
   ThinkingContent,
+  CustomMessage,
 } from "@/lib/types";
 
 interface Props {
@@ -344,7 +346,7 @@ function AssistantMessageView({
   const [hovered, setHovered] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  const resultBlocks = blocks.filter((b): b is TextContent => b.type === "text" && !!stripThinkingTags(b.text));
+  const resultBlocks = blocks.filter((b): b is TextContent => b.type === "text" && !isCommentaryTextBlock(b) && !!stripThinkingTags(b.text));
   const textContent = resultBlocks
     .map((b) => stripThinkingTags(b.text))
     .join("\n");
@@ -436,6 +438,7 @@ function AssistantMessageView({
 }
 
 function TextBlock({ block, isStreaming }: { block: TextContent; isStreaming?: boolean }) {
+  if (isCommentaryTextBlock(block)) return null;
   const text = stripThinkingTags(block.text);
   if (!text) return null;
   return <MarkdownBody isStreaming={isStreaming}>{text}</MarkdownBody>;
@@ -455,6 +458,31 @@ function firstSentence(text: string): string {
   return s;
 }
 
+function customMessageText(message: CustomMessage): string {
+  if (typeof message.content === "string") return stripThinkingTags(message.content);
+  return message.content
+    .filter((block): block is TextContent => block.type === "text")
+    .map((block) => stripThinkingTags(block.text))
+    .filter(Boolean)
+    .join("\n")
+    .trim();
+}
+
+export function deriveStepFromCustomMessage(message: CustomMessage): Step | null {
+  if (message.display === false) return null;
+  if (message.customType === "branch_summary") return null;
+  const text = customMessageText(message);
+  if (!text) return null;
+  const statusText = firstSentence(text) || text.trim().replace(/\s+/g, " ").slice(0, 100);
+  if (!statusText) return null;
+  return {
+    type: "status",
+    statusText,
+    summary: text.trim().replace(/\s+/g, " "),
+    full: text,
+  };
+}
+
 // ponytail: some providers stream tool arguments as thinking text before the
 // toolCall block arrives; never show paths/json/"no output" in the status line.
 function isToolLikeFragment(text: string): boolean {
@@ -469,7 +497,7 @@ function isToolLikeFragment(text: string): boolean {
 }
 
 export interface Step {
-  type: "thinking" | "tool_call";
+  type: "thinking" | "tool_call" | "status";
   statusText: string; // shown in the single-node status line while streaming
   summary: string;    // shown in the collapsed history list
   full: string;       // shown when a history entry is expanded
@@ -500,6 +528,19 @@ export function deriveSteps(
         statusText: "调用工具：" + tc.toolName,
         summary: "工具调用：" + tc.toolName,
         full: `工具：${tc.toolName}\n状态：${status}`,
+      });
+    } else if (b.type === "text") {
+      const textBlock = b as TextContent;
+      if (!isCommentaryTextBlock(textBlock)) continue;
+      const text = stripThinkingTags(textBlock.text);
+      if (!text) continue;
+      const statusText = firstSentence(text) || text.trim().replace(/\s+/g, " ").slice(0, 100);
+      if (!statusText) continue;
+      steps.push({
+        type: "status",
+        statusText,
+        summary: text.trim().replace(/\s+/g, " "),
+        full: text,
       });
     }
   }
@@ -575,7 +616,7 @@ export function ThinkingStatusLine({
     }
 
     const currentStep = steps[steps.length - 1] ?? null;
-    const currentId = currentStep ? `${steps.length - 1}-${currentStep.type}` : "";
+    const currentId = currentStep ? `${steps.length - 1}-${currentStep.type}-${currentStep.statusText}` : "";
 
     if (!currentStep) {
       animateTo("思考中…");
@@ -583,7 +624,11 @@ export function ThinkingStatusLine({
       return;
     }
 
-    const placeholder = currentStep.type === "thinking" ? "思考中…" : "调用工具…";
+    const placeholder = currentStep.type === "thinking"
+      ? "思考中…"
+      : currentStep.type === "tool_call"
+        ? "调用工具…"
+        : "处理中…";
     const targetText = currentStep.statusText || placeholder;
 
     if (currentId !== currentIdRef.current) {
@@ -601,9 +646,13 @@ export function ThinkingStatusLine({
   if (!showStatusLine && historySteps.length === 0) return null;
 
   const canExpand = historySteps.length > 0;
-  const collapsedDetail = displayText && displayText !== "思考中…" && displayText !== "调用工具…"
+  const activeStep = showStatusLine ? (steps[steps.length - 1] ?? null) : null;
+  const activeHistoryIndex = activeStep
+    ? historySteps.findLastIndex((step) => step.type === activeStep.type && step.statusText === activeStep.statusText && step.full === activeStep.full)
+    : -1;
+  const collapsedDetail = displayText && !["思考中…", "调用工具…", "处理中…"].includes(displayText)
     ? displayText
-    : "当前步骤";
+    : activeStep?.statusText || "当前步骤";
   const collapsedLabel = showStatusLine
     ? `思考中 · ${collapsedDetail}`
     : `运行步骤 · ${duration}s · ${historySteps.length} 步`;
@@ -684,6 +733,7 @@ export function ThinkingStatusLine({
           {historySteps.map((step, i) => {
             const isOpen = openEntries.has(i);
             const isTool = step.type === "tool_call";
+            const isActive = showStatusLine && i === activeHistoryIndex;
             return (
               <div key={i} style={{ display: "flex", flexDirection: "column" }}>
                 <div
@@ -696,7 +746,7 @@ export function ThinkingStatusLine({
                       return next;
                     });
                   }}
-                  style={{ display: "flex", alignItems: "center", gap: 7, padding: "6px 2px", cursor: "pointer", color: "var(--text-muted)" }}
+                  style={{ display: "flex", alignItems: "center", gap: 7, padding: "6px 2px", cursor: "pointer", color: isActive ? "var(--accent)" : "var(--text-muted)" }}
                 >
                   <span
                     style={{
@@ -704,7 +754,7 @@ export function ThinkingStatusLine({
                       textAlign: "center",
                       fontSize: 11,
                       flex: "0 0 auto",
-                      color: "var(--text-muted)",
+                      color: isActive ? "var(--accent)" : "var(--text-muted)",
                     }}
                   >
                     {isTool ? "⚙" : "◆"}
@@ -718,6 +768,7 @@ export function ThinkingStatusLine({
                       textOverflow: "ellipsis",
                       fontFamily: isTool ? "var(--font-mono)" : "inherit",
                       fontSize: isTool ? 11 : 11.5,
+                      fontWeight: isActive ? 700 : 400,
                     }}
                   >
                     {step.summary}

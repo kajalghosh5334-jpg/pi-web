@@ -248,7 +248,7 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
       const res = await fetch(url);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const d = await res.json() as { context: { messages: AgentMessage[]; entryIds: string[] } };
-      setMessages(d.context.messages);
+      setMessages(d.context.messages.map(normalizeToolCalls));
       setEntryIds(d.context.entryIds ?? []);
     } catch (e) {
       console.error("Failed to load context:", e);
@@ -378,7 +378,8 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
         if (startMsg) {
           const id = String(++streamingIdCounter.current);
           setCurrentStreamingMessageId(id);
-          setMessages((prev) => [...prev, { ...normalizeToolCalls(startMsg as AgentMessage), role: "assistant", _streamId: id } as unknown as AgentMessage]);
+          const normalized = normalizeToolCalls(startMsg as AgentMessage) as AgentMessage & { _streamId?: string };
+          setMessages((prev) => [...prev, { ...normalized, _streamId: id } as unknown as AgentMessage]);
         }
         setAgentPhase(null);
         break;

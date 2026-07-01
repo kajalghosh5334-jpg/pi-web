@@ -54,16 +54,19 @@ const WORKFLOW_TEMPLATE_LABELS: Record<string, string> = {
 
 function formatRelativeTime(dateStr: string): string {
   const date = new Date(dateStr);
-  const now = new Date();
-  const diff = now.getTime() - date.getTime();
+  const diff = Date.now() - date.getTime();
+  if (Number.isNaN(diff) || diff < 0) return "now";
   const mins = Math.floor(diff / 60000);
   const hours = Math.floor(diff / 3600000);
   const days = Math.floor(diff / 86400000);
-  if (mins < 1) return "just now";
-  if (mins < 60) return `${mins}m ago`;
-  if (hours < 24) return `${hours}h ago`;
-  if (days < 7) return `${days}d ago`;
-  return date.toLocaleDateString();
+  const months = Math.floor(days / 30);
+  const years = Math.floor(days / 365);
+  if (mins < 1) return "now";
+  if (mins < 60) return `${mins}m`;
+  if (hours < 24) return `${hours}h`;
+  if (days < 30) return `${days}d`;
+  if (months < 12) return `${months}mo`;
+  return `${years}y`;
 }
 
 function getRecentCwds(sessions: SessionInfo[]): string[] {
@@ -950,7 +953,7 @@ function SessionItem({
   }, [session.id, title, onDeleted, onChanged]);
 
   return (
-    <div style={{ marginBottom: 6 }}>
+    <div style={{ marginBottom: 3 }}>
       <div
         role="button"
         tabIndex={0}
@@ -966,11 +969,11 @@ function SessionItem({
         style={{
           display: "flex",
           alignItems: "center",
-          gap: 8,
-          minHeight: 54,
-          paddingLeft: 12 + depth * 14,
-          paddingRight: 10,
-          borderRadius: 16,
+          gap: 4,
+          minHeight: 40,
+          paddingLeft: 2 + depth * 14,
+          paddingRight: 8,
+          borderRadius: 14,
           background: isSelected ? "color-mix(in srgb, var(--accent) 10%, var(--bg))" : hovered ? "color-mix(in srgb, var(--bg-hover) 85%, var(--bg))" : "transparent",
           boxShadow: isSelected ? "var(--shell-shadow-sm)" : "none",
           cursor: renaming ? "default" : "pointer",
@@ -993,7 +996,7 @@ function SessionItem({
           <div style={{ width: 20, flexShrink: 0 }} />
         )}
 
-        <div style={{ minWidth: 0, flex: 1 }}>
+        <div style={{ minWidth: 0, flex: 1, marginLeft: "-2ch" }}>
           {renaming ? (
             <input
               ref={inputRef}
@@ -1006,7 +1009,7 @@ function SessionItem({
               }}
               style={{
                 width: "100%",
-                height: 30,
+                height: 28,
                 borderRadius: 10,
                 border: "1px solid color-mix(in srgb, var(--accent) 35%, transparent)",
                 background: "var(--bg)",
@@ -1016,15 +1019,14 @@ function SessionItem({
               }}
             />
           ) : (
-            <>
-              <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0 }}>
+              <span style={{ flexShrink: 0, fontSize: 10.5, color: "var(--text-dim)", width: 28, textAlign: "left" }}>
+                {formatRelativeTime(session.modified)}
+              </span>
+              <div style={{ minWidth: 0, flex: 1, fontSize: 12, fontWeight: 700, color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                 {title}
               </div>
-              <div className="session-row-meta" style={{ marginTop: 2, display: "flex", gap: 8, fontSize: 11, color: "var(--text-dim)" }}>
-                <span>{formatRelativeTime(session.modified)}</span>
-                <span>{session.messageCount} msgs</span>
-              </div>
-            </>
+            </div>
           )}
         </div>
 
@@ -1080,7 +1082,7 @@ function SessionItem({
       </div>
 
       {expanded ? (
-        <div style={{ marginTop: 4, marginLeft: 44 + depth * 14, padding: "4px 10px 8px", borderLeft: "1px solid color-mix(in srgb, var(--shell-edge) 82%, transparent)" }}>
+        <div style={{ marginTop: 2, marginLeft: 40 + depth * 14, padding: "3px 8px 6px", borderLeft: "1px solid color-mix(in srgb, var(--shell-edge) 82%, transparent)" }}>
           <div style={{ display: "grid", gap: 8, fontSize: 11, color: "var(--text-muted)", lineHeight: 1.6 }}>
             <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
               <span>Directory</span>
