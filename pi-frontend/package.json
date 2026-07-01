@@ -8,6 +8,8 @@
   },
   "files": [
     "bin",
+    "assets",
+    "scripts",
     ".next",
     "!.next/cache",
     "!.next/dev",
@@ -22,6 +24,10 @@
     "dev:turbo": "next dev -p 30141 --turbopack",
     "build": "next build --webpack",
     "start": "next start -p 30141",
+    "app:install": "node scripts/install-app.mjs",
+    "icons:generate": "node scripts/generate-icons.mjs",
+    "app:install:mac": "node scripts/install-macos-app.mjs",
+    "app:install:win": "node scripts/install-windows-shortcut.mjs",
     "lint": "eslint .",
     "smoke:api": "node scripts/smoke-api.mjs",
     "release": "npm version patch --no-git-tag-version && npm run build && npm publish --access public"

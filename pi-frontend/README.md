@@ -29,6 +29,14 @@ npm install
 npm run dev   # port 30141
 ```
 
+## Local Launcher
+
+```bash
+npm run app:install
+```
+
+This creates a clickable launcher for your platform. On macOS it makes a `.app`; on Windows it makes a shortcut. Clicking it starts Pi Web locally and opens it in the browser.
+
 ### With Multi-Agent Backend
 
 For the full Multi-Agent system, also start the backend:
