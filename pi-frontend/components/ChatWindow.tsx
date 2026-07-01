@@ -221,10 +221,11 @@ const ChatWindow = memo(function ChatWindow({ session, newSessionCwd, onAgentEnd
 
     const flushAssistant = () => {
       if (!assistantCandidate) return;
+      const isCurrentRunAssistant = assistantCandidate.idx > lastUserIdx;
       items.push({
         msg: assistantCandidate.msg,
         idx: assistantCandidate.idx,
-        runSteps: pendingRunSteps.length > 0 ? [...pendingRunSteps] : undefined,
+        runSteps: isCurrentRunAssistant && (agentRunning || pendingRunSteps.length > 0) ? [...pendingRunSteps] : undefined,
       });
       assistantCandidate = null;
     };
@@ -251,7 +252,15 @@ const ChatWindow = memo(function ChatWindow({ session, newSessionCwd, onAgentEnd
     }
     flushAssistant();
     return items;
-  }, [isStreamingMsg, pendingRunSteps, renderMessages, toolResultsMap]);
+  }, [agentRunning, isStreamingMsg, lastUserIdx, pendingRunSteps, renderMessages, toolResultsMap]);
+
+  const hasAttachedRunStatusLine = useMemo(() => {
+    return displayItems.some((item) => {
+      if (item.msg.role !== "assistant" || item.runSteps === undefined) return false;
+      if (item.runSteps.length > 0 || isStreamingMsg(item.msg)) return true;
+      return deriveSteps((item.msg as AssistantMessage).content ?? [], toolResultsMap).length > 0;
+    });
+  }, [displayItems, isStreamingMsg, toolResultsMap]);
 
   const minimapMessages = useMemo(
     () => displayItems
@@ -473,7 +482,7 @@ const ChatWindow = memo(function ChatWindow({ session, newSessionCwd, onAgentEnd
 
 
             {/* Standalone status line before the first streaming message arrives */}
-            {agentRunning && !currentStreamingMessageId && (
+            {agentRunning && !currentStreamingMessageId && !hasAttachedRunStatusLine && (
               <ThinkingStatusLine
                 steps={pendingRunSteps}
                 runSteps={pendingRunSteps.length > 0 ? pendingRunSteps : undefined}
