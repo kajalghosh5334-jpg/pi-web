@@ -7,6 +7,7 @@ const BACKEND_URL = process.env.PI_BACKEND_URL || "http://127.0.0.1:3000";
 const GENERIC_WORKFLOW_PROFILE_IDS = [
   "weak-research-extractor",
   "weak-structured-operator",
+  "weak-test-enumerator",
   "classification-router",
   "structured-writeback-operator",
   "content-draft-producer",
@@ -20,7 +21,7 @@ const GENERIC_WORKFLOW_PROFILE_IDS = [
   "monitor-alert-operator",
 ];
 
-type ProfileRecord = { id?: string; name?: string };
+type ProfileRecord = { id?: string; name?: string; projectConfig?: { generatedStatus?: string; profileKind?: string } };
 type WorkflowRecord = {
   leadProfileId?: string;
   tasks?: Array<{ profileId?: string }>;
@@ -48,7 +49,12 @@ async function readLocalProfiles(error: string) {
   const allowed = workflowProfileIds(workflows);
   return {
     profiles: Object.values(profiles)
-      .filter((profile) => profile?.id && allowed.has(profile.id))
+      .filter((profile) => {
+        if (!profile?.id) return false;
+        if (allowed.has(profile.id)) return true;
+        if (profile.id.startsWith("trained-case-")) return true;
+        return profile.projectConfig?.generatedStatus === "trained" && profile.projectConfig?.profileKind === "task-specific";
+      })
       .sort((a, b) => String(a.name || a.id).localeCompare(String(b.name || b.id))),
     degraded: true,
     source: "local-agent-profiles-json",

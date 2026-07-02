@@ -1,8 +1,8 @@
 {
   "generatedAt": "2026-07-02T02:52:39.479Z",
-  "rule": "keep profiles referenced by current workflows plus generic workflow node profiles",
+  "rule": "keep profiles referenced by current workflows plus generic workflow node profiles plus trained task profiles",
   "before": 54,
-  "after": 29,
+  "after": 33,
   "kept": [
     "classification-router",
     "content-draft-producer",
@@ -19,8 +19,11 @@
     "structured-writeback-operator",
     "support-kb-responder",
     "trained-case-job-background-strategy-001-2026-07-01-2",
+    "trained-case-job-company-extract-001-2026-07-01",
     "trained-case-job-company-gather-001-2026-07-01-2",
+    "trained-case-job-experience-standardize-001-2026-07-01-2",
     "trained-case-job-jd-analyze-001-2026-07-01-2",
+    "trained-case-job-report-render-001-2026-07-01",
     "trained-case-job-resume-draft-001-2026-07-01",
     "trained-case-job-resume-review-001-2026-07-01",
     "trained-case-media-account-strategy-001-2026-07-01-3",
@@ -32,7 +35,8 @@
     "trained-case-media-monitor-alert-001-2026-07-01",
     "trained-case-media-title-draft-001-2026-07-01-3",
     "weak-research-extractor",
-    "weak-structured-operator"
+    "weak-structured-operator",
+    "weak-test-enumerator"
   ],
   "removed": [
     "agent-coach",
@@ -55,11 +59,15 @@
     "generated-standardize-2026-07-01",
     "generated-strategize-plan-2026-07-01-6",
     "memory-curator",
-    "session-memory",
+    "session-memory"
+  ],
+  "missingAllowedProfiles": [],
+  "updatedAt": "2026-07-02T10:52:27.453Z",
+  "restored": [
     "trained-case-job-company-extract-001-2026-07-01",
     "trained-case-job-experience-standardize-001-2026-07-01-2",
     "trained-case-job-report-render-001-2026-07-01",
     "weak-test-enumerator"
   ],
-  "missingAllowedProfiles": []
+  "protectionRule": "Profiles with id prefix trained-case-* or projectConfig.generatedStatus=trained + profileKind=task-specific must not be pruned even when not yet referenced by a workflow. Core generic profiles required by validation, including weak-test-enumerator, must also be preserved."
 }

@@ -294,6 +294,7 @@ function saveWorkflows(workflows) {
 const GENERIC_WORKFLOW_PROFILE_IDS = [
   "weak-research-extractor",
   "weak-structured-operator",
+  "weak-test-enumerator",
   "classification-router",
   "structured-writeback-operator",
   "content-draft-producer",
@@ -321,7 +322,12 @@ function workflowProfileIds(workflows = loadWorkflows()) {
 function workflowVisibleProfiles(profiles = loadAgentProfiles(), workflows = loadWorkflows()) {
   const allowed = workflowProfileIds(workflows);
   return Object.values(profiles)
-    .filter((profile) => profile?.id && allowed.has(profile.id))
+    .filter((profile) => {
+      if (!profile?.id) return false;
+      if (allowed.has(profile.id)) return true;
+      if (String(profile.id).startsWith("trained-case-")) return true;
+      return profile.projectConfig?.generatedStatus === "trained" && profile.projectConfig?.profileKind === "task-specific";
+    })
     .sort((a, b) => String(a.name || a.id).localeCompare(String(b.name || b.id)));
 }
 

@@ -2694,6 +2694,107 @@
       "updatedAt": 1782950419383
     }
   },
+  "trained-case-job-company-extract-001-2026-07-01": {
+    "id": "trained-case-job-company-extract-001-2026-07-01",
+    "name": "公司字段抽取 专用 Profile",
+    "match": [
+      "trained-case:job-company-extract-001",
+      "workflow:WF-3",
+      "node-type:Extract",
+      "公司字段抽取",
+      "structured-writeback-operator"
+    ],
+    "defaultModel": "opencode-go/deepseek-v4-flash",
+    "skills": [
+      "output-spec"
+    ],
+    "availableSkills": [
+      "output-spec",
+      "artifact-storage"
+    ],
+    "collaborationProtocol": "专用于已调试任务：公司字段抽取。\n负责把非结构化文本抽取为结构化字段、做格式校验和生成写回 payload；遇到必填字段缺失或高风险承诺时转人工。\n必须复用经验沉淀的成功模式，并保留风险、证据和待确认项。",
+    "projectConfig": {
+      "modelTier": "weak",
+      "pattern": "extract-writeback",
+      "roleInWorkflow": "writeback-operator",
+      "preferredTasks": [
+        "结构化字段抽取",
+        "原文锚点保留",
+        "字段格式校验",
+        "写回 payload 生成",
+        "失败重试建议"
+      ],
+      "escalateWhen": [
+        "必填字段缺失",
+        "日期或枚举值非法",
+        "原文锚点不足",
+        "写回会覆盖已有高价值字段"
+      ],
+      "qualityBar": "必须输出 schema JSON、validation_errors、source_spans、write_payload 和 idempotency_key。",
+      "generated": true,
+      "generatedStatus": "trained",
+      "routingEnabled": false,
+      "profileKind": "task-specific",
+      "workflowId": "WF-3",
+      "sourceNodeType": "Extract",
+      "sourceProfileId": "structured-writeback-operator",
+      "trainingRunId": "2026-07-01T20-53-01-930Z",
+      "trainingCaseId": "job-company-extract-001",
+      "trainingScore": 95,
+      "trainingArtifactDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-53-01-930Z",
+      "nodeOutputArtifact": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-53-01-930Z/node_outputs/12-job-company-extract-001.md",
+      "nodeContract": {
+        "purpose": "从给定材料抽取字段并保留原文锚点。",
+        "output": [
+          "extracted_fields: 每项含 field, value, source_anchor, confidence",
+          "missing_required_fields",
+          "validation_errors",
+          "handoff_payload"
+        ],
+        "redLines": [
+          "不得无来源补字段",
+          "不确定字段必须标记 confidence=low 或 missing",
+          "必须保留原文锚点或来源位置"
+        ]
+      },
+      "profileBoundary": "Profile only defines node-local behavior, guardrails, input scope, output expectations, and escalation conditions. Runtime workflow data passing is injected by monitor-server.js via task deps and artifact registry, not by this profile."
+    },
+    "systemPromptPatch": "你是“公司字段抽取”专用节点 Profile。\n节点类型：Extract。\n节点职责：从给定材料抽取字段并保留原文锚点。\n红线：不得无来源补字段；不确定字段必须标记 confidence=low 或 missing；必须保留原文锚点或来源位置\n经验沉淀：unknown_fields 作为 extracted_fields 的一项非标准结构，建议作为顶层数组字段以提高下游兼容性\n只完成当前节点；缺失信息标记 missing/unknown/unverified；不得补造。",
+    "experience": 1,
+    "successes": 1,
+    "failures": 0,
+    "recentTasks": [
+      {
+        "name": "公司字段抽取",
+        "taskId": "job-company-extract-001",
+        "success": true,
+        "timestamp": 1782941004553,
+        "modelUsed": "opencode-go/deepseek-v4-flash",
+        "score": 95,
+        "status": "training_case_profile",
+        "outputArtifact": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-53-01-930Z/node_outputs/12-job-company-extract-001.md"
+      }
+    ],
+    "runHistory": [],
+    "savedExperiences": [
+      {
+        "taskId": "job-company-extract-001",
+        "taskName": "公司字段抽取",
+        "lesson": "unknown_fields 作为 extracted_fields 的一项非标准结构，建议作为顶层数组字段以提高下游兼容性",
+        "skills": [
+          "output-spec"
+        ],
+        "model": "opencode-go/deepseek-v4-flash",
+        "artifactId": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-53-01-930Z/node_outputs/12-job-company-extract-001.md",
+        "debugValidated": true,
+        "score": 95,
+        "savedAt": 1782941004553
+      }
+    ],
+    "sourceProfileId": "structured-writeback-operator",
+    "generatedAt": 1782941004553,
+    "generatedBy": "node-profile-training"
+  },
   "trained-case-job-company-gather-001-2026-07-01-2": {
     "id": "trained-case-job-company-gather-001-2026-07-01-2",
     "name": "公司调研资料搬运 专用 Profile",
@@ -2938,6 +3039,108 @@
       "sampleCount": 4,
       "updatedAt": 1782950269180
     }
+  },
+  "trained-case-job-experience-standardize-001-2026-07-01-2": {
+    "id": "trained-case-job-experience-standardize-001-2026-07-01-2",
+    "name": "求职经历分段标准化 专用 Profile",
+    "match": [
+      "trained-case:job-experience-standardize-001",
+      "workflow:WF-2",
+      "node-type:Standardize",
+      "求职经历分段标准化",
+      "weak-structured-operator"
+    ],
+    "defaultModel": "opencode-go/deepseek-v4-flash",
+    "skills": [
+      "output-spec"
+    ],
+    "availableSkills": [
+      "output-spec",
+      "artifact-storage"
+    ],
+    "collaborationProtocol": "专用于已调试任务：求职经历分段标准化。\n执行格式明确、低歧义、可校验的批量任务；严格遵守输入 schema 和输出 schema，不自行改变目标或引入新方案。\n必须复用经验沉淀的成功模式，并保留风险、证据和待确认项。",
+    "projectConfig": {
+      "modelTier": "weak",
+      "roleInWeakStrongWorkflow": "operator",
+      "preferredTasks": [
+        "格式转换",
+        "字段抽取",
+        "模板化初稿",
+        "批量改写",
+        "简单机械修改"
+      ],
+      "escalateWhen": [
+        "规则之间冲突",
+        "schema 无法表达真实需求",
+        "需要跨模块架构判断",
+        "输出无法用规则验证"
+      ],
+      "qualityBar": "必须按指定 schema 输出；如输入缺字段，显式列出缺失项，不得猜测补全关键事实。",
+      "generated": true,
+      "generatedStatus": "trained",
+      "routingEnabled": false,
+      "profileKind": "task-specific",
+      "workflowId": "WF-2",
+      "sourceNodeType": "Standardize",
+      "sourceProfileId": "weak-structured-operator",
+      "trainingRunId": "2026-07-01T23-21-23-938Z",
+      "trainingCaseId": "job-experience-standardize-001",
+      "trainingScore": 100,
+      "trainingArtifactDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T23-21-23-938Z",
+      "nodeOutputArtifact": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T23-21-23-938Z/node_outputs/01-job-experience-standardize-001.md",
+      "nodeContract": {
+        "purpose": "把非结构化输入转换成统一 schema，不做业务判断。",
+        "output": [
+          "normalized_items: 标准化条目列表",
+          "field_mapping: 原始字段到标准字段的映射",
+          "missing_fields",
+          "format_warnings",
+          "handoff_summary: 只概括标准化结果，不给业务策略建议"
+        ],
+        "redLines": [
+          "不得猜测缺失字段",
+          "不得改变原始事实含义",
+          "不得加入业务判断或策略建议",
+          "技术栈/technologies 只能放原文明确出现的语言、工具、框架或产品名；功能描述放入 tasks 或 evidence_gap",
+          "缺失数组使用 []，不要把 missing 解释文本塞进数组元素"
+        ]
+      }
+    },
+    "systemPromptPatch": "你是“求职经历分段标准化”专用节点 Profile。\n节点类型：Standardize。\n节点职责：把非结构化输入转换成统一 schema，不做业务判断。\n红线：不得猜测缺失字段；不得改变原始事实含义；不得加入业务判断或策略建议；技术栈/technologies 只能放原文明确出现的语言、工具、框架或产品名；功能描述放入 tasks 或 evidence_gap；缺失数组使用 []，不要把 missing 解释文本塞进数组元素\n只完成当前节点；缺失信息标记 missing/unknown/unverified；不得补造。",
+    "experience": 1,
+    "successes": 1,
+    "failures": 0,
+    "recentTasks": [
+      {
+        "name": "求职经历分段标准化",
+        "taskId": "job-experience-standardize-001",
+        "success": true,
+        "timestamp": 1782948256424,
+        "modelUsed": "opencode-go/deepseek-v4-flash",
+        "score": 100,
+        "status": "training_case_profile",
+        "outputArtifact": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T23-21-23-938Z/node_outputs/01-job-experience-standardize-001.md"
+      }
+    ],
+    "runHistory": [],
+    "savedExperiences": [
+      {
+        "taskId": "job-experience-standardize-001",
+        "taskName": "求职经历分段标准化",
+        "lesson": "通过真实任务样本，score=100",
+        "skills": [
+          "output-spec"
+        ],
+        "model": "opencode-go/deepseek-v4-flash",
+        "artifactId": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T23-21-23-938Z/node_outputs/01-job-experience-standardize-001.md",
+        "debugValidated": true,
+        "score": 100,
+        "savedAt": 1782948256425
+      }
+    ],
+    "sourceProfileId": "weak-structured-operator",
+    "generatedAt": 1782948256425,
+    "generatedBy": "node-profile-training"
   },
   "trained-case-job-jd-analyze-001-2026-07-01-2": {
     "id": "trained-case-job-jd-analyze-001-2026-07-01-2",
@@ -3221,6 +3424,106 @@
       "sampleCount": 4,
       "updatedAt": 1782950510267
     }
+  },
+  "trained-case-job-report-render-001-2026-07-01": {
+    "id": "trained-case-job-report-render-001-2026-07-01",
+    "name": "JD 匹配报告渲染 专用 Profile",
+    "match": [
+      "trained-case:job-report-render-001",
+      "workflow:WF-4",
+      "node-type:Artifact/Render",
+      "JD 匹配报告渲染",
+      "weak-structured-operator"
+    ],
+    "defaultModel": "opencode-go/deepseek-v4-flash",
+    "skills": [
+      "output-spec"
+    ],
+    "availableSkills": [
+      "output-spec",
+      "artifact-storage"
+    ],
+    "collaborationProtocol": "专用于已调试任务：JD 匹配报告渲染。\n执行格式明确、低歧义、可校验的批量任务；严格遵守输入 schema 和输出 schema，不自行改变目标或引入新方案。\n必须复用经验沉淀的成功模式，并保留风险、证据和待确认项。",
+    "projectConfig": {
+      "modelTier": "weak",
+      "preferredTasks": [
+        "格式转换",
+        "字段抽取",
+        "模板化初稿",
+        "批量改写",
+        "简单机械修改"
+      ],
+      "escalateWhen": [
+        "规则之间冲突",
+        "schema 无法表达真实需求",
+        "需要跨模块架构判断",
+        "输出无法用规则验证"
+      ],
+      "qualityBar": "必须按指定 schema 输出；如输入缺字段，显式列出缺失项，不得猜测补全关键事实。",
+      "generated": true,
+      "generatedStatus": "trained",
+      "routingEnabled": false,
+      "profileKind": "task-specific",
+      "workflowId": "WF-4",
+      "sourceNodeType": "Artifact/Render",
+      "sourceProfileId": "weak-structured-operator",
+      "trainingRunId": "2026-07-01T20-53-01-930Z",
+      "trainingCaseId": "job-report-render-001",
+      "trainingScore": 100,
+      "trainingArtifactDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-53-01-930Z",
+      "nodeOutputArtifact": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-53-01-930Z/node_outputs/16-job-report-render-001.md",
+      "nodeContract": {
+        "purpose": "把上游结构化结果渲染成人类可读产物，不新增事实。",
+        "output": [
+          "artifact_title",
+          "artifact_body",
+          "source_mapping",
+          "placeholders",
+          "render_notes"
+        ],
+        "redLines": [
+          "不得新增上游没有的事实、数字、案例或结论",
+          "不得丢失关键风险/缺口",
+          "必须保留占位符和待确认项"
+        ]
+      },
+      "profileBoundary": "Profile only defines node-local behavior, guardrails, input scope, output expectations, and escalation conditions. Runtime workflow data passing is injected by monitor-server.js via task deps and artifact registry, not by this profile."
+    },
+    "systemPromptPatch": "你是“JD 匹配报告渲染”专用节点 Profile。\n节点类型：Artifact/Render。\n节点职责：把上游结构化结果渲染成人类可读产物，不新增事实。\n红线：不得新增上游没有的事实、数字、案例或结论；不得丢失关键风险/缺口；必须保留占位符和待确认项\n只完成当前节点；缺失信息标记 missing/unknown/unverified；不得补造。",
+    "experience": 1,
+    "successes": 1,
+    "failures": 0,
+    "recentTasks": [
+      {
+        "name": "JD 匹配报告渲染",
+        "taskId": "job-report-render-001",
+        "success": true,
+        "timestamp": 1782941004566,
+        "modelUsed": "opencode-go/deepseek-v4-flash",
+        "score": 100,
+        "status": "training_case_profile",
+        "outputArtifact": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-53-01-930Z/node_outputs/16-job-report-render-001.md"
+      }
+    ],
+    "runHistory": [],
+    "savedExperiences": [
+      {
+        "taskId": "job-report-render-001",
+        "taskName": "JD 匹配报告渲染",
+        "lesson": "通过真实任务样本，score=100",
+        "skills": [
+          "output-spec"
+        ],
+        "model": "opencode-go/deepseek-v4-flash",
+        "artifactId": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-53-01-930Z/node_outputs/16-job-report-render-001.md",
+        "debugValidated": true,
+        "score": 100,
+        "savedAt": 1782941004566
+      }
+    ],
+    "sourceProfileId": "weak-structured-operator",
+    "generatedAt": 1782941004566,
+    "generatedBy": "node-profile-training"
   },
   "trained-case-job-resume-draft-001-2026-07-01": {
     "id": "trained-case-job-resume-draft-001-2026-07-01",
@@ -6848,5 +7151,53 @@
       "sampleCount": 12,
       "updatedAt": 1782805578664
     }
+  },
+  "weak-test-enumerator": {
+    "id": "weak-test-enumerator",
+    "name": "弱模型测试枚举员",
+    "match": [
+      "弱模型测试枚举",
+      "测试用例",
+      "验收用例",
+      "边界值",
+      "检查清单",
+      "常规 case",
+      "回归测试",
+      "验证步骤",
+      "负例",
+      "异常输入"
+    ],
+    "defaultModel": "opencode-go/deepseek-v4-flash",
+    "skills": [
+      "output-spec"
+    ],
+    "availableSkills": [
+      "output-spec",
+      "artifact-storage"
+    ],
+    "collaborationProtocol": "枚举常规测试、边界测试、负例和回归检查；复杂风险优先标注给强模型 reviewer，不假装覆盖了隐蔽系统性风险。",
+    "projectConfig": {
+      "modelTier": "weak",
+      "roleInWeakStrongWorkflow": "test-enumerator",
+      "preferredTasks": [
+        "常规测试枚举",
+        "边界值测试",
+        "负例输入",
+        "验收清单",
+        "回归检查步骤"
+      ],
+      "escalateWhen": [
+        "需要判断核心风险优先级",
+        "涉及安全/数据损坏/架构回归",
+        "需要跨系统因果诊断",
+        "测试失败原因不明显"
+      ],
+      "qualityBar": "每个测试项必须包含输入、操作、期望结果和覆盖风险；复杂风险标记给强模型复核。"
+    },
+    "systemPromptPatch": "你是弱模型测试枚举员。负责列出正常路径、边界值、异常输入、权限、网络、重复提交和回归检查。每个用例要有输入、步骤、期望结果、覆盖风险。不要替代强模型做最终风险裁决。",
+    "experience": 0,
+    "successes": 0,
+    "failures": 0,
+    "recentTasks": []
   }
 }
