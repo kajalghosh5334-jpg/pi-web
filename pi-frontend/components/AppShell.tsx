@@ -2126,8 +2126,28 @@ export function AppShell() {
             </div>
           ) : showPlaceholder ? (
             activeCwd ? (
-              <div style={{ height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-muted)", fontSize: 15 }}>
-                Select a session from the sidebar
+              <div style={{ height: "100%", display: "flex", alignItems: "center", justifyContent: "center", padding: 28 }}>
+                <div className="codex-card" style={{ width: "min(620px, 100%)", borderRadius: 24, padding: "24px 26px", display: "grid", gap: 18 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                    <div style={{ width: 48, height: 48, borderRadius: 16, display: "flex", alignItems: "center", justifyContent: "center", background: "color-mix(in srgb, var(--accent) 10%, var(--bg))", color: "var(--accent)", flexShrink: 0 }}>
+                      <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M4 7h16" />
+                        <path d="M4 12h10" />
+                        <path d="M4 17h7" />
+                        <path d="M16 15l3 3 3-3" />
+                      </svg>
+                    </div>
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontSize: 21, fontWeight: 850, color: "var(--text)", letterSpacing: "-0.03em", marginBottom: 5 }}>Workflow orchestration workspace</div>
+                      <div style={{ fontSize: 13, color: "var(--text-muted)", lineHeight: 1.7 }}>
+                        This project turns repeatable tasks into workflows: strong models plan, review, and judge; faster weak models handle gathering, extraction, routing, drafting, and structured writeback through reusable Profiles.
+                      </div>
+                    </div>
+                  </div>
+                  <div style={{ borderTop: "1px solid var(--border)", paddingTop: 14, fontSize: 12, color: "var(--text-muted)", lineHeight: 1.8 }}>
+                    Open a session from the sidebar to continue debugging, or switch to Workflow to compose Profile nodes into a clean multi-model execution chain.
+                  </div>
+                </div>
               </div>
             ) : (
               <div style={{ height: "100%", display: "flex", alignItems: "center", justifyContent: "center", padding: 28 }}>

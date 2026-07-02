@@ -12,6 +12,18 @@ interface AgentProfileItem {
   collaborationProtocol?: string;
 }
 
+interface SkillOption {
+  id: string;
+  description?: string;
+}
+
+interface ModelOption {
+  id: string;
+  name: string;
+  provider: string;
+  value: string;
+}
+
 interface Props {
   mode: "chat" | "workflow";
   onModeChange?: (mode: "chat" | "workflow") => void;
@@ -183,6 +195,9 @@ export function SessionSidebar({
   const [workflowCatalogDegraded, setWorkflowCatalogDegraded] = useState(false);
   const [workflowBusyId, setWorkflowBusyId] = useState<string | null>(null);
   const [profileInspector, setProfileInspector] = useState<AgentProfileItem | null>(null);
+  const [profileSavingId, setProfileSavingId] = useState<string | null>(null);
+  const [profileSkills, setProfileSkills] = useState<SkillOption[]>([]);
+  const [profileModels, setProfileModels] = useState<ModelOption[]>([]);
   const [fallbackCwd, setFallbackCwd] = useState<string | null>(selectedCwdProp ?? null);
   const restoredRef = useRef(false);
   const refreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -264,6 +279,46 @@ export function SessionSidebar({
   }, [mode, selectedWorkflowId, loadProfiles]);
 
   useEffect(() => {
+    if (!profileInspector) return;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10000);
+    const cwd = encodeURIComponent(effectiveCwd || "");
+    Promise.all([
+      fetch(`/api/skills?cwd=${cwd}`, { signal: controller.signal }).then((res) => res.json()).catch(() => ({})),
+      fetch(`/api/models?cwd=${cwd}`, { signal: controller.signal }).then((res) => res.json()).catch(() => ({})),
+    ]).then(([skillsData, modelsData]) => {
+      const nextSkills = Array.isArray(skillsData?.skills)
+        ? skillsData.skills
+            .map((skill: { name?: string; id?: string; description?: string }) => ({
+              id: skill.name || skill.id || "",
+              description: skill.description,
+            }))
+            .filter((skill: SkillOption) => skill.id)
+        : [];
+      const nextModels = Array.isArray(modelsData?.modelList)
+        ? modelsData.modelList
+            .map((model: { id?: string; name?: string; provider?: string }) => {
+              const id = model.id || "";
+              const provider = model.provider || "";
+              return id && provider ? {
+                id,
+                provider,
+                name: model.name || id,
+                value: `${provider}/${id}`,
+              } : null;
+            })
+            .filter(Boolean) as ModelOption[]
+        : [];
+      setProfileSkills(nextSkills);
+      setProfileModels(nextModels);
+    }).finally(() => clearTimeout(timeout));
+    return () => {
+      clearTimeout(timeout);
+      controller.abort();
+    };
+  }, [effectiveCwd, profileInspector]);
+
+  useEffect(() => {
     if (selectedCwdProp !== undefined) setFallbackCwd(selectedCwdProp ?? null);
   }, [selectedCwdProp]);
 
@@ -333,6 +388,26 @@ export function SessionSidebar({
     }
   }, [loadWorkflows, onSelectWorkflow, selectedWorkflowId]);
 
+  const saveProfile = useCallback(async (profileId: string, patch: Partial<AgentProfileItem>) => {
+    setProfileSavingId(profileId);
+    try {
+      const res = await fetch(`/api/agent-profiles/${encodeURIComponent(profileId)}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(patch),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data?.profile) {
+        window.alert(data?.error || "Profile 保存失败");
+        return;
+      }
+      setProfiles((prev) => prev.map((profile) => profile.id === profileId ? data.profile : profile));
+      setProfileInspector(data.profile);
+    } finally {
+      setProfileSavingId(null);
+    }
+  }, []);
+
   const currentWorkflow = useMemo(
     () => workflows.find((workflow) => workflow.id === selectedWorkflowId) ?? null,
     [workflows, selectedWorkflowId],
@@ -384,7 +459,11 @@ export function SessionSidebar({
             <div style={{ fontSize: 14, fontWeight: 850, letterSpacing: "-0.03em", color: "var(--text)", whiteSpace: "nowrap" }}>pi-multi</div>
           </div>
           {selectedWorkflowId ? (
-            <button onClick={() => onSelectWorkflow?.(null)} style={ghostButtonStyle}>Back</button>
+            <button type="button" onClick={() => onSelectWorkflow?.(null)} title="Back" aria-label="Back" style={plainIconButtonStyle}>
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="10 3 5 8 10 13" />
+              </svg>
+            </button>
           ) : null}
         </div>
         {!selectedWorkflowId ? (
@@ -455,8 +534,16 @@ export function SessionSidebar({
             {profiles.map((profile) => (
               <div
                 key={profile.id}
+                role="button"
+                tabIndex={0}
                 className="codex-card"
                 draggable
+                onClick={() => setProfileInspector(profile)}
+                onKeyDown={(event) => {
+                  if (event.key !== "Enter" && event.key !== " ") return;
+                  event.preventDefault();
+                  setProfileInspector(profile);
+                }}
                 onDragStart={(event) => {
                   const payload = JSON.stringify({
                     id: profile.id,
@@ -469,23 +556,9 @@ export function SessionSidebar({
                 }}
                 style={{ borderRadius: 18, padding: "14px 14px 12px", marginBottom: 8, cursor: "grab" }}
               >
-                <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10 }}>
-                  <div style={{ minWidth: 0 }}>
-                    <div style={{ fontSize: 12, fontWeight: 800, color: "var(--text)", marginBottom: 3 }}>{profile.name || profile.id}</div>
-                    <div style={{ fontSize: 11, color: "var(--text-dim)", fontFamily: "var(--font-mono)" }}>{profile.id}</div>
-                  </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
-                    <button
-                      type="button"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        setProfileInspector(profile);
-                      }}
-                      style={ghostButtonStyle}
-                    >
-                      Inspector
-                    </button>
-                  </div>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: 12, fontWeight: 800, color: "var(--text)", marginBottom: 3 }}>{profile.name || profile.id}</div>
+                  <div style={{ fontSize: 11, color: "var(--text-dim)", fontFamily: "var(--font-mono)" }}>{profile.id}</div>
                 </div>
                 <div style={{ marginTop: 10, fontSize: 11, color: "var(--text-muted)", lineHeight: 1.6 }}>
                   {profile.defaultModel || "No default model"}
@@ -518,7 +591,7 @@ export function SessionSidebar({
                     tone={workflowCatalogDegraded ? "muted" : "error"}
                   />
                 </div>
-                <button type="button" aria-label="Retry workflows" title="Retry" onClick={() => void loadWorkflows()} style={iconButtonStyle}>
+                <button type="button" aria-label="Retry workflows" title="Retry" onClick={() => void loadWorkflows()} style={plainIconButtonStyle}>
                   ↻
                 </button>
               </div>
@@ -540,13 +613,16 @@ export function SessionSidebar({
         )}
       </div>
       {profileInspector ? (
-        <InspectorOverlay title={profileInspector.name || profileInspector.id} onClose={() => setProfileInspector(null)}>
-          <div style={{ display: "grid", gap: 10, fontSize: 12, color: "var(--text-muted)", lineHeight: 1.7 }}>
-            <div><strong style={{ color: "var(--text)" }}>ID</strong><br /><span style={{ fontFamily: "var(--font-mono)" }}>{profileInspector.id}</span></div>
-            <div><strong style={{ color: "var(--text)" }}>Default Model</strong><br />{profileInspector.defaultModel || "No default model"}</div>
-            <div><strong style={{ color: "var(--text)" }}>Skills</strong><br />{(profileInspector.skills || []).length ? profileInspector.skills?.join(", ") : "No skills"}</div>
-            {profileInspector.collaborationProtocol ? <div><strong style={{ color: "var(--text)" }}>Protocol</strong><br />{profileInspector.collaborationProtocol}</div> : null}
-          </div>
+        <InspectorOverlay onClose={() => setProfileInspector(null)}>
+          <ProfileInspectorPanel
+            key={profileInspector.id}
+            profile={profileInspector}
+            skills={profileSkills}
+            models={profileModels}
+            saving={profileSavingId === profileInspector.id}
+            onClose={() => setProfileInspector(null)}
+            onSave={(patch) => void saveProfile(profileInspector.id, patch)}
+          />
         </InspectorOverlay>
       ) : null}
     </div>
@@ -687,7 +763,15 @@ function WorkflowListItem({ workflow, active, busy, onSelect, onDelete }: { work
               onDelete();
             }}
             disabled={busy}
-            style={{ ...ghostButtonStyle, color: "#ef4444" }}
+            style={{
+              border: "none",
+              background: "transparent",
+              color: "#ef4444",
+              cursor: busy ? "default" : "pointer",
+              fontSize: 11,
+              fontWeight: 750,
+              padding: 0,
+            }}
           >
             {busy ? "..." : "Delete"}
           </button>
@@ -711,16 +795,231 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
-function InspectorOverlay({ title, children, onClose }: { title: string; children: React.ReactNode; onClose: () => void }) {
+function InspectorOverlay({ children, onClose }: { children: React.ReactNode; onClose: () => void }) {
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 900, display: "flex", justifyContent: "flex-end", background: "rgba(15,23,42,0.18)" }} onClick={onClose}>
       <aside onClick={(event) => event.stopPropagation()} className="codex-card" style={{ width: 360, maxWidth: "92vw", height: "100%", borderRadius: "22px 0 0 22px", padding: 18, overflow: "auto" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 16 }}>
-          <div style={{ fontSize: 15, fontWeight: 850, color: "var(--text)", letterSpacing: "-0.02em" }}>{title}</div>
-          <button type="button" onClick={onClose} style={iconButtonStyle}>×</button>
-        </div>
         {children}
       </aside>
+    </div>
+  );
+}
+
+function ProfileInspectorPanel({
+  profile,
+  skills,
+  models,
+  saving,
+  onClose,
+  onSave,
+}: {
+  profile: AgentProfileItem;
+  skills: SkillOption[];
+  models: ModelOption[];
+  saving: boolean;
+  onClose: () => void;
+  onSave: (patch: Partial<AgentProfileItem>) => void;
+}) {
+  const [draft, setDraft] = useState<AgentProfileItem>({
+    ...profile,
+    skills: [...(profile.skills || [])],
+    availableSkills: [...(profile.availableSkills || [])],
+  });
+  const [editingField, setEditingField] = useState<"name" | "protocol" | null>(null);
+  const [picker, setPicker] = useState<"model" | "skills" | null>(null);
+
+  const fixedSkills = draft.skills || [];
+  const optionalSkills = (draft.availableSkills || []).filter((skill) => !fixedSkills.includes(skill));
+  const skillDescriptions = useMemo(() => new Map(skills.map((skill) => [skill.id, skill.description || "No description"])), [skills]);
+  const changed = JSON.stringify({
+    name: draft.name || "",
+    defaultModel: draft.defaultModel || "",
+    skills: draft.skills || [],
+    availableSkills: draft.availableSkills || [],
+    collaborationProtocol: draft.collaborationProtocol || "",
+  }) !== JSON.stringify({
+    name: profile.name || "",
+    defaultModel: profile.defaultModel || "",
+    skills: profile.skills || [],
+    availableSkills: profile.availableSkills || [],
+    collaborationProtocol: profile.collaborationProtocol || "",
+  });
+
+  const toggleOptionalSkill = (skillId: string) => {
+    setDraft((prev) => {
+      const current = new Set(prev.availableSkills || []);
+      if (current.has(skillId)) current.delete(skillId);
+      else current.add(skillId);
+      for (const fixed of prev.skills || []) current.delete(fixed);
+      return { ...prev, availableSkills: [...current].sort() };
+    });
+  };
+
+  return (
+    <div style={{ minHeight: "100%", display: "grid", gridTemplateRows: "auto minmax(0, 1fr) auto", gap: 16 }}>
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
+        <div style={{ minWidth: 0 }}>
+          {editingField === "name" ? (
+            <input
+              autoFocus
+              value={draft.name || ""}
+              onChange={(event) => setDraft((prev) => ({ ...prev, name: event.target.value }))}
+              onBlur={() => setEditingField(null)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === "Escape") setEditingField(null);
+              }}
+              style={{ ...inputStyle, fontSize: 15, fontWeight: 850 }}
+            />
+          ) : (
+            <div
+              title="Double click to edit"
+              onDoubleClick={() => setEditingField("name")}
+              style={{ fontSize: 15, fontWeight: 850, color: "var(--text)", lineHeight: 1.35, cursor: "text" }}
+            >
+              {draft.name || draft.id}
+            </div>
+          )}
+          <div style={{ marginTop: 4, fontSize: 11, color: "var(--text-dim)", fontFamily: "var(--font-mono)", wordBreak: "break-all" }}>{draft.id}</div>
+        </div>
+        <button type="button" aria-label="Close" title="Close" onClick={onClose} style={plainIconButtonStyle}>×</button>
+      </div>
+
+      <div style={{ display: "grid", gap: 15, alignContent: "start" }}>
+        <Field label="Model">
+          <button type="button" onClick={() => setPicker("model")} style={selectLikeButtonStyle}>
+            {draft.defaultModel || "选择模型"}
+          </button>
+        </Field>
+
+        <Field label="Fixed Skills">
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+            {fixedSkills.length ? fixedSkills.map((skill) => (
+              <span key={skill} title={skillDescriptions.get(skill) || skill} className="codex-pill" style={{ fontSize: 10 }}>
+                {skill}
+              </span>
+            )) : <span style={{ fontSize: 12, color: "var(--text-dim)" }}>None</span>}
+          </div>
+        </Field>
+
+        <Field label="Configurable Skills">
+          <button type="button" onClick={() => setPicker("skills")} style={selectLikeButtonStyle}>
+            {optionalSkills.length ? `${optionalSkills.length} skills selected` : "选择可装配 Skill"}
+          </button>
+          {optionalSkills.length ? (
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+              {optionalSkills.map((skill) => (
+                <span key={skill} title={skillDescriptions.get(skill) || skill} className="codex-pill" style={{ fontSize: 10 }}>
+                  {skill}
+                </span>
+              ))}
+            </div>
+          ) : null}
+        </Field>
+
+        <Field label="Protocol">
+          {editingField === "protocol" ? (
+            <textarea
+              autoFocus
+              value={draft.collaborationProtocol || ""}
+              onChange={(event) => setDraft((prev) => ({ ...prev, collaborationProtocol: event.target.value }))}
+              onBlur={() => setEditingField(null)}
+              onKeyDown={(event) => {
+                if (event.key === "Escape") setEditingField(null);
+              }}
+              style={{ ...inputStyle, minHeight: 128, resize: "vertical", lineHeight: 1.6 }}
+            />
+          ) : (
+            <div
+              title="Double click to edit"
+              onDoubleClick={() => setEditingField("protocol")}
+              style={{ border: "1px solid var(--border)", borderRadius: 10, padding: "9px 10px", background: "var(--bg-secondary)", color: draft.collaborationProtocol ? "var(--text)" : "var(--text-dim)", fontSize: 12, lineHeight: 1.7, cursor: "text", minHeight: 96, whiteSpace: "pre-wrap" }}
+            >
+              {draft.collaborationProtocol || "Double click to add protocol"}
+            </div>
+          )}
+        </Field>
+      </div>
+
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, borderTop: "1px solid var(--border)", paddingTop: 12 }}>
+        <span style={{ fontSize: 11, color: changed ? "var(--text-muted)" : "var(--text-dim)" }}>
+          {changed ? "Unsaved changes" : "No changes"}
+        </span>
+        <button
+          type="button"
+          disabled={saving || !changed}
+          onClick={() => onSave({
+            name: draft.name,
+            defaultModel: draft.defaultModel,
+            skills: draft.skills,
+            availableSkills: optionalSkills,
+            collaborationProtocol: draft.collaborationProtocol,
+          })}
+          style={{ border: "none", background: "transparent", color: changed ? "var(--text)" : "var(--text-dim)", cursor: saving || !changed ? "default" : "pointer", fontSize: 13, fontWeight: 850, padding: "6px 0" }}
+        >
+          {saving ? "Saving..." : "Save"}
+        </button>
+      </div>
+
+      {picker === "model" ? (
+        <ProfilePickerDialog title="选择模型" onClose={() => setPicker(null)}>
+          <div style={{ display: "grid", gap: 7 }}>
+            {models.length ? models.map((model) => {
+              const active = draft.defaultModel === model.value;
+              return (
+                <button
+                  key={model.value}
+                  type="button"
+                  onClick={() => {
+                    setDraft((prev) => ({ ...prev, defaultModel: model.value }));
+                    setPicker(null);
+                  }}
+                  style={pickerRowStyle(active)}
+                >
+                  <span style={{ fontWeight: 800 }}>{model.name}</span>
+                  <span style={{ fontFamily: "var(--font-mono)", color: "var(--text-muted)", fontSize: 11 }}>{model.value}</span>
+                </button>
+              );
+            }) : <div style={{ fontSize: 12, color: "var(--text-muted)" }}>没有可用模型。请先在 API 面板配置模型。</div>}
+          </div>
+        </ProfilePickerDialog>
+      ) : null}
+
+      {picker === "skills" ? (
+        <ProfilePickerDialog title="选择可装配 Skill" onClose={() => setPicker(null)}>
+          <div style={{ display: "grid", gap: 7 }}>
+            {skills.length ? skills.map((skill) => {
+              const fixed = fixedSkills.includes(skill.id);
+              const active = optionalSkills.includes(skill.id);
+              return (
+                <button
+                  key={skill.id}
+                  type="button"
+                  disabled={fixed}
+                  onClick={() => toggleOptionalSkill(skill.id)}
+                  style={{ ...pickerRowStyle(active || fixed), opacity: fixed ? 0.55 : 1, cursor: fixed ? "not-allowed" : "pointer" }}
+                >
+                  <span style={{ fontWeight: 800 }}>{skill.id}{fixed ? " · fixed" : ""}</span>
+                  <span style={{ color: "var(--text-muted)", fontSize: 11, lineHeight: 1.5 }}>{skill.description || "No description"}</span>
+                </button>
+              );
+            }) : <div style={{ fontSize: 12, color: "var(--text-muted)" }}>没有可用 Skill。</div>}
+          </div>
+        </ProfilePickerDialog>
+      ) : null}
+    </div>
+  );
+}
+
+function ProfilePickerDialog({ title, children, onClose }: { title: string; children: React.ReactNode; onClose: () => void }) {
+  return (
+    <div style={{ position: "fixed", inset: 0, zIndex: 940, display: "grid", placeItems: "center", background: "rgba(15,23,42,0.2)", padding: 18 }} onClick={onClose}>
+      <section className="codex-card" onClick={(event) => event.stopPropagation()} style={{ width: "min(560px, 92vw)", maxHeight: "78vh", overflow: "auto", borderRadius: 18, padding: 16 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, marginBottom: 12 }}>
+          <div style={{ fontSize: 14, fontWeight: 850, color: "var(--text)" }}>{title}</div>
+          <button type="button" aria-label="Close" title="Close" onClick={onClose} style={plainIconButtonStyle}>×</button>
+        </div>
+        {children}
+      </section>
     </div>
   );
 }
@@ -992,6 +1291,52 @@ const inputStyle: React.CSSProperties = {
   color: "var(--text)",
   fontSize: 12,
 };
+
+const plainIconButtonStyle: React.CSSProperties = {
+  border: "none",
+  background: "transparent",
+  color: "var(--text-muted)",
+  cursor: "pointer",
+  fontSize: 20,
+  lineHeight: 1,
+  padding: 2,
+  width: 24,
+  height: 24,
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  flexShrink: 0,
+};
+
+const selectLikeButtonStyle: React.CSSProperties = {
+  width: "100%",
+  border: "1px solid var(--border)",
+  background: "var(--bg-secondary)",
+  color: "var(--text)",
+  borderRadius: 10,
+  minHeight: 38,
+  padding: "8px 10px",
+  cursor: "pointer",
+  fontSize: 12,
+  textAlign: "left",
+};
+
+function pickerRowStyle(active: boolean): React.CSSProperties {
+  return {
+    width: "100%",
+    minHeight: 48,
+    border: active ? "1px solid color-mix(in srgb, var(--accent) 52%, transparent)" : "1px solid var(--border)",
+    background: active ? "color-mix(in srgb, var(--accent) 10%, var(--bg))" : "var(--bg-secondary)",
+    color: "var(--text)",
+    borderRadius: 12,
+    padding: "9px 10px",
+    cursor: "pointer",
+    display: "grid",
+    gap: 3,
+    textAlign: "left",
+    fontSize: 12,
+  };
+}
 
 const iconButtonStyle: React.CSSProperties = {
   width: 30,

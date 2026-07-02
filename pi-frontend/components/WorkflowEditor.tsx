@@ -519,17 +519,6 @@ export function WorkflowEditor({
             </button>
           );
         })}
-
-        <div style={{ position: "absolute", left: 16, bottom: 16, zIndex: 4, display: "flex", gap: 8, flexWrap: "wrap" }}>
-          <button type="button" onClick={() => setInspectorOpen(true)} disabled={!selectedTask} style={buttonStyle()}>
-            Inspector
-          </button>
-          {hasRunnableChain ? (
-            <button type="button" onClick={run} disabled={busy !== null || !canRun} style={buttonStyle("primary")}>
-              {busy === "run" ? "Running..." : "Run"}
-            </button>
-          ) : null}
-        </div>
       </section>
 
       <section className="codex-card" style={{ borderRadius: 18, padding: "12px", display: "grid", gap: 12 }}>
@@ -638,7 +627,13 @@ export function WorkflowEditor({
             <span> · {workflowDomainLabel(draft.domain)} · {workflowTemplateLabel(draft.templateType)}</span>
           </div>
           <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
-            {onBack ? <button type="button" onClick={onBack} style={buttonStyle()}>Back</button> : null}
+            {onBack ? (
+              <button type="button" onClick={onBack} title="Back" aria-label="Back" style={backIconButtonStyle}>
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="10 3 5 8 10 13" />
+                </svg>
+              </button>
+            ) : null}
             <button type="button" onClick={save} disabled={busy !== null} style={buttonStyle("primary")}>
               {busy === "save" ? "Saving..." : "Save"}
             </button>
@@ -1199,6 +1194,20 @@ const iconButtonStyle: React.CSSProperties = {
   cursor: "pointer",
   fontSize: 16,
   lineHeight: 1,
+};
+
+const backIconButtonStyle: React.CSSProperties = {
+  width: 30,
+  height: 30,
+  border: "none",
+  background: "transparent",
+  color: "var(--text-muted)",
+  cursor: "pointer",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  padding: 0,
+  flexShrink: 0,
 };
 
 function buttonStyle(kind: "default" | "primary" | "danger" = "default"): React.CSSProperties {
