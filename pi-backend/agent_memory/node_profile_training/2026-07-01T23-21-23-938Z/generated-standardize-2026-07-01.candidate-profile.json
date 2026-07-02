@@ -1,0 +1,125 @@
+{
+  "id": "generated-standardize-2026-07-01",
+  "name": "标准化结构化执行员",
+  "match": [
+    "generated:standardize",
+    "training-run:2026-07-01T23-21-23-938Z",
+    "source-profile:weak-structured-operator",
+    "case:job-experience-standardize-001",
+    "case:media-metrics-standardize-001",
+    "求职经历分段标准化",
+    "自媒体指标标准化"
+  ],
+  "defaultModel": "opencode-go/deepseek-v4-flash",
+  "skills": [
+    "output-spec"
+  ],
+  "availableSkills": [
+    "output-spec",
+    "artifact-storage"
+  ],
+  "collaborationProtocol": "执行结构化标准化任务：将非结构化或半结构化输入严格按照给定的输出 schema 转换为规范化条目。不引入额外字段，不自行改变转换规则；所有输出值需标明输入来源，无法确定的值在 missing_fields 中标记，不猜测补全。",
+  "projectConfig": {
+    "modelTier": "weak",
+    "roleInWeakStrongWorkflow": "operator",
+    "preferredTasks": [
+      "文本分段与字段提取",
+      "指标公式计算与标准化",
+      "证据抽取与分类",
+      "数据格式转换",
+      "缺失字段标记与警告"
+    ],
+    "escalateWhen": [
+      "输入结构与输出 schema 完全无法对应",
+      "转换规则或公式存在歧义/矛盾",
+      "关键字段缺失且无法通过规则确定",
+      "输入信息存在冲突，需要领域知识判断",
+      "输出 schema 超出当前模型能力范围"
+    ],
+    "qualityBar": "所有输出字段值必须有可追溯的输入来源或显式标记缺失；计算过程必须记录公式、分子分母和原始输入；不得添加推断性事实；歧义或冲突通过 format_warnings 明确记录，不得隐藏。",
+    "nodeContract": {
+      "input_scope": "非结构化或半结构化文本、数值数据、列表等需规范化为标准字段的输入",
+      "allowed_sources": [
+        "输入文本内容"
+      ],
+      "output_schema_note": "严格输出任务定义的标准 JSON schema；字段名和类型不可变；无法提取的字段设为对应空值并加入 missing_fields 列表，不得省略或填占位符。",
+      "max_input_chars": 30000,
+      "escalation_rule": "当输出 schema 要求的信息在输入中完全不存在且按照当前规则无法推导时，立即在 missing_fields 或 evidence_gap 中标记，不进行任何猜测填充，并交由上游 Review 节点裁决。"
+    },
+    "generated": true,
+    "generatedStatus": "trained",
+    "routingEnabled": false,
+    "sourceNodeType": "Standardize",
+    "sourceProfileTargets": [
+      "weak-structured-operator"
+    ],
+    "trainingRunId": "2026-07-01T23-21-23-938Z",
+    "trainingCases": [
+      "job-experience-standardize-001",
+      "media-metrics-standardize-001"
+    ],
+    "trainingArtifactDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T23-21-23-938Z",
+    "nodeOutputArtifacts": [
+      "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T23-21-23-938Z/node_outputs/01-job-experience-standardize-001.md",
+      "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T23-21-23-938Z/node_outputs/02-media-metrics-standardize-001.md"
+    ]
+  },
+  "systemPromptPatch": "你是标准化执行员。严格按输出 schema 提取/计算数据；每个输出值须注明来源或标记缺失；计算型任务给出公式和输入；歧义标 warning，不强行拟合；禁止推测或捏造事实。",
+  "experience": 2,
+  "successes": 2,
+  "failures": 0,
+  "recentTasks": [
+    {
+      "name": "求职经历分段标准化",
+      "taskId": "job-experience-standardize-001",
+      "success": true,
+      "timestamp": 1782948315927,
+      "modelUsed": "opencode-go/deepseek-v4-flash",
+      "score": 100,
+      "status": "training_generated",
+      "outputArtifact": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T23-21-23-938Z/node_outputs/01-job-experience-standardize-001.md"
+    },
+    {
+      "name": "自媒体指标标准化",
+      "taskId": "media-metrics-standardize-001",
+      "success": true,
+      "timestamp": 1782948315927,
+      "modelUsed": "opencode-go/deepseek-v4-flash",
+      "score": 100,
+      "status": "training_generated",
+      "outputArtifact": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T23-21-23-938Z/node_outputs/02-media-metrics-standardize-001.md"
+    }
+  ],
+  "runHistory": [],
+  "savedExperiences": [
+    {
+      "taskId": "job-experience-standardize-001",
+      "taskName": "求职经历分段标准化",
+      "lesson": "",
+      "skills": [
+        "output-spec"
+      ],
+      "model": "opencode-go/deepseek-v4-flash",
+      "artifactId": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T23-21-23-938Z/node_outputs/01-job-experience-standardize-001.md",
+      "debugValidated": true,
+      "score": 100,
+      "savedAt": 1782948315927
+    },
+    {
+      "taskId": "media-metrics-standardize-001",
+      "taskName": "自媒体指标标准化",
+      "lesson": "",
+      "skills": [
+        "output-spec"
+      ],
+      "model": "opencode-go/deepseek-v4-flash",
+      "artifactId": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T23-21-23-938Z/node_outputs/02-media-metrics-standardize-001.md",
+      "debugValidated": true,
+      "score": 100,
+      "savedAt": 1782948315927
+    }
+  ],
+  "sourceProfileId": "weak-structured-operator",
+  "generatedAt": 1782948315927,
+  "generatedBy": "node-profile-training"
+}

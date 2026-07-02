@@ -272,6 +272,18 @@ const CAPABILITY_DIMENSIONS = [
   { id: "long-context", label: "长上下文能力" },
 ] as const;
 
+const NODE_MODEL_PREVIEW = [
+  { id: "Fetch/Gather", tier: "worker", capabilities: ["summarization"], description: "资料搬运、事实摘取、来源整理" },
+  { id: "Standardize", tier: "worker", capabilities: ["classification"], description: "格式转换、字段规整、schema 对齐" },
+  { id: "Classify/Route", tier: "worker", capabilities: ["classification"], description: "分类、置信度、路由目标" },
+  { id: "Extract/Writeback", tier: "worker", capabilities: ["classification"], description: "字段抽取、校验、payload" },
+  { id: "Generate/Draft", tier: "worker", capabilities: ["writing"], description: "草稿、改写、变体生成" },
+  { id: "Analyze/Judge", tier: "strong", capabilities: ["reasoning"], description: "复杂判断、证据权衡" },
+  { id: "Strategize/Plan", tier: "strong", capabilities: ["reasoning"], description: "策略、架构、优先级" },
+  { id: "Review/Gate", tier: "strong", capabilities: ["reasoning"], description: "质量门禁、风险裁决" },
+  { id: "Monitor/Alert", tier: "worker", capabilities: ["classification"], description: "阈值判断、分级告警" },
+] as const;
+
 // ── Form field helpers ────────────────────────────────────────────────────────
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
@@ -515,7 +527,6 @@ function defaultPresetModels(preset: typeof AGGREGATOR_PRESETS[number]): ModelEn
       normalizeModelCapabilities({
         id: "step-1o-turbo-vision",
         name: "Step-1o Turbo Vision",
-        role: "strong",
         input: ["text", "image"],
         contextWindow: 32768,
         maxTokens: 8192,
@@ -523,14 +534,13 @@ function defaultPresetModels(preset: typeof AGGREGATOR_PRESETS[number]): ModelEn
       normalizeModelCapabilities({
         id: "step-image-edit-2",
         name: "Step Image Edit 2",
-        role: "weak",
         output: ["image"],
         capabilities: ["image-generation"],
         routingNotes: "Use the built-in generate_image tool for actual StepFun image generation.",
       }),
     ];
   }
-  return [normalizeModelCapabilities({ id: "", role: "weak", capabilities: ["classification", "summarization"] })];
+  return [normalizeModelCapabilities({ id: "", capabilities: ["classification", "summarization"] })];
 }
 
 function modelKey(providerName: string, modelId: string): string {
@@ -539,9 +549,8 @@ function modelKey(providerName: string, modelId: string): string {
 
 function isStrongEligibleModel(providerName: string, modelId: string): boolean {
   const text = `${providerName} ${modelId}`.toLowerCase();
-  return /\b(?:openai|anthropic|gpt-|chatgpt|o1|o3|o4|claude|opus|sonnet)\b/.test(text)
-    || /(?:^|[/:\s-])(?:gpt|o[134])[-\d]/.test(text)
-    || /\bstepfun\b|step-1o|step-3/.test(text);
+  return /\b(?:openai|anthropic|gpt-|chatgpt|claude|opus|sonnet)\b/.test(text)
+    || /(?:^|[/:\s-])(?:gpt|o[134])[-\d]/.test(text);
 }
 
 function availableKey(providerName: string, modelId: string): string {
@@ -1323,11 +1332,13 @@ function ModelDetail({
             <div>
               <div style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 6 }}>Model tier</div>
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                <TogglePill label="Weak worker" active={model.role === "weak"} onClick={() => set("role", model.role === "weak" ? undefined : "weak")} />
-                <TogglePill label="Strong" active={model.role === "strong"} disabled={!isStrongEligibleModel(providerName, model.id)} title={isStrongEligibleModel(providerName, model.id) ? undefined : "Only GPT and Claude models can be strong"} onClick={() => {
+                <TogglePill label="Strong (S)" active={model.role === "strong"} disabled={!isStrongEligibleModel(providerName, model.id)} title={isStrongEligibleModel(providerName, model.id) ? "Mark as strong candidate for strategy/review nodes" : "Only GPT and Claude models can be marked S"} onClick={() => {
                   if (!isStrongEligibleModel(providerName, model.id)) return;
                   set("role", model.role === "strong" ? undefined : "strong");
                 }} />
+              </div>
+              <div style={{ marginTop: 6, fontSize: 10, lineHeight: 1.45, color: "var(--text-dim)" }}>
+                Unmarked models are worker candidates; node/profile routing chooses them by capability.
               </div>
             </div>
             <div>
@@ -1394,7 +1405,7 @@ function ModelDetail({
                 {model.name || model.id || "new model"}
               </div>
               <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 2, display: "flex", gap: 10, flexWrap: "wrap" }}>
-                <span>Role: {model.role || "unset"}</span>
+                <span>Tier: {model.role === "strong" ? "S" : "worker"}</span>
                 <span>Profile: {capabilityProfile?.updatedAt ? new Date(capabilityProfile.updatedAt).toLocaleDateString() : "not generated"}</span>
               </div>
             </div>
@@ -2107,12 +2118,15 @@ function InitialApiSetup({
       const models = (catalog.models ?? [])
         .filter((model) => model.id.trim())
         .slice(0, 12)
-        .map((model, index): ModelEntry => normalizeModelCapabilities({
-          id: model.id,
-          name: model.name && model.name !== model.id ? model.name : undefined,
-          contextWindow: model.contextWindow,
-          role: index === 0 ? "strong" : "weak",
-        }));
+        .map((model, index): ModelEntry => {
+          const id = model.id;
+          return normalizeModelCapabilities({
+            id,
+            name: model.name && model.name !== id ? model.name : undefined,
+            contextWindow: model.contextWindow,
+            role: index === 0 && isStrongEligibleModel(providerName.trim(), id) ? "strong" : undefined,
+          });
+        });
       if (!models.length) throw new Error("No models were returned from this endpoint.");
 
       const nextProvider = { ...provider, models };
@@ -2249,7 +2263,7 @@ function ModelRoleSetupPanel({
         <div style={{ minWidth: 0 }}>
           <div style={{ fontSize: 12, fontWeight: 750, color: "var(--text)" }}>Role and capability</div>
           <div title={guideLabel || undefined} style={{ marginTop: 2, fontSize: 11, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-            {guideLabel ? `Guide: ${guideLabel}` : "Only GPT and Claude models can be marked strong; other models use weak plus capability tags."}
+            {guideLabel ? `Guide: ${guideLabel}` : "Only GPT and Claude models can be marked S; every other model stays in the worker pool and is routed by capability."}
           </div>
         </div>
         <button
@@ -2279,8 +2293,7 @@ function ModelRoleSetupPanel({
                 {key}
               </button>
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                <TogglePill label="Weak" active={item.model.role === "weak"} onClick={() => setModel({ role: item.model.role === "weak" ? undefined : "weak" })} />
-                <TogglePill label="Strong" active={item.model.role === "strong"} disabled={!canBeStrong} title={canBeStrong ? undefined : "Only GPT and Claude models can be strong"} onClick={() => {
+                <TogglePill label="S" active={item.model.role === "strong"} disabled={!canBeStrong} title={canBeStrong ? "Strong candidate for strategy/review nodes" : "Only GPT and Claude models can be marked S"} onClick={() => {
                   if (!canBeStrong) return;
                   setModel({ role: item.model.role === "strong" ? undefined : "strong" });
                 }} />
@@ -2321,7 +2334,7 @@ function CapabilitySummaryView({
   items: Array<{ providerName: string; index: number; model: ModelEntry; profile?: CapabilityProfile; isProbing: boolean }>;
   onSelectModel: (providerName: string, index: number) => void;
 }) {
-  const weakItems = items.filter((item) => item.model.id.trim() && item.model.role === "weak");
+  const workerItems = items.filter((item) => item.model.id.trim() && item.model.role !== "strong");
 
   return (
     <div style={{ display: "grid", gap: 12 }}>
@@ -2329,7 +2342,7 @@ function CapabilitySummaryView({
         <div>
           <SectionTitle>Guide AI profile overview</SectionTitle>
           <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 3 }}>
-            Compare weak models by Guide AI research profile.
+            Compare worker models by Guide AI research profile.
           </div>
         </div>
       </div>
@@ -2338,7 +2351,7 @@ function CapabilitySummaryView({
           <span>Model</span>
           {CAPABILITY_DIMENSIONS.slice(0, 4).map((dimension) => <span key={dimension.id}>{dimension.label}</span>)}
         </div>
-        {weakItems.length ? weakItems.map((item) => (
+        {workerItems.length ? workerItems.map((item) => (
           <div
             key={`${item.providerName}/${item.model.id || item.index}`}
             style={{ display: "grid", gridTemplateColumns: "minmax(180px, 1.2fr) repeat(4, minmax(76px, 0.6fr))", alignItems: "center", gap: 0, minHeight: 44, padding: "7px 10px", borderBottom: "1px solid var(--border)" }}
@@ -2362,8 +2375,83 @@ function CapabilitySummaryView({
             })}
           </div>
         )) : (
-          <div style={{ padding: 18, textAlign: "center", fontSize: 12, color: "var(--text-dim)" }}>No weak models yet.</div>
+          <div style={{ padding: 18, textAlign: "center", fontSize: 12, color: "var(--text-dim)" }}>No worker models yet.</div>
         )}
+      </div>
+    </div>
+  );
+}
+
+function NodeModelRoutingPreview({
+  items,
+  onSelectModel,
+}: {
+  items: Array<{ providerName: string; index: number; model: ModelEntry; profile?: CapabilityProfile; isProbing: boolean }>;
+  onSelectModel: (providerName: string, index: number) => void;
+}) {
+  const configured = items.filter((item) => item.model.id.trim());
+  const strongItems = configured.filter((item) => item.model.role === "strong");
+  const workerItems = configured.filter((item) => item.model.role !== "strong");
+  const labelFor = (item: { providerName: string; model: ModelEntry }) => `${item.providerName}/${item.model.id}`;
+  const candidatesForPool = (pool: typeof configured, node: typeof NODE_MODEL_PREVIEW[number]) => {
+    const matched = pool.filter((item) => node.capabilities.some((capability) => (item.model.capabilities ?? []).includes(capability) || item.profile?.dimensions?.[capability]?.result === "capable"));
+    return (matched.length ? matched : pool).slice(0, 3);
+  };
+  const candidateGroupsFor = (node: typeof NODE_MODEL_PREVIEW[number]) => {
+    if (node.tier === "strong") {
+      return [
+        { label: "S", items: candidatesForPool(strongItems, node), empty: "No S model" },
+        { label: "w", items: candidatesForPool(workerItems, node), empty: "No worker model" },
+      ];
+    }
+    return [{ label: "w", items: candidatesForPool(workerItems, node), empty: "No worker model" }];
+  };
+
+  if (!configured.length) return null;
+
+  return (
+    <div style={{ marginBottom: 16, border: "1px solid var(--border)", borderRadius: 8, background: "color-mix(in srgb, var(--bg-panel) 80%, transparent)", overflow: "hidden" }}>
+      <div style={{ padding: "10px 12px", borderBottom: "1px solid var(--border)" }}>
+        <div style={{ fontSize: 12, fontWeight: 750, color: "var(--text)" }}>Node model routing preview</div>
+        <div style={{ marginTop: 2, fontSize: 11, color: "var(--text-muted)", lineHeight: 1.5 }}>
+          Profile/node type decides S vs worker; capability tags decide the best model inside that pool.
+        </div>
+      </div>
+      <div style={{ display: "grid" }}>
+        {NODE_MODEL_PREVIEW.map((node) => {
+          const groups = candidateGroupsFor(node);
+          return (
+            <div key={node.id} style={{ display: "grid", gridTemplateColumns: "minmax(150px, 0.75fr) minmax(170px, 0.9fr) minmax(220px, 1.3fr)", gap: 10, alignItems: "center", padding: "9px 12px", borderBottom: "1px solid var(--border)" }}>
+              <div>
+                <div style={{ fontSize: 12, fontWeight: 750, color: "var(--text)" }}>{node.id}</div>
+                <div style={{ marginTop: 2, fontSize: 10, color: "var(--text-dim)" }}>{node.tier === "strong" ? "S + worker candidates" : "worker pool"}</div>
+              </div>
+              <div style={{ fontSize: 11, color: "var(--text-muted)", lineHeight: 1.45 }}>{node.description}</div>
+              <div style={{ display: "grid", gap: 5 }}>
+                {groups.map((group) => (
+                  <div key={`${node.id}-${group.label}`} style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
+                    <span style={{ minWidth: 16, height: 18, borderRadius: 5, border: "1px solid var(--border)", color: group.label === "S" ? "#0f766e" : "var(--text-dim)", background: group.label === "S" ? "rgba(20,184,166,0.10)" : "var(--bg)", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 800 }}>
+                      {group.label}
+                    </span>
+                    {group.items.length ? group.items.map((item) => (
+                      <button
+                        key={`${node.id}-${group.label}-${labelFor(item)}`}
+                        type="button"
+                        onClick={() => onSelectModel(item.providerName, item.index)}
+                        title={labelFor(item)}
+                        style={{ border: "1px solid var(--border)", background: "var(--bg)", color: "var(--text-muted)", borderRadius: 999, padding: "3px 8px", fontSize: 10, cursor: "pointer", maxWidth: 220, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+                      >
+                        {labelFor(item)}
+                      </button>
+                    )) : (
+                      <span style={{ fontSize: 11, color: "#f59e0b" }}>{group.empty}</span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -2513,7 +2601,6 @@ export function ModelsConfig({ cwd, onClose, onOpenGuide }: { cwd?: string | nul
         id: catalogModel.id,
         name: catalogModel.name && catalogModel.name !== catalogModel.id ? catalogModel.name : undefined,
         contextWindow: catalogModel.contextWindow,
-        role: "weak",
       };
       const models = [...(provider.models ?? []), normalizeModelCapabilities(nextModel)];
       return { ...prev, providers: { ...(prev.providers ?? {}), [providerName]: { ...provider, models } } };
@@ -2977,9 +3064,9 @@ export function ModelsConfig({ cwd, onClose, onOpenGuide }: { cwd?: string | nul
                           {m.reasoning && (
                             <span style={{ fontSize: 9, padding: "1px 4px", background: "rgba(99,102,241,0.12)", color: "rgba(99,102,241,0.8)", borderRadius: 3, flexShrink: 0 }}>T</span>
                           )}
-                          {m.role && (
-                            <span style={{ fontSize: 9, padding: "1px 4px", background: m.role === "strong" ? "rgba(20,184,166,0.12)" : "rgba(234,179,8,0.14)", color: m.role === "strong" ? "#0f766e" : "#a16207", borderRadius: 3, flexShrink: 0 }}>
-                              {m.role === "strong" ? "S" : "W"}
+                          {m.role === "strong" && (
+                            <span title="Strong candidate" style={{ fontSize: 9, padding: "1px 4px", background: "rgba(20,184,166,0.12)", color: "#0f766e", borderRadius: 3, flexShrink: 0 }}>
+                              S
                             </span>
                           )}
                           {((m.capabilities ?? []).includes("image-generation") || (m.output ?? []).includes("image")) && (
@@ -3048,6 +3135,10 @@ export function ModelsConfig({ cwd, onClose, onOpenGuide }: { cwd?: string | nul
                         onSetGuide={setGuideModel}
                         onUpdateModel={updateModel}
                         onOpenCapabilitySummary={() => setSelection({ type: "capabilities" })}
+                      />
+                      <NodeModelRoutingPreview
+                        items={modelInventory.map((item) => ({ ...item, isProbing: false }))}
+                        onSelectModel={(providerName, index) => setSelection({ type: "model", providerName, index })}
                       />
                     </div>
                   )}

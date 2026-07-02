@@ -323,7 +323,7 @@
     "cwd": "/Users/yipengfei/Desktop/pi-fork",
     "projectId": "",
     "createdAt": 1782860000000,
-    "updatedAt": 1782860000000,
+    "updatedAt": 1782954841595,
     "tasks": [
       {
         "id": "sm-strategy",
@@ -420,7 +420,49 @@
     "templateType": "generate-variants",
     "debugStatus": "polished",
     "debuggedAt": 1782842017491,
-    "debugSource": "user:self-media-bulk-polish"
+    "debugSource": "user:self-media-bulk-polish",
+    "inputContract": {
+      "version": 1,
+      "mode": "single-run",
+      "title": "变体生成输入",
+      "description": "一次性提交目标、素材和约束。Plan 节点定策略，Generate 节点产出变体，Review 节点做质量门禁。",
+      "missingPolicy": "mark_missing",
+      "fields": [
+        {
+          "id": "task_goal",
+          "label": "任务目标",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "例如：为一个广告活动生成 5 组标题和 CTA。"
+        },
+        {
+          "id": "source_materials",
+          "label": "素材/事实边界",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "粘贴产品事实、定位、受众、已有正文或素材。"
+        },
+        {
+          "id": "variant_requirements",
+          "label": "变体要求",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "数量、平台、风格、长度、A/B 维度。"
+        },
+        {
+          "id": "brand_or_risk_rules",
+          "label": "品牌/风险规则",
+          "type": "textarea",
+          "placeholder": "禁用词、不能编造的数据、合规要求。"
+        },
+        {
+          "id": "output_format",
+          "label": "输出格式",
+          "type": "textarea",
+          "placeholder": "例如：表格列出版本、适用场景、风险标注。"
+        }
+      ]
+    }
   },
   "ecommerce-listing-optimization": {
     "id": "ecommerce-listing-optimization",
@@ -432,7 +474,7 @@
     "cwd": "/Users/yipengfei/Desktop/pi-fork",
     "projectId": "",
     "createdAt": 1782860000000,
-    "updatedAt": 1782860000000,
+    "updatedAt": 1782954841595,
     "tasks": [
       {
         "id": "ec-research",
@@ -486,7 +528,49 @@
     ],
     "status": "active",
     "domain": "ecommerce",
-    "templateType": "generate-variants"
+    "templateType": "generate-variants",
+    "inputContract": {
+      "version": 1,
+      "mode": "single-run",
+      "title": "变体生成输入",
+      "description": "一次性提交目标、素材和约束。Plan 节点定策略，Generate 节点产出变体，Review 节点做质量门禁。",
+      "missingPolicy": "mark_missing",
+      "fields": [
+        {
+          "id": "task_goal",
+          "label": "任务目标",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "例如：为一个广告活动生成 5 组标题和 CTA。"
+        },
+        {
+          "id": "source_materials",
+          "label": "素材/事实边界",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "粘贴产品事实、定位、受众、已有正文或素材。"
+        },
+        {
+          "id": "variant_requirements",
+          "label": "变体要求",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "数量、平台、风格、长度、A/B 维度。"
+        },
+        {
+          "id": "brand_or_risk_rules",
+          "label": "品牌/风险规则",
+          "type": "textarea",
+          "placeholder": "禁用词、不能编造的数据、合规要求。"
+        },
+        {
+          "id": "output_format",
+          "label": "输出格式",
+          "type": "textarea",
+          "placeholder": "例如：表格列出版本、适用场景、风险标注。"
+        }
+      ]
+    }
   },
   "support-kb-response-pipeline": {
     "id": "support-kb-response-pipeline",
@@ -498,7 +582,7 @@
     "cwd": "/Users/yipengfei/Desktop/pi-fork",
     "projectId": "",
     "createdAt": 1782860000000,
-    "updatedAt": 1782860000000,
+    "updatedAt": 1782954841595,
     "tasks": [
       {
         "id": "cs-extract",
@@ -552,7 +636,49 @@
     ],
     "status": "active",
     "domain": "customer-support",
-    "templateType": "classify-route"
+    "templateType": "classify-route",
+    "inputContract": {
+      "version": 1,
+      "mode": "single-run",
+      "title": "分类路由输入",
+      "description": "一次性提交待分类条目、标签体系和处理规则。低置信度或高风险条目必须进入审查。",
+      "missingPolicy": "mark_missing",
+      "fields": [
+        {
+          "id": "task_goal",
+          "label": "任务目标",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "例如：将评论区新增评论分级并生成可审查回复队列。"
+        },
+        {
+          "id": "items_to_classify",
+          "label": "待处理条目",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "粘贴工单、评论、票据或对话列表。"
+        },
+        {
+          "id": "label_schema",
+          "label": "标签/路由规则",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "例如：好评/质疑/广告/投诉；低置信度转人工。"
+        },
+        {
+          "id": "draft_policy",
+          "label": "自动处理草稿规则",
+          "type": "textarea",
+          "placeholder": "哪些条目可生成草稿，哪些必须人工审核。"
+        },
+        {
+          "id": "risk_rules",
+          "label": "风险审查规则",
+          "type": "textarea",
+          "placeholder": "例如：投诉、隐私、交易、法律风险必须 blocked/manual_review。"
+        }
+      ]
+    }
   },
   "industry-research-brief": {
     "id": "industry-research-brief",
@@ -564,7 +690,7 @@
     "cwd": "/Users/yipengfei/Desktop/pi-fork",
     "projectId": "",
     "createdAt": 1782860000000,
-    "updatedAt": 1782860000000,
+    "updatedAt": 1782954841595,
     "tasks": [
       {
         "id": "ir-research",
@@ -635,7 +761,49 @@
     ],
     "status": "active",
     "domain": "research",
-    "templateType": "fetch-summarize"
+    "templateType": "fetch-summarize",
+    "inputContract": {
+      "version": 1,
+      "mode": "single-run",
+      "title": "资料搜集与摘要输入",
+      "description": "一次性提交调研对象、来源材料和输出要求。Fetch 节点只搬运资料，Structure 节点结构化，Judge 节点输出影响判断。",
+      "missingPolicy": "mark_missing",
+      "fields": [
+        {
+          "id": "task_goal",
+          "label": "任务目标",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "例如：整理某行业近 7 天融资、政策和竞品变化，输出结构化简报。"
+        },
+        {
+          "id": "source_materials",
+          "label": "资料/原文/搜索结果",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "粘贴来源文本、工具结果、表格、网页摘录；没有资料时写明希望检索的对象和范围。"
+        },
+        {
+          "id": "links",
+          "label": "来源链接",
+          "type": "links",
+          "placeholder": "每行一个链接，可留空。"
+        },
+        {
+          "id": "time_window",
+          "label": "时间窗口",
+          "type": "text",
+          "placeholder": "例如：过去 7 天 / 2025H1 / 2026-06-30 至 2026-07-02"
+        },
+        {
+          "id": "output_format",
+          "label": "输出格式",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "例如：表格 + 摘要；包含来源、置信度、待复核点。"
+        }
+      ]
+    }
   },
   "template-fetch-summarize": {
     "id": "template-fetch-summarize",
@@ -647,7 +815,7 @@
     "cwd": "/Users/yipengfei/Desktop/pi-fork",
     "projectId": "",
     "createdAt": 1782860100000,
-    "updatedAt": 1782860100000,
+    "updatedAt": 1782954841595,
     "tasks": [
       {
         "id": "fs-fetch",
@@ -698,7 +866,49 @@
     ],
     "status": "template",
     "domain": "generic",
-    "templateType": "fetch-summarize"
+    "templateType": "fetch-summarize",
+    "inputContract": {
+      "version": 1,
+      "mode": "single-run",
+      "title": "资料搜集与摘要输入",
+      "description": "一次性提交调研对象、来源材料和输出要求。Fetch 节点只搬运资料，Structure 节点结构化，Judge 节点输出影响判断。",
+      "missingPolicy": "mark_missing",
+      "fields": [
+        {
+          "id": "task_goal",
+          "label": "任务目标",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "例如：整理某行业近 7 天融资、政策和竞品变化，输出结构化简报。"
+        },
+        {
+          "id": "source_materials",
+          "label": "资料/原文/搜索结果",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "粘贴来源文本、工具结果、表格、网页摘录；没有资料时写明希望检索的对象和范围。"
+        },
+        {
+          "id": "links",
+          "label": "来源链接",
+          "type": "links",
+          "placeholder": "每行一个链接，可留空。"
+        },
+        {
+          "id": "time_window",
+          "label": "时间窗口",
+          "type": "text",
+          "placeholder": "例如：过去 7 天 / 2025H1 / 2026-06-30 至 2026-07-02"
+        },
+        {
+          "id": "output_format",
+          "label": "输出格式",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "例如：表格 + 摘要；包含来源、置信度、待复核点。"
+        }
+      ]
+    }
   },
   "template-generate-variants": {
     "id": "template-generate-variants",
@@ -710,7 +920,7 @@
     "cwd": "/Users/yipengfei/Desktop/pi-fork",
     "projectId": "",
     "createdAt": 1782860100000,
-    "updatedAt": 1782860100000,
+    "updatedAt": 1782954841595,
     "tasks": [
       {
         "id": "gv-brief",
@@ -761,7 +971,49 @@
     ],
     "status": "template",
     "domain": "generic",
-    "templateType": "generate-variants"
+    "templateType": "generate-variants",
+    "inputContract": {
+      "version": 1,
+      "mode": "single-run",
+      "title": "变体生成输入",
+      "description": "一次性提交目标、素材和约束。Plan 节点定策略，Generate 节点产出变体，Review 节点做质量门禁。",
+      "missingPolicy": "mark_missing",
+      "fields": [
+        {
+          "id": "task_goal",
+          "label": "任务目标",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "例如：为一个广告活动生成 5 组标题和 CTA。"
+        },
+        {
+          "id": "source_materials",
+          "label": "素材/事实边界",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "粘贴产品事实、定位、受众、已有正文或素材。"
+        },
+        {
+          "id": "variant_requirements",
+          "label": "变体要求",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "数量、平台、风格、长度、A/B 维度。"
+        },
+        {
+          "id": "brand_or_risk_rules",
+          "label": "品牌/风险规则",
+          "type": "textarea",
+          "placeholder": "禁用词、不能编造的数据、合规要求。"
+        },
+        {
+          "id": "output_format",
+          "label": "输出格式",
+          "type": "textarea",
+          "placeholder": "例如：表格列出版本、适用场景、风险标注。"
+        }
+      ]
+    }
   },
   "template-classify-route": {
     "id": "template-classify-route",
@@ -773,7 +1025,7 @@
     "cwd": "/Users/yipengfei/Desktop/pi-fork",
     "projectId": "",
     "createdAt": 1782860100000,
-    "updatedAt": 1782860100000,
+    "updatedAt": 1782954841595,
     "tasks": [
       {
         "id": "cr-ingest",
@@ -841,7 +1093,49 @@
     ],
     "status": "template",
     "domain": "generic",
-    "templateType": "classify-route"
+    "templateType": "classify-route",
+    "inputContract": {
+      "version": 1,
+      "mode": "single-run",
+      "title": "分类路由输入",
+      "description": "一次性提交待分类条目、标签体系和处理规则。低置信度或高风险条目必须进入审查。",
+      "missingPolicy": "mark_missing",
+      "fields": [
+        {
+          "id": "task_goal",
+          "label": "任务目标",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "例如：将评论区新增评论分级并生成可审查回复队列。"
+        },
+        {
+          "id": "items_to_classify",
+          "label": "待处理条目",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "粘贴工单、评论、票据或对话列表。"
+        },
+        {
+          "id": "label_schema",
+          "label": "标签/路由规则",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "例如：好评/质疑/广告/投诉；低置信度转人工。"
+        },
+        {
+          "id": "draft_policy",
+          "label": "自动处理草稿规则",
+          "type": "textarea",
+          "placeholder": "哪些条目可生成草稿，哪些必须人工审核。"
+        },
+        {
+          "id": "risk_rules",
+          "label": "风险审查规则",
+          "type": "textarea",
+          "placeholder": "例如：投诉、隐私、交易、法律风险必须 blocked/manual_review。"
+        }
+      ]
+    }
   },
   "template-monitor-alert": {
     "id": "template-monitor-alert",
@@ -853,7 +1147,7 @@
     "cwd": "/Users/yipengfei/Desktop/pi-fork",
     "projectId": "",
     "createdAt": 1782860100000,
-    "updatedAt": 1782860100000,
+    "updatedAt": 1782954841595,
     "tasks": [
       {
         "id": "ma-observe",
@@ -904,7 +1198,51 @@
     ],
     "status": "template",
     "domain": "generic",
-    "templateType": "monitor-alert"
+    "templateType": "monitor-alert",
+    "inputContract": {
+      "version": 1,
+      "mode": "single-run",
+      "title": "事件窗口与告警输入",
+      "description": "一次性提交监控对象、时间窗口、来源和阈值。该 Workflow 是单次窗口判断，不是后台常驻守护。",
+      "missingPolicy": "mark_missing",
+      "fields": [
+        {
+          "id": "task_goal",
+          "label": "任务目标",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "例如：判断过去 48 小时是否出现重大事故或监管预警。"
+        },
+        {
+          "id": "monitor_targets",
+          "label": "监控对象",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "品牌、关键词、商品、竞品、平台、账号等。"
+        },
+        {
+          "id": "time_window",
+          "label": "时间窗口",
+          "type": "text",
+          "required": true,
+          "placeholder": "例如：过去 48 小时 / 2026-06-30 至 2026-07-02"
+        },
+        {
+          "id": "source_materials",
+          "label": "事件/讨论/指标资料",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "粘贴抓取结果、帖子、指标、新闻或监管来源。"
+        },
+        {
+          "id": "alert_thresholds",
+          "label": "告警阈值与升级条件",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "定义 P0/P1/P2/P3 或轻/中/重规则。"
+        }
+      ]
+    }
   },
   "template-extract-writeback": {
     "id": "template-extract-writeback",
@@ -916,7 +1254,7 @@
     "cwd": "/Users/yipengfei/Desktop/pi-fork",
     "projectId": "",
     "createdAt": 1782860100000,
-    "updatedAt": 1782860100000,
+    "updatedAt": 1782954841595,
     "tasks": [
       {
         "id": "ew-ingest",
@@ -983,7 +1321,50 @@
     ],
     "status": "template",
     "domain": "generic",
-    "templateType": "extract-writeback"
+    "templateType": "extract-writeback",
+    "inputContract": {
+      "version": 1,
+      "mode": "single-run",
+      "title": "字段抽取与写回输入",
+      "description": "一次性提交原始材料、目标字段和写回约束。缺失必填字段时阻塞，不默认为空或 0。",
+      "missingPolicy": "block",
+      "fields": [
+        {
+          "id": "task_goal",
+          "label": "任务目标",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "例如：从通话转写抽取 CRM 字段并生成写回 payload。"
+        },
+        {
+          "id": "raw_materials",
+          "label": "原始材料",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "粘贴通话、发票、表单、邮件、工单等原文。"
+        },
+        {
+          "id": "target_schema",
+          "label": "目标字段/schema",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "列出字段名、类型、必填项、枚举值、校验规则。"
+        },
+        {
+          "id": "writeback_rules",
+          "label": "写回/幂等规则",
+          "type": "textarea",
+          "placeholder": "例如：idempotency_key 规则、失败重试、禁止默认值。"
+        },
+        {
+          "id": "output_format",
+          "label": "输出格式",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "例如：payload JSON + validation_errors + needs_review。"
+        }
+      ]
+    }
   },
   "self-media-comment-reply-routing": {
     "id": "self-media-comment-reply-routing",
@@ -995,7 +1376,7 @@
     "cwd": "/Users/yipengfei/Desktop/pi-fork",
     "projectId": "",
     "createdAt": 1782860200000,
-    "updatedAt": 1782860200000,
+    "updatedAt": 1782954841595,
     "tasks": [
       {
         "id": "comment-ingest",
@@ -1068,7 +1449,49 @@
     "templateType": "classify-route",
     "debugStatus": "polished",
     "debuggedAt": 1782842017491,
-    "debugSource": "user:self-media-bulk-polish"
+    "debugSource": "user:self-media-bulk-polish",
+    "inputContract": {
+      "version": 1,
+      "mode": "single-run",
+      "title": "分类路由输入",
+      "description": "一次性提交待分类条目、标签体系和处理规则。低置信度或高风险条目必须进入审查。",
+      "missingPolicy": "mark_missing",
+      "fields": [
+        {
+          "id": "task_goal",
+          "label": "任务目标",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "例如：将评论区新增评论分级并生成可审查回复队列。"
+        },
+        {
+          "id": "items_to_classify",
+          "label": "待处理条目",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "粘贴工单、评论、票据或对话列表。"
+        },
+        {
+          "id": "label_schema",
+          "label": "标签/路由规则",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "例如：好评/质疑/广告/投诉；低置信度转人工。"
+        },
+        {
+          "id": "draft_policy",
+          "label": "自动处理草稿规则",
+          "type": "textarea",
+          "placeholder": "哪些条目可生成草稿，哪些必须人工审核。"
+        },
+        {
+          "id": "risk_rules",
+          "label": "风险审查规则",
+          "type": "textarea",
+          "placeholder": "例如：投诉、隐私、交易、法律风险必须 blocked/manual_review。"
+        }
+      ]
+    }
   },
   "sales-call-crm-writeback": {
     "id": "sales-call-crm-writeback",
@@ -1080,7 +1503,7 @@
     "cwd": "/Users/yipengfei/Desktop/pi-fork",
     "projectId": "",
     "createdAt": 1782860200000,
-    "updatedAt": 1782860200000,
+    "updatedAt": 1782954841595,
     "tasks": [
       {
         "id": "call-transcript",
@@ -1154,7 +1577,50 @@
     "templateType": "extract-writeback",
     "debugStatus": "polished",
     "debuggedAt": 1782842017491,
-    "debugSource": "docs/workflow-debugging-playbook.md"
+    "debugSource": "docs/workflow-debugging-playbook.md",
+    "inputContract": {
+      "version": 1,
+      "mode": "single-run",
+      "title": "字段抽取与写回输入",
+      "description": "一次性提交原始材料、目标字段和写回约束。缺失必填字段时阻塞，不默认为空或 0。",
+      "missingPolicy": "block",
+      "fields": [
+        {
+          "id": "task_goal",
+          "label": "任务目标",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "例如：从通话转写抽取 CRM 字段并生成写回 payload。"
+        },
+        {
+          "id": "raw_materials",
+          "label": "原始材料",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "粘贴通话、发票、表单、邮件、工单等原文。"
+        },
+        {
+          "id": "target_schema",
+          "label": "目标字段/schema",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "列出字段名、类型、必填项、枚举值、校验规则。"
+        },
+        {
+          "id": "writeback_rules",
+          "label": "写回/幂等规则",
+          "type": "textarea",
+          "placeholder": "例如：idempotency_key 规则、失败重试、禁止默认值。"
+        },
+        {
+          "id": "output_format",
+          "label": "输出格式",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "例如：payload JSON + validation_errors + needs_review。"
+        }
+      ]
+    }
   },
   "self-media-topic-mining": {
     "id": "self-media-topic-mining",
@@ -1166,7 +1632,7 @@
     "cwd": "/Users/yipengfei/Desktop/pi-fork",
     "projectId": "",
     "createdAt": 1782860300000,
-    "updatedAt": 1782860300000,
+    "updatedAt": 1782954841595,
     "status": "active",
     "domain": "self-media",
     "templateType": "fetch-summarize",
@@ -1220,7 +1686,49 @@
           "包含验证指标"
         ]
       }
-    ]
+    ],
+    "inputContract": {
+      "version": 1,
+      "mode": "single-run",
+      "title": "资料搜集与摘要输入",
+      "description": "一次性提交调研对象、来源材料和输出要求。Fetch 节点只搬运资料，Structure 节点结构化，Judge 节点输出影响判断。",
+      "missingPolicy": "mark_missing",
+      "fields": [
+        {
+          "id": "task_goal",
+          "label": "任务目标",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "例如：整理某行业近 7 天融资、政策和竞品变化，输出结构化简报。"
+        },
+        {
+          "id": "source_materials",
+          "label": "资料/原文/搜索结果",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "粘贴来源文本、工具结果、表格、网页摘录；没有资料时写明希望检索的对象和范围。"
+        },
+        {
+          "id": "links",
+          "label": "来源链接",
+          "type": "links",
+          "placeholder": "每行一个链接，可留空。"
+        },
+        {
+          "id": "time_window",
+          "label": "时间窗口",
+          "type": "text",
+          "placeholder": "例如：过去 7 天 / 2025H1 / 2026-06-30 至 2026-07-02"
+        },
+        {
+          "id": "output_format",
+          "label": "输出格式",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "例如：表格 + 摘要；包含来源、置信度、待复核点。"
+        }
+      ]
+    }
   },
   "self-media-ai-track-topic-research": {
     "id": "self-media-ai-track-topic-research",
@@ -1232,7 +1740,7 @@
     "cwd": "/Users/yipengfei/Desktop/pi-fork",
     "projectId": "",
     "createdAt": 1782860600000,
-    "updatedAt": 1782860600000,
+    "updatedAt": 1782954841595,
     "status": "active",
     "domain": "self-media",
     "templateType": "fetch-summarize",
@@ -1331,7 +1839,49 @@
           "maxOutputChars": 10000
         }
       }
-    ]
+    ],
+    "inputContract": {
+      "version": 1,
+      "mode": "single-run",
+      "title": "资料搜集与摘要输入",
+      "description": "一次性提交调研对象、来源材料和输出要求。Fetch 节点只搬运资料，Structure 节点结构化，Judge 节点输出影响判断。",
+      "missingPolicy": "mark_missing",
+      "fields": [
+        {
+          "id": "task_goal",
+          "label": "任务目标",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "例如：整理某行业近 7 天融资、政策和竞品变化，输出结构化简报。"
+        },
+        {
+          "id": "source_materials",
+          "label": "资料/原文/搜索结果",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "粘贴来源文本、工具结果、表格、网页摘录；没有资料时写明希望检索的对象和范围。"
+        },
+        {
+          "id": "links",
+          "label": "来源链接",
+          "type": "links",
+          "placeholder": "每行一个链接，可留空。"
+        },
+        {
+          "id": "time_window",
+          "label": "时间窗口",
+          "type": "text",
+          "placeholder": "例如：过去 7 天 / 2025H1 / 2026-06-30 至 2026-07-02"
+        },
+        {
+          "id": "output_format",
+          "label": "输出格式",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "例如：表格 + 摘要；包含来源、置信度、待复核点。"
+        }
+      ]
+    }
   },
   "self-media-title-cover-ab": {
     "id": "self-media-title-cover-ab",
@@ -1343,7 +1893,7 @@
     "cwd": "/Users/yipengfei/Desktop/pi-fork",
     "projectId": "",
     "createdAt": 1782860300000,
-    "updatedAt": 1782860300000,
+    "updatedAt": 1782954841595,
     "status": "active",
     "domain": "self-media",
     "templateType": "generate-variants",
@@ -1397,7 +1947,49 @@
           "包含返工建议"
         ]
       }
-    ]
+    ],
+    "inputContract": {
+      "version": 1,
+      "mode": "single-run",
+      "title": "变体生成输入",
+      "description": "一次性提交目标、素材和约束。Plan 节点定策略，Generate 节点产出变体，Review 节点做质量门禁。",
+      "missingPolicy": "mark_missing",
+      "fields": [
+        {
+          "id": "task_goal",
+          "label": "任务目标",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "例如：为一个广告活动生成 5 组标题和 CTA。"
+        },
+        {
+          "id": "source_materials",
+          "label": "素材/事实边界",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "粘贴产品事实、定位、受众、已有正文或素材。"
+        },
+        {
+          "id": "variant_requirements",
+          "label": "变体要求",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "数量、平台、风格、长度、A/B 维度。"
+        },
+        {
+          "id": "brand_or_risk_rules",
+          "label": "品牌/风险规则",
+          "type": "textarea",
+          "placeholder": "禁用词、不能编造的数据、合规要求。"
+        },
+        {
+          "id": "output_format",
+          "label": "输出格式",
+          "type": "textarea",
+          "placeholder": "例如：表格列出版本、适用场景、风险标注。"
+        }
+      ]
+    }
   },
   "self-media-data-review-weekly": {
     "id": "self-media-data-review-weekly",
@@ -1409,7 +2001,7 @@
     "cwd": "/Users/yipengfei/Desktop/pi-fork",
     "projectId": "",
     "createdAt": 1782860300000,
-    "updatedAt": 1782860300000,
+    "updatedAt": 1782954841595,
     "status": "active",
     "domain": "self-media",
     "templateType": "fetch-summarize",
@@ -1463,7 +2055,49 @@
           "包含下期选题"
         ]
       }
-    ]
+    ],
+    "inputContract": {
+      "version": 1,
+      "mode": "single-run",
+      "title": "资料搜集与摘要输入",
+      "description": "一次性提交调研对象、来源材料和输出要求。Fetch 节点只搬运资料，Structure 节点结构化，Judge 节点输出影响判断。",
+      "missingPolicy": "mark_missing",
+      "fields": [
+        {
+          "id": "task_goal",
+          "label": "任务目标",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "例如：整理某行业近 7 天融资、政策和竞品变化，输出结构化简报。"
+        },
+        {
+          "id": "source_materials",
+          "label": "资料/原文/搜索结果",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "粘贴来源文本、工具结果、表格、网页摘录；没有资料时写明希望检索的对象和范围。"
+        },
+        {
+          "id": "links",
+          "label": "来源链接",
+          "type": "links",
+          "placeholder": "每行一个链接，可留空。"
+        },
+        {
+          "id": "time_window",
+          "label": "时间窗口",
+          "type": "text",
+          "placeholder": "例如：过去 7 天 / 2025H1 / 2026-06-30 至 2026-07-02"
+        },
+        {
+          "id": "output_format",
+          "label": "输出格式",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "例如：表格 + 摘要；包含来源、置信度、待复核点。"
+        }
+      ]
+    }
   },
   "industry-source-monitoring-daily": {
     "id": "industry-source-monitoring-daily",
@@ -1475,7 +2109,7 @@
     "cwd": "/Users/yipengfei/Desktop/pi-fork",
     "projectId": "",
     "createdAt": 1782860300000,
-    "updatedAt": 1782860300000,
+    "updatedAt": 1782954841595,
     "status": "active",
     "domain": "research",
     "templateType": "fetch-summarize",
@@ -1532,7 +2166,49 @@
           "不可验证来源不下高置信结论"
         ]
       }
-    ]
+    ],
+    "inputContract": {
+      "version": 1,
+      "mode": "single-run",
+      "title": "资料搜集与摘要输入",
+      "description": "一次性提交调研对象、来源材料和输出要求。Fetch 节点只搬运资料，Structure 节点结构化，Judge 节点输出影响判断。",
+      "missingPolicy": "mark_missing",
+      "fields": [
+        {
+          "id": "task_goal",
+          "label": "任务目标",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "例如：整理某行业近 7 天融资、政策和竞品变化，输出结构化简报。"
+        },
+        {
+          "id": "source_materials",
+          "label": "资料/原文/搜索结果",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "粘贴来源文本、工具结果、表格、网页摘录；没有资料时写明希望检索的对象和范围。"
+        },
+        {
+          "id": "links",
+          "label": "来源链接",
+          "type": "links",
+          "placeholder": "每行一个链接，可留空。"
+        },
+        {
+          "id": "time_window",
+          "label": "时间窗口",
+          "type": "text",
+          "placeholder": "例如：过去 7 天 / 2025H1 / 2026-06-30 至 2026-07-02"
+        },
+        {
+          "id": "output_format",
+          "label": "输出格式",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "例如：表格 + 摘要；包含来源、置信度、待复核点。"
+        }
+      ]
+    }
   },
   "industry-competitor-diff-tracking": {
     "id": "industry-competitor-diff-tracking",
@@ -1544,7 +2220,7 @@
     "cwd": "/Users/yipengfei/Desktop/pi-fork",
     "projectId": "",
     "createdAt": 1782860300000,
-    "updatedAt": 1782860300000,
+    "updatedAt": 1782954841595,
     "status": "active",
     "domain": "research",
     "templateType": "monitor-alert",
@@ -1611,7 +2287,51 @@
           "包含下一步跟踪动作"
         ]
       }
-    ]
+    ],
+    "inputContract": {
+      "version": 1,
+      "mode": "single-run",
+      "title": "事件窗口与告警输入",
+      "description": "一次性提交监控对象、时间窗口、来源和阈值。该 Workflow 是单次窗口判断，不是后台常驻守护。",
+      "missingPolicy": "mark_missing",
+      "fields": [
+        {
+          "id": "task_goal",
+          "label": "任务目标",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "例如：判断过去 48 小时是否出现重大事故或监管预警。"
+        },
+        {
+          "id": "monitor_targets",
+          "label": "监控对象",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "品牌、关键词、商品、竞品、平台、账号等。"
+        },
+        {
+          "id": "time_window",
+          "label": "时间窗口",
+          "type": "text",
+          "required": true,
+          "placeholder": "例如：过去 48 小时 / 2026-06-30 至 2026-07-02"
+        },
+        {
+          "id": "source_materials",
+          "label": "事件/讨论/指标资料",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "粘贴抓取结果、帖子、指标、新闻或监管来源。"
+        },
+        {
+          "id": "alert_thresholds",
+          "label": "告警阈值与升级条件",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "定义 P0/P1/P2/P3 或轻/中/重规则。"
+        }
+      ]
+    }
   },
   "industry-interview-summary": {
     "id": "industry-interview-summary",
@@ -1623,7 +2343,7 @@
     "cwd": "/Users/yipengfei/Desktop/pi-fork",
     "projectId": "",
     "createdAt": 1782860300000,
-    "updatedAt": 1782860300000,
+    "updatedAt": 1782954841595,
     "status": "active",
     "domain": "research",
     "templateType": "extract-writeback",
@@ -1678,7 +2398,50 @@
           "包含人工复核清单"
         ]
       }
-    ]
+    ],
+    "inputContract": {
+      "version": 1,
+      "mode": "single-run",
+      "title": "字段抽取与写回输入",
+      "description": "一次性提交原始材料、目标字段和写回约束。缺失必填字段时阻塞，不默认为空或 0。",
+      "missingPolicy": "block",
+      "fields": [
+        {
+          "id": "task_goal",
+          "label": "任务目标",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "例如：从通话转写抽取 CRM 字段并生成写回 payload。"
+        },
+        {
+          "id": "raw_materials",
+          "label": "原始材料",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "粘贴通话、发票、表单、邮件、工单等原文。"
+        },
+        {
+          "id": "target_schema",
+          "label": "目标字段/schema",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "列出字段名、类型、必填项、枚举值、校验规则。"
+        },
+        {
+          "id": "writeback_rules",
+          "label": "写回/幂等规则",
+          "type": "textarea",
+          "placeholder": "例如：idempotency_key 规则、失败重试、禁止默认值。"
+        },
+        {
+          "id": "output_format",
+          "label": "输出格式",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "例如：payload JSON + validation_errors + needs_review。"
+        }
+      ]
+    }
   },
   "industry-sentiment-risk-alert": {
     "id": "industry-sentiment-risk-alert",
@@ -1690,7 +2453,7 @@
     "cwd": "/Users/yipengfei/Desktop/pi-fork",
     "projectId": "",
     "createdAt": 1782860300000,
-    "updatedAt": 1782860300000,
+    "updatedAt": 1782954841595,
     "status": "active",
     "domain": "research",
     "templateType": "monitor-alert",
@@ -1741,7 +2504,51 @@
           "包含升级条件"
         ]
       }
-    ]
+    ],
+    "inputContract": {
+      "version": 1,
+      "mode": "single-run",
+      "title": "事件窗口与告警输入",
+      "description": "一次性提交监控对象、时间窗口、来源和阈值。该 Workflow 是单次窗口判断，不是后台常驻守护。",
+      "missingPolicy": "mark_missing",
+      "fields": [
+        {
+          "id": "task_goal",
+          "label": "任务目标",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "例如：判断过去 48 小时是否出现重大事故或监管预警。"
+        },
+        {
+          "id": "monitor_targets",
+          "label": "监控对象",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "品牌、关键词、商品、竞品、平台、账号等。"
+        },
+        {
+          "id": "time_window",
+          "label": "时间窗口",
+          "type": "text",
+          "required": true,
+          "placeholder": "例如：过去 48 小时 / 2026-06-30 至 2026-07-02"
+        },
+        {
+          "id": "source_materials",
+          "label": "事件/讨论/指标资料",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "粘贴抓取结果、帖子、指标、新闻或监管来源。"
+        },
+        {
+          "id": "alert_thresholds",
+          "label": "告警阈值与升级条件",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "定义 P0/P1/P2/P3 或轻/中/重规则。"
+        }
+      ]
+    }
   },
   "ecommerce-review-mining": {
     "id": "ecommerce-review-mining",
@@ -1753,7 +2560,7 @@
     "cwd": "/Users/yipengfei/Desktop/pi-fork",
     "projectId": "",
     "createdAt": 1782860300000,
-    "updatedAt": 1782860300000,
+    "updatedAt": 1782954841595,
     "status": "active",
     "domain": "ecommerce",
     "templateType": "fetch-summarize",
@@ -1820,7 +2627,49 @@
           "包含人工确认项"
         ]
       }
-    ]
+    ],
+    "inputContract": {
+      "version": 1,
+      "mode": "single-run",
+      "title": "资料搜集与摘要输入",
+      "description": "一次性提交调研对象、来源材料和输出要求。Fetch 节点只搬运资料，Structure 节点结构化，Judge 节点输出影响判断。",
+      "missingPolicy": "mark_missing",
+      "fields": [
+        {
+          "id": "task_goal",
+          "label": "任务目标",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "例如：整理某行业近 7 天融资、政策和竞品变化，输出结构化简报。"
+        },
+        {
+          "id": "source_materials",
+          "label": "资料/原文/搜索结果",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "粘贴来源文本、工具结果、表格、网页摘录；没有资料时写明希望检索的对象和范围。"
+        },
+        {
+          "id": "links",
+          "label": "来源链接",
+          "type": "links",
+          "placeholder": "每行一个链接，可留空。"
+        },
+        {
+          "id": "time_window",
+          "label": "时间窗口",
+          "type": "text",
+          "placeholder": "例如：过去 7 天 / 2025H1 / 2026-06-30 至 2026-07-02"
+        },
+        {
+          "id": "output_format",
+          "label": "输出格式",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "例如：表格 + 摘要；包含来源、置信度、待复核点。"
+        }
+      ]
+    }
   },
   "ecommerce-inventory-pricing-alert": {
     "id": "ecommerce-inventory-pricing-alert",
@@ -1832,7 +2681,7 @@
     "cwd": "/Users/yipengfei/Desktop/pi-fork",
     "projectId": "",
     "createdAt": 1782860300000,
-    "updatedAt": 1782860300000,
+    "updatedAt": 1782954841595,
     "status": "active",
     "domain": "ecommerce",
     "templateType": "monitor-alert",
@@ -1883,7 +2732,51 @@
           "包含人工确认项"
         ]
       }
-    ]
+    ],
+    "inputContract": {
+      "version": 1,
+      "mode": "single-run",
+      "title": "事件窗口与告警输入",
+      "description": "一次性提交监控对象、时间窗口、来源和阈值。该 Workflow 是单次窗口判断，不是后台常驻守护。",
+      "missingPolicy": "mark_missing",
+      "fields": [
+        {
+          "id": "task_goal",
+          "label": "任务目标",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "例如：判断过去 48 小时是否出现重大事故或监管预警。"
+        },
+        {
+          "id": "monitor_targets",
+          "label": "监控对象",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "品牌、关键词、商品、竞品、平台、账号等。"
+        },
+        {
+          "id": "time_window",
+          "label": "时间窗口",
+          "type": "text",
+          "required": true,
+          "placeholder": "例如：过去 48 小时 / 2026-06-30 至 2026-07-02"
+        },
+        {
+          "id": "source_materials",
+          "label": "事件/讨论/指标资料",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "粘贴抓取结果、帖子、指标、新闻或监管来源。"
+        },
+        {
+          "id": "alert_thresholds",
+          "label": "告警阈值与升级条件",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "定义 P0/P1/P2/P3 或轻/中/重规则。"
+        }
+      ]
+    }
   },
   "ecommerce-promo-creative-batch": {
     "id": "ecommerce-promo-creative-batch",
@@ -1895,7 +2788,7 @@
     "cwd": "/Users/yipengfei/Desktop/pi-fork",
     "projectId": "",
     "createdAt": 1782860300000,
-    "updatedAt": 1782860300000,
+    "updatedAt": 1782954841595,
     "status": "active",
     "domain": "ecommerce",
     "templateType": "generate-variants",
@@ -1946,7 +2839,49 @@
           "包含测试建议"
         ]
       }
-    ]
+    ],
+    "inputContract": {
+      "version": 1,
+      "mode": "single-run",
+      "title": "变体生成输入",
+      "description": "一次性提交目标、素材和约束。Plan 节点定策略，Generate 节点产出变体，Review 节点做质量门禁。",
+      "missingPolicy": "mark_missing",
+      "fields": [
+        {
+          "id": "task_goal",
+          "label": "任务目标",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "例如：为一个广告活动生成 5 组标题和 CTA。"
+        },
+        {
+          "id": "source_materials",
+          "label": "素材/事实边界",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "粘贴产品事实、定位、受众、已有正文或素材。"
+        },
+        {
+          "id": "variant_requirements",
+          "label": "变体要求",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "数量、平台、风格、长度、A/B 维度。"
+        },
+        {
+          "id": "brand_or_risk_rules",
+          "label": "品牌/风险规则",
+          "type": "textarea",
+          "placeholder": "禁用词、不能编造的数据、合规要求。"
+        },
+        {
+          "id": "output_format",
+          "label": "输出格式",
+          "type": "textarea",
+          "placeholder": "例如：表格列出版本、适用场景、风险标注。"
+        }
+      ]
+    }
   },
   "support-auto-answer": {
     "id": "support-auto-answer",
@@ -1958,7 +2893,7 @@
     "cwd": "/Users/yipengfei/Desktop/pi-fork",
     "projectId": "",
     "createdAt": 1782860300000,
-    "updatedAt": 1782860300000,
+    "updatedAt": 1782954841595,
     "status": "active",
     "domain": "customer-support",
     "templateType": "classify-route",
@@ -2009,7 +2944,49 @@
           "包含返工建议"
         ]
       }
-    ]
+    ],
+    "inputContract": {
+      "version": 1,
+      "mode": "single-run",
+      "title": "分类路由输入",
+      "description": "一次性提交待分类条目、标签体系和处理规则。低置信度或高风险条目必须进入审查。",
+      "missingPolicy": "mark_missing",
+      "fields": [
+        {
+          "id": "task_goal",
+          "label": "任务目标",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "例如：将评论区新增评论分级并生成可审查回复队列。"
+        },
+        {
+          "id": "items_to_classify",
+          "label": "待处理条目",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "粘贴工单、评论、票据或对话列表。"
+        },
+        {
+          "id": "label_schema",
+          "label": "标签/路由规则",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "例如：好评/质疑/广告/投诉；低置信度转人工。"
+        },
+        {
+          "id": "draft_policy",
+          "label": "自动处理草稿规则",
+          "type": "textarea",
+          "placeholder": "哪些条目可生成草稿，哪些必须人工审核。"
+        },
+        {
+          "id": "risk_rules",
+          "label": "风险审查规则",
+          "type": "textarea",
+          "placeholder": "例如：投诉、隐私、交易、法律风险必须 blocked/manual_review。"
+        }
+      ]
+    }
   },
   "support-ticket-priority-routing": {
     "id": "support-ticket-priority-routing",
@@ -2021,7 +2998,7 @@
     "cwd": "/Users/yipengfei/Desktop/pi-fork",
     "projectId": "",
     "createdAt": 1782860300000,
-    "updatedAt": 1782860300000,
+    "updatedAt": 1782954841595,
     "status": "active",
     "domain": "customer-support",
     "templateType": "classify-route",
@@ -2072,7 +3049,49 @@
           "包含调整建议"
         ]
       }
-    ]
+    ],
+    "inputContract": {
+      "version": 1,
+      "mode": "single-run",
+      "title": "分类路由输入",
+      "description": "一次性提交待分类条目、标签体系和处理规则。低置信度或高风险条目必须进入审查。",
+      "missingPolicy": "mark_missing",
+      "fields": [
+        {
+          "id": "task_goal",
+          "label": "任务目标",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "例如：将评论区新增评论分级并生成可审查回复队列。"
+        },
+        {
+          "id": "items_to_classify",
+          "label": "待处理条目",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "粘贴工单、评论、票据或对话列表。"
+        },
+        {
+          "id": "label_schema",
+          "label": "标签/路由规则",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "例如：好评/质疑/广告/投诉；低置信度转人工。"
+        },
+        {
+          "id": "draft_policy",
+          "label": "自动处理草稿规则",
+          "type": "textarea",
+          "placeholder": "哪些条目可生成草稿，哪些必须人工审核。"
+        },
+        {
+          "id": "risk_rules",
+          "label": "风险审查规则",
+          "type": "textarea",
+          "placeholder": "例如：投诉、隐私、交易、法律风险必须 blocked/manual_review。"
+        }
+      ]
+    }
   },
   "support-prehandoff-info-collection": {
     "id": "support-prehandoff-info-collection",
@@ -2084,7 +3103,7 @@
     "cwd": "/Users/yipengfei/Desktop/pi-fork",
     "projectId": "",
     "createdAt": 1782860300000,
-    "updatedAt": 1782860300000,
+    "updatedAt": 1782954841595,
     "status": "active",
     "domain": "customer-support",
     "templateType": "extract-writeback",
@@ -2151,7 +3170,50 @@
           "包含最终人工队列摘要"
         ]
       }
-    ]
+    ],
+    "inputContract": {
+      "version": 1,
+      "mode": "single-run",
+      "title": "字段抽取与写回输入",
+      "description": "一次性提交原始材料、目标字段和写回约束。缺失必填字段时阻塞，不默认为空或 0。",
+      "missingPolicy": "block",
+      "fields": [
+        {
+          "id": "task_goal",
+          "label": "任务目标",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "例如：从通话转写抽取 CRM 字段并生成写回 payload。"
+        },
+        {
+          "id": "raw_materials",
+          "label": "原始材料",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "粘贴通话、发票、表单、邮件、工单等原文。"
+        },
+        {
+          "id": "target_schema",
+          "label": "目标字段/schema",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "列出字段名、类型、必填项、枚举值、校验规则。"
+        },
+        {
+          "id": "writeback_rules",
+          "label": "写回/幂等规则",
+          "type": "textarea",
+          "placeholder": "例如：idempotency_key 规则、失败重试、禁止默认值。"
+        },
+        {
+          "id": "output_format",
+          "label": "输出格式",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "例如：payload JSON + validation_errors + needs_review。"
+        }
+      ]
+    }
   },
   "support-service-quality-review": {
     "id": "support-service-quality-review",
@@ -2163,7 +3225,7 @@
     "cwd": "/Users/yipengfei/Desktop/pi-fork",
     "projectId": "",
     "createdAt": 1782860300000,
-    "updatedAt": 1782860300000,
+    "updatedAt": 1782954841595,
     "status": "active",
     "domain": "customer-support",
     "templateType": "fetch-summarize",
@@ -2214,7 +3276,49 @@
           "包含复盘结论"
         ]
       }
-    ]
+    ],
+    "inputContract": {
+      "version": 1,
+      "mode": "single-run",
+      "title": "资料搜集与摘要输入",
+      "description": "一次性提交调研对象、来源材料和输出要求。Fetch 节点只搬运资料，Structure 节点结构化，Judge 节点输出影响判断。",
+      "missingPolicy": "mark_missing",
+      "fields": [
+        {
+          "id": "task_goal",
+          "label": "任务目标",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "例如：整理某行业近 7 天融资、政策和竞品变化，输出结构化简报。"
+        },
+        {
+          "id": "source_materials",
+          "label": "资料/原文/搜索结果",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "粘贴来源文本、工具结果、表格、网页摘录；没有资料时写明希望检索的对象和范围。"
+        },
+        {
+          "id": "links",
+          "label": "来源链接",
+          "type": "links",
+          "placeholder": "每行一个链接，可留空。"
+        },
+        {
+          "id": "time_window",
+          "label": "时间窗口",
+          "type": "text",
+          "placeholder": "例如：过去 7 天 / 2025H1 / 2026-06-30 至 2026-07-02"
+        },
+        {
+          "id": "output_format",
+          "label": "输出格式",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "例如：表格 + 摘要；包含来源、置信度、待复核点。"
+        }
+      ]
+    }
   },
   "sales-lead-scoring": {
     "id": "sales-lead-scoring",
@@ -2226,7 +3330,7 @@
     "cwd": "/Users/yipengfei/Desktop/pi-fork",
     "projectId": "",
     "createdAt": 1782860300000,
-    "updatedAt": 1782860300000,
+    "updatedAt": 1782954841595,
     "status": "active",
     "domain": "sales",
     "templateType": "classify-route",
@@ -2277,7 +3381,49 @@
           "包含日志字段"
         ]
       }
-    ]
+    ],
+    "inputContract": {
+      "version": 1,
+      "mode": "single-run",
+      "title": "分类路由输入",
+      "description": "一次性提交待分类条目、标签体系和处理规则。低置信度或高风险条目必须进入审查。",
+      "missingPolicy": "mark_missing",
+      "fields": [
+        {
+          "id": "task_goal",
+          "label": "任务目标",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "例如：将评论区新增评论分级并生成可审查回复队列。"
+        },
+        {
+          "id": "items_to_classify",
+          "label": "待处理条目",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "粘贴工单、评论、票据或对话列表。"
+        },
+        {
+          "id": "label_schema",
+          "label": "标签/路由规则",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "例如：好评/质疑/广告/投诉；低置信度转人工。"
+        },
+        {
+          "id": "draft_policy",
+          "label": "自动处理草稿规则",
+          "type": "textarea",
+          "placeholder": "哪些条目可生成草稿，哪些必须人工审核。"
+        },
+        {
+          "id": "risk_rules",
+          "label": "风险审查规则",
+          "type": "textarea",
+          "placeholder": "例如：投诉、隐私、交易、法律风险必须 blocked/manual_review。"
+        }
+      ]
+    }
   },
   "sales-precall-brief": {
     "id": "sales-precall-brief",
@@ -2289,7 +3435,7 @@
     "cwd": "/Users/yipengfei/Desktop/pi-fork",
     "projectId": "",
     "createdAt": 1782860300000,
-    "updatedAt": 1782860300000,
+    "updatedAt": 1782954841595,
     "status": "active",
     "domain": "sales",
     "templateType": "fetch-summarize",
@@ -2343,7 +3489,49 @@
           "包含人工确认项"
         ]
       }
-    ]
+    ],
+    "inputContract": {
+      "version": 1,
+      "mode": "single-run",
+      "title": "资料搜集与摘要输入",
+      "description": "一次性提交调研对象、来源材料和输出要求。Fetch 节点只搬运资料，Structure 节点结构化，Judge 节点输出影响判断。",
+      "missingPolicy": "mark_missing",
+      "fields": [
+        {
+          "id": "task_goal",
+          "label": "任务目标",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "例如：整理某行业近 7 天融资、政策和竞品变化，输出结构化简报。"
+        },
+        {
+          "id": "source_materials",
+          "label": "资料/原文/搜索结果",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "粘贴来源文本、工具结果、表格、网页摘录；没有资料时写明希望检索的对象和范围。"
+        },
+        {
+          "id": "links",
+          "label": "来源链接",
+          "type": "links",
+          "placeholder": "每行一个链接，可留空。"
+        },
+        {
+          "id": "time_window",
+          "label": "时间窗口",
+          "type": "text",
+          "placeholder": "例如：过去 7 天 / 2025H1 / 2026-06-30 至 2026-07-02"
+        },
+        {
+          "id": "output_format",
+          "label": "输出格式",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "例如：表格 + 摘要；包含来源、置信度、待复核点。"
+        }
+      ]
+    }
   },
   "sales-objection-coach": {
     "id": "sales-objection-coach",
@@ -2355,7 +3543,7 @@
     "cwd": "/Users/yipengfei/Desktop/pi-fork",
     "projectId": "",
     "createdAt": 1782860300000,
-    "updatedAt": 1782860300000,
+    "updatedAt": 1782954841595,
     "status": "active",
     "domain": "sales",
     "templateType": "classify-route",
@@ -2424,7 +3612,49 @@
           "包含返工建议"
         ]
       }
-    ]
+    ],
+    "inputContract": {
+      "version": 1,
+      "mode": "single-run",
+      "title": "分类路由输入",
+      "description": "一次性提交待分类条目、标签体系和处理规则。低置信度或高风险条目必须进入审查。",
+      "missingPolicy": "mark_missing",
+      "fields": [
+        {
+          "id": "task_goal",
+          "label": "任务目标",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "例如：将评论区新增评论分级并生成可审查回复队列。"
+        },
+        {
+          "id": "items_to_classify",
+          "label": "待处理条目",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "粘贴工单、评论、票据或对话列表。"
+        },
+        {
+          "id": "label_schema",
+          "label": "标签/路由规则",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "例如：好评/质疑/广告/投诉；低置信度转人工。"
+        },
+        {
+          "id": "draft_policy",
+          "label": "自动处理草稿规则",
+          "type": "textarea",
+          "placeholder": "哪些条目可生成草稿，哪些必须人工审核。"
+        },
+        {
+          "id": "risk_rules",
+          "label": "风险审查规则",
+          "type": "textarea",
+          "placeholder": "例如：投诉、隐私、交易、法律风险必须 blocked/manual_review。"
+        }
+      ]
+    }
   },
   "sales-followup-cadence": {
     "id": "sales-followup-cadence",
@@ -2436,7 +3666,7 @@
     "cwd": "/Users/yipengfei/Desktop/pi-fork",
     "projectId": "",
     "createdAt": 1782860300000,
-    "updatedAt": 1782860300000,
+    "updatedAt": 1782954841595,
     "status": "active",
     "domain": "sales",
     "templateType": "generate-variants",
@@ -2504,7 +3734,49 @@
           "包含下一步动作"
         ]
       }
-    ]
+    ],
+    "inputContract": {
+      "version": 1,
+      "mode": "single-run",
+      "title": "变体生成输入",
+      "description": "一次性提交目标、素材和约束。Plan 节点定策略，Generate 节点产出变体，Review 节点做质量门禁。",
+      "missingPolicy": "mark_missing",
+      "fields": [
+        {
+          "id": "task_goal",
+          "label": "任务目标",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "例如：为一个广告活动生成 5 组标题和 CTA。"
+        },
+        {
+          "id": "source_materials",
+          "label": "素材/事实边界",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "粘贴产品事实、定位、受众、已有正文或素材。"
+        },
+        {
+          "id": "variant_requirements",
+          "label": "变体要求",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "数量、平台、风格、长度、A/B 维度。"
+        },
+        {
+          "id": "brand_or_risk_rules",
+          "label": "品牌/风险规则",
+          "type": "textarea",
+          "placeholder": "禁用词、不能编造的数据、合规要求。"
+        },
+        {
+          "id": "output_format",
+          "label": "输出格式",
+          "type": "textarea",
+          "placeholder": "例如：表格列出版本、适用场景、风险标注。"
+        }
+      ]
+    }
   },
   "new-workflow": {
     "id": "new-workflow",
@@ -2522,5 +3794,723 @@
     "domain": "internal",
     "category": "内部旧项",
     "templateType": "manual-check"
+  },
+  "trained-job-search-node-chain": {
+    "id": "trained-job-search-node-chain",
+    "name": "求职定制：背景诊断到简历终审",
+    "description": "由已调试通过的求职场景 Profile 组合而成，串联背景诊断、公司资料搬运、JD 匹配、简历草稿和终审裁决。",
+    "status": "active",
+    "debugStatus": "polished",
+    "domain": "job-search",
+    "category": "job-search",
+    "templateType": "fetch-summarize",
+    "reviewPolicy": "lead_plus_reviewer",
+    "createdAt": 1782948669973,
+    "updatedAt": 1782954841595,
+    "leadProfileId": "strong-task-architect",
+    "tasks": [
+      {
+        "id": "background-strategy",
+        "name": "背景诊断",
+        "profileId": "trained-case-job-background-strategy-001-2026-07-01-2",
+        "model": "opencode-go/deepseek-v4-pro",
+        "noTools": true,
+        "deps": [],
+        "definitionOfDone": "完成求职背景诊断，输出可交给下游使用的竞争位置、目标岗位圈、短板和绕行策略。",
+        "acceptanceCriteria": [
+          "明确学历现实影响但不得建议隐藏/伪造",
+          "圈定 6k 薪资对应岗位圈",
+          "输出方向性结论，不写简历正文"
+        ],
+        "prompt": "求职者背景：高中学历，男，29 岁，性格开朗，有 Python/LLM/RAG 相关 AI 编程经验，接过小型 AI 工具和 RAG 外包项目，期望薪资 6k。请诊断真实竞争位置、目标岗位圈、不可逆短板和绕行策略。"
+      },
+      {
+        "id": "company-gather",
+        "name": "公司调研资料搬运",
+        "profileId": "trained-case-job-company-gather-001-2026-07-01-2",
+        "model": "opencode-go/deepseek-v4-flash",
+        "noTools": true,
+        "deps": [
+          "background-strategy"
+        ],
+        "definitionOfDone": "完成公司调研资料搬运，输出带来源片段的结构化事实包和证据缺口。",
+        "acceptanceCriteria": [
+          "只抽取给定来源显性事实",
+          "每条事实标注来源片段",
+          "未出现信息输出 unknown/missing"
+        ],
+        "prompt": "目标公司：星河智造。来源：官网片段：制造业质检自动化和设备数据采集，关键词 Python、OpenCV、PLC、轻量化模型部署；JD：初级 AI 工具开发助理，薪资 5-7k，Python 基础、接口文档，大专及以上优先；面经：Python 文件处理、接口调用、项目 demo。请只搬运事实。"
+      },
+      {
+        "id": "jd-analyze",
+        "name": "JD 匹配分析",
+        "profileId": "trained-case-job-jd-analyze-001-2026-07-01-2",
+        "model": "opencode-go/deepseek-v4-flash",
+        "noTools": true,
+        "deps": [
+          "background-strategy",
+          "company-gather"
+        ],
+        "definitionOfDone": "完成 JD 匹配分析，输出命中、缺漏、弱化项、学历屏障和简历定制策略。",
+        "acceptanceCriteria": [
+          "逐条对照 JD 输出命中/缺漏/弱化",
+          "区分事实、推断、建议和置信度",
+          "不得把未掌握技能写成熟练"
+        ],
+        "prompt": "候选人简历要点：高中学历；做过 Python 自动化脚本、RAG 知识库 demo、一个小型企业资料问答外包；会 Flask 基础，不熟 Django；Docker 只部署过一次。JD：Python 基础扎实，熟悉接口调用，了解 OpenCV 加分，大专及以上优先，有项目 demo 加分，能和业务方沟通需求。请输出命中项、缺漏项、弱化项、学历屏障和简历定制策略。"
+      },
+      {
+        "id": "resume-draft",
+        "name": "简历经历初稿",
+        "profileId": "trained-case-job-resume-draft-001-2026-07-01",
+        "model": "opencode-go/deepseek-v4-flash",
+        "noTools": true,
+        "deps": [
+          "jd-analyze"
+        ],
+        "definitionOfDone": "完成简历经历初稿，输出可编辑 STAR 经历段落、技能标签和项目亮点。",
+        "acceptanceCriteria": [
+          "使用 STAR 或类似结构写可编辑经历段落",
+          "不虚构量化成果、公司、学历或正式职位",
+          "技能标签区分直接相关和弱相关",
+          "正文不得包含方括号占位符或 {X} 变量"
+        ],
+        "prompt": "原始经历：做过一个企业资料问答 RAG 外包，负责整理客户资料、写 Python 文档清洗脚本、接入向量库、做简单网页查询入口；还帮朋友做过批量 Excel 处理脚本；性格开朗，能和客户沟通需求。请按 STAR 写 2 段简历经历，附技能标签和项目亮点。正文不得出现方括号占位符或 {X} 变量；学校名、Demo 链接、客户名、工时数字等缺失信息只能放入 editable_notes，不写进可投递正文。若 Demo 链接缺失，把“可演示项目”降级为“原型/项目经验”。"
+      },
+      {
+        "id": "resume-review",
+        "name": "简历终审裁决",
+        "profileId": "trained-case-job-resume-review-001-2026-07-01",
+        "model": "opencode-go/deepseek-v4-pro",
+        "noTools": true,
+        "deps": [
+          "resume-draft"
+        ],
+        "definitionOfDone": "完成简历终审裁决，输出 pass/revise/block、问题清单、返工节点和验收标准。",
+        "acceptanceCriteria": [
+          "给出明确 pass/revise/block 裁决",
+          "检查未支撑量化、demo 夸大、学历呈现",
+          "只给短裁决和返工任务"
+        ],
+        "prompt": "请审查上游简历初稿是否如实、不夸大、符合 JD 定制策略。输出 pass/revise/block 裁决、问题清单、返工节点和验收标准。"
+      }
+    ],
+    "inputContract": {
+      "version": 1,
+      "mode": "single-run",
+      "title": "资料搜集与摘要输入",
+      "description": "一次性提交调研对象、来源材料和输出要求。Fetch 节点只搬运资料，Structure 节点结构化，Judge 节点输出影响判断。",
+      "missingPolicy": "mark_missing",
+      "fields": [
+        {
+          "id": "task_goal",
+          "label": "任务目标",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "例如：整理某行业近 7 天融资、政策和竞品变化，输出结构化简报。"
+        },
+        {
+          "id": "source_materials",
+          "label": "资料/原文/搜索结果",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "粘贴来源文本、工具结果、表格、网页摘录；没有资料时写明希望检索的对象和范围。"
+        },
+        {
+          "id": "links",
+          "label": "来源链接",
+          "type": "links",
+          "placeholder": "每行一个链接，可留空。"
+        },
+        {
+          "id": "time_window",
+          "label": "时间窗口",
+          "type": "text",
+          "placeholder": "例如：过去 7 天 / 2025H1 / 2026-06-30 至 2026-07-02"
+        },
+        {
+          "id": "output_format",
+          "label": "输出格式",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "例如：表格 + 摘要；包含来源、置信度、待复核点。"
+        }
+      ]
+    }
+  },
+  "trained-self-media-node-chain": {
+    "id": "trained-self-media-node-chain",
+    "name": "自媒体运营：定位到分发与告警",
+    "description": "由已调试通过的自媒体场景 Profile 组合而成，串联账号定位、素材搜集、标题变体、评论路由、审稿、指标标准化、告警和分发 payload。",
+    "status": "active",
+    "debugStatus": "polished",
+    "domain": "self-media",
+    "category": "self-media",
+    "templateType": "generate-variants",
+    "reviewPolicy": "lead_plus_reviewer",
+    "createdAt": 1782948669973,
+    "updatedAt": 1782954841595,
+    "leadProfileId": "content-strategy-director",
+    "tasks": [
+      {
+        "id": "account-strategy",
+        "name": "账号定位",
+        "profileId": "trained-case-media-account-strategy-001-2026-07-01-3",
+        "model": "opencode-go/deepseek-v4-pro",
+        "noTools": true,
+        "deps": [],
+        "definitionOfDone": "完成账号定位策略，输出定位一句话、受众画像、内容矩阵和验证指标。",
+        "acceptanceCriteria": [
+          "定位围绕 AI 落地需求和可交付技术者连接",
+          "输出内容矩阵和验证指标",
+          "不得编造真实案例、百分比、金额或转化率"
+        ],
+        "prompt": "账号方向：AI 项目撮合，面向有落地需求的中小企业主和会做 AI 工具的技术者。平台：抖音/小红书/知乎。调性：真实、克制、拆坑。请输出定位一句话、受众画像、内容矩阵。示例标题、内容矩阵和验证指标中不得出现无来源百分比、金额、客户结果或夸张承诺。"
+      },
+      {
+        "id": "material-gather",
+        "name": "素材搜集",
+        "profileId": "trained-case-media-material-gather-001-2026-07-01-3",
+        "model": "opencode-go/deepseek-v4-flash",
+        "noTools": true,
+        "deps": [
+          "account-strategy"
+        ],
+        "definitionOfDone": "完成素材搜集，输出结构化资料包、事实/观点区分和证据缺口。",
+        "acceptanceCriteria": [
+          "区分事实和观点",
+          "标注来源片段",
+          "缺少统计/成本/客户案例时标记证据缺口"
+        ],
+        "prompt": "选题：为什么很多企业 LLM 项目 demo 能跑、上线就烂。给定来源材料：1）访谈摘录：某制造企业试过知识库问答，最大问题是资料太乱、没人维护。2）文章摘录：LLM 项目常见成本来自数据清洗、权限设计、评测和运维。3）评论摘录：开发者担心客户只想要 demo，不愿意为后续维护付费。请整理结构化资料包，区分事实/观点/证据缺口；证据缺口是交付内容，不是阻塞原因。"
+      },
+      {
+        "id": "title-draft",
+        "name": "标题封面 A/B",
+        "profileId": "trained-case-media-title-draft-001-2026-07-01-3",
+        "model": "opencode-go/deepseek-v4-flash",
+        "noTools": true,
+        "deps": [
+          "material-gather"
+        ],
+        "definitionOfDone": "完成标题封面 A/B 初稿，输出可编辑变体并保持事实边界。",
+        "acceptanceCriteria": [
+          "围绕资料乱、维护没人做、demo 到生产距离",
+          "不得写无来源数字或夸张承诺",
+          "输出可编辑变体"
+        ],
+        "prompt": "基于上游定位和素材，生成 5 组标题+封面方向，覆盖技术者向、企业主向、混合向。不得新增无来源数字。由于素材来源有限，每组必须附发布安全说明或简介约束，避免把访谈/评论观点包装成行业普遍结论；不要输出未解决 high risk。"
+      },
+      {
+        "id": "comment-classify",
+        "name": "评论分级路由",
+        "profileId": "trained-case-media-comment-classify-001-2026-07-01-3",
+        "model": "opencode-go/deepseek-v4-flash",
+        "noTools": true,
+        "deps": [
+          "title-draft"
+        ],
+        "definitionOfDone": "完成评论分级路由，输出固定标签、置信度、回复建议和转人工标记。",
+        "acceptanceCriteria": [
+          "使用固定标签和置信度",
+          "预算/交易/法律风险转人工",
+          "广告忽略或删除建议，不生成推广回复"
+        ],
+        "prompt": "评论：1）这个太真实了，我们公司知识库也是没人维护。2）能不能介绍靠谱开发者？预算 3 万。3）你这就是割韭菜吧，AI 都是骗子。4）加我微信领资料。5）之前找人做过，出了事故谁负责？请分级并路由。"
+      },
+      {
+        "id": "content-review",
+        "name": "内容审稿裁决",
+        "profileId": "trained-case-media-content-review-001-2026-07-01-2",
+        "model": "opencode-go/deepseek-v4-pro",
+        "noTools": true,
+        "deps": [
+          "account-strategy",
+          "title-draft",
+          "comment-classify"
+        ],
+        "definitionOfDone": "完成内容审稿裁决，输出 publish/revise/block、风险问题和返工标准。",
+        "acceptanceCriteria": [
+          "给出明确 publish/revise/block 裁决",
+          "检查标题和素材证据一致性",
+          "high/critical 问题不得 publish"
+        ],
+        "prompt": "请审核上游标题封面和评论路由方案是否符合 AI 自媒体项目撮合定位。重点检查标题党、未支撑事实、CTA 是否过硬、交易/法律风险。输出 publish/revise/block 裁决。"
+      },
+      {
+        "id": "metrics-standardize",
+        "name": "指标标准化",
+        "profileId": "trained-case-media-metrics-standardize-001-2026-07-01",
+        "model": "opencode-go/deepseek-v4-flash",
+        "noTools": true,
+        "deps": [],
+        "definitionOfDone": "完成指标标准化，输出率值指标、原始分子分母和格式校验结果。",
+        "acceptanceCriteria": [
+          "正确计算率值指标",
+          "保留原始分子分母",
+          "只做指标转换，不做波动归因"
+        ],
+        "prompt": "发布数据：视频 A 播放 12000，点赞 360，评论 96，转发 48，私信 12；视频 B 播放 3000，点赞 45，评论 9，转发 3，私信 0。请转换成互动率、评论率、转发率、私信转化率。"
+      },
+      {
+        "id": "monitor-alert",
+        "name": "内容数据异常告警",
+        "profileId": "trained-case-media-monitor-alert-001-2026-07-01",
+        "model": "opencode-go/deepseek-v4-flash",
+        "noTools": true,
+        "deps": [
+          "metrics-standardize"
+        ],
+        "definitionOfDone": "完成内容数据异常告警，输出 severity、evidence、trigger_reason 和升级建议。",
+        "acceptanceCriteria": [
+          "按阈值判断 severity",
+          "每个告警包含 evidence 和 trigger_reason",
+          "不得无证据触发 high"
+        ],
+        "prompt": "阈值规则：互动率低于 2% 标记 medium，私信转化率为 0 且播放超过 2000 标记 medium，评论中出现交易纠纷或法律责任标记 high。请基于上游指标输出告警。"
+      },
+      {
+        "id": "distribution-action",
+        "name": "多平台分发 payload",
+        "profileId": "trained-case-media-distribution-action-001-2026-07-01",
+        "model": "opencode-go/deepseek-v4-flash",
+        "noTools": true,
+        "deps": [
+          "content-review"
+        ],
+        "definitionOfDone": "完成多平台分发 payload，输出各平台 action_payload、缺失字段和 blocked/missing 状态。",
+        "acceptanceCriteria": [
+          "每个平台生成 action_payload",
+          "缺少字段标记 blocked 或 missing",
+          "不得声称已发布或默认填发布时间"
+        ],
+        "prompt": "请基于上游审稿裁决生成分发队列 payload。仅当审稿 decision 为 publish/pass/approve 时，才生成 ready 的平台 action_payload；如果审稿为 revise/block/escalate，则每个平台输出 blocked 状态、缺失字段/返工原因和下一步动作，不得声称已经发布或默认填发布时间。平台要求：抖音需要标题、口播脚本、发布时间；小红书需要标题、封面文案、正文；知乎需要长标题和回答摘要。注意区分业务状态和节点状态：业务 payload 可以 blocked，但本节点只要完成校验与 payload 输出，交接包完成状态写 completed，未完成/阻塞原因写“无”。"
+      }
+    ],
+    "inputContract": {
+      "version": 1,
+      "mode": "single-run",
+      "title": "变体生成输入",
+      "description": "一次性提交目标、素材和约束。Plan 节点定策略，Generate 节点产出变体，Review 节点做质量门禁。",
+      "missingPolicy": "mark_missing",
+      "fields": [
+        {
+          "id": "task_goal",
+          "label": "任务目标",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "例如：为一个广告活动生成 5 组标题和 CTA。"
+        },
+        {
+          "id": "source_materials",
+          "label": "素材/事实边界",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "粘贴产品事实、定位、受众、已有正文或素材。"
+        },
+        {
+          "id": "variant_requirements",
+          "label": "变体要求",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "数量、平台、风格、长度、A/B 维度。"
+        },
+        {
+          "id": "brand_or_risk_rules",
+          "label": "品牌/风险规则",
+          "type": "textarea",
+          "placeholder": "禁用词、不能编造的数据、合规要求。"
+        },
+        {
+          "id": "output_format",
+          "label": "输出格式",
+          "type": "textarea",
+          "placeholder": "例如：表格列出版本、适用场景、风险标注。"
+        }
+      ]
+    }
+  },
+  "case-quantum-funding-h1-2025": {
+    "id": "case-quantum-funding-h1-2025",
+    "name": "案例：2025H1 量子计算初创融资格局",
+    "description": "搜索 2025 上半年全球量子计算初创公司融资轮次与金额，按轮次、国别、应用方向分组输出表格，并给出竞争格局影响摘要。",
+    "leadProfileId": "strong-task-architect",
+    "reviewPolicy": "lead_plus_reviewer",
+    "sourceSessionId": "",
+    "cwd": "/Users/yipengfei/Desktop/pi-fork",
+    "projectId": "",
+    "createdAt": 1782953265103,
+    "updatedAt": 1782954841595,
+    "status": "active",
+    "domain": "research",
+    "debugStatus": "needs_debug",
+    "debugSource": "pi-backend/training/real_workflow_benchmarks/2026-07-02-research-monitor-cases.json",
+    "templateType": "fetch-summarize",
+    "tasks": [
+      {
+        "id": "quantum-source-scan",
+        "name": "H1 融资来源检索与事实搬运",
+        "profileId": "weak-research-extractor",
+        "model": "opencode-go/deepseek-v4-flash",
+        "deps": [],
+        "prompt": "只检索并搬运 2025-01-01 至 2025-06-30 之间公开披露的全球量子计算初创公司融资事件。每条事件必须包含 company、announcement_date、round、amount_original、amount_usd_or_fx_note、country_or_region、application_direction、lead_or_notable_investors、source_url_or_locator、source_status、uncertainty。不得把 2024、2025H2、2026、上市公司二级市场融资或收购交易混入表格；无法确认轮次/金额时标记 unknown，不得估算。",
+        "acceptanceCriteria": [
+          "时间窗严格限定 2025H1",
+          "每条融资事件包含来源定位",
+          "排除非初创融资和窗口外事件",
+          "缺失字段标记 unknown",
+          "不凭记忆生成金额或投资方"
+        ]
+      },
+      {
+        "id": "quantum-funding-table",
+        "name": "按轮次/国别/应用方向结构化分组",
+        "profileId": "weak-structured-operator",
+        "model": "opencode-go/deepseek-v4-flash",
+        "deps": [
+          "quantum-source-scan"
+        ],
+        "prompt": "把上游融资事件整理为三张表：1) 按轮次分组；2) 按国别/地区分组；3) 按应用方向分组。每行保留 company、round、amount、country_or_region、application_direction、source_status、confidence。只使用上游事实，不新增公司或金额。",
+        "acceptanceCriteria": [
+          "包含轮次分组表",
+          "包含国别/地区分组表",
+          "包含应用方向分组表",
+          "保留 source_status 和 confidence",
+          "不新增上游没有的融资事件"
+        ]
+      },
+      {
+        "id": "quantum-competitive-impact",
+        "name": "竞争格局影响摘要",
+        "profileId": "research-report-analyst",
+        "model": "opencode-go/deepseek-v4-pro",
+        "deps": [
+          "quantum-funding-table"
+        ],
+        "prompt": "基于结构化表格输出不超过 900 字竞争格局影响摘要。必须区分事实、推断、假设；说明硬件路线、控制系统/基础设施、区域资本集中度的变化；对未验证来源不得给高置信结论。",
+        "acceptanceCriteria": [
+          "区分事实/推断/假设",
+          "覆盖硬件路线变化",
+          "覆盖基础设施/控制系统变化",
+          "覆盖地域资本集中度",
+          "包含置信度和反证条件"
+        ]
+      },
+      {
+        "id": "quantum-quality-gate",
+        "name": "参考答案对齐审查",
+        "profileId": "strong-quality-reviewer",
+        "model": "opencode-go/deepseek-v4-pro",
+        "deps": [
+          "quantum-competitive-impact"
+        ],
+        "prompt": "对照 benchmark artifact 中 case_quantum_funding_h1_2025 的 reference_output 与 scoring_rubric 审查最终结果。输出 pass/rework/blocked、缺失事实、错误事实、时间窗违规、来源风险和返工节点。必须给明确裁决。",
+        "acceptanceCriteria": [
+          "输出 pass/rework/blocked",
+          "检查时间窗违规",
+          "检查来源和金额一致性",
+          "列出返工节点",
+          "引用评分规程中的关键项目"
+        ]
+      }
+    ],
+    "inputContract": {
+      "version": 1,
+      "mode": "single-run",
+      "title": "资料搜集与摘要输入",
+      "description": "一次性提交调研对象、来源材料和输出要求。Fetch 节点只搬运资料，Structure 节点结构化，Judge 节点输出影响判断。",
+      "missingPolicy": "mark_missing",
+      "fields": [
+        {
+          "id": "task_goal",
+          "label": "任务目标",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "例如：整理某行业近 7 天融资、政策和竞品变化，输出结构化简报。"
+        },
+        {
+          "id": "source_materials",
+          "label": "资料/原文/搜索结果",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "粘贴来源文本、工具结果、表格、网页摘录；没有资料时写明希望检索的对象和范围。"
+        },
+        {
+          "id": "links",
+          "label": "来源链接",
+          "type": "links",
+          "placeholder": "每行一个链接，可留空。"
+        },
+        {
+          "id": "time_window",
+          "label": "时间窗口",
+          "type": "text",
+          "placeholder": "例如：过去 7 天 / 2025H1 / 2026-06-30 至 2026-07-02"
+        },
+        {
+          "id": "output_format",
+          "label": "输出格式",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "例如：表格 + 摘要；包含来源、置信度、待复核点。"
+        }
+      ]
+    }
+  },
+  "case-ai-ide-pricing-compare": {
+    "id": "case-ai-ide-pricing-compare",
+    "name": "案例：Cursor/Copilot/Windsurf 定价功能对比",
+    "description": "搜索 Cursor、GitHub Copilot、Windsurf/Devin Desktop 最新定价与功能，输出差异矩阵和选型建议。",
+    "leadProfileId": "strong-task-architect",
+    "reviewPolicy": "lead_plus_reviewer",
+    "sourceSessionId": "",
+    "cwd": "/Users/yipengfei/Desktop/pi-fork",
+    "projectId": "",
+    "createdAt": 1782953265103,
+    "updatedAt": 1782954841595,
+    "status": "active",
+    "domain": "research",
+    "debugStatus": "needs_debug",
+    "debugSource": "pi-backend/training/real_workflow_benchmarks/2026-07-02-research-monitor-cases.json",
+    "templateType": "fetch-summarize",
+    "tasks": [
+      {
+        "id": "ide-official-source-fetch",
+        "name": "官方定价与功能来源检索",
+        "profileId": "weak-research-extractor",
+        "model": "opencode-go/deepseek-v4-flash",
+        "deps": [],
+        "prompt": "优先读取官方页面：cursor.com pricing/docs、docs.github.com Copilot billing/pricing、windsurf.com 或 codeium.com pricing/docs。输出 retrieval_date、product、plan、monthly_price_usd、included_usage_or_credits、agent_features、team_admin_features、source_url_or_locator、source_status、uncertainty。第三方对比文章只能作为补充，不得覆盖官方价格。",
+        "acceptanceCriteria": [
+          "优先官方来源",
+          "每个产品至少一个官方来源",
+          "包含价格和用量口径",
+          "包含功能差异字段",
+          "第三方来源仅补充"
+        ]
+      },
+      {
+        "id": "ide-difference-matrix",
+        "name": "差异矩阵结构化",
+        "profileId": "weak-structured-operator",
+        "model": "opencode-go/deepseek-v4-flash",
+        "deps": [
+          "ide-official-source-fetch"
+        ],
+        "prompt": "把上游官方信息整理成差异矩阵，列为 Cursor、GitHub Copilot、Windsurf/Devin Desktop，行为个人入门价格、重度个人价格、团队价格、用量口径、IDE/编辑器体验、Agent 能力、企业管理、额外付费、主要风险。缺失或不确定字段标记 unknown。",
+        "acceptanceCriteria": [
+          "输出三产品差异矩阵",
+          "包含个人/团队/重度价格",
+          "包含用量口径",
+          "包含 Agent 和企业能力",
+          "不确定字段标记 unknown"
+        ]
+      },
+      {
+        "id": "ide-selection-advice",
+        "name": "选型建议",
+        "profileId": "research-report-analyst",
+        "model": "opencode-go/deepseek-v4-pro",
+        "deps": [
+          "ide-difference-matrix"
+        ],
+        "prompt": "基于差异矩阵给出选型建议，至少覆盖：个人轻量开发、重度 agent 编码、GitHub 组织/企业、预算敏感团队、需要统一管理的团队。建议必须绑定表格证据，不得用泛泛主观评价替代。",
+        "acceptanceCriteria": [
+          "覆盖五类用户场景",
+          "建议绑定矩阵证据",
+          "说明预算和用量风险",
+          "区分事实和判断",
+          "包含复核日期"
+        ]
+      },
+      {
+        "id": "ide-quality-gate",
+        "name": "参考答案对齐审查",
+        "profileId": "strong-quality-reviewer",
+        "model": "opencode-go/deepseek-v4-pro",
+        "deps": [
+          "ide-selection-advice"
+        ],
+        "prompt": "对照 benchmark artifact 中 case_ai_ide_pricing_compare 的 reference_output 与 scoring_rubric 审查最终结果。重点检查价格是否来自官方、是否标注 retrieval_date、是否混淆 Windsurf 与 Devin Desktop、是否给出可执行选型建议。必须给 pass/rework/blocked。",
+        "acceptanceCriteria": [
+          "输出明确裁决",
+          "核对官方价格来源",
+          "检查产品命名和计划口径",
+          "检查选型建议可执行性",
+          "列出返工节点"
+        ]
+      }
+    ],
+    "inputContract": {
+      "version": 1,
+      "mode": "single-run",
+      "title": "资料搜集与摘要输入",
+      "description": "一次性提交调研对象、来源材料和输出要求。Fetch 节点只搬运资料，Structure 节点结构化，Judge 节点输出影响判断。",
+      "missingPolicy": "mark_missing",
+      "fields": [
+        {
+          "id": "task_goal",
+          "label": "任务目标",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "例如：整理某行业近 7 天融资、政策和竞品变化，输出结构化简报。"
+        },
+        {
+          "id": "source_materials",
+          "label": "资料/原文/搜索结果",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "粘贴来源文本、工具结果、表格、网页摘录；没有资料时写明希望检索的对象和范围。"
+        },
+        {
+          "id": "links",
+          "label": "来源链接",
+          "type": "links",
+          "placeholder": "每行一个链接，可留空。"
+        },
+        {
+          "id": "time_window",
+          "label": "时间窗口",
+          "type": "text",
+          "placeholder": "例如：过去 7 天 / 2025H1 / 2026-06-30 至 2026-07-02"
+        },
+        {
+          "id": "output_format",
+          "label": "输出格式",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "例如：表格 + 摘要；包含来源、置信度、待复核点。"
+        }
+      ]
+    }
+  },
+  "case-tesla-fsd-v13-social-alert": {
+    "id": "case-tesla-fsd-v13-social-alert",
+    "name": "案例：Tesla FSD V13 48小时舆情告警",
+    "description": "监控过去 48 小时 Reddit/Twitter/X 关于 Tesla FSD V13 的讨论，检测重大事故或监管预警，命中则触发高级告警。",
+    "leadProfileId": "strong-task-architect",
+    "reviewPolicy": "lead_plus_reviewer",
+    "sourceSessionId": "",
+    "cwd": "/Users/yipengfei/Desktop/pi-fork",
+    "projectId": "",
+    "createdAt": 1782953265103,
+    "updatedAt": 1782954841595,
+    "status": "active",
+    "domain": "research",
+    "debugStatus": "needs_debug",
+    "debugSource": "pi-backend/training/real_workflow_benchmarks/2026-07-02-research-monitor-cases.json",
+    "templateType": "monitor-alert",
+    "tasks": [
+      {
+        "id": "fsd-window-collect",
+        "name": "48小时事件窗口采集",
+        "profileId": "weak-research-extractor",
+        "model": "opencode-go/deepseek-v4-flash",
+        "deps": [],
+        "prompt": "只采集当前运行时刻往前 48 小时内 Reddit、Twitter/X 以及可验证新闻/监管来源中关于 Tesla FSD V13、FSD 13.x、Full Self-Driving v13 的讨论。每条样本必须包含 platform、posted_at、url_or_locator、claim_type(accident/near_miss/regulatory/general_sentiment)、claim_summary、engagement_if_available、source_status、window_status(in_window/out_of_window/unknown)。无法访问 Twitter/X 时必须标记 source_status=missing，不得伪造推文。窗口外帖子只能放入 context，不得作为告警命中。",
+        "acceptanceCriteria": [
+          "严格标记 48 小时时间窗",
+          "包含 Reddit 和 Twitter/X 覆盖状态",
+          "每条样本包含链接或定位",
+          "窗口外内容不得触发告警",
+          "无法访问平台时标记 missing"
+        ]
+      },
+      {
+        "id": "fsd-alert-grade",
+        "name": "事故/监管预警触发判断",
+        "profileId": "monitor-alert-operator",
+        "model": "opencode-go/deepseek-v4-flash",
+        "deps": [
+          "fsd-window-collect"
+        ],
+        "prompt": "按阈值分级：P0 高级告警=48小时内出现可信重大事故、死亡/重伤、官方监管行动、召回/调查升级；P1 中级告警=多源近失事故或高传播安全缺陷但无官方确认；P2 观察=零散体验反馈或窗口外旧事件；P3 无告警=没有窗口内可信风险。输出 severity、trigger_reason、evidence、false_positive_risk、recommended_action、escalation_required。",
+        "acceptanceCriteria": [
+          "包含 severity",
+          "包含触发原因和证据",
+          "包含误报风险",
+          "包含建议动作",
+          "高级告警必须有窗口内可信证据"
+        ]
+      },
+      {
+        "id": "fsd-severe-review",
+        "name": "高级告警强审查",
+        "profileId": "strong-quality-reviewer",
+        "model": "opencode-go/deepseek-v4-pro",
+        "deps": [
+          "fsd-alert-grade"
+        ],
+        "prompt": "对告警结论做强审查。若 P0/P1 证据来自窗口外、不可访问平台、无来源摘要或单一低可信帖子，必须降级或阻塞。输出 final_alert_level、evidence_gap、manual_escalation、next_monitoring_queries、final_verdict。",
+        "acceptanceCriteria": [
+          "输出 final_alert_level",
+          "检查窗口外误触发",
+          "检查来源可信度",
+          "包含人工升级条件",
+          "给出最终裁决"
+        ]
+      },
+      {
+        "id": "fsd-quality-gate",
+        "name": "参考答案对齐审查",
+        "profileId": "strong-quality-reviewer",
+        "model": "opencode-go/deepseek-v4-pro",
+        "deps": [
+          "fsd-severe-review"
+        ],
+        "prompt": "对照 benchmark artifact 中 case_tesla_fsd_v13_social_alert 的 reference_output 与 scoring_rubric 审查最终结果。重点检查是否把旧 Reddit 贴、6天前新闻或不可访问 X 内容误判为 48小时高级告警。必须给 pass/rework/blocked。",
+        "acceptanceCriteria": [
+          "输出明确裁决",
+          "检查 48 小时窗口",
+          "检查 Reddit/Twitter 覆盖声明",
+          "检查高级告警证据门槛",
+          "列出返工节点"
+        ]
+      }
+    ],
+    "inputContract": {
+      "version": 1,
+      "mode": "single-run",
+      "title": "事件窗口与告警输入",
+      "description": "一次性提交监控对象、时间窗口、来源和阈值。该 Workflow 是单次窗口判断，不是后台常驻守护。",
+      "missingPolicy": "mark_missing",
+      "fields": [
+        {
+          "id": "task_goal",
+          "label": "任务目标",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "例如：判断过去 48 小时是否出现重大事故或监管预警。"
+        },
+        {
+          "id": "monitor_targets",
+          "label": "监控对象",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "品牌、关键词、商品、竞品、平台、账号等。"
+        },
+        {
+          "id": "time_window",
+          "label": "时间窗口",
+          "type": "text",
+          "required": true,
+          "placeholder": "例如：过去 48 小时 / 2026-06-30 至 2026-07-02"
+        },
+        {
+          "id": "source_materials",
+          "label": "事件/讨论/指标资料",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "粘贴抓取结果、帖子、指标、新闻或监管来源。"
+        },
+        {
+          "id": "alert_thresholds",
+          "label": "告警阈值与升级条件",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "定义 P0/P1/P2/P3 或轻/中/重规则。"
+        }
+      ]
+    }
   }
 }

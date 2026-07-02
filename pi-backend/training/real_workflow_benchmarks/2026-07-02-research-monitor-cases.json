@@ -1,0 +1,246 @@
+{
+  "createdAt": "2026-07-02",
+  "purpose": "Reference outputs and scoring rubrics for three real workflow construction cases. These are not execution prompts; they are quality gates for judging workflow outputs against a strong-model reference.",
+  "cases": {
+    "case_quantum_funding_h1_2025": {
+      "workflowId": "case-quantum-funding-h1-2025",
+      "templateType": "fetch-summarize",
+      "task": "Search H1 2025 global quantum-computing startup funding rounds and amounts; output grouped tables by round, country, and application direction plus competitive impact summary.",
+      "reference_output": {
+        "retrieval_date": "2026-07-02",
+        "source_policy": "Use announced financing date in 2025-01-01..2025-06-30; exclude later extensions, IPOs, public-market financings, acquisitions, and window-out events.",
+        "core_events": [
+          {
+            "company": "Alice & Bob",
+            "announcement_date": "2025-01-28",
+            "round": "Series B",
+            "amount": "EUR 100M",
+            "country_or_region": "France",
+            "application_direction": "fault-tolerant quantum computers; cat qubits/error-resistant architecture",
+            "investors_or_notes": "Led by Future French Champions, AXA Venture Partners, and Bpifrance per company/HPCwire coverage.",
+            "source_status": "verified"
+          },
+          {
+            "company": "QuEra Computing",
+            "announcement_date": "2025-02-11",
+            "round": "financing / Series B context",
+            "amount": "more than USD 230M",
+            "country_or_region": "United States",
+            "application_direction": "neutral-atom, large-scale fault-tolerant quantum computers",
+            "investors_or_notes": "Company says capital accelerates development and production of large-scale fault-tolerant systems.",
+            "source_status": "verified"
+          },
+          {
+            "company": "Quantum Machines",
+            "announcement_date": "2025-02-25",
+            "round": "Series C",
+            "amount": "USD 170M",
+            "country_or_region": "Israel",
+            "application_direction": "quantum control systems and hybrid quantum-classical infrastructure",
+            "investors_or_notes": "Company reports total funding reached USD 280M; technology used across multiple quantum-computer types.",
+            "source_status": "verified"
+          },
+          {
+            "company": "QuantWare",
+            "announcement_date": "2025-03-04",
+            "round": "Series A",
+            "amount": "EUR 20M",
+            "country_or_region": "Netherlands",
+            "application_direction": "superconducting QPU architecture and modular processors",
+            "investors_or_notes": "Company says round funds scaling of VIO platform and powerful quantum processors.",
+            "source_status": "verified"
+          }
+        ],
+        "grouping_expectations": {
+          "by_round": "Series A: QuantWare; Series B/large financing: Alice & Bob, QuEra; Series C: Quantum Machines.",
+          "by_country": "United States: QuEra; France: Alice & Bob; Israel: Quantum Machines; Netherlands: QuantWare.",
+          "by_application": "Fault-tolerant hardware: Alice & Bob, QuEra; quantum control/infrastructure: Quantum Machines; QPU processor architecture: QuantWare."
+        },
+        "competitive_impact_summary": "The H1 2025 funding signal is concentrated around fault-tolerant hardware and enabling infrastructure rather than near-term application software. QuEra and Alice & Bob indicate capital moving toward distinct fault-tolerant hardware bets, while Quantum Machines shows that control-stack vendors can attract late-stage capital because they sell into many hardware modalities. QuantWare adds a modular superconducting QPU supply-chain angle. A strong answer should avoid claiming a complete market census unless it has broader database coverage, and should label this as a source-backed sample of notable public rounds."
+      },
+      "sources": [
+        {
+          "title": "QuEra Computing Completes $230M Financing",
+          "url": "https://www.quera.com/press-releases/quera-computing-completes-230m-financing-to-accelerate-development-of-large-scale-fault-tolerant-quantum-computers"
+        },
+        {
+          "title": "Quantum Machines Raises $170 million in Series C funding",
+          "url": "https://www.quantum-machines.co/press-release/quantum-machines-raises-170-million-in-series-c-funding/"
+        },
+        {
+          "title": "Alice & Bob Closes EUR 100M Series B",
+          "url": "https://alice-bob.com/newsroom/alice-bob-100m-series-b-fundraising-press-release/"
+        },
+        {
+          "title": "QuantWare raises EUR 20 million Series A",
+          "url": "https://www.quantware.com/news/quantware-raises-eu20-million-series-a-to-power-the-worlds-largest-quantum-computers"
+        }
+      ],
+      "scoring_rubric": {
+        "pass_threshold": 85,
+        "criteria": [
+          "Only includes financing events announced in 2025H1.",
+          "Every amount and round has a source URL or clear locator.",
+          "Tables are grouped by round, country/region, and application direction.",
+          "Competition summary separates fact, inference, and uncertainty.",
+          "Does not present the reference list as exhaustive unless broader funding databases are cited."
+        ],
+        "fail_conditions": [
+          "Includes H2 2025, 2026, IPO, public-market, or acquisition events as H1 startup funding.",
+          "Invents amounts, lead investors, countries, or application directions.",
+          "Omits source status or confidence for financing rows."
+        ]
+      }
+    },
+    "case_ai_ide_pricing_compare": {
+      "workflowId": "case-ai-ide-pricing-compare",
+      "templateType": "fetch-summarize",
+      "task": "Search latest Cursor, GitHub Copilot, and Windsurf/Devin Desktop pricing and features; output difference matrix plus selection advice.",
+      "reference_output": {
+        "retrieval_date": "2026-07-02",
+        "source_policy": "Prefer official pricing/docs pages. Third-party pricing explainers are allowed only to flag disputed or recently changed billing mechanics.",
+        "matrix_core": [
+          {
+            "product": "Cursor",
+            "official_source": "cursor.com/pricing",
+            "entry_plan": "Hobby/Free available",
+            "individual_paid": "Pro around USD 20/month; higher tiers such as Pro+/Ultra are usage-heavy tiers where available",
+            "team_plan": "Teams shown at USD 40/user/month on official pricing page",
+            "key_features": "Agentic editor, cloud agents/automations, team billing/admin, team privacy mode, SAML/OIDC SSO on teams per official page snippets",
+            "risk_notes": "Usage/credit details change frequently; output must include retrieval date and quote source status."
+          },
+          {
+            "product": "GitHub Copilot",
+            "official_source": "github.com/features/copilot/plans and docs.github.com/copilot/get-started/plans",
+            "entry_plan": "Free plan exists; individual paid tiers include Pro/Pro+/Max in current plan taxonomy",
+            "organization_paid": "Business and Enterprise plans; official docs emphasize centralized management, policy control, broad model catalog, cloud agent, and monthly AI credit pool",
+            "key_features": "Deep GitHub integration, code completion, chat, cloud agent, organization policy/license management, IP indemnity for org offerings",
+            "risk_notes": "Usage-based billing and AI credits changed in 2026; current output must distinguish subscription fee from extra usage exposure."
+          },
+          {
+            "product": "Windsurf / Devin Desktop",
+            "official_source": "devin.ai/pricing and Devin/Windsurf pricing announcement",
+            "entry_plan": "Free plan shown",
+            "individual_paid": "Pro USD 20/month and Max USD 200/month shown on Devin pricing page",
+            "team_plan": "Team plan shown at USD 80/month plus full-user pricing on Devin pricing page; older Windsurf Teams naming may appear in older docs",
+            "key_features": "Devin Desktop/Tab, premium models, fast context, Devin Cloud/DeepWiki/API/Ask Devin depending on plan",
+            "risk_notes": "Must not confuse old Windsurf credit plans with post-2026 Devin Desktop plans; name migration should be called out."
+          }
+        ],
+        "selection_advice": {
+          "solo_lightweight": "Cursor Pro or Copilot Pro depending on whether editor-native agent workflows or GitHub-native assistance matters more.",
+          "heavy_agent_coding": "Cursor higher usage tiers or Devin Desktop Max/Team are stronger candidates; require budget caps and usage monitoring.",
+          "github_org": "Copilot Business/Enterprise is preferred when GitHub policy management, license control, and org integration dominate.",
+          "budget_sensitive_team": "Start with official team entry prices and enforce spend controls; avoid tools with unclear overage exposure until billing mechanics are verified.",
+          "centralized_enterprise": "Copilot Enterprise or Cursor Teams/Enterprise depending on GitHub governance vs editor-agent workflow; Devin Enterprise if cloud agent/desktop workflows are the main operating model."
+        }
+      },
+      "sources": [
+        {
+          "title": "Cursor Pricing",
+          "url": "https://cursor.com/pricing"
+        },
+        {
+          "title": "GitHub Copilot Plans & Pricing",
+          "url": "https://github.com/features/copilot/plans"
+        },
+        {
+          "title": "Plans for GitHub Copilot",
+          "url": "https://docs.github.com/en/copilot/get-started/plans"
+        },
+        {
+          "title": "Introducing our new Windsurf pricing plans",
+          "url": "https://devin.ai/blog/windsurf-pricing-plans/"
+        },
+        {
+          "title": "Devin Plans and Pricing",
+          "url": "https://devin.ai/pricing/"
+        }
+      ],
+      "scoring_rubric": {
+        "pass_threshold": 85,
+        "criteria": [
+          "Uses official product pages as primary evidence.",
+          "Includes retrieval date and source status for all prices.",
+          "Separates individual, heavy-user, team, and enterprise plans.",
+          "Explains usage/credit/quota risk rather than only monthly headline prices.",
+          "Selection advice is scenario-based and tied to matrix evidence."
+        ],
+        "fail_conditions": [
+          "Uses stale third-party pricing as final truth when official pages differ.",
+          "Confuses Windsurf legacy naming with Devin Desktop current pricing.",
+          "Gives generic advice without price/use-case evidence."
+        ]
+      }
+    },
+    "case_tesla_fsd_v13_social_alert": {
+      "workflowId": "case-tesla-fsd-v13-social-alert",
+      "templateType": "monitor-alert",
+      "task": "Monitor the past 48 hours of Reddit/Twitter/X discussion about Tesla FSD V13; detect major accidents or regulatory warnings; trigger high-level alert if hit.",
+      "reference_output": {
+        "retrieval_date": "2026-07-02",
+        "time_window": "2026-06-30 to 2026-07-02, interpreted relative to current run date.",
+        "source_policy": "Only in-window Reddit/Twitter/X posts or in-window news/regulatory sources can trigger alert. Window-out Reddit posts about FSD 13.x crashes are context only. If X/Twitter is inaccessible, source_status must be missing and cannot be treated as evidence.",
+        "observed_context": [
+          {
+            "item": "Business Insider article published today about missing Tesla Autopilot fatal crash data",
+            "window_status": "in_window",
+            "claim_type": "legal/regulatory context, not FSD V13-specific",
+            "alert_use": "context only; do not count as FSD V13 social hit"
+          },
+          {
+            "item": "Wired/People reports about a Texas fatal crash and lawsuit published around 6 days earlier",
+            "window_status": "out_of_window",
+            "claim_type": "fatal crash / FSD or Autopilot allegations",
+            "alert_use": "context only for monitoring background; cannot trigger 48-hour V13 alert"
+          },
+          {
+            "item": "Reddit posts about FSD 13.2.x crashes or near misses found in public search",
+            "window_status": "mostly months to over a year old",
+            "claim_type": "historical social discussion",
+            "alert_use": "must not trigger current high-level alert"
+          }
+        ],
+        "expected_alert_result": {
+          "severity": "P3 no current high-level alert, or P2 watch if the workflow includes in-window non-V13 regulatory/legal context",
+          "escalation_required": false,
+          "reason": "Accessible sources did not establish a credible in-window Reddit/Twitter/X FSD V13 major accident or regulatory warning. Current/high-relevance but non-V13 or out-of-window evidence should be preserved as context, not escalated.",
+          "required_caveat": "If direct Twitter/X API access is unavailable, the output must explicitly state coverage gap and recommend API-backed rerun."
+        }
+      },
+      "sources": [
+        {
+          "title": "The case of the missing Tesla fatal crash data",
+          "url": "https://www.businessinsider.com/tesla-autopilot-failure-fatal-crash-missing-data-2026-7"
+        },
+        {
+          "title": "A Fatal Tesla Crash in Texas Sets Up a Legal Showdown",
+          "url": "https://www.wired.com/story/a-fatal-tesla-crash-in-texas-sets-up-a-legal-showdown"
+        },
+        {
+          "title": "Tesla FSD 13.2.8 Accident Reddit thread",
+          "url": "https://www.reddit.com/r/TeslaFSD/comments/1ksa79y/1328_fsd_accident/"
+        },
+        {
+          "title": "Tesla Full Self-Driving Vehicle Safety Report",
+          "url": "https://www.tesla.com/fsd/safety"
+        }
+      ],
+      "scoring_rubric": {
+        "pass_threshold": 85,
+        "criteria": [
+          "Every social/news item has posted_at/published_at and window_status.",
+          "Clearly states Reddit and Twitter/X coverage status.",
+          "Does not trigger P0/P1 without in-window credible accident or regulatory evidence.",
+          "Preserves context from older or non-V13 incidents without treating it as current alert evidence.",
+          "Provides next monitoring queries and platform/API coverage gaps."
+        ],
+        "fail_conditions": [
+          "Triggers high-level alert from old Reddit posts or 6-day-old news.",
+          "Claims Twitter/X monitoring succeeded without accessible source links or API results.",
+          "Treats general Tesla Autopilot/FSD legal news as FSD V13-specific evidence without support."
+        ]
+      }
+    }
+  }
+}

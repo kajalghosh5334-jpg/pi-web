@@ -146,6 +146,8 @@ const NODE_TYPE_CONTRACTS = {
       "不得猜测缺失字段",
       "不得改变原始事实含义",
       "不得加入业务判断或策略建议",
+      "技术栈/technologies 只能放原文明确出现的语言、工具、框架或产品名；功能描述放入 tasks 或 evidence_gap",
+      "缺失数组使用 []，不要把 missing 解释文本塞进数组元素",
     ],
   },
   Extract: {
@@ -488,7 +490,7 @@ function deterministicReference(testCase) {
   return {
     kind: "metric_rate_precompute",
     source: "runner_precompute_not_user_evidence",
-    note: "Use these deterministic calculations as the numeric reference. Do not cite this helper as a user-facing evidence source; cite the original input rows as source evidence.",
+    note: "Use these deterministic calculations as the numeric reference. Never mention this helper, runner precompute, deterministic reference, or calculation scaffold in any user-visible output. Cite only the original input rows as source evidence.",
     rules: testCase.calculationRules,
     rows,
   };
@@ -537,7 +539,7 @@ ${deterministic ? JSON.stringify(deterministic, null, 2) : "无"}
 5. 遇到红线必须标记 blocked 或 manual_review_required。
 6. 优先按“节点通用契约”的字段输出；若任务要求更具体，以任务要求为准。
 7. 如果上游依赖 missing/failed，只能标记 upstream_missing 或 low_confidence，不得用常识、节点名、标准答案补齐。
-8. 如果提供“确定性预计算参考”，数字计算必须以该参考为准；模型只负责结构化、标注原始输入来源和说明，不要把预计算 helper 当成用户可见证据来源。
+8. 如果提供“确定性预计算参考”，数字计算必须以该参考为准；模型只负责结构化、标注原始输入来源和说明。最终输出中禁止出现“预计算”“deterministic”“helper”“runner”等内部计算脚手架字样。
 
 评分 Rubric：
 ${testCase.expectedRubric.map((item, index) => `${index + 1}. ${item}`).join("\n")}
@@ -665,7 +667,6 @@ ${JSON.stringify(cases, null, 2)}
   "collaborationProtocol": "",
   "projectConfig": {
     "modelTier": "weak|strong",
-    "roleInWorkflow": "",
     "preferredTasks": [""],
     "escalateWhen": [""],
     "qualityBar": "",
@@ -685,7 +686,30 @@ ${JSON.stringify(cases, null, 2)}
 2. systemPromptPatch 要短、硬、可执行，适合弱模型稳定执行。
 3. 事实型节点必须强调不得编造来源。
 4. Review/Gate 必须输出短裁决，不重写长文。
-5. Analyze/Judge 必须区分事实/推断/建议/置信度/反证条件。`;
+5. Analyze/Judge 必须区分事实/推断/建议/置信度/反证条件。
+6. 不要输出 handoffTargets、deps、artifact path、consumer、producer、DAG、调度、上下游数据传递机制等编排字段；Profile 只沉淀该节点类型如何完成自己的小任务。`;
+}
+
+function sanitizeGeneratedProjectConfig(config) {
+  const blockedKeys = new Set([
+    "handoffTargets",
+    "handoff_targets",
+    "deps",
+    "dependencies",
+    "upstream",
+    "downstream",
+    "artifactPath",
+    "artifactRegistry",
+    "consumerContracts",
+    "producerContract",
+    "roleInWeakStrongWorkflow",
+  ]);
+  const sanitized = {};
+  for (const [key, value] of Object.entries(config || {})) {
+    if (blockedKeys.has(key)) continue;
+    sanitized[key] = value;
+  }
+  return sanitized;
 }
 
 function makeCandidateProfile(nodeType, synthesized, group, spec) {
@@ -715,7 +739,7 @@ function makeCandidateProfile(nodeType, synthesized, group, spec) {
     collaborationProtocol: synthesized.collaborationProtocol || base.collaborationProtocol || "执行该类 Workflow 节点，输出可交接结果、风险和下一步建议。",
     projectConfig: {
       ...(base.projectConfig || {}),
-      ...(synthesized.projectConfig || {}),
+      ...sanitizeGeneratedProjectConfig(synthesized.projectConfig || {}),
       modelTier,
       generated: true,
       generatedStatus: "trained",
@@ -789,9 +813,9 @@ function makeTaskSpecificProfile(item, spec) {
     skills: unique([...(base.skills || []), "output-spec"]),
     availableSkills: unique([...(base.availableSkills || []), ...(base.skills || []), "output-spec", "artifact-storage"]),
     collaborationProtocol: [
-      `专用于真实训练任务：${item.testCase.title}。`,
+      `专用于已调试任务：${item.testCase.title}。`,
       base.collaborationProtocol || contract.purpose || "执行该类节点并输出可交接结果。",
-      "必须复用训练样本中的成功模式，并保留风险、证据和待确认项。",
+      "必须复用经验沉淀的成功模式，并保留风险、证据和待确认项。",
     ].filter(Boolean).join("\n"),
     projectConfig: {
       ...(base.projectConfig || {}),
@@ -838,7 +862,7 @@ function makeTaskSpecificProfile(item, spec) {
     savedExperiences: [{
       taskId: item.testCase.id,
       taskName: item.testCase.title,
-      lesson: lessons.join(" | ") || `通过真实训练样本，score=${item.judge.score}`,
+      lesson: lessons.join(" | ") || `通过真实任务样本，score=${item.judge.score}`,
       skills: base.skills || [],
       model: item.output.model,
       artifactId: item.nodeOutputArtifact?.markdownPath,

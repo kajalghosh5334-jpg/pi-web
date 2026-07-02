@@ -32,6 +32,10 @@ type TrainRoundDetailState =
 interface WorkflowRecommendationResult {
   model: string;
   decision: "use-existing" | "customize-template" | "create-from-profiles";
+  mode?: string;
+  cleanContext?: boolean;
+  searchSummary?: string;
+  generationReason?: string;
   inferred?: {
     domain?: string;
     templateType?: string;
@@ -47,6 +51,7 @@ interface WorkflowRecommendationResult {
     score: number;
     reasons: string[];
   }>;
+  generatedWorkflow?: WorkflowDefinition;
   profilePlan?: Array<{
     id: string;
     name: string;
@@ -88,7 +93,7 @@ function isFlowState(value: unknown): value is FlowState {
 function decisionLabel(decision: WorkflowRecommendationResult["decision"]) {
   if (decision === "use-existing") return "推荐使用已有 Workflow";
   if (decision === "customize-template") return "推荐从模板微调";
-  return "推荐从 Profile 自建";
+  return "已从 Profile 生成 Workflow";
 }
 
 function workflowDomainName(domain?: string) {
@@ -110,6 +115,10 @@ function WorkflowFlashGuide({ onSelectWorkflow }: { onSelectWorkflow: (workflow:
   const [result, setResult] = useState<WorkflowRecommendationResult | null>(null);
   const topRecommendation = result?.recommendations?.[0];
   const topTemplate = result?.templateRecommendations?.[0];
+  const generatedWorkflow = result?.generatedWorkflow;
+  const primaryWorkflow = generatedWorkflow
+    || (result?.decision === "use-existing" ? topRecommendation?.workflow : null)
+    || (result?.decision === "customize-template" ? topTemplate?.workflow : null);
   const canAsk = task.trim().length > 3 && !busy;
 
   const askFlash = async () => {
@@ -150,7 +159,7 @@ function WorkflowFlashGuide({ onSelectWorkflow }: { onSelectWorkflow: (workflow:
           <div>
             <div style={{ fontSize: 18, fontWeight: 850, color: "var(--text)" }}>选择或新建一个 Workflow</div>
             <div style={{ marginTop: 4, fontSize: 12, color: "var(--text-muted)", lineHeight: 1.7 }}>
-              Flash 路由助手会先判断行业、任务类型和可复用 Profile。
+              Flash 会先精确匹配已有 Workflow；匹配不到再推荐模板；模板也不匹配时才组合 Profile 生成新 Workflow。
             </div>
           </div>
         </div>
@@ -225,18 +234,54 @@ function WorkflowFlashGuide({ onSelectWorkflow }: { onSelectWorkflow: (workflow:
                   行业：{workflowDomainName(result.inferred?.domain)} · 模式：{result.inferred?.templateType || topTemplate?.workflow.templateType || "待确认"} · 置信度：{Math.round((result.inferred?.confidence || 0) * 100)}%
                 </div>
               </div>
-              {topRecommendation ? (
+              {primaryWorkflow ? (
                 <button
                   type="button"
-                  onClick={() => onSelectWorkflow(topRecommendation.workflow)}
+                  onClick={() => onSelectWorkflow(primaryWorkflow)}
                   style={{ border: "1px solid var(--accent)", background: "color-mix(in srgb, var(--accent) 12%, var(--bg))", color: "var(--accent)", borderRadius: 12, padding: "8px 11px", fontSize: 12, fontWeight: 850, cursor: "pointer" }}
                 >
-                  打开推荐 Workflow
+                  {generatedWorkflow ? "打开生成 Workflow" : result.decision === "customize-template" ? "打开模板 Workflow" : "打开推荐 Workflow"}
                 </button>
               ) : null}
             </div>
+            {result.searchSummary || result.generationReason ? (
+              <div style={{ marginTop: 10, fontSize: 12, color: "var(--text-muted)", lineHeight: 1.7 }}>
+                {result.searchSummary}
+                {result.generationReason ? ` ${result.generationReason}` : ""}
+              </div>
+            ) : null}
 
             <div style={{ display: "grid", gap: 8, marginTop: 12 }}>
+              {generatedWorkflow ? (
+                <button
+                  type="button"
+                  onClick={() => onSelectWorkflow(generatedWorkflow)}
+                  style={{ width: "100%", textAlign: "left", border: "1px solid var(--accent)", background: "color-mix(in srgb, var(--accent) 9%, transparent)", color: "var(--text)", borderRadius: 14, padding: "11px 12px", cursor: "pointer" }}
+                >
+                  <span style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center" }}>
+                    <span style={{ fontSize: 13, fontWeight: 850 }}>{generatedWorkflow.name}</span>
+                    <span style={{ fontSize: 11, color: "var(--accent)", fontWeight: 800 }}>generated</span>
+                  </span>
+                  <span style={{ display: "block", marginTop: 6, fontSize: 11, color: "var(--text-muted)", lineHeight: 1.6 }}>
+                    {generatedWorkflow.description || `已保存为 ${generatedWorkflow.tasks?.length || 0} 个节点的 Workflow`}
+                  </span>
+                </button>
+              ) : null}
+              {!generatedWorkflow && result.decision === "customize-template" && topTemplate ? (
+                <button
+                  type="button"
+                  onClick={() => onSelectWorkflow(topTemplate.workflow)}
+                  style={{ width: "100%", textAlign: "left", border: "1px solid var(--accent)", background: "color-mix(in srgb, var(--accent) 9%, transparent)", color: "var(--text)", borderRadius: 14, padding: "11px 12px", cursor: "pointer" }}
+                >
+                  <span style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center" }}>
+                    <span style={{ fontSize: 13, fontWeight: 850 }}>{topTemplate.workflow.name}</span>
+                    <span style={{ fontSize: 11, color: "var(--accent)", fontWeight: 800 }}>template</span>
+                  </span>
+                  <span style={{ display: "block", marginTop: 6, fontSize: 11, color: "var(--text-muted)", lineHeight: 1.6 }}>
+                    {topTemplate.reasons.join("；") || topTemplate.workflow.description || "可作为当前任务的模板起点"}
+                  </span>
+                </button>
+              ) : null}
               {(result.recommendations || []).slice(0, 3).map((item, index) => (
                 <button
                   key={item.workflow.id}
@@ -394,10 +439,10 @@ export function AppShell() {
       .then((r) => r.json())
       .then((config: { providers?: Record<string, { models?: Array<{ id?: string; role?: string }> }>; modelSetup?: { guideModel?: string } }) => {
         const models = Object.values(config.providers ?? {}).flatMap((provider) => provider.models ?? []);
-        const hasWeak = models.some((model) => model.id?.trim() && model.role === "weak");
+        const hasWorker = models.some((model) => model.id?.trim() && model.role !== "strong");
         const hasStrong = models.some((model) => model.id?.trim() && model.role === "strong");
         const hasGuide = Boolean(config.modelSetup?.guideModel);
-        if (!models.some((model) => model.id?.trim()) || !hasGuide || !hasWeak || !hasStrong) {
+        if (!models.some((model) => model.id?.trim()) || !hasGuide || !hasWorker || !hasStrong) {
           sessionStorage.setItem("pi.modelRoutingSetupSeen", "1");
           setModelsConfigOpen(true);
         }

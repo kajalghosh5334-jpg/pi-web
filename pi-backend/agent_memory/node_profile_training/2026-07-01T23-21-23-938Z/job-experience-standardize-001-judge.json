@@ -1,0 +1,25 @@
+{
+  "model": "opencode-go/deepseek-v4-pro",
+  "code": 0,
+  "text": "{\n  \"score\": 100,\n  \"score_scale\": \"0-100\",\n  \"pass\": true,\n  \"rubric_hits\": [\n    \"拆成可独立处理的经历条目\",\n    \"每条保留原始事实，不添加成果数字\",\n    \"字段包含项目名称、任务、技术、角色、证据缺口\",\n    \"缺少时间、公司、成果时标记 missing\",\n    \"不做简历润色或岗位判断\"\n  ],\n  \"missing\": [],\n  \"hallucination\": [],\n  \"red_line_violations\": [],\n  \"profile_lessons\": [],\n  \"prompt_patch_suggestions\": []\n}",
+  "usage": {
+    "input": 3259,
+    "output": 1812,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "reasoning": 1675,
+    "totalTokens": 5071,
+    "cost": {
+      "input": 0.00567066,
+      "output": 0.0063057600000000005,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "total": 0.011976420000000002
+    }
+  },
+  "stderr": "",
+  "elapsedMs": 27741,
+  "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+  "workDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T23-21-23-938Z/job-experience-standardize-001-judge",
+  "isolatedSessionDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T23-21-23-938Z/job-experience-standardize-001-judge/.pi-sessions"
+}

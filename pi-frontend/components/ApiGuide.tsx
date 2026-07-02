@@ -112,7 +112,6 @@ const PRESETS: Preset[] = [
       {
         id: "step-3.7-flash",
         name: "step-3.7-flash",
-        role: "weak",
         reasoning: true,
         capabilities: ["reasoning", "coding", "vision", "long-context"],
         input: ["text", "image"],
@@ -124,7 +123,6 @@ const PRESETS: Preset[] = [
       {
         id: "step-3.5-flash-2603",
         name: "step-3.5-flash-2603",
-        role: "weak",
         reasoning: true,
         capabilities: ["reasoning", "coding", "summarization", "classification"],
         contextWindow: 128000,
@@ -135,7 +133,6 @@ const PRESETS: Preset[] = [
       {
         id: "step-3.5-flash",
         name: "step-3.5-flash",
-        role: "weak",
         reasoning: true,
         capabilities: ["reasoning", "coding", "summarization", "classification"],
         contextWindow: 128000,
@@ -146,7 +143,6 @@ const PRESETS: Preset[] = [
       {
         id: "step-router-v1",
         name: "step-router-v1",
-        role: "weak",
         reasoning: true,
         capabilities: ["reasoning", "coding"],
         contextWindow: 128000,
@@ -228,13 +224,12 @@ function classifyModel(model: CatalogModel): ModelEntry {
   const lower = `${model.id} ${model.name ?? ""}`.toLowerCase();
   const capabilities = new Set<string>();
   const routingNotes: string[] = [];
-  let role: ModelRole = "weak";
+  let role: ModelRole | undefined;
   let reasoning = false;
   let input: string[] | undefined;
   let output: string[] | undefined;
 
   if (/mini|flash|lite|fast|haiku|small|turbo|cheap/.test(lower)) {
-    role = "weak";
     capabilities.add("classification");
     capabilities.add("summarization");
     routingNotes.push("默认作为低成本 worker，用于分类、摘要、改写、轻量任务。");
@@ -265,7 +260,6 @@ function classifyModel(model: CatalogModel): ModelEntry {
   if (/flux|sdxl|dall|imagen|midjourney|image generation|绘图|生图/.test(lower)) {
     capabilities.add("image-generation");
     output = ["image"];
-    role = "weak";
     routingNotes.push("检测到生图模型特征，只进入 image-generation 路由。");
   }
 
@@ -289,7 +283,7 @@ function classifyModel(model: CatalogModel): ModelEntry {
 
 function summarizeConfig(providerName: string, models: ModelEntry[]): string {
   const strong = models.filter((model) => model.role === "strong").slice(0, 4);
-  const weak = models.filter((model) => model.role === "weak").slice(0, 4);
+  const worker = models.filter((model) => model.role !== "strong").slice(0, 4);
   const reasoning = models.filter((model) => model.reasoning || model.capabilities?.includes("reasoning")).slice(0, 4);
   const image = models.filter((model) => model.capabilities?.includes("image-generation")).slice(0, 3);
   const vision = models.filter((model) => model.capabilities?.includes("vision")).slice(0, 3);
@@ -298,12 +292,12 @@ function summarizeConfig(providerName: string, models: ModelEntry[]): string {
     `已完成 ${providerName} 的模型分类草案。`,
     "",
     `Strong guide: ${strong.map((model) => model.id).join(", ") || "未识别"}`,
-    `Weak worker: ${weak.map((model) => model.id).join(", ") || "未识别"}`,
+    `Worker pool: ${worker.map((model) => model.id).join(", ") || "未识别"}`,
     `Reasoning: ${reasoning.map((model) => model.id).join(", ") || "未识别"}`,
     `Vision: ${vision.map((model) => model.id).join(", ") || "未识别"}`,
     `Image Gen: ${image.map((model) => model.id).join(", ") || "未识别"}`,
     "",
-    "我只写入当前项目支持的字段：weak/strong、reasoning、capabilities、input/output、routingNotes。",
+    "我只写入当前项目支持的字段：strong(S)、reasoning、capabilities、input/output、routingNotes；未标 S 的模型默认进入 worker pool。",
   ].join("\n");
 }
 
@@ -535,10 +529,6 @@ export function ApiGuide({ panel = false, onClose, onOpenModels, onApplied }: Ap
         throw new Error("No models were returned from this endpoint.");
       }
 
-      if (!nextModels.some((model) => model.role === "weak") && nextModels[1]) {
-        nextModels[1] = { ...nextModels[1], role: "weak", routingNotes: [nextModels[1].routingNotes, "作为 weak worker 候选。"].filter(Boolean).join(" ") };
-      }
-
       setModels(nextModels);
       push("guide", summarizeConfig(providerName.trim(), nextModels));
     } catch (error) {
@@ -602,7 +592,7 @@ export function ApiGuide({ panel = false, onClose, onOpenModels, onApplied }: Ap
 
       setSaved(true);
       onApplied?.();
-      push("guide", "配置已写入 ~/.pi/agent/models.json。后续 session 页面会重新读取可用模型，workflow 会读取 weakModels / strongModels / imageModels，并按已有路由逻辑选择模型。");
+      push("guide", "配置已写入 ~/.pi/agent/models.json。后续 session 页面会重新读取可用模型，workflow 会读取 workerModels / strongModels / imageModels，并按节点类型与能力标签选择模型。");
     } catch (error) {
       push("guide", `保存失败：${error instanceof Error ? error.message : String(error)}`);
     } finally {
@@ -709,13 +699,13 @@ export function ApiGuide({ panel = false, onClose, onOpenModels, onApplied }: Ap
           <div style={{ border: "1px solid var(--border)", borderRadius: 8, overflow: "hidden", background: "var(--bg-panel)" }}>
             <div style={{ display: "grid", gridTemplateColumns: "minmax(180px, 1fr) 90px minmax(260px, 1.4fr)", gap: 0, padding: "8px 10px", borderBottom: "1px solid var(--border)", fontSize: 10, color: "var(--text-dim)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
               <span>Model</span>
-              <span>Role</span>
+              <span>Tier</span>
               <span>Capabilities</span>
             </div>
             {models.slice(0, 16).map((model) => (
               <div key={model.id} style={{ display: "grid", gridTemplateColumns: "minmax(180px, 1fr) 90px minmax(260px, 1.4fr)", gap: 0, minHeight: 42, alignItems: "center", padding: "7px 10px", borderBottom: "1px solid var(--border)", fontSize: 12 }}>
                 <span style={{ fontFamily: "var(--font-mono)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{model.id}</span>
-                <span style={{ color: model.role === "strong" ? "#0f766e" : "#a16207", fontWeight: 700 }}>{model.role}</span>
+                <span style={{ color: model.role === "strong" ? "#0f766e" : "var(--text-dim)", fontWeight: 700 }}>{model.role === "strong" ? "S" : "worker"}</span>
                 <span style={{ color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                   {[...(model.capabilities ?? []), model.reasoning ? "reasoning=true" : ""].filter(Boolean).join(", ") || "-"}
                 </span>

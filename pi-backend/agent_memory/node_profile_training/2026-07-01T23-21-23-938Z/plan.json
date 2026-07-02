@@ -1,0 +1,43 @@
+{
+  "runId": "2026-07-01T23-21-23-938Z",
+  "specPath": "/Users/yipengfei/Desktop/pi-fork/pi-backend/training/node-task-cases.json",
+  "runDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T23-21-23-938Z",
+  "conversationIsolation": {
+    "mode": "fresh_conversation_per_model_call",
+    "appliesTo": [
+      "node_output",
+      "judge",
+      "profile_synthesis"
+    ],
+    "piArgs": [
+      "--print",
+      "--mode",
+      "json",
+      "--no-session",
+      "--no-context-files",
+      "--session-dir",
+      "<per-call isolated directory>"
+    ],
+    "contextPolicy": "Only explicit dependency outputs are injected into the next prompt; no model call resumes prior chat history."
+  },
+  "selectedCases": [
+    {
+      "id": "job-experience-standardize-001",
+      "nodeType": "Standardize",
+      "title": "求职经历分段标准化",
+      "dependsOn": [],
+      "profileTarget": "weak-structured-operator"
+    },
+    {
+      "id": "media-metrics-standardize-001",
+      "nodeType": "Standardize",
+      "title": "自媒体指标标准化",
+      "dependsOn": [],
+      "profileTarget": "weak-structured-operator"
+    }
+  ],
+  "requestedCaseIds": [
+    "job-experience-standardize-001",
+    "media-metrics-standardize-001"
+  ]
+}

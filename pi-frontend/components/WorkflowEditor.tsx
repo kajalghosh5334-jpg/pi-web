@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { WorkflowDefinition, WorkflowTaskDefinition } from "@/lib/types";
+import type { WorkflowDefinition, WorkflowInputFieldDefinition, WorkflowTaskDefinition } from "@/lib/types";
+import { formatWorkflowInput, initialInputValues, inputContractForWorkflow } from "@/lib/workflowInputContracts";
 
 type ProfileDropPayload = {
   id: string;
@@ -85,6 +86,7 @@ export function WorkflowEditor({
 }) {
   const [draft, setDraft] = useState<WorkflowDefinition>(workflow);
   const [runInput, setRunInput] = useState("");
+  const [runInputValues, setRunInputValues] = useState<Record<string, string>>(() => initialInputValues(inputContractForWorkflow(workflow), workflow));
   const [categorySelection, setCategorySelection] = useState(workflow.domain || "self-media");
   const [customCategory, setCustomCategory] = useState("");
   const [busy, setBusy] = useState<"save" | "run" | null>(null);
@@ -107,6 +109,8 @@ export function WorkflowEditor({
       },
     }));
     setDraft({ ...workflow, tasks: normalizedTasks });
+    const nextContract = inputContractForWorkflow(workflow);
+    setRunInputValues(initialInputValues(nextContract, workflow));
     setRunInput("");
     setRunNotice(null);
     setCategorySelection(workflow.domain || "self-media");
@@ -130,6 +134,7 @@ export function WorkflowEditor({
   }, []);
 
   const tasks = useMemo(() => draft.tasks || [], [draft.tasks]);
+  const inputContract = useMemo(() => inputContractForWorkflow(draft), [draft]);
   const selectedTask = tasks.find((task) => task.id === selectedTaskId) || null;
   const profileNames = useMemo(() => new Map(profiles.map((profile) => [profile.id, profile.name || profile.id])), [profiles]);
   const taskById = useMemo(() => new Map(tasks.map((task) => [task.id || "", task])), [tasks]);
@@ -137,7 +142,8 @@ export function WorkflowEditor({
     if (tasks.length < 2) return false;
     return tasks.some((task) => (task.deps || []).some((dep) => dep && taskById.has(dep)));
   }, [taskById, tasks]);
-  const canRun = hasRunnableChain && runInput.trim().length > 0;
+  const missingRequiredInput = useMemo(() => (inputContract.fields || []).filter((field) => field.required && !runInputValues[field.id]?.trim()), [inputContract.fields, runInputValues]);
+  const canRun = hasRunnableChain && missingRequiredInput.length === 0;
   const categoryOptions = useMemo(() => {
     const domains = new Set(WORKFLOW_DOMAIN_ORDER);
     if (draft.domain) domains.add(draft.domain);
@@ -187,6 +193,10 @@ export function WorkflowEditor({
       ...prev,
       tasks: (prev.tasks || []).map((task) => task.id === taskId ? { ...task, ...patch } : task),
     }));
+  }, []);
+
+  const updateRunInputValue = useCallback((fieldId: string, value: string) => {
+    setRunInputValues((prev) => ({ ...prev, [fieldId]: value }));
   }, []);
 
   const updateCategory = useCallback((next: string, customLabel = customCategory) => {
@@ -263,8 +273,8 @@ export function WorkflowEditor({
   }, [draft, onChange]);
 
   const run = useCallback(async () => {
-    const input = runInput.trim();
-    if (!hasRunnableChain || !input) return;
+    const input = formatWorkflowInput(inputContract, runInputValues);
+    if (!hasRunnableChain || missingRequiredInput.length > 0) return;
     const startedAt = Date.now();
     setRunNotice({ status: "running", input, startedAt });
     setBusy("run");
@@ -285,7 +295,15 @@ export function WorkflowEditor({
       const res = await fetch(`/api/workflows/${encodeURIComponent(draft.id)}/run`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ input, cwd: draft.cwd || "" }),
+        body: JSON.stringify({
+          input,
+          inputPayload: {
+            contract: inputContract,
+            values: runInputValues,
+            missingFields: (inputContract.fields || []).filter((field) => !runInputValues[field.id]?.trim()).map((field) => field.id),
+          },
+          cwd: draft.cwd || "",
+        }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok || !data?.sessionId) {
@@ -298,7 +316,7 @@ export function WorkflowEditor({
     } finally {
       setBusy(null);
     }
-  }, [draft, hasRunnableChain, onChange, runInput]);
+  }, [draft, hasRunnableChain, inputContract, missingRequiredInput, onChange, runInputValues]);
 
   const edges = useMemo(() => buildEdges(tasks), [tasks]);
 
@@ -420,18 +438,44 @@ export function WorkflowEditor({
       </section>
 
       <section className="codex-card" style={{ borderRadius: 18, padding: "12px", display: "grid", gap: 12 }}>
-        <div style={{ display: "grid", gridTemplateColumns: "minmax(280px, 1fr) auto", gap: 10, alignItems: "end" }}>
-          <Field label="Task Input">
+        <div style={{ display: "grid", gap: 10 }}>
+          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 850, color: "var(--text)" }}>{inputContract.title || "Workflow 输入资料包"}</div>
+              {inputContract.description ? (
+                <div style={{ marginTop: 3, fontSize: 11, lineHeight: 1.6, color: "var(--text-muted)" }}>{inputContract.description}</div>
+              ) : null}
+            </div>
+            <button type="button" onClick={run} disabled={busy !== null || !canRun} style={{ ...buttonStyle("primary"), minHeight: 38 }}>
+              {busy === "run" ? "Running..." : "Run workflow"}
+            </button>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 10 }}>
+            {(inputContract.fields || []).map((field) => (
+              <WorkflowInputField
+                key={field.id}
+                field={field}
+                value={runInputValues[field.id] || ""}
+                onChange={(value) => updateRunInputValue(field.id, value)}
+              />
+            ))}
+          </div>
+          <Field label="补充说明（可选）">
             <textarea
               value={runInput}
-              onChange={(event) => setRunInput(event.target.value)}
-              placeholder="输入这次要让该 Workflow 完成的具体任务..."
-              style={{ ...inputStyle, minHeight: 62, resize: "vertical" }}
+              onChange={(event) => {
+                setRunInput(event.target.value);
+                updateRunInputValue("additional_notes", event.target.value);
+              }}
+              placeholder="临时补充约束、输出偏好、不要遗漏的背景。"
+              style={{ ...inputStyle, minHeight: 54, resize: "vertical" }}
             />
           </Field>
-          <button type="button" onClick={run} disabled={busy !== null || !canRun} style={{ ...buttonStyle("primary"), minHeight: 38 }}>
-            {busy === "run" ? "Running..." : "Run workflow"}
-          </button>
+          {missingRequiredInput.length ? (
+            <div style={{ fontSize: 11, color: "#ef4444", lineHeight: 1.6 }}>
+              还缺少必填资料：{missingRequiredInput.map((field) => field.label).join("、")}
+            </div>
+          ) : null}
         </div>
         {runNotice ? (
           <div
@@ -802,6 +846,55 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
       <span style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 700 }}>{label}</span>
       {children}
     </label>
+  );
+}
+
+function WorkflowInputField({
+  field,
+  value,
+  onChange,
+}: {
+  field: WorkflowInputFieldDefinition;
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  const label = `${field.label}${field.required ? " *" : ""}`;
+  const placeholder = field.placeholder || (field.type === "links" ? "每行一个链接" : field.type === "files" ? "每行一个文件路径" : "");
+  const help = field.help ? <span style={{ fontSize: 10, lineHeight: 1.5, color: "var(--text-muted)" }}>{field.help}</span> : null;
+
+  if (field.type === "select") {
+    return (
+      <Field label={label}>
+        <select value={value} onChange={(event) => onChange(event.target.value)} style={inputStyle}>
+          <option value="">请选择</option>
+          {(field.options || []).map((option) => (
+            <option key={option} value={option}>{option}</option>
+          ))}
+        </select>
+        {help}
+      </Field>
+    );
+  }
+
+  if (field.type === "text" || field.type === "datetime") {
+    return (
+      <Field label={label}>
+        <input value={value} onChange={(event) => onChange(event.target.value)} placeholder={placeholder} style={inputStyle} />
+        {help}
+      </Field>
+    );
+  }
+
+  return (
+    <Field label={label}>
+      <textarea
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        placeholder={placeholder}
+        style={{ ...inputStyle, minHeight: field.type === "links" || field.type === "files" ? 76 : 92, resize: "vertical" }}
+      />
+      {help}
+    </Field>
   );
 }
 

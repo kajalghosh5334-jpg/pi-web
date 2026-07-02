@@ -1,0 +1,34 @@
+{
+  "caseId": "job-experience-standardize-001",
+  "title": "求职经历分段标准化",
+  "workflowId": "WF-2",
+  "nodeType": "Standardize",
+  "profileTarget": "weak-structured-operator",
+  "model": "opencode-go/deepseek-v4-flash",
+  "score": 100,
+  "pass": true,
+  "elapsedMs": 71764,
+  "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+  "workDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T23-21-23-938Z/job-experience-standardize-001-output",
+  "input": "原始经历散文：我之前帮朋友做过 Excel 自动处理，主要是 Python 读表、合并、去重；后来接过一个企业资料问答小项目，客户资料很乱，我先清洗文档，再做向量库和简单网页入口；还给一个门店老板写过库存提醒脚本，但没有长期维护。请拆成独立经历条目。",
+  "output": "```json\n{\n  \"normalized_items\": [\n    {\n      \"project_name\": \"Excel自动处理\",\n      \"tasks\": [\"用Python读取Excel表格\", \"合并表格\", \"去重\"],\n      \"technologies\": [\"Python\"],\n      \"role\": \"帮朋友\",\n      \"evidence_gap\": \"无时间、无公司、无成果量化、无是否独立完成\"\n    },\n    {\n      \"project_name\": \"企业资料问答小项目\",\n      \"tasks\": [\"清洗文档\", \"构建向量库\", \"开发简单网页入口\"],\n      \"technologies\": [],\n      \"role\": \"项目承接（个人）\",\n      \"evidence_gap\": \"无客户名、无时间范围、无公司、无技术栈具体产品、无成果反馈\"\n    },\n    {\n      \"project_name\": \"库存提醒脚本\",\n      \"tasks\": [\"编写库存提醒脚本\", \"未长期维护\"],\n      \"technologies\": [],\n      \"role\": \"为门店老板开发\",\n      \"evidence_gap\": \"无脚本语言、无使用情况、无时间、无公司、无具体维护期\"\n    }\n  ],\n  \"field_mapping\": {\n    \"project_name\": \"从原文概括的任务范围\",\n    \"tasks\": \"从原文动作短语分段提取\",\n    \"technologies\": \"原文明确出现的语言/工具/框架/产品名\",\n    \"role\": \"从原文参与关系描述提取，不添加头衔\",\n    \"evidence_gap\": \"原文明确缺失或未提供的关键信息\"\n  },\n  \"missing_fields\": [\n    \"公司/组织名称\",\n    \"开始时间\",\n    \"结束时间\",\n    \"量化成果/收益\",\n    \"正式角色/职位\",\n    \"团队规模\"\n  ],\n  \"format_warnings\": [\n    \"原文为连续散文，经历间无分隔标记，拆分基于语义边界\",\n    \"第二条的'向量库'属通用描述，未指定具体产品，未列入技术栈\",\n    \"第三条未说明脚本语言，无法列入技术栈\",\n    \"所有条目均缺少时间、公司、成果，可能有更多未提及的背景\"\n  ],\n  \"handoff_summary\": \"将原始散文拆分为3条独立经历条目。技术栈仅第一条明确出现Python；角色均为非正式个人关系；缺失时间、公司、量化成果等标准字段。未添加推断事实，未做简历润色。\"\n}\n```",
+  "judge": {
+    "score": 100,
+    "score_scale": "0-100",
+    "pass": true,
+    "rubric_hits": [
+      "拆成可独立处理的经历条目",
+      "每条保留原始事实，不添加成果数字",
+      "字段包含项目名称、任务、技术、角色、证据缺口",
+      "缺少时间、公司、成果时标记 missing",
+      "不做简历润色或岗位判断"
+    ],
+    "missing": [],
+    "hallucination": [],
+    "red_line_violations": [],
+    "profile_lessons": [],
+    "prompt_patch_suggestions": [],
+    "raw_score": 100
+  },
+  "dependencies": []
+}

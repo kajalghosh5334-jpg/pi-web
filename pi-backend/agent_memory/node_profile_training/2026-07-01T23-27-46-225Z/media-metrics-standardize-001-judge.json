@@ -1,0 +1,25 @@
+{
+  "model": "opencode-go/deepseek-v4-pro",
+  "code": 0,
+  "text": "{\n  \"score\": 100,\n  \"score_scale\": \"0-100\",\n  \"pass\": true,\n  \"rubric_hits\": [\n    \"正确计算率值指标\",\n    \"保留原始分子分母\",\n    \"私信为 0 时不得补造\",\n    \"只做指标转换，不做波动归因\",\n    \"输出结构化表格或 JSON\"\n  ],\n  \"missing\": [],\n  \"hallucination\": [],\n  \"red_line_violations\": [],\n  \"profile_lessons\": [],\n  \"prompt_patch_suggestions\": []\n}",
+  "usage": {
+    "input": 4642,
+    "output": 1211,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "reasoning": 1086,
+    "totalTokens": 5853,
+    "cost": {
+      "input": 0.00807708,
+      "output": 0.00421428,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "total": 0.012291360000000001
+    }
+  },
+  "stderr": "",
+  "elapsedMs": 20971,
+  "conversationIsolation": "fresh pi --print process with --no-session and --no-context-files",
+  "workDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T23-27-46-225Z/media-metrics-standardize-001-judge",
+  "isolatedSessionDir": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T23-27-46-225Z/media-metrics-standardize-001-judge/.pi-sessions"
+}

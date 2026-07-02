@@ -218,10 +218,30 @@ export interface WorkflowTaskDefinition {
     tokenBudget?: number;
   };
   retryPolicy?: string;
+  noTools?: boolean;
   layout?: {
     x?: number;
     y?: number;
   };
+}
+
+export interface WorkflowInputFieldDefinition {
+  id: string;
+  label: string;
+  type?: "text" | "textarea" | "links" | "files" | "datetime" | "select";
+  required?: boolean;
+  placeholder?: string;
+  help?: string;
+  options?: string[];
+}
+
+export interface WorkflowInputContract {
+  version?: number;
+  mode?: "single-run";
+  title?: string;
+  description?: string;
+  missingPolicy?: "block" | "mark_missing";
+  fields: WorkflowInputFieldDefinition[];
 }
 
 export interface WorkflowDefinition {
@@ -242,6 +262,7 @@ export interface WorkflowDefinition {
   projectId?: string;
   createdAt?: number;
   updatedAt?: number;
+  inputContract?: WorkflowInputContract;
   tasks?: WorkflowTaskDefinition[];
 }
 

@@ -19,7 +19,15 @@ const legacyWorkflowIds = new Set([
   "eval-weak-to-strong-2026-06-29t21-09-41-525z",
 ]);
 
-const expectedDomains = new Set(["self-media", "research", "ecommerce", "customer-support", "sales"]);
+const expectedDomains = new Set(["self-media", "research", "ecommerce", "customer-support", "sales", "job-search"]);
+const expectedDomainMinimums = {
+  "self-media": 3,
+  research: 3,
+  ecommerce: 3,
+  "customer-support": 3,
+  sales: 3,
+  "job-search": 1,
+};
 const expectedTemplateTypes = new Set(["fetch-summarize", "generate-variants", "classify-route", "monitor-alert", "extract-writeback"]);
 
 const summary = {
@@ -29,6 +37,14 @@ const summary = {
   industry: {},
   invalid: [],
 };
+
+const forbiddenExecutionTerms = [
+  "训练样本",
+  "标准样本",
+  "真实训练",
+  "训练验证",
+  "样本对齐",
+];
 
 for (const [id, workflow] of Object.entries(workflows)) {
   summary.total += 1;
@@ -48,6 +64,11 @@ for (const [id, workflow] of Object.entries(workflows)) {
     assert.ok(expectedDomains.has(workflow.domain), `${id} should declare a known domain`);
     summary.industry[workflow.domain] ||= [];
     summary.industry[workflow.domain].push(id);
+  }
+
+  const workflowText = JSON.stringify(workflow);
+  for (const term of forbiddenExecutionTerms) {
+    assert.ok(!workflowText.includes(term), `${id} should not include forbidden execution term: ${term}`);
   }
 
   assert.ok(tasks.length >= 3, `${id} should have at least three tasks`);
@@ -70,7 +91,8 @@ for (const [id, workflow] of Object.entries(workflows)) {
 }
 
 for (const domain of expectedDomains) {
-  assert.ok((summary.industry[domain] || []).length >= 3, `domain ${domain} should have at least three workflows`);
+  const minimum = expectedDomainMinimums[domain] || 3;
+  assert.ok((summary.industry[domain] || []).length >= minimum, `domain ${domain} should have at least ${minimum} workflows`);
 }
 
 for (const templateType of expectedTemplateTypes) {

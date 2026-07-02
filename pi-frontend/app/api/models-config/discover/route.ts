@@ -38,7 +38,6 @@ const STEPFUN_DEFAULT_MODELS = [
   {
     id: "step-3.7-flash",
     name: "step-3.7-flash",
-    role: "weak",
     reasoning: true,
     capabilities: ["reasoning", "coding", "vision", "long-context"],
     input: ["text", "image"],
@@ -50,7 +49,6 @@ const STEPFUN_DEFAULT_MODELS = [
   {
     id: "step-3.5-flash-2603",
     name: "step-3.5-flash-2603",
-    role: "weak",
     reasoning: true,
     capabilities: ["reasoning", "coding", "summarization", "classification"],
     contextWindow: 128000,
@@ -61,7 +59,6 @@ const STEPFUN_DEFAULT_MODELS = [
   {
     id: "step-3.5-flash",
     name: "step-3.5-flash",
-    role: "weak",
     reasoning: true,
     capabilities: ["reasoning", "coding", "summarization", "classification"],
     contextWindow: 128000,
@@ -72,7 +69,6 @@ const STEPFUN_DEFAULT_MODELS = [
   {
     id: "step-router-v1",
     name: "step-router-v1",
-    role: "weak",
     reasoning: true,
     capabilities: ["reasoning", "coding"],
     contextWindow: 128000,

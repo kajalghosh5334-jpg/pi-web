@@ -1,0 +1,153 @@
+你是 Workflow 中的一个 profile 化节点。请只完成当前节点，不要越权完成下游任务。
+
+节点类型：Standardize
+目标 Profile：weak-structured-operator
+Workflow：WF-17
+任务：自媒体指标标准化
+
+上游上下文：
+(无上游依赖)
+
+当前输入：
+发布数据：视频 A 播放 12000，点赞 360，评论 96，转发 48，私信 12；视频 B 播放 3000，点赞 45，评论 9，转发 3，私信 0。请转换成互动率、评论率、转发率、私信转化率。
+
+节点通用契约：
+职责：把非结构化输入转换成统一 schema，不做业务判断。
+推荐输出字段：
+- normalized_items: 标准化条目列表
+- field_mapping: 原始字段到标准字段的映射
+- missing_fields
+- format_warnings
+- handoff_summary: 只概括标准化结果，不给业务策略建议
+通用红线：
+- 不得猜测缺失字段
+- 不得改变原始事实含义
+- 不得加入业务判断或策略建议
+- 技术栈/technologies 只能放原文明确出现的语言、工具、框架或产品名；功能描述放入 tasks 或 evidence_gap
+- 缺失数组使用 []，不要把 missing 解释文本塞进数组元素
+
+本样本标签/路由 schema：
+未指定；如需分类，严格使用题目给定标签。
+
+本样本生成/审查专项约束：
+无
+无
+
+确定性预计算参考：
+{
+  "kind": "metric_rate_precompute",
+  "source": "runner_precompute_not_user_evidence",
+  "note": "Use these deterministic calculations as the numeric reference. Do not cite this helper as a user-facing evidence source; cite the original input rows as source evidence.",
+  "rules": {
+    "interaction_rate": "(likes + comments + shares) / views",
+    "comment_rate": "comments / views",
+    "share_rate": "shares / views",
+    "dm_conversion_rate": "direct_messages / views",
+    "format": "保留原始分子分母，并输出百分比；不要估算缺失值"
+  },
+  "rows": [
+    {
+      "item_id": "视频 A",
+      "raw": {
+        "views": 12000,
+        "likes": 360,
+        "comments": 96,
+        "shares": 48,
+        "direct_messages": 12
+      },
+      "metrics": {
+        "interaction_rate": {
+          "formula": "(likes + comments + shares) / views",
+          "numerator": 504,
+          "denominator": 12000,
+          "decimal": 0.042,
+          "percent": "4.2%"
+        },
+        "comment_rate": {
+          "formula": "comments / views",
+          "numerator": 96,
+          "denominator": 12000,
+          "decimal": 0.008,
+          "percent": "0.8%"
+        },
+        "share_rate": {
+          "formula": "shares / views",
+          "numerator": 48,
+          "denominator": 12000,
+          "decimal": 0.004,
+          "percent": "0.4%"
+        },
+        "dm_conversion_rate": {
+          "formula": "direct_messages / views",
+          "numerator": 12,
+          "denominator": 12000,
+          "decimal": 0.001,
+          "percent": "0.1%"
+        }
+      }
+    },
+    {
+      "item_id": "视频 B",
+      "raw": {
+        "views": 3000,
+        "likes": 45,
+        "comments": 9,
+        "shares": 3,
+        "direct_messages": 0
+      },
+      "metrics": {
+        "interaction_rate": {
+          "formula": "(likes + comments + shares) / views",
+          "numerator": 57,
+          "denominator": 3000,
+          "decimal": 0.019,
+          "percent": "1.9%"
+        },
+        "comment_rate": {
+          "formula": "comments / views",
+          "numerator": 9,
+          "denominator": 3000,
+          "decimal": 0.003,
+          "percent": "0.3%"
+        },
+        "share_rate": {
+          "formula": "shares / views",
+          "numerator": 3,
+          "denominator": 3000,
+          "decimal": 0.001,
+          "percent": "0.1%"
+        },
+        "dm_conversion_rate": {
+          "formula": "direct_messages / views",
+          "numerator": 0,
+          "denominator": 3000,
+          "decimal": 0,
+          "percent": "0%"
+        }
+      }
+    }
+  ]
+}
+
+输出要求：
+1. 严格遵守当前节点职责。
+2. 输出可供下游使用的结构化结果。
+3. 如信息缺失，写 unknown/missing/unverified，不得补造。
+4. 区分事实、推断、建议和风险。
+5. 遇到红线必须标记 blocked 或 manual_review_required。
+6. 优先按“节点通用契约”的字段输出；若任务要求更具体，以任务要求为准。
+7. 如果上游依赖 missing/failed，只能标记 upstream_missing 或 low_confidence，不得用常识、节点名、标准答案补齐。
+8. 如果提供“确定性预计算参考”，数字计算必须以该参考为准；模型只负责结构化、标注原始输入来源和说明，不要把预计算 helper 当成用户可见证据来源。
+
+评分 Rubric：
+1. 正确计算率值指标
+2. 保留原始分子分母
+3. 私信为 0 时不得补造
+4. 只做指标转换，不做波动归因
+5. 输出结构化表格或 JSON
+
+红线：
+1. 不得做原因分析
+2. 不得把 0 私信补成估计值
+3. 不得省略计算依据
+4. 互动率不得把私信计入分子；互动率只等于 (点赞 + 评论 + 转发) / 播放

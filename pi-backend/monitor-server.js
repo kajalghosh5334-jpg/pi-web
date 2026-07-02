@@ -1207,6 +1207,42 @@ function normalizeTaskContract(task) {
   };
 }
 
+function buildRuntimeProfileConfig(projectConfig = {}) {
+  const allowedKeys = new Set([
+    "modelTier",
+    "domain",
+    "roleInWorkflow",
+    "preferredTasks",
+    "qualityBar",
+    "routingEnabled",
+    "profileKind",
+    "workflowId",
+    "sourceNodeType",
+    "sourceProfileId",
+    "escalateWhen",
+    "output",
+    "redLines",
+    "nodeContract",
+    "generationGuardrails",
+    "validationMetrics",
+    "riskFlags",
+    "editableNotesPolicy",
+    "allowedOutputs",
+    "requiredOutputs",
+  ]);
+  const hiddenKeyPattern = /^(training|nodeOutputArtifact|nodeOutputArtifacts|outputArtifact|artifactId|sample|judge|evaluation|lesson|result)/i;
+  const redact = (value) => {
+    if (Array.isArray(value)) return value.map(redact).filter((item) => item !== undefined);
+    if (!value || typeof value !== "object") return value;
+    return Object.fromEntries(
+      Object.entries(value)
+        .filter(([key]) => allowedKeys.has(key) || !hiddenKeyPattern.test(key))
+        .map(([key, item]) => [key, redact(item)]),
+    );
+  };
+  return redact(projectConfig);
+}
+
 function touchSession(sessionId, patch) {
   const prev = activeSessions.get(sessionId) || { tasks: [], status: "idle", startedAt: Date.now() };
   activeSessions.set(sessionId, { ...prev, ...patch, updatedAt: Date.now() });
@@ -3480,10 +3516,9 @@ function inferModelCapabilities(model) {
 }
 
 function inferModelRole(model, capabilities) {
-  if (model?.role === "weak" || model?.role === "strong") return model.role;
   const id = `${model?.id || ""} ${model?.name || ""}`.toLowerCase();
-  if (/mini|flash|lite|fast|haiku|small|cheap|turbo/.test(id)) return "weak";
-  if (model?.reasoning || capabilities.includes("reasoning") || /pro|max|opus|sonnet|gpt-5|gpt-4.1|glm|qwen3.7|deepseek-v4-pro/.test(id)) return "strong";
+  if (model?.role === "strong") return "strong";
+  if (/\b(?:openai|anthropic|gpt-|chatgpt|claude|opus|sonnet)\b/.test(id) || /(?:^|[/:\s-])(?:gpt|o[134])[-\d]/.test(id)) return "strong";
   return "weak";
 }
 
@@ -3517,15 +3552,17 @@ function readModelRoutingCatalog() {
       });
     }
   }
-  const weakModels = models.filter((model) => model.role === "weak");
+  const workerModels = models.filter((model) => model.role !== "strong");
   const strongModels = models.filter((model) => model.role === "strong");
   const imageModels = models.filter((model) => model.capabilities.includes("image-generation"));
   return {
     configured: models.length > 0,
     source: MODELS_CONFIG_PATH,
-    defaultWeakModel: weakModels[0]?.model || null,
+    defaultWeakModel: workerModels[0]?.model || null,
+    defaultWorkerModel: workerModels[0]?.model || null,
     defaultStrongModel: strongModels[0]?.model || null,
-    weakModels,
+    weakModels: workerModels,
+    workerModels,
     strongModels,
     imageModels,
     models,
@@ -3544,24 +3581,61 @@ function isLegacyBuiltInModel(model) {
   return /^opencode-go\/(deepseek-v4-flash|deepseek-v4-pro|glm-5\.2|qwen3\.7-plus|kimi-k2\.7-code)$/i.test(String(model || ""));
 }
 
-function chooseCatalogModelForTask(task, modelRoutingCatalog) {
+function taskRequiresStrongModel(task, profile) {
+  const text = `${task?.name || ""}\n${task?.prompt || ""}\n${profile?.projectConfig?.roleInWorkflow || ""}\n${profile?.projectConfig?.sourceNodeType || ""}`.toLowerCase();
+  const tier = profile?.projectConfig?.modelTier;
+  if (tier === "strong") return true;
+  if (tier === "weak") return false;
+  return /strateg|plan|architect|review|gate|judge|analyst|director|quality|审查|裁决|策略|规划|复杂判断|风险裁决/.test(text);
+}
+
+function requiredCapabilitiesForTask(task, profile) {
+  const text = `${task?.name || ""}\n${task?.prompt || ""}\n${(task?.skills || []).join(" ")}\n${profile?.projectConfig?.roleInWorkflow || ""}\n${profile?.projectConfig?.sourceNodeType || ""}`.toLowerCase();
+  const caps = new Set();
+  if (/代码|编程|实现|修复|bug|patch|diff|component|hook|route|backend|frontend|coding|code/.test(text)) caps.add("coding");
+  if (/分类|分级|路由|标签|classif|router|route/.test(text)) caps.add("classification");
+  if (/摘要|总结|归纳|summar/.test(text)) caps.add("summarization");
+  if (/文案|改写|草稿|写作|writing|copy/.test(text)) caps.add("writing");
+  if (/图片|视觉|看图|vision|image input/.test(text)) caps.add("vision");
+  if (/生图|绘图|图片生成|image generation|generate image|flux|sdxl/.test(text)) caps.add("image-generation");
+  if (/长文本|长上下文|long context|128k|200k|1m/.test(text)) caps.add("long-context");
+  if (/复杂推理|reasoning|thinking|严格审查|规划|裁决/.test(text)) caps.add("reasoning");
+  return [...caps];
+}
+
+function pickModelByCapabilities(candidates = [], capabilities = []) {
+  if (!candidates.length) return null;
+  if (!capabilities.length) return candidates[0]?.model || null;
+  const scored = candidates
+    .map((model) => ({
+      model,
+      score: capabilities.reduce((sum, capability) => sum + (model.capabilities?.includes(capability) ? 1 : 0), 0),
+    }))
+    .sort((a, b) => b.score - a.score);
+  return (scored[0]?.score || 0) > 0 ? scored[0].model.model : candidates[0]?.model || null;
+}
+
+function chooseCatalogModelForTask(task, modelRoutingCatalog, profiles = loadAgentProfiles()) {
   if (!modelRoutingCatalog?.configured) return null;
   const requested = task?.model || task?.modelOverride;
   if (isConfiguredModel(modelRoutingCatalog, requested)) return requested;
   if (requested && !isLegacyBuiltInModel(requested)) return requested;
 
+  const profile = task?.profileId && profiles[task.profileId] ? profiles[task.profileId] : selectAgentProfile(task);
   const text = `${task?.name || ""}\n${task?.prompt || ""}\n${(task?.skills || []).join(" ")}`.toLowerCase();
+  const requiredCapabilities = requiredCapabilitiesForTask(task, profile);
   if (/生图|绘图|图片生成|image generation|generate image|flux|sdxl/.test(text)) {
     return modelRoutingCatalog.imageModels?.[0]?.model || pickDefaultWorkerModel(modelRoutingCatalog);
   }
-  if (/严格审查|复杂|跨文件|工程修改|架构|debug|失败恢复|规划|review carefully|strict review|multi.?step/.test(text)) {
-    return modelRoutingCatalog.defaultStrongModel || pickDefaultWorkerModel(modelRoutingCatalog);
+  if (taskRequiresStrongModel(task, profile) || /严格审查|复杂|跨文件|工程修改|架构|debug|失败恢复|规划|review carefully|strict review|multi.?step/.test(text)) {
+    return pickModelByCapabilities(modelRoutingCatalog.strongModels, requiredCapabilities) || modelRoutingCatalog.defaultStrongModel || pickDefaultWorkerModel(modelRoutingCatalog);
   }
   if (/代码|编程|实现|修复|bug|patch|diff|component|hook|route|backend|frontend/.test(text)) {
-    const coding = modelRoutingCatalog.models?.find((entry) => entry.capabilities?.includes("coding"));
+    const coding = modelRoutingCatalog.workerModels?.find((entry) => entry.capabilities?.includes("coding"))
+      || modelRoutingCatalog.models?.find((entry) => entry.capabilities?.includes("coding"));
     return coding?.model || modelRoutingCatalog.defaultStrongModel || pickDefaultWorkerModel(modelRoutingCatalog);
   }
-  return pickDefaultWorkerModel(modelRoutingCatalog);
+  return pickModelByCapabilities(modelRoutingCatalog.workerModels, requiredCapabilities) || pickDefaultWorkerModel(modelRoutingCatalog);
 }
 
 function needsStrictUserReview(input) {
@@ -3583,15 +3657,32 @@ async function leadPlan(userInput, sessionId) {
   const flowState = session?.flowState || createFlowState(userInput);
   const modelRoutingCatalog = readModelRoutingCatalog();
   const defaultWorkerModel = pickDefaultWorkerModel(modelRoutingCatalog);
+  const profiles = loadAgentProfiles();
   const profileKnowledge = [
-    ...buildAgentProfileKnowledge(),
+    ...Object.values(profiles).map((p) => ({
+      id: p.id,
+      name: p.name,
+      match: p.match,
+      defaultModel: p.defaultModel,
+      skills: p.skills,
+      availableSkills: p.availableSkills || p.skills || [],
+      projectConfig: p.projectConfig || {},
+      collaborationProtocol: p.collaborationProtocol || "",
+      systemPromptPatch: p.systemPromptPatch || "",
+      experience: p.experience || 0,
+      successes: p.successes || 0,
+      failures: p.failures || 0,
+      modelStats: p.modelStats || {},
+      skillStats: p.skillStats || {},
+      savedExperiences: (p.savedExperiences || []).slice(0, 5),
+    })),
     {
       id: "__model-routing-catalog__",
-      name: "用户配置的强弱模型与能力目录",
+      name: "用户配置的节点模型与能力目录",
       defaultModel: modelRoutingCatalog.defaultStrongModel || LEAD_MODEL,
       projectConfig: modelRoutingCatalog,
-      collaborationProtocol: "Lead 必须优先读取此目录，为 task.model 选择 weakModels / strongModels / imageModels 中最合适的模型。",
-      systemPromptPatch: "简单、高并发、分类、总结、改写任务优先弱模型；复杂规划、严格审查、跨文件工程修改、失败恢复优先强模型；生图任务选择 image-generation；看图任务选择 vision。",
+      collaborationProtocol: "Lead 必须优先读取此目录，根据 Profile 节点类型和能力标签为 task.model 选择 workerModels / strongModels / imageModels 中最合适的模型。",
+      systemPromptPatch: "未标 S 的模型都属于 worker pool。简单、高并发、分类、总结、改写任务优先 workerModels；复杂规划、严格审查、跨文件工程修改、失败恢复优先 strongModels；生图任务选择 image-generation；看图任务选择 vision。",
     },
   ];
   const globalSkillKnowledge = buildGlobalSkillKnowledge();
@@ -3606,7 +3697,7 @@ async function leadPlan(userInput, sessionId) {
     noTools: true,
     timeoutMs: LEAD_PLAN_TIMEOUT_MS,
     systemPrompt: buildLeadSystemPrompt("leadPlan"),
-    prompt: `阶段：planning\n\n已知真实项目目录：\n- pi-backend: ${REPO_ROOT}\n- pi-frontend: ${FRONTEND_ROOT}\n\n规划任务时必须把这些真实目录写进子任务说明；不要让子 Agent 从 /tmp 或 /private/tmp/pi-multi-agent 猜测项目位置。\n\n可唤醒 Agent Profile / 工具经验（优先复用匹配任务的 profile、技能和模型经验）：\n${JSON.stringify(profileKnowledge, null, 2)}\n\n全量 Skill 简介目录（你可以从这里为任意子任务自由选择 task.skills，不受某个 profile 的 availableSkills 上限约束）：\n${JSON.stringify(globalSkillKnowledge, null, 2)}\n\n强制规则：\n1. 生成子任务时，优先从上面的 profile catalog 中选择明确的 profileId，不要偷懒全用 general-executor。\n2. profile 负责角色、经验、协作方式、默认模型；本次实际启用哪些 skills，由你从全量 skill 目录中按任务判断写入 task.skills。\n3. profile 的 skills / availableSkills 只是历史偏好与参考，不是 task.skills 的硬上限。\n4. 不要默认激活很多 skill；只选择本次任务真正需要的 skill。\n5. 涉及 bug 修复、调教、结果不可用时，优先使用 debug-teacher profile。\n6. 涉及 context/progress/bugs/阶段状态时，优先使用 session-memory profile。\n7. 涉及协作、物料、交付、上下游依赖时，优先使用 artifact-flow profile。\n8. 你必须主动识别简单任务：如果任务只是分类、抽取、总结、改写、意图判断、路由判断、轻量审稿、记忆整理、短文本生成，且不涉及仓库级改代码、跨文件修改、复杂推理、多模态理解，则默认优先使用 opencode-go/deepseek-v4-flash。\n9. 只有当任务明显超出简单任务边界时，才升级到 glm-5.2、qwen3.7-plus 或 deepseek-v4-pro。\n10. 文本生成、算法题/竞赛代码、高并发调用、长文本分析这四类任务固定使用 opencode-go/deepseek-v4-flash，除非用户明确指定别的模型。\n\n当前项目记忆（只读取本项目目录，不扫描其他项目）：\n${JSON.stringify(projectMemory, null, 2)}\n\n当前全局 Flow State（来自 agent_memory 流转机制的后端状态）：\n${JSON.stringify(flowState, null, 2)}\n\n用户输入/上下文：\n${userInput}\n\n请严格按 Planning 输出协议返回 JSON。`,
+    prompt: `阶段：planning\n\n已知真实项目目录：\n- pi-backend: ${REPO_ROOT}\n- pi-frontend: ${FRONTEND_ROOT}\n\n规划任务时必须把这些真实目录写进子任务说明；不要让子 Agent 从 /tmp 或 /private/tmp/pi-multi-agent 猜测项目位置。\n\n可唤醒 Agent Profile / 工具经验（优先复用匹配任务的 profile、技能和模型经验）：\n${JSON.stringify(profileKnowledge, null, 2)}\n\n全量 Skill 简介目录（你可以从这里为任意子任务自由选择 task.skills，不受某个 profile 的 availableSkills 上限约束）：\n${JSON.stringify(globalSkillKnowledge, null, 2)}\n\n强制规则：\n1. 生成子任务时，优先从上面的 profile catalog 中选择明确的 profileId，不要偷懒全用 general-executor。\n2. profile 负责角色、经验、协作方式、默认模型；本次实际启用哪些 skills，由你从全量 skill 目录中按任务判断写入 task.skills。\n3. profile 的 skills / availableSkills 只是历史偏好与参考，不是 task.skills 的硬上限。\n4. 不要默认激活很多 skill；只选择本次任务真正需要的 skill。\n5. 涉及 bug 修复、调教、结果不可用时，优先使用 debug-teacher profile。\n6. 涉及 context/progress/bugs/阶段状态时，优先使用 session-memory profile。\n7. 涉及协作、物料、交付、上下游依赖时，优先使用 artifact-flow profile。\n8. 你必须主动识别节点类型：Profile 的 modelTier / roleInWorkflow / sourceNodeType 决定该任务优先 strongModels 还是 workerModels。\n9. 未标 S 的模型都是 worker 候选；只有标 S 或 GPT/Claude 系列用于策略、复杂判断、审查、裁决、失败恢复等强模型节点。\n10. 文本生成、分类、抽取、总结、改写、意图判断、路由判断、短文本生成、高并发调用默认从 workerModels 里按 capability 选择；只有明显超出简单任务边界才升级到 strongModels。\n\n当前项目记忆（只读取本项目目录，不扫描其他项目）：\n${JSON.stringify(projectMemory, null, 2)}\n\n当前全局 Flow State（来自 agent_memory 流转机制的后端状态）：\n${JSON.stringify(flowState, null, 2)}\n\n用户输入/上下文：\n${userInput}\n\n请严格按 Planning 输出协议返回 JSON。`,
     onDelta: (delta) => broadcast({ type: "task_delta", sessionId, taskId: LEAD_TASK_ID, delta }),
     sessionId,
     taskId: LEAD_TASK_ID,
@@ -3615,7 +3706,7 @@ async function leadPlan(userInput, sessionId) {
   plan.reviewPolicy = plan.reviewPolicy === "lead_only" ? "lead_only" : "lead_plus_reviewer";
   if (!Array.isArray(plan.tasks)) plan.tasks = [];
   plan.tasks = plan.tasks.map((t, i) => {
-    const catalogModel = chooseCatalogModelForTask(t, modelRoutingCatalog);
+    const catalogModel = chooseCatalogModelForTask(t, modelRoutingCatalog, profiles);
     const reroutedLegacyModel = catalogModel && t.model && t.model !== catalogModel && isLegacyBuiltInModel(t.model);
     return normalizeTaskContract({
       id: t.id || `t${i + 1}`,
@@ -3970,7 +4061,7 @@ Profile 固定技能：${profileStoredSkills.join(", ") || "无"}
 Profile 可选技能池：${profileAvailableSkills.join(", ") || "无"}
 本次实际激活技能：${equippedSkills.join(", ") || "无"}
 Profile 协作方式：${profile.collaborationProtocol || "遵循默认协作协议"}
-Profile 项目配置：${JSON.stringify(profile.projectConfig || {})}
+Profile 项目配置：${JSON.stringify(buildRuntimeProfileConfig(profile.projectConfig || {}))}
 本任务 Skill Scope：${skillScope}
 经验次数：${profile.experience || 0}
 成功次数：${profile.successes || 0}
@@ -5130,6 +5221,7 @@ app.post("/api/workflows", (req, res) => {
     projectId: body.projectId || "",
     createdAt: Date.now(),
     updatedAt: Date.now(),
+    inputContract: body.inputContract && typeof body.inputContract === "object" ? body.inputContract : undefined,
     tasks: Array.isArray(body.tasks) ? body.tasks : [],
   });
   workflows[id] = workflow;
@@ -5175,7 +5267,18 @@ app.post("/api/workflows/:workflowId/run", async (req, res) => {
   const workflows = loadWorkflows();
   const workflow = workflows[req.params.workflowId];
   if (!workflow) return res.status(404).json({ error: "workflow not found" });
-  const input = String(req.body?.input || workflow.description || workflow.name || "运行工作流").trim();
+  const rawInput = String(req.body?.input || workflow.description || workflow.name || "运行工作流").trim();
+  const inputPayload = req.body?.inputPayload && typeof req.body.inputPayload === "object" ? req.body.inputPayload : null;
+  const input = inputPayload
+    ? [
+        rawInput,
+        "",
+        "结构化资料包（由 Workflow 入口表单提交）：",
+        JSON.stringify(inputPayload, null, 2),
+        "",
+        "执行规则：所有节点只能基于本资料包、用户补充说明和上游节点 artifact 工作；缺失信息必须按 inputContract 标记 missing/unknown/unverified，不得补造。",
+      ].join("\n")
+    : rawInput;
   const sessionId = req.body?.sessionId || randomUUID();
   const projectCwd = normalizeProjectCwd(req.body?.cwd || workflow.cwd || "");
   const projectId = projectIdFromCwd(projectCwd);

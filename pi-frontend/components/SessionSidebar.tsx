@@ -99,16 +99,8 @@ function workflowTemplateLabel(templateType: string | undefined): string {
   return templateType ? WORKFLOW_TEMPLATE_LABELS[templateType] || templateType : "Workflow";
 }
 
-function isSameLocalDate(a: Date, b: Date): boolean {
-  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
-}
-
-function workflowWasDebuggedToday(workflow: WorkflowDefinition): boolean {
-  if (workflow.status === "template" || workflow.status === "legacy") return false;
-  if (workflow.debugStatus !== "polished" || !workflow.debuggedAt) return false;
-  const debuggedAt = new Date(workflow.debuggedAt);
-  if (Number.isNaN(debuggedAt.getTime())) return false;
-  return isSameLocalDate(debuggedAt, new Date());
+function workflowIsVisibleInLibrary(workflow: WorkflowDefinition): boolean {
+  return workflow.status !== "template" && !workflow.id.startsWith("template-");
 }
 
 function sortWorkflowDomains(domains: string[]) {
@@ -384,7 +376,7 @@ export function SessionSidebar({
 
   const workflowGroups = useMemo(() => {
     const groups = new Map<string, WorkflowDefinition[]>();
-    for (const workflow of workflows.filter(workflowWasDebuggedToday)) {
+    for (const workflow of workflows.filter(workflowIsVisibleInLibrary)) {
       const status = workflow.status || "active";
       if (status === "template") continue;
       const domain = status === "legacy" ? "legacy" : workflowDomain(workflow);
@@ -404,7 +396,7 @@ export function SessionSidebar({
     }));
   }, [workflows]);
 
-  const visibleWorkflowCount = useMemo(() => workflows.filter(workflowWasDebuggedToday).length, [workflows]);
+  const visibleWorkflowCount = useMemo(() => workflows.filter(workflowIsVisibleInLibrary).length, [workflows]);
 
   const workflowDomains = useMemo(() => {
     const domains = new Set<string>();
@@ -563,7 +555,7 @@ export function SessionSidebar({
               sublabel="Choose a template and category"
               onClick={() => setWorkflowCreateOpen(true)}
             />
-            {visibleWorkflowCount === 0 ? <EmptyState label="今天还没有调试通过的 workflow。" /> : null}
+            {visibleWorkflowCount === 0 ? <EmptyState label="还没有保存的 workflow。" /> : null}
             {workflowGroups.map((group) => (
               <WorkflowGroup
                 key={group.domain}

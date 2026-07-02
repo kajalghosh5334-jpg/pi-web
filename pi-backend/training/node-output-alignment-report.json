@@ -1,0 +1,171 @@
+{
+  "generatedAt": "2026-07-01T23:27:15.540Z",
+  "caseCount": 16,
+  "passCount": 16,
+  "averageScore": 98,
+  "cases": [
+    {
+      "id": "job-background-strategy-001",
+      "nodeType": "Strategize/Plan",
+      "title": "求职背景诊断",
+      "score": 100,
+      "pass": true,
+      "artifact": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T22-57-28-000Z/node_outputs/01-job-background-strategy-001.md",
+      "alignment": "exact_or_near_exact",
+      "remainingIssues": []
+    },
+    {
+      "id": "job-company-gather-001",
+      "nodeType": "Gather/Fetch",
+      "title": "公司调研资料搬运",
+      "score": 100,
+      "pass": true,
+      "artifact": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T22-27-25-228Z/node_outputs/02-job-company-gather-001.md",
+      "alignment": "exact_or_near_exact",
+      "remainingIssues": []
+    },
+    {
+      "id": "job-jd-analyze-001",
+      "nodeType": "Analyze/Judge",
+      "title": "JD 匹配分析",
+      "score": 95,
+      "pass": true,
+      "artifact": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T22-27-25-228Z/node_outputs/03-job-jd-analyze-001.md",
+      "alignment": "high",
+      "remainingIssues": []
+    },
+    {
+      "id": "job-resume-draft-001",
+      "nodeType": "Generate/Draft",
+      "title": "简历经历初稿",
+      "score": 95,
+      "pass": true,
+      "artifact": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-28-40-414Z/node_outputs/04-job-resume-draft-001.md",
+      "alignment": "high",
+      "remainingIssues": []
+    },
+    {
+      "id": "job-resume-review-001",
+      "nodeType": "Review/Gate",
+      "title": "简历终审裁决",
+      "score": 95,
+      "pass": true,
+      "artifact": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-53-01-930Z/node_outputs/05-job-resume-review-001.md",
+      "alignment": "high",
+      "remainingIssues": []
+    },
+    {
+      "id": "media-account-strategy-001",
+      "nodeType": "Strategize/Plan",
+      "title": "AI 自媒体账号定位",
+      "score": 95,
+      "pass": true,
+      "artifact": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T22-27-25-228Z/node_outputs/04-media-account-strategy-001.md",
+      "alignment": "high",
+      "remainingIssues": [
+        "未明确覆盖项目报价/边界科普内容类型，可能影响企业主成本认知",
+        "validation_metrics 中存在待定占位符（x%, y%），未给出可即刻验证的基准值"
+      ]
+    },
+    {
+      "id": "media-material-gather-001",
+      "nodeType": "Gather/Fetch",
+      "title": "AI 选题素材搜集",
+      "score": 100,
+      "pass": true,
+      "artifact": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-53-01-930Z/node_outputs/07-media-material-gather-001.md",
+      "alignment": "exact_or_near_exact",
+      "remainingIssues": []
+    },
+    {
+      "id": "media-title-draft-001",
+      "nodeType": "Generate/Draft",
+      "title": "标题封面 A/B 方案",
+      "score": 100,
+      "pass": true,
+      "artifact": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T21-57-37-055Z/node_outputs/07-media-title-draft-001.md",
+      "alignment": "exact_or_near_exact",
+      "remainingIssues": []
+    },
+    {
+      "id": "media-comment-classify-001",
+      "nodeType": "Classify/Router",
+      "title": "评论区分级和路由",
+      "score": 100,
+      "pass": true,
+      "artifact": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T21-57-37-055Z/node_outputs/08-media-comment-classify-001.md",
+      "alignment": "exact_or_near_exact",
+      "remainingIssues": []
+    },
+    {
+      "id": "media-content-review-001",
+      "nodeType": "Review/Gate",
+      "title": "内容审稿与发布裁决",
+      "score": 100,
+      "pass": true,
+      "artifact": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T22-27-25-228Z/node_outputs/08-media-content-review-001.md",
+      "alignment": "exact_or_near_exact",
+      "remainingIssues": []
+    },
+    {
+      "id": "job-experience-standardize-001",
+      "nodeType": "Standardize",
+      "title": "求职经历分段标准化",
+      "score": 100,
+      "pass": true,
+      "artifact": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T23-21-23-938Z/node_outputs/01-job-experience-standardize-001.md",
+      "alignment": "exact_or_near_exact",
+      "remainingIssues": []
+    },
+    {
+      "id": "job-company-extract-001",
+      "nodeType": "Extract",
+      "title": "公司字段抽取",
+      "score": 95,
+      "pass": true,
+      "artifact": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-53-01-930Z/node_outputs/12-job-company-extract-001.md",
+      "alignment": "high",
+      "remainingIssues": []
+    },
+    {
+      "id": "media-metrics-standardize-001",
+      "nodeType": "Standardize",
+      "title": "自媒体指标标准化",
+      "score": 100,
+      "pass": true,
+      "artifact": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T23-21-23-938Z/node_outputs/02-media-metrics-standardize-001.md",
+      "alignment": "exact_or_near_exact",
+      "remainingIssues": []
+    },
+    {
+      "id": "media-monitor-alert-001",
+      "nodeType": "Monitor/Alert",
+      "title": "内容数据异常告警",
+      "score": 100,
+      "pass": true,
+      "artifact": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-53-01-930Z/node_outputs/14-media-monitor-alert-001.md",
+      "alignment": "exact_or_near_exact",
+      "remainingIssues": []
+    },
+    {
+      "id": "media-distribution-action-001",
+      "nodeType": "Action/Writeback",
+      "title": "多平台分发排期 payload",
+      "score": 100,
+      "pass": true,
+      "artifact": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T22-27-25-228Z/node_outputs/10-media-distribution-action-001.md",
+      "alignment": "exact_or_near_exact",
+      "remainingIssues": []
+    },
+    {
+      "id": "job-report-render-001",
+      "nodeType": "Artifact/Render",
+      "title": "JD 匹配报告渲染",
+      "score": 100,
+      "pass": true,
+      "artifact": "/Users/yipengfei/Desktop/pi-fork/pi-backend/agent_memory/node_profile_training/2026-07-01T20-53-01-930Z/node_outputs/16-job-report-render-001.md",
+      "alignment": "exact_or_near_exact",
+      "remainingIssues": []
+    }
+  ]
+}
