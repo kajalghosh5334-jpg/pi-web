@@ -1738,8 +1738,8 @@ export function AppShell() {
 
   return (
     <>
-    <div style={{ height: "111.111dvh", width: "111.111%", overflow: "hidden", background: "transparent", padding: "14px", zoom: 0.9 }}>
-    <div className="codex-shell" style={{ display: "flex", height: "calc(111.111dvh - 28px)", overflow: "hidden", background: "transparent", borderRadius: 28, position: "relative" }}>
+    <div style={{ height: "100dvh", overflow: "hidden", background: "transparent", padding: "14px" }}>
+    <div className="codex-shell" style={{ display: "flex", height: "calc(100dvh - 28px)", overflow: "hidden", background: "transparent", borderRadius: 28, position: "relative" }}>
       {/* Mobile overlay backdrop */}
       <div
         className="sidebar-overlay-backdrop"

@@ -357,11 +357,14 @@ function startServer() {
 }
 
 function openAppWindow() {
+  // Chrome app windows can report a matching tab to AppleScript while the user-visible
+  // window is not restored. Prefer opening the app window directly so desktop icon
+  // clicks always produce a visible Pi window.
+  if (openBrowserAppWindow()) return;
+
   for (const browser of browserCandidates()) {
     if (restoreAppWindow(browser)) return;
   }
-
-  if (openBrowserAppWindow()) return;
 
   openUrlWindow();
 }
