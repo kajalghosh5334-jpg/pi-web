@@ -500,8 +500,7 @@ export function SessionSidebar({
           <>
             <CreateListItem
               label="New session"
-              sublabel={effectiveCwd ? shortenCwd(effectiveCwd) : "Choose a workspace first"}
-              disabled={!effectiveCwd}
+              sublabel={effectiveCwd ? shortenCwd(effectiveCwd) : "Create a default workspace"}
               onClick={handleNewSession}
             />
             {loadingSessions ? <EmptyState label="Loading sessions..." /> : null}

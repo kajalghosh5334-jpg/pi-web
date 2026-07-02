@@ -725,6 +725,17 @@ export function AppShell() {
     setNewSessionCwd(data.cwd);
   }, []);
 
+  const createDefaultCwd = useCallback(async (): Promise<string | null> => {
+    const res = await fetch("/api/default-cwd", { method: "POST" }).catch(() => null);
+    const data = res ? await res.json().catch(() => ({})) as { cwd?: string; error?: string } : null;
+    if (!res || !res.ok || !data?.cwd) {
+      window.alert(data?.error || "创建默认工作目录失败");
+      return null;
+    }
+    setActiveCwd(data.cwd);
+    return data.cwd;
+  }, []);
+
   const handleFileContextSend = useCallback(async (
     message: string,
     images: AttachedImage[] | undefined,
@@ -834,19 +845,22 @@ export function AppShell() {
         }
       } catch {}
     }
+    const nextCwd = cwd ?? activeCwd ?? await createDefaultCwd();
+    if (!nextCwd) return;
+
     setSelectedWorkflow(null);
     setSelectedSession(null);
     setMainView("chat");
     setRightPanelOpen(false);
     setDraftChatOpen(true);
-    setNewSessionCwd(cwd ?? null);
+    setNewSessionCwd(nextCwd);
     setSessionKey((k) => k + 1);
     setBranchTree([]);
     setBranchActiveLeafId(null);
     setSystemPrompt(null);
     setActiveTopPanel(null);
     router.replace("/", { scroll: false });
-  }, [router]);
+  }, [activeCwd, createDefaultCwd, router]);
 
   // Called by ChatWindow when a new session gets its real id from pi
   const handleSessionCreated = useCallback((session: SessionInfo) => {

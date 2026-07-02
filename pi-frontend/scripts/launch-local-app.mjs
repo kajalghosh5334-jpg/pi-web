@@ -169,6 +169,7 @@ function runPackageManager(args, cwd, logFd, detached = false) {
 }
 
 function serverScriptName() {
+  if (process.env.PI_WEB_SCRIPT) return process.env.PI_WEB_SCRIPT;
   return existsSync(buildIdFile) ? "start" : "dev";
 }
 
