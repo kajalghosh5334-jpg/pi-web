@@ -284,8 +284,14 @@ function openBrowserAppWindow(browser) {
   if (process.platform === "darwin") {
     const appPath = browser.appPaths.find((candidate) => existsSync(candidate));
     if (appPath) {
-      spawnDetached("open", ["-na", appPath, "--args", `--app=${url}`]);
-      return true;
+      const result = spawnSync("open", ["-n", appPath, "--args", `--app=${url}`], { stdio: "ignore" });
+      if (result.status === 0) {
+        for (let i = 0; i < 6; i += 1) {
+          if (restoreAppWindow(browser)) break;
+          Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 250);
+        }
+        return true;
+      }
     }
   }
 

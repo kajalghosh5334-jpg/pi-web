@@ -189,6 +189,8 @@ export function SessionSidebar({
   const [loadingProfiles, setLoadingProfiles] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [profileError, setProfileError] = useState<string | null>(null);
+  const [workflowLoadError, setWorkflowLoadError] = useState<string | null>(null);
+  const [workflowCatalogDegraded, setWorkflowCatalogDegraded] = useState(false);
   const [workflowBusyId, setWorkflowBusyId] = useState<string | null>(null);
   const [profileInspector, setProfileInspector] = useState<AgentProfileItem | null>(null);
   const [workflowCreateOpen, setWorkflowCreateOpen] = useState(false);
@@ -228,11 +230,15 @@ export function SessionSidebar({
   const loadWorkflows = useCallback(async () => {
     try {
       const res = await fetch("/api/workflows");
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json() as { workflows?: WorkflowDefinition[] };
+      const data = await res.json().catch(() => ({})) as { workflows?: WorkflowDefinition[]; degraded?: boolean; error?: string };
+      if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
       setWorkflows(Array.isArray(data.workflows) ? data.workflows : []);
-    } catch {
+      setWorkflowCatalogDegraded(Boolean(data.degraded));
+      setWorkflowLoadError(data.degraded ? (data.error || "Backend unavailable; showing local workflow catalog.") : null);
+    } catch (err) {
       setWorkflows([]);
+      setWorkflowCatalogDegraded(false);
+      setWorkflowLoadError(err instanceof Error ? err.message : String(err));
     }
   }, []);
 
@@ -555,7 +561,19 @@ export function SessionSidebar({
               sublabel="Choose a template and category"
               onClick={() => setWorkflowCreateOpen(true)}
             />
-            {visibleWorkflowCount === 0 ? <EmptyState label="还没有保存的 workflow。" /> : null}
+            {workflowLoadError ? (
+              <div style={{ padding: "8px 6px 10px", display: "grid", gap: 8 }}>
+                <EmptyState
+                  label={workflowCatalogDegraded ? `${workflowLoadError} 当前显示本地 workflow 目录，运行和保存仍需要后端。` : workflowLoadError}
+                  tone={workflowCatalogDegraded ? "muted" : "error"}
+                />
+                <button type="button" onClick={() => void loadWorkflows()} style={{ ...ghostButtonStyle, justifySelf: "start" }}>
+                  Retry
+                </button>
+              </div>
+            ) : null}
+            {visibleWorkflowCount === 0 && !workflowLoadError ? <EmptyState label="还没有保存的 workflow。" /> : null}
+            {visibleWorkflowCount === 0 && workflowLoadError ? <EmptyState label="没有可显示的 workflow。请确认后端或本地 catalog 文件可用。" /> : null}
             {workflowGroups.map((group) => (
               <WorkflowGroup
                 key={group.domain}
