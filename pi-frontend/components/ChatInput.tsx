@@ -26,20 +26,13 @@ interface Props {
   modelNames?: Record<string, string>;
   modelList?: { id: string; name: string; provider: string }[];
   onModelChange?: (provider: string, modelId: string) => void;
-  onCompact?: () => void;
-  onAbortCompaction?: () => void;
   isCompacting?: boolean;
-  compactError?: string | null;
   compactResult?: CompactResultInfo | null;
-  toolPreset?: "none" | "default" | "full";
-  onToolPresetChange?: (preset: "none" | "default" | "full") => void;
   thinkingLevel?: "auto" | "off" | "minimal" | "low" | "medium" | "high" | "xhigh";
   onThinkingLevelChange?: (level: "auto" | "off" | "minimal" | "low" | "medium" | "high" | "xhigh") => void;
   availableThinkingLevels?: string[] | null;
   thinkingLevelMap?: Record<string, string | null> | null;
   retryInfo?: { attempt: number; maxAttempts: number; errorMessage?: string } | null;
-  soundEnabled?: boolean;
-  onSoundToggle?: () => void;
   placeholder?: string;
   accessory?: React.ReactNode;
 }
@@ -50,8 +43,6 @@ export interface ChatInputHandle {
   addImages: (files: File[]) => void;
 }
 
-const TOOL_PRESETS = ["off", "default", "full"] as const;
-const TOOL_PRESET_MAP: Record<"off" | "default" | "full", "none" | "default" | "full"> = { off: "none", default: "default", full: "full" };
 const COMPOSITION_END_ENTER_GRACE_MS = 100;
 const MODEL_OPTION_COLLATOR = new Intl.Collator(undefined, { numeric: true, sensitivity: "base" });
 
@@ -83,6 +74,15 @@ const THINKING_LEVEL_DESC: Record<typeof THINKING_LEVELS[number], string> = {
   high: "High",
   xhigh: "Maximum",
 };
+const THINKING_LEVEL_LABEL: Record<typeof THINKING_LEVELS[number], string> = {
+  auto: "自动",
+  off: "关",
+  minimal: "极简",
+  low: "低",
+  medium: "中",
+  high: "高",
+  xhigh: "超高",
+};
 
 function formatTokenCount(tokens: number): string {
   if (tokens >= 1_000_000) return `${(tokens / 1_000_000).toFixed(1)}M`;
@@ -92,29 +92,21 @@ function formatTokenCount(tokens: number): string {
 
 export const ChatInput = forwardRef<ChatInputHandle, Props>(function ChatInput({
   onSend, onAbort, onSteer, onFollowUp, isStreaming, model, isAutoModelSelection, modelNames, modelList, onModelChange,
-  onCompact, onAbortCompaction, isCompacting, compactError, compactResult, toolPreset, onToolPresetChange,
+  isCompacting, compactResult,
   thinkingLevel, onThinkingLevelChange, availableThinkingLevels, thinkingLevelMap,
   retryInfo,
-  soundEnabled, onSoundToggle,
   placeholder,
   accessory,
 }: Props, ref) {
   const [value, setValue] = useState("");
   const [modelDropdownOpen, setModelDropdownOpen] = useState(false);
-  const [modelDropdownRect, setModelDropdownRect] = useState<{ top: number; left: number; width: number } | null>(null);
-  const [modelSearch, setModelSearch] = useState("");
-  const [showAllModels, setShowAllModels] = useState(false);
-  const [toolDropdownOpen, setToolDropdownOpen] = useState(false);
-  const [thinkingDropdownOpen, setThinkingDropdownOpen] = useState(false);
+  const [modelSubmenuOpen, setModelSubmenuOpen] = useState(false);
+  const [modeButtonHovered, setModeButtonHovered] = useState(false);
   const [attachedImages, setAttachedImages] = useState<AttachedImage[]>([]);
   const [isDragOver, setIsDragOver] = useState(false);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const modelDropdownPanelRef = useRef<HTMLDivElement>(null);
-  const toolDropdownRef = useRef<HTMLDivElement>(null);
-  const thinkingDropdownRef = useRef<HTMLDivElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const isComposingRef = useRef(false);
   const lastCompositionEndAtRef = useRef(0);
 
@@ -323,9 +315,7 @@ export const ChatInput = forwardRef<ChatInputHandle, Props>(function ChatInput({
       .sort(compareModelOptions);
   })();
 
-  const normalizedSearch = modelSearch.trim().toLowerCase();
-  const visibleModelOptions = (showAllModels ? [...availableModelOptions, ...hiddenModelOptions] : availableModelOptions)
-    .filter((opt) => !normalizedSearch || `${opt.name} ${opt.modelId} ${opt.provider}`.toLowerCase().includes(normalizedSearch));
+  const visibleModelOptions = [...availableModelOptions, ...hiddenModelOptions];
 
   const visibleModelsByProvider: { provider: string; options: ModelOption[] }[] = [];
   for (const opt of visibleModelOptions) {
@@ -339,6 +329,17 @@ export const ChatInput = forwardRef<ChatInputHandle, Props>(function ChatInput({
     ? (allModelOptions.find((o) => o.modelId === model.modelId && o.provider === model.provider)?.name ?? model.modelId)
     : null;
   const currentName = displayModelName;
+  const currentThinkingLevel = thinkingLevel ?? "auto";
+  const currentThinkingLabel = (() => {
+    if (currentThinkingLevel !== "auto" && thinkingLevelMap) {
+      const mapped = thinkingLevelMap[currentThinkingLevel];
+      if (mapped) return mapped;
+    }
+    return THINKING_LEVEL_LABEL[currentThinkingLevel];
+  })();
+  const hasModelMenu = availableModelOptions.length > 0 && currentName && onModelChange;
+  const hasModeControls = !isStreaming && (hasModelMenu || onThinkingLevelChange);
+  const canSend = value.trim().length > 0 || attachedImages.length > 0;
 
   const compactSavedTokens = compactResult
     ? Math.max(0, compactResult.tokensBefore - compactResult.estimatedTokensAfter)
@@ -353,17 +354,9 @@ export const ChatInput = forwardRef<ChatInputHandle, Props>(function ChatInput({
   // Close dropdowns on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
-      if (
-        dropdownRef.current && !dropdownRef.current.contains(e.target as Node) &&
-        modelDropdownPanelRef.current && !modelDropdownPanelRef.current.contains(e.target as Node)
-      ) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
         setModelDropdownOpen(false);
-      }
-      if (toolDropdownRef.current && !toolDropdownRef.current.contains(e.target as Node)) {
-        setToolDropdownOpen(false);
-      }
-      if (thinkingDropdownRef.current && !thinkingDropdownRef.current.contains(e.target as Node)) {
-        setThinkingDropdownOpen(false);
+        setModelSubmenuOpen(false);
       }
     };
     document.addEventListener("mousedown", handler);
@@ -377,23 +370,10 @@ export const ChatInput = forwardRef<ChatInputHandle, Props>(function ChatInput({
       style={{
         flexShrink: 0,
         background: "transparent",
-        padding: "10px 4px 6px",
+        padding: "4px 4px 3px",
         paddingRight: 52, // 16px base + 36px for ChatMinimap alignment
       }}
     >
-      {/* Hidden file input */}
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/*"
-        multiple
-        style={{ display: "none" }}
-        onChange={(e) => {
-          const files = Array.from(e.target.files ?? []);
-          processImageFiles(files);
-          e.target.value = "";
-        }}
-      />
       <div style={{ maxWidth: 820, margin: "0 auto" }}>
         {accessory && (
           <div style={{
@@ -483,7 +463,7 @@ export const ChatInput = forwardRef<ChatInputHandle, Props>(function ChatInput({
                 ? "rgba(234,179,8,0.4)"
                 : "color-mix(in srgb, var(--shell-edge) 80%, transparent)"}`,
             borderRadius: accessory ? "0 0 26px 26px" : 24,
-            padding: "12px 12px 12px 16px",
+            padding: "9px 10px 9px 15px",
             boxShadow: isDragOver
               ? "0 0 0 3px rgba(59,130,246,0.12), var(--shell-shadow-md)"
               : "var(--shell-shadow-md)",
@@ -549,7 +529,7 @@ export const ChatInput = forwardRef<ChatInputHandle, Props>(function ChatInput({
                     borderRadius: 8,
                     color: (value.trim() || attachedImages.length) ? "rgba(180,130,0,1)" : "var(--text-dim)",
                     cursor: (value.trim() || attachedImages.length) ? "pointer" : "not-allowed",
-                    fontSize: 13, fontWeight: 600, letterSpacing: "-0.01em",
+                    fontSize: 13, fontWeight: 600, letterSpacing: 0,
                     transition: "background 0.12s",
                   }}
                 >
@@ -572,7 +552,7 @@ export const ChatInput = forwardRef<ChatInputHandle, Props>(function ChatInput({
                     borderRadius: 8,
                     color: (value.trim() || attachedImages.length) ? "rgba(99,102,241,1)" : "var(--text-dim)",
                     cursor: (value.trim() || attachedImages.length) ? "pointer" : "not-allowed",
-                    fontSize: 13, fontWeight: 600, letterSpacing: "-0.01em",
+                    fontSize: 13, fontWeight: 600, letterSpacing: 0,
                     transition: "background 0.12s",
                   }}
                 >
@@ -583,389 +563,20 @@ export const ChatInput = forwardRef<ChatInputHandle, Props>(function ChatInput({
                   Follow-up
                 </button>
               )}
-            </div>
-          ) : (
-            <button
-              onClick={handleSend}
-              disabled={!value.trim() && !attachedImages.length}
-              style={{
-                flexShrink: 0,
-                alignSelf: "flex-end",
-                display: "flex", alignItems: "center", gap: 6,
-                minHeight: 38,
-                padding: "7px 10px",
-                background: (value.trim() || attachedImages.length) ? "var(--text)" : "var(--bg-secondary)",
-                border: "1px solid var(--border)",
-                borderRadius: 9,
-                color: (value.trim() || attachedImages.length) ? "var(--bg)" : "var(--text-dim)",
-                cursor: (value.trim() || attachedImages.length) ? "pointer" : "not-allowed",
-                fontSize: 12,
-                fontWeight: 750,
-                transition: "background 0.15s, color 0.15s",
-              }}
-            >
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="2" y1="7" x2="11" y2="7" />
-                <polyline points="7.5 3 12 7 7.5 11" />
-              </svg>
-              Send
-            </button>
-          )}
-        </div>
-
-        {/* Bottom bar: left | center (context) | right */}
-        <div style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 6 }}>
-
-          {/* LEFT: attach + model selector (idle) or steer/followup toggle (streaming) */}
-          <div style={{ flex: "0 0 auto", display: "flex", alignItems: "center", gap: 2 }}>
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              disabled={isStreaming}
-              title="Attach image"
-              style={{
-                flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center",
-                width: 32, height: 32, padding: 0,
-                background: "none", border: "none",
-                borderRadius: 9,
-                color: attachedImages.length ? "var(--accent)" : "var(--text-muted)",
-                cursor: isStreaming ? "not-allowed" : "pointer",
-                opacity: isStreaming ? 0.5 : 1,
-                transition: "background 0.12s, color 0.12s",
-              }}
-              onMouseEnter={(e) => {
-                if (isStreaming) return;
-                e.currentTarget.style.background = "var(--bg-hover)";
-                e.currentTarget.style.color = attachedImages.length ? "var(--accent)" : "var(--text)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = "none";
-                e.currentTarget.style.color = attachedImages.length ? "var(--accent)" : "var(--text-muted)";
-              }}
-            >
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-                <circle cx="8.5" cy="8.5" r="1.5" />
-                <polyline points="21 15 16 10 5 21" />
-              </svg>
-            </button>
-            {/* Model selector — visible always, disabled during streaming */}
-            {availableModelOptions.length > 0 && currentName && onModelChange && (
-                <div ref={dropdownRef} style={{ position: "relative" }}>
-                  <button
-                    onClick={(e) => {
-                      const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-                      setModelDropdownRect({ top: rect.top, left: rect.left, width: rect.width });
-                      setModelDropdownOpen((v) => !v);
-                    }}
-                    disabled={isStreaming}
-                    style={{
-                      display: "flex", alignItems: "center", gap: 6,
-                      padding: "8px 12px",
-                      height: 32,
-                      maxWidth: 220, overflow: "hidden",
-                      background: modelDropdownOpen ? "var(--bg-hover)" : "none",
-                      border: "none",
-                      borderRadius: 9,
-                      color: "var(--text-muted)",
-                      cursor: isStreaming ? "not-allowed" : "pointer",
-                      fontSize: 12,
-                      opacity: isStreaming ? 0.5 : 1,
-                      transition: "background 0.12s, color 0.12s",
-                    }}
-                    onMouseEnter={(e) => {
-                      if (isStreaming) return;
-                      e.currentTarget.style.background = "var(--bg-hover)";
-                      e.currentTarget.style.color = "var(--text)";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = modelDropdownOpen ? "var(--bg-hover)" : "none";
-                      e.currentTarget.style.color = "var(--text-muted)";
-                    }}
-                  >
-                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <rect x="4" y="4" width="16" height="16" rx="2" />
-                      <rect x="9" y="9" width="6" height="6" />
-                      <line x1="9" y1="1" x2="9" y2="4" /><line x1="15" y1="1" x2="15" y2="4" />
-                      <line x1="9" y1="20" x2="9" y2="23" /><line x1="15" y1="20" x2="15" y2="23" />
-                      <line x1="20" y1="9" x2="23" y2="9" /><line x1="20" y1="14" x2="23" y2="14" />
-                      <line x1="1" y1="9" x2="4" y2="9" /><line x1="1" y1="14" x2="4" y2="14" />
-                    </svg>
-                    <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", minWidth: 0 }}>{currentName}</span>
-                  </button>
-                  {modelDropdownOpen && modelDropdownRect && (() => {
-                    const viewportHeight = window.visualViewport?.height ?? window.innerHeight;
-                    const bottom = viewportHeight - modelDropdownRect.top + 6;
-                    const maxH = Math.max(260, Math.min(modelDropdownRect.top - 8, viewportHeight * 0.7));
-                    return (
-                      <div ref={modelDropdownPanelRef} style={{ position: "fixed", bottom, left: modelDropdownRect.left, zIndex: 500, background: "var(--bg)", border: "1px solid var(--border)", borderRadius: 10, boxShadow: "0 -4px 20px rgba(0,0,0,0.14)", overflow: "hidden", width: 360, minWidth: modelDropdownRect.width, maxHeight: maxH, display: "flex", flexDirection: "column" }}>
-                        <div style={{ padding: 10, borderBottom: "1px solid var(--border)", background: "var(--bg-panel)" }}>
-                          <input autoFocus value={modelSearch} onChange={(e) => setModelSearch(e.target.value)} placeholder="搜索模型..." style={{ width: "100%", boxSizing: "border-box", padding: "8px 10px", borderRadius: 8, border: "1px solid var(--border)", background: "var(--bg)", color: "var(--text)", fontSize: 12 }} />
-                          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginTop: 8, fontSize: 11, color: "var(--text-muted)" }}>
-                            <span>{availableModelOptions.length} available{hiddenModelOptions.length > 0 ? `, ${hiddenModelOptions.length} not connected` : ""}</span>
-                            {hiddenModelOptions.length > 0 && <button onClick={() => setShowAllModels((v) => !v)} style={{ border: "none", background: "none", color: "var(--accent)", cursor: "pointer", fontSize: 11, padding: 0 }}>{showAllModels ? "Available only" : "Show all"}</button>}
-                          </div>
-                        </div>
-                        <div style={{ overflowY: "auto", maxHeight: maxH - 72 }}>
-                          {visibleModelsByProvider.length > 0 ? visibleModelsByProvider.map((group, gi) => (
-                            <div key={group.provider}>
-                              {visibleModelsByProvider.length > 1 && <div style={{ padding: "6px 12px 4px", fontSize: 10, fontWeight: 700, color: "var(--text-dim)", textTransform: "uppercase", letterSpacing: "0.07em", borderTop: gi > 0 ? "1px solid var(--border)" : "none" }}>{group.provider}</div>}
-                              {group.options.map((opt) => {
-                                const isActive = opt.modelId === model?.modelId && opt.provider === model?.provider;
-                                const isHidden = hiddenModelOptions.some((m) => m.provider === opt.provider && m.modelId === opt.modelId);
-                                return (
-                                  <button key={`${opt.provider}:${opt.modelId}`} onClick={() => { setModelDropdownOpen(false); setModelSearch(""); if (!isActive || isAutoModelSelection) onModelChange(opt.provider, opt.modelId); }} style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", padding: "8px 12px", background: isActive ? "var(--bg-selected)" : "none", border: "none", color: isActive ? "var(--text)" : "var(--text-muted)", cursor: "pointer", fontSize: 12, textAlign: "left", fontWeight: isActive ? 650 : 400 }} onMouseEnter={(e) => { if (!isActive) e.currentTarget.style.background = "var(--bg-hover)"; }} onMouseLeave={(e) => { if (!isActive) e.currentTarget.style.background = "none"; }}>
-                                    {isActive ? <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><polyline points="1.5 5 4 7.5 8.5 2.5" /></svg> : <span style={{ width: 10, flexShrink: 0 }} />}
-                                    <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{opt.name}</span>
-                                    <span style={{ fontSize: 10, color: isHidden ? "#f59e0b" : "#22c55e" }}>{isHidden ? "Offline" : "Online"}</span>
-                                  </button>
-                                );
-                              })}
-                            </div>
-                          )) : <div style={{ padding: 14, color: "var(--text-muted)", fontSize: 12 }}>No matching models</div>}
-                        </div>
-                      </div>
-                    );
-                  })()}
-                </div>
-            )}
-          </div>
-
-          {/* spacer */}
-          <div style={{ flex: 1 }} />
-
-          {/* RIGHT: thinking + tools preset + compact + sound (idle) | Stop + sound (streaming) */}
-          <div style={{ flex: "0 0 auto", display: "flex", alignItems: "center", gap: 2, marginLeft: "auto" }}>
-            {!isStreaming && onThinkingLevelChange && (
-              <div ref={thinkingDropdownRef} style={{ position: "relative" }}>
-                <button
-                  onClick={() => !isStreaming && setThinkingDropdownOpen((v) => !v)}
-                  disabled={isStreaming}
-                  title="Reasoning level"
-                  style={{
-                    display: "flex", alignItems: "center", gap: 5,
-                    padding: "8px 12px",
-                    height: 32,
-                    background: thinkingDropdownOpen ? "var(--bg-hover)" : "none",
-                    border: "none",
-                    borderRadius: 9,
-                    color: "var(--text-muted)",
-                    cursor: isStreaming ? "not-allowed" : "pointer",
-                    fontSize: 12,
-                    opacity: isStreaming ? 0.5 : 1,
-                    transition: "background 0.12s, color 0.12s",
-                  }}
-                  onMouseEnter={(e) => {
-                    if (isStreaming) return;
-                    e.currentTarget.style.background = "var(--bg-hover)";
-                    e.currentTarget.style.color = "var(--text)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = thinkingDropdownOpen ? "var(--bg-hover)" : "none";
-                    e.currentTarget.style.color = "var(--text-muted)";
-                  }}
-                >
-                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M9.5 2A5.5 5.5 0 0 0 4 7.5c0 1.7.78 3.21 2 4.21V14a1 1 0 0 0 1 1h5a1 1 0 0 0 1-1v-2.29c1.22-1 2-2.51 2-4.21A5.5 5.5 0 0 0 9.5 2z" />
-                    <line x1="7" y1="18" x2="12" y2="18" />
-                    <line x1="8" y1="21" x2="11" y2="21" />
-                  </svg>
-                  <span>{(() => {
-                    const lvl = thinkingLevel ?? "auto";
-                    if (lvl === "auto" || !thinkingLevelMap) return lvl;
-                    const mapped = thinkingLevelMap[lvl];
-                    return mapped != null ? mapped : lvl;
-                  })()}</span>
-                </button>
-                {thinkingDropdownOpen && (
-                  <div style={{
-                    position: "absolute", bottom: "calc(100% + 6px)", right: 0,
-                    zIndex: 100, background: "var(--bg)", border: "1px solid var(--border)",
-                    borderRadius: 8, boxShadow: "0 -4px 16px rgba(0,0,0,0.10)",
-                    overflow: "hidden", minWidth: 180,
-                  }}>
-                    {THINKING_LEVELS.filter((lvl) => {
-                      if (!availableThinkingLevels) return true;
-                      if (lvl === "auto") return true;
-                      return availableThinkingLevels.includes(lvl);
-                    }).map((lvl) => {
-                      const isActive = (thinkingLevel ?? "auto") === lvl;
-                      const desc = THINKING_LEVEL_DESC[lvl];
-                      const mappedVal = (lvl !== "auto" && thinkingLevelMap) ? thinkingLevelMap[lvl] : undefined;
-                      const displayLabel = (mappedVal != null && mappedVal !== lvl) ? mappedVal : lvl;
-                      const showOriginal = mappedVal != null && mappedVal !== lvl;
-                      return (
-                        <button
-                          key={lvl}
-                          onClick={() => { setThinkingDropdownOpen(false); if (!isActive) onThinkingLevelChange(lvl); }}
-                          style={{
-                            display: "flex", alignItems: "center", gap: 8,
-                            width: "100%", padding: "7px 12px",
-                            background: isActive ? "var(--bg-selected)" : "none",
-                            border: "none",
-                            color: isActive ? "var(--text)" : "var(--text-muted)",
-                            cursor: "pointer", fontSize: 12, textAlign: "left",
-                            fontWeight: isActive ? 600 : 400,
-                            whiteSpace: "nowrap",
-                          }}
-                          onMouseEnter={(e) => { if (!isActive) e.currentTarget.style.background = "var(--bg-hover)"; }}
-                          onMouseLeave={(e) => { if (!isActive) e.currentTarget.style.background = "none"; }}
-                        >
-                          {isActive
-                            ? <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><polyline points="1.5 5 4 7.5 8.5 2.5" /></svg>
-                            : <span style={{ width: 10, flexShrink: 0 }} />}
-                          <span style={{ flex: 1 }}>
-                            {displayLabel}
-                            {showOriginal && <span style={{ fontSize: 10, color: "var(--text-dim)", fontFamily: "var(--font-mono)", marginLeft: 5 }}>({lvl})</span>}
-                          </span>
-                          <span style={{ fontSize: 11, color: "var(--text-dim)", marginLeft: 8 }}>{desc}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            )}
-            {!isStreaming && onToolPresetChange && (
-              <div ref={toolDropdownRef} style={{ position: "relative" }}>
-                <button
-                  onClick={() => !isStreaming && setToolDropdownOpen((v) => !v)}
-                  disabled={isStreaming}
-                  title="Tool preset"
-                  style={{
-                    display: "flex", alignItems: "center", gap: 5,
-                    padding: "8px 12px",
-                    height: 32,
-                    background: toolDropdownOpen ? "var(--bg-hover)" : "none",
-                    border: "none",
-                    borderRadius: 9,
-                    color: "var(--text-muted)",
-                    cursor: isStreaming ? "not-allowed" : "pointer",
-                    fontSize: 12,
-                    opacity: isStreaming ? 0.5 : 1,
-                    transition: "background 0.12s, color 0.12s",
-                  }}
-                  onMouseEnter={(e) => {
-                    if (isStreaming) return;
-                    e.currentTarget.style.background = "var(--bg-hover)";
-                    e.currentTarget.style.color = "var(--text)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = toolDropdownOpen ? "var(--bg-hover)" : "none";
-                    e.currentTarget.style.color = "var(--text-muted)";
-                  }}
-                >
-                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
-                  </svg>
-                  <span>{Object.entries(TOOL_PRESET_MAP).find(([, v]) => v === (toolPreset ?? "default"))?.[0] ?? "default"}</span>
-                </button>
-                {toolDropdownOpen && (
-                  <div style={{
-                    position: "absolute", bottom: "calc(100% + 6px)", right: 0,
-                    zIndex: 100, background: "var(--bg)", border: "1px solid var(--border)",
-                    borderRadius: 8, boxShadow: "0 -4px 16px rgba(0,0,0,0.10)",
-                    overflow: "hidden", minWidth: 120,
-                  }}>
-                    {TOOL_PRESETS.map((lvl) => {
-                      const preset = TOOL_PRESET_MAP[lvl];
-                      const isActive = (toolPreset ?? "default") === preset;
-                      const desc = lvl === "off" ? "No tools, chat only" : lvl === "default" ? "4 built-in tools" : "All built-in tools";
-                      return (
-                        <button
-                          key={lvl}
-                          onClick={() => { setToolDropdownOpen(false); if (!isActive) onToolPresetChange(preset); }}
-                          style={{
-                            display: "flex", alignItems: "center", gap: 8,
-                            width: "100%", padding: "7px 12px",
-                            background: isActive ? "var(--bg-selected)" : "none",
-                            border: "none",
-                            color: isActive ? "var(--text)" : "var(--text-muted)",
-                            cursor: "pointer", fontSize: 12, textAlign: "left",
-                            fontWeight: isActive ? 600 : 400,
-                            whiteSpace: "nowrap",
-                          }}
-                          onMouseEnter={(e) => { if (!isActive) e.currentTarget.style.background = "var(--bg-hover)"; }}
-                          onMouseLeave={(e) => { if (!isActive) e.currentTarget.style.background = "none"; }}
-                        >
-                          {isActive
-                            ? <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><polyline points="1.5 5 4 7.5 8.5 2.5" /></svg>
-                            : <span style={{ width: 10, flexShrink: 0 }} />}
-                          <span style={{ flex: 1 }}>{lvl}</span>
-                          <span style={{ fontSize: 11, color: "var(--text-dim)", marginLeft: 8 }}>{desc}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {!isStreaming && onCompact && (
-              <div style={{ position: "relative" }}>
-                {compactError && (
-                  <div style={{
-                    position: "absolute", bottom: "calc(100% + 6px)", right: 0,
-                    background: "#1f2937", color: "#f87171",
-                    fontSize: 11, padding: "4px 8px", borderRadius: 5,
-                    whiteSpace: "nowrap", pointerEvents: "none",
-                    boxShadow: "0 2px 8px rgba(0,0,0,0.2)", zIndex: 50,
-                  }}>
-                    {compactError}
-                  </div>
-                )}
-                <button
-                  onClick={isCompacting ? onAbortCompaction : onCompact}
-                  disabled={isStreaming && !isCompacting}
-                  style={{
-                    display: "flex", alignItems: "center", gap: 5,
-                    padding: "8px 12px",
-                    height: 32,
-                    background: isCompacting ? "rgba(239,68,68,0.08)" : "none",
-                    border: "none",
-                    borderRadius: 9,
-                    color: isCompacting ? "#ef4444" : "var(--text-muted)",
-                    cursor: (isStreaming && !isCompacting) ? "not-allowed" : "pointer",
-                    fontSize: 12, opacity: (isStreaming && !isCompacting) ? 0.5 : 1,
-                    transition: "background 0.12s, color 0.12s",
-                  }}
-                  onMouseEnter={(e) => {
-                    if (isStreaming && !isCompacting) return;
-                    e.currentTarget.style.background = isCompacting ? "rgba(239,68,68,0.16)" : "var(--bg-hover)";
-                    e.currentTarget.style.color = isCompacting ? "#ef4444" : "var(--text)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = isCompacting ? "rgba(239,68,68,0.08)" : "none";
-                    e.currentTarget.style.color = isCompacting ? "#ef4444" : "var(--text-muted)";
-                  }}
-                  title={isCompacting ? "Stop compacting" : "Compact context"}
-                >
-                  {isCompacting ? (
-                    <><svg width="10" height="10" viewBox="0 0 10 10" fill="none"><rect x="2" y="2" width="6" height="6" rx="1" fill="currentColor" /></svg>Compacting…</>
-                  ) : (
-                    <><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <polyline points="4 14 10 14 10 20" /><polyline points="20 10 14 10 14 4" />
-                      <line x1="10" y1="14" x2="3" y2="21" /><line x1="21" y1="3" x2="14" y2="10" />
-                    </svg>Compact</>
-                  )}
-                </button>
-              </div>
-            )}
-
-            {isStreaming && (
               <button
                 onClick={onAbort}
                 title="Stop agent"
                 style={{
                   display: "flex", alignItems: "center", gap: 6,
-                  padding: "8px 14px",
-                  height: 32,
+                  padding: "7px 12px",
+                  minHeight: 36,
                   background: "rgba(239,68,68,0.08)",
                   border: "1px solid rgba(239,68,68,0.3)",
                   borderRadius: 9,
                   color: "#ef4444",
                   cursor: "pointer",
-                  fontSize: 12, fontWeight: 600,
-                  whiteSpace: "nowrap", letterSpacing: "-0.01em",
+                  fontSize: 12, fontWeight: 650,
+                  whiteSpace: "nowrap", letterSpacing: 0,
                   transition: "background 0.12s",
                 }}
                 onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(239,68,68,0.16)"; }}
@@ -976,52 +587,269 @@ export const ChatInput = forwardRef<ChatInputHandle, Props>(function ChatInput({
                 </svg>
                 Stop
               </button>
-            )}
-
-            {onSoundToggle !== undefined && (
+            </div>
+          ) : (
+            <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0, alignSelf: "flex-end" }}>
+              {hasModeControls && (
+                <div ref={dropdownRef} style={{ position: "relative" }}>
+                  <button
+                    onClick={() => {
+                      setModelDropdownOpen((v) => !v);
+                      setModelSubmenuOpen(false);
+                    }}
+                    disabled={isCompacting}
+                    title={currentName ? `${currentName} / ${currentThinkingLabel}` : "Model and reasoning"}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 7,
+                      minHeight: 36,
+                      maxWidth: 240,
+                      padding: "7px 9px",
+                      background: modelDropdownOpen ? "var(--bg-hover)" : "transparent",
+                      border: "none",
+                      borderRadius: 9,
+                      color: "var(--text-muted)",
+                      cursor: isCompacting ? "not-allowed" : "pointer",
+                      opacity: isCompacting ? 0.55 : 1,
+                      fontSize: 13,
+                      fontWeight: 520,
+                      letterSpacing: 0,
+                      transition: "background 0.12s, color 0.12s",
+                    }}
+                    onMouseEnter={(e) => {
+                      if (isCompacting) return;
+                      setModeButtonHovered(true);
+                      e.currentTarget.style.background = "var(--bg-hover)";
+                      e.currentTarget.style.color = "var(--text)";
+                    }}
+                    onMouseLeave={(e) => {
+                      setModeButtonHovered(false);
+                      e.currentTarget.style.background = modelDropdownOpen ? "var(--bg-hover)" : "transparent";
+                      e.currentTarget.style.color = "var(--text-muted)";
+                    }}
+                  >
+                    <span style={{ color: "var(--text)", fontWeight: 650, whiteSpace: "nowrap" }}>{currentThinkingLabel}</span>
+                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                      <polyline points="3 4.5 6 7.5 9 4.5" />
+                    </svg>
+                    {modeButtonHovered && currentName && !modelDropdownOpen && (
+                      <span style={{
+                        position: "absolute",
+                        right: 0,
+                        bottom: "calc(100% + 8px)",
+                        zIndex: 90,
+                        maxWidth: 320,
+                        padding: "7px 10px",
+                        borderRadius: 10,
+                        background: "var(--bg)",
+                        border: "1px solid var(--border)",
+                        boxShadow: "0 -8px 24px rgba(0,0,0,0.12)",
+                        color: "var(--text)",
+                        fontSize: 12,
+                        fontWeight: 560,
+                        lineHeight: 1.35,
+                        whiteSpace: "nowrap",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        pointerEvents: "none",
+                      }}>
+                        {currentName}
+                      </span>
+                    )}
+                  </button>
+                  {modelDropdownOpen && (
+                    <div style={{
+                      position: "absolute",
+                      bottom: "calc(100% + 8px)",
+                      right: 0,
+                      zIndex: 120,
+                      width: 330,
+                      maxWidth: "min(330px, calc(100vw - 32px))",
+                      background: "var(--bg)",
+                      border: "1px solid var(--border)",
+                      borderRadius: 18,
+                      boxShadow: "0 -12px 36px rgba(0,0,0,0.14)",
+                      padding: 8,
+                    }}>
+                      {onThinkingLevelChange && (
+                        <>
+                          <div style={{ padding: "7px 12px 6px", fontSize: 13, color: "var(--text-dim)", fontWeight: 700 }}>推理</div>
+                          {THINKING_LEVELS.filter((lvl) => {
+                            if (!availableThinkingLevels) return true;
+                            if (lvl === "auto") return true;
+                            return availableThinkingLevels.includes(lvl);
+                          }).map((lvl) => {
+                            const isActive = currentThinkingLevel === lvl;
+                            const mappedVal = (lvl !== "auto" && thinkingLevelMap) ? thinkingLevelMap[lvl] : undefined;
+                            const displayLabel = mappedVal || THINKING_LEVEL_LABEL[lvl];
+                            return (
+                              <button
+                                key={lvl}
+                                onClick={() => {
+                                  setModelDropdownOpen(false);
+                                  setModelSubmenuOpen(false);
+                                  if (!isActive) onThinkingLevelChange(lvl);
+                                }}
+                                title={THINKING_LEVEL_DESC[lvl]}
+                                style={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: 10,
+                                  width: "100%",
+                                  minHeight: 40,
+                                  padding: "8px 12px",
+                                  background: isActive ? "var(--bg-selected)" : "transparent",
+                                  border: "none",
+                                  borderRadius: 10,
+                                  color: isActive ? "var(--text)" : "var(--text-muted)",
+                                  cursor: "pointer",
+                                  fontSize: 14,
+                                  textAlign: "left",
+                                  fontWeight: isActive ? 680 : 520,
+                                  letterSpacing: 0,
+                                }}
+                                onMouseEnter={(e) => { if (!isActive) e.currentTarget.style.background = "var(--bg-hover)"; }}
+                                onMouseLeave={(e) => { if (!isActive) e.currentTarget.style.background = "transparent"; }}
+                              >
+                                <span style={{ flex: 1, whiteSpace: "nowrap" }}>{displayLabel}</span>
+                                {isActive && <span style={{ fontSize: 18, lineHeight: 1, color: "var(--text)" }}>✓</span>}
+                              </button>
+                            );
+                          })}
+                        </>
+                      )}
+                      {hasModelMenu && (
+                        <div style={{ position: "relative", marginTop: onThinkingLevelChange ? 8 : 0, paddingTop: onThinkingLevelChange ? 8 : 0, borderTop: onThinkingLevelChange ? "1px solid var(--border)" : "none" }}>
+                          <button
+                            onClick={() => setModelSubmenuOpen((v) => !v)}
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 10,
+                              width: "100%",
+                              minHeight: 42,
+                              padding: "8px 12px",
+                              background: modelSubmenuOpen ? "var(--bg-hover)" : "transparent",
+                              border: "none",
+                              borderRadius: 10,
+                              color: "var(--text)",
+                              cursor: "pointer",
+                              fontSize: 14,
+                              textAlign: "left",
+                              letterSpacing: 0,
+                            }}
+                          >
+                            <span style={{ flex: 1, color: "var(--text-muted)", fontWeight: 620 }}>模型</span>
+                            <span style={{ maxWidth: 170, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontWeight: 520 }}>{currentName}</span>
+                            <svg width="14" height="14" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, transform: modelSubmenuOpen ? "rotate(180deg)" : "none", transition: "transform 0.12s" }}>
+                              <polyline points="4.5 3 7.5 6 4.5 9" />
+                            </svg>
+                          </button>
+                          {modelSubmenuOpen && (
+                            <div style={{
+                              position: "absolute",
+                              bottom: -8,
+                              right: "calc(100% + 8px)",
+                              width: 320,
+                              maxWidth: "min(320px, calc(100vw - 32px))",
+                              maxHeight: 360,
+                              overflowY: "auto",
+                              background: "var(--bg)",
+                              border: "1px solid var(--border)",
+                              borderRadius: 18,
+                              boxShadow: "0 -12px 36px rgba(0,0,0,0.14)",
+                              padding: 8,
+                            }}>
+                              <div style={{ padding: "7px 12px 6px", fontSize: 13, color: "var(--text-dim)", fontWeight: 700 }}>模型</div>
+                              {visibleModelsByProvider.length > 0 ? visibleModelsByProvider.map((group, gi) => (
+                                <div key={group.provider}>
+                                  {visibleModelsByProvider.length > 1 && (
+                                    <div style={{ padding: gi > 0 ? "9px 12px 4px" : "3px 12px 4px", fontSize: 11, color: "var(--text-dim)", fontWeight: 700, textTransform: "uppercase" }}>{group.provider}</div>
+                                  )}
+                                  {group.options.map((opt) => {
+                                    const isActive = opt.modelId === model?.modelId && opt.provider === model?.provider;
+                                    return (
+                                      <button
+                                        key={`${opt.provider}:${opt.modelId}`}
+                                        onClick={() => {
+                                          setModelDropdownOpen(false);
+                                          setModelSubmenuOpen(false);
+                                          if (!isActive || isAutoModelSelection) onModelChange(opt.provider, opt.modelId);
+                                        }}
+                                        style={{
+                                          display: "flex",
+                                          alignItems: "center",
+                                          gap: 10,
+                                          width: "100%",
+                                          minHeight: 40,
+                                          padding: "8px 12px",
+                                          background: isActive ? "var(--bg-selected)" : "transparent",
+                                          border: "none",
+                                          borderRadius: 10,
+                                          color: isActive ? "var(--text)" : "var(--text-muted)",
+                                          cursor: "pointer",
+                                          fontSize: 14,
+                                          textAlign: "left",
+                                          fontWeight: isActive ? 680 : 520,
+                                          letterSpacing: 0,
+                                        }}
+                                        onMouseEnter={(e) => { if (!isActive) e.currentTarget.style.background = "var(--bg-hover)"; }}
+                                        onMouseLeave={(e) => { if (!isActive) e.currentTarget.style.background = "transparent"; }}
+                                      >
+                                        <span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{opt.name}</span>
+                                        {isActive && <span style={{ fontSize: 18, lineHeight: 1, color: "var(--text)" }}>✓</span>}
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              )) : (
+                                <div style={{ padding: 12, color: "var(--text-muted)", fontSize: 13 }}>No models available</div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
               <button
-                onClick={onSoundToggle}
-                title={soundEnabled ? "Disable sound" : "Enable sound"}
+                onClick={handleSend}
+                disabled={isCompacting || !canSend}
                 style={{
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  width: 32, height: 32, padding: 0,
-                  background: "none",
-                  border: "none",
+                  flexShrink: 0,
+                  display: "flex", alignItems: "center", gap: 6,
+                  minHeight: 36,
+                  padding: "7px 10px",
+                  background: !isCompacting && canSend ? "var(--text)" : "var(--bg-secondary)",
+                  border: "1px solid var(--border)",
                   borderRadius: 9,
-                  color: soundEnabled ? "var(--text-muted)" : "var(--text-dim)",
-                  cursor: "pointer",
-                  opacity: soundEnabled ? 1 : 0.55,
-                  transition: "background 0.12s, color 0.12s, opacity 0.12s",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = "var(--bg-hover)";
-                  e.currentTarget.style.color = "var(--text)";
-                  e.currentTarget.style.opacity = "1";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = "none";
-                  e.currentTarget.style.color = soundEnabled ? "var(--text-muted)" : "var(--text-dim)";
-                  e.currentTarget.style.opacity = soundEnabled ? "1" : "0.55";
+                  color: !isCompacting && canSend ? "var(--bg)" : "var(--text-dim)",
+                  cursor: isCompacting ? "wait" : canSend ? "pointer" : "not-allowed",
+                  fontSize: 12,
+                  fontWeight: 750,
+                  letterSpacing: 0,
+                  transition: "background 0.15s, color 0.15s",
+                  whiteSpace: "nowrap",
                 }}
               >
-                {soundEnabled ? (
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
-                    <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
-                    <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
-                  </svg>
+                {isCompacting ? (
+                  "Compacting…"
                 ) : (
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
-                    <line x1="23" y1="9" x2="17" y2="15" />
-                    <line x1="17" y1="9" x2="23" y2="15" />
-                  </svg>
+                  <>
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <line x1="2" y1="7" x2="11" y2="7" />
+                      <polyline points="7.5 3 12 7 7.5 11" />
+                    </svg>
+                    Send
+                  </>
                 )}
               </button>
-            )}
-          </div>
-
+            </div>
+          )}
         </div>
+
       </div>
     </div>
   );

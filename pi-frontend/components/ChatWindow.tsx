@@ -99,23 +99,23 @@ function Typewriter({ phrases }: { phrases: string[] }) {
 const ChatWindow = memo(function ChatWindow({ session, newSessionCwd, onAgentEnd, onSessionCreated, onSessionForked, modelsRefreshKey, chatInputRef, onBranchDataChange, loadBranchTree, onSystemPromptChange, onSessionStatsChange, onContextUsageChange, onSendOverride, externalMessages = [], inputPlaceholder, inputAccessory }: Props) {
   const {
     loading, error, messages, entryIds, isStreaming, currentStreamingMessageId,
-    agentRunning, modelNames, modelList, modelThinkingLevels, modelThinkingLevelMaps, toolPreset, thinkingLevel,
+    agentRunning, modelNames, modelList, modelThinkingLevels, modelThinkingLevelMaps, thinkingLevel,
     retryInfo, contextUsage, forkingEntryId,
-    isCompacting, compactError, compactResult, displayModel: displayModelValue, sessionStats,
+    isCompacting, compactResult, displayModel: displayModelValue, sessionStats,
     loadingFullHistory, isAutoModelSelection,
     finalOutputStarted,
     isNew,
     messagesEndRef, scrollContainerRef,
     lastUserMsgRef,
     handleSend, handleAbort, handleFork, handleNavigate, handleModelChange,
-    handleCompact, handleSteer, handleFollowUp, handleAbortCompaction,
-    handleToolPresetChange, handleThinkingLevelChange, handleAgentEventRef,
+    handleSteer, handleFollowUp,
+    handleThinkingLevelChange, handleAgentEventRef,
   } = useAgentSession({
     session, newSessionCwd, onAgentEnd, onSessionCreated, onSessionForked,
     modelsRefreshKey, onBranchDataChange, loadBranchTree, onSystemPromptChange,
   });
 
-  const { soundEnabled, onSoundToggle, playDoneSound } = useAudio();
+  const { soundEnabled, playDoneSound } = useAudio();
   const playDoneSoundRef = useRef(playDoneSound);
   playDoneSoundRef.current = playDoneSound;
   const soundEnabledRef = useRef(soundEnabled);
@@ -297,29 +297,22 @@ const ChatWindow = memo(function ChatWindow({ session, newSessionCwd, onAgentEnd
       modelNames={modelNames}
       modelList={modelList}
       onModelChange={handleModelChange}
-      onCompact={session || isNew ? handleCompact : undefined}
-      onAbortCompaction={handleAbortCompaction}
       isCompacting={isCompacting}
-      compactError={compactError}
       compactResult={compactResult}
-      toolPreset={toolPreset}
-      onToolPresetChange={session || isNew ? handleToolPresetChange : undefined}
       thinkingLevel={thinkingLevel}
       onThinkingLevelChange={session || isNew ? handleThinkingLevelChange : undefined}
       availableThinkingLevels={availableThinkingLevels}
       thinkingLevelMap={currentThinkingLevelMap}
       retryInfo={retryInfo}
-      soundEnabled={soundEnabled}
-      onSoundToggle={onSoundToggle}
       placeholder={inputPlaceholder}
       accessory={inputAccessory}
     />
   ), [
-    agentRunning, availableThinkingLevels, chatInputRef, compactError, compactResult, currentThinkingLevelMap,
-    displayModelValue, handleAbort, handleAbortCompaction, handleChatSend, handleCompact, handleFollowUp,
-    handleModelChange, handleSteer, handleThinkingLevelChange, handleToolPresetChange, inputAccessory,
-    inputPlaceholder, isAutoModelSelection, isCompacting, isNew, modelList, modelNames, onSoundToggle,
-    retryInfo, session, soundEnabled, thinkingLevel, toolPreset,
+    agentRunning, availableThinkingLevels, chatInputRef, compactResult, currentThinkingLevelMap,
+    displayModelValue, handleAbort, handleChatSend, handleFollowUp,
+    handleModelChange, handleSteer, handleThinkingLevelChange, inputAccessory,
+    inputPlaceholder, isAutoModelSelection, isCompacting, isNew, modelList, modelNames,
+    retryInfo, session, soundEnabled, thinkingLevel,
   ]);
 
   if (loading) {

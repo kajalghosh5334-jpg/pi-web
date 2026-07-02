@@ -71,6 +71,18 @@ interface GuardianDecision {
   reason?: string;
 }
 
+interface ConversationArtifact {
+  path: string;
+  name: string;
+  kind: "file";
+  source: "tool" | "workflow";
+  label?: string;
+  toolName?: string;
+  previewType: "document" | "image" | "audio";
+  size: number;
+  modified: string;
+}
+
 const ChatWindow = dynamic(() => import("./ChatWindow").then((mod) => mod.ChatWindow), { ssr: false });
 const FileViewer = dynamic(() => import("./FileViewer").then((mod) => mod.FileViewer), { ssr: false });
 const ApiGuide = dynamic(() => import("./ApiGuide").then((mod) => mod.ApiGuide), { ssr: false });
@@ -392,10 +404,10 @@ export function AppShell() {
   }, []);
 
   // Single active panel — only one dropdown open at a time
-  const [activeTopPanel, setActiveTopPanel] = useState<"branches" | "system" | null>(null);
+  const [activeTopPanel, setActiveTopPanel] = useState<"branches" | "system" | "artifacts" | null>(null);
   const [topPanelPos, setTopPanelPos] = useState<{ top: number; left: number; width: number } | null>(null);
 
-  const toggleTopPanel = useCallback((panel: "branches" | "system") => {
+  const toggleTopPanel = useCallback((panel: "branches" | "system" | "artifacts") => {
     setActiveTopPanel((cur) => cur === panel ? null : panel);
   }, []);
 
@@ -416,6 +428,9 @@ export function AppShell() {
   const [activeFileTabId, setActiveFileTabId] = useState<string | null>(null);
   const [rightPanelOpen, setRightPanelOpen] = useState(false);
   const [activeCwd, setActiveCwd] = useState<string | null>(null);
+  const [conversationArtifacts, setConversationArtifacts] = useState<ConversationArtifact[]>([]);
+  const [artifactsLoading, setArtifactsLoading] = useState(false);
+  const [artifactsError, setArtifactsError] = useState<string | null>(null);
   const [multiAgentMode, setMultiAgentMode] = useState(false);
   const [guardianAutoMultiAgentSuppressed, setGuardianAutoMultiAgentSuppressed] = useState(false);
   const [multiAgentMessages, setMultiAgentMessages] = useState<AgentMessage[]>([]);
@@ -922,6 +937,40 @@ export function AppShell() {
     setSidebarOpen(false);
     setMainView("chat");
   }, []);
+
+  const loadConversationArtifacts = useCallback(async () => {
+    if (!selectedSession?.id) {
+      setConversationArtifacts([]);
+      setArtifactsError(null);
+      return;
+    }
+    setArtifactsLoading(true);
+    setArtifactsError(null);
+    try {
+      const res = await fetch(`/api/sessions/${encodeURIComponent(selectedSession.id)}/artifacts`);
+      const data = await res.json() as { artifacts?: ConversationArtifact[]; error?: string };
+      if (!res.ok) throw new Error(data.error || `Failed to load artifacts (${res.status})`);
+      setConversationArtifacts(data.artifacts || []);
+    } catch (error) {
+      setArtifactsError(error instanceof Error ? error.message : String(error));
+    } finally {
+      setArtifactsLoading(false);
+    }
+  }, [selectedSession?.id]);
+
+  useEffect(() => {
+    setConversationArtifacts([]);
+    setArtifactsError(null);
+  }, [selectedSession?.id]);
+
+  useEffect(() => {
+    if (activeTopPanel === "artifacts") void loadConversationArtifacts();
+  }, [activeTopPanel, loadConversationArtifacts]);
+
+  const handleOpenArtifact = useCallback((artifact: ConversationArtifact) => {
+    handleOpenFile(artifact.path, artifact.name);
+    setActiveTopPanel(null);
+  }, [handleOpenFile]);
 
   const handleCloseFileTab = useCallback((tabId: string) => {
     setFileTabs((prev) => {
@@ -1689,8 +1738,8 @@ export function AppShell() {
 
   return (
     <>
-    <div style={{ height: "100dvh", overflow: "hidden", background: "transparent", padding: "14px" }}>
-    <div className="codex-shell" style={{ display: "flex", height: "calc(100dvh - 28px)", overflow: "hidden", background: "transparent", borderRadius: 28, position: "relative" }}>
+    <div style={{ height: "111.111dvh", width: "111.111%", overflow: "hidden", background: "transparent", padding: "14px", zoom: 0.9 }}>
+    <div className="codex-shell" style={{ display: "flex", height: "calc(111.111dvh - 28px)", overflow: "hidden", background: "transparent", borderRadius: 28, position: "relative" }}>
       {/* Mobile overlay backdrop */}
       <div
         className="sidebar-overlay-backdrop"
@@ -1842,11 +1891,41 @@ export function AppShell() {
                     Cancel
                   </button>
                 </div>
-              ) : null}
-              <button
-                onClick={handleExportSession}
-                disabled={!selectedSession}
-                title={selectedSession ? "Export HTML" : "Export is available after the session is saved"}
+	              ) : null}
+	              <button
+	                onClick={() => toggleTopPanel("artifacts")}
+	                title="Show conversation artifacts"
+	                style={{
+	                  display: "flex",
+	                  alignItems: "center",
+	                  gap: 6,
+	                  minHeight: 34,
+	                  padding: "0 12px",
+	                  background: activeTopPanel === "artifacts" ? "color-mix(in srgb, var(--accent) 10%, var(--bg))" : "transparent",
+	                  border: "none",
+	                  color: activeTopPanel === "artifacts" ? "var(--text)" : "var(--text-muted)",
+	                  cursor: "pointer",
+	                  flexShrink: 0,
+	                  fontSize: 11,
+	                  whiteSpace: "nowrap",
+	                  transition: "color 0.1s, background 0.1s",
+	                }}
+	                onMouseEnter={(e) => { e.currentTarget.style.color = "var(--text)"; }}
+	                onMouseLeave={(e) => { e.currentTarget.style.color = activeTopPanel === "artifacts" ? "var(--text)" : "var(--text-muted)"; }}
+	              >
+	                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: conversationArtifacts.length ? "var(--accent)" : "var(--text-dim)", flexShrink: 0 }}>
+	                  <path d="M4 6h6l2 2h8v10a2 2 0 0 1-2 2H4z" />
+	                  <path d="M4 6v12a2 2 0 0 0 2 2" />
+	                </svg>
+	                <span>Artifact</span>
+	                {conversationArtifacts.length > 0 ? (
+	                  <span style={{ color: "var(--text-dim)" }}>{conversationArtifacts.length}</span>
+	                ) : null}
+	              </button>
+	              <button
+	                onClick={handleExportSession}
+	                disabled={!selectedSession}
+	                title={selectedSession ? "Export HTML" : "Export is available after the session is saved"}
                 aria-label="Export HTML"
                 style={{
                   display: "flex",
@@ -2023,10 +2102,20 @@ export function AppShell() {
               left: topPanelPos.left,
               width: topPanelPos.width,
               zIndex: 500,
-            }}>
-              {activeTopPanel === "system" && (
-                <div style={{
-                  background: "var(--panel-gradient)",
+	            }}>
+	              {activeTopPanel === "artifacts" && (
+	                <ArtifactPanel
+	                  artifacts={conversationArtifacts}
+	                  loading={artifactsLoading}
+	                  error={artifactsError}
+	                  cwd={selectedSession?.cwd ?? newSessionCwd ?? activeCwd ?? ""}
+	                  onOpen={handleOpenArtifact}
+	                  onRefresh={() => void loadConversationArtifacts()}
+	                />
+	              )}
+	              {activeTopPanel === "system" && (
+	                <div style={{
+	                  background: "var(--panel-gradient)",
                   borderBottom: "1px solid var(--border)",
                 }}>
                   {systemPrompt ? (
@@ -2248,6 +2337,157 @@ export function AppShell() {
       <SkillsConfig cwd={(activeCwd ?? selectedSession?.cwd ?? newSessionCwd)!} onClose={() => setSkillsConfigOpen(false)} />
     )}
     </>
+  );
+}
+
+function artifactRelativePath(filePath: string, cwd: string): string {
+  const normalizedFile = filePath.replace(/\\/g, "/");
+  const normalizedCwd = cwd.replace(/\\/g, "/").replace(/\/+$/, "");
+  if (normalizedCwd && normalizedFile.startsWith(normalizedCwd + "/")) {
+    return normalizedFile.slice(normalizedCwd.length + 1);
+  }
+  return normalizedFile;
+}
+
+function formatArtifactSize(size: number): string {
+  if (!Number.isFinite(size) || size <= 0) return "";
+  if (size < 1024) return `${size} B`;
+  if (size < 1024 * 1024) return `${(size / 1024).toFixed(size < 10 * 1024 ? 1 : 0)} KB`;
+  return `${(size / (1024 * 1024)).toFixed(size < 10 * 1024 * 1024 ? 1 : 0)} MB`;
+}
+
+function artifactTypeLabel(type: ConversationArtifact["previewType"]): string {
+  if (type === "image") return "Image";
+  if (type === "audio") return "Audio";
+  return "Document";
+}
+
+function ArtifactPanel({
+  artifacts,
+  loading,
+  error,
+  cwd,
+  onOpen,
+  onRefresh,
+}: {
+  artifacts: ConversationArtifact[];
+  loading: boolean;
+  error: string | null;
+  cwd: string;
+  onOpen: (artifact: ConversationArtifact) => void;
+  onRefresh: () => void;
+}) {
+  return (
+    <div
+      style={{
+        background: "var(--panel-gradient)",
+        borderBottom: "1px solid var(--border)",
+        maxHeight: "min(520px, 70vh)",
+        overflow: "hidden",
+        display: "flex",
+        flexDirection: "column",
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "10px 16px", borderBottom: "1px solid var(--border)" }}>
+        <div style={{ minWidth: 0 }}>
+          <div style={{ fontSize: 12, fontWeight: 800, color: "var(--text)" }}>Conversation Artifacts</div>
+          <div style={{ marginTop: 2, fontSize: 11, color: "var(--text-muted)" }}>
+            Documents, images, audio, Markdown, and HTML generated in this conversation.
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={onRefresh}
+          disabled={loading}
+          title="Refresh artifacts"
+          style={{
+            border: "1px solid var(--border)",
+            background: "var(--bg)",
+            color: loading ? "var(--text-dim)" : "var(--text-muted)",
+            borderRadius: 8,
+            height: 28,
+            padding: "0 10px",
+            cursor: loading ? "default" : "pointer",
+            fontSize: 11,
+            flexShrink: 0,
+          }}
+        >
+          {loading ? "Loading..." : "Refresh"}
+        </button>
+      </div>
+      <div style={{ overflowY: "auto", padding: 10 }}>
+        {error ? (
+          <div style={{ padding: "14px 12px", fontSize: 12, color: "#f87171" }}>{error}</div>
+        ) : loading && artifacts.length === 0 ? (
+          <div style={{ padding: "14px 12px", fontSize: 12, color: "var(--text-muted)" }}>Loading artifacts...</div>
+        ) : artifacts.length === 0 ? (
+          <div style={{ padding: "14px 12px", fontSize: 12, color: "var(--text-muted)" }}>
+            No previewable artifacts yet.
+          </div>
+        ) : (
+          <div style={{ display: "grid", gap: 6 }}>
+            {artifacts.map((artifact) => {
+              const rel = artifactRelativePath(artifact.path, cwd);
+              const size = formatArtifactSize(artifact.size);
+              const when = artifact.modified ? new Date(artifact.modified).toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }) : "";
+              return (
+                <button
+                  key={artifact.path}
+                  type="button"
+                  onClick={() => onOpen(artifact)}
+                  title={artifact.path}
+                  style={{
+                    width: "100%",
+                    minHeight: 48,
+                    border: "1px solid var(--border)",
+                    borderRadius: 8,
+                    background: "color-mix(in srgb, var(--bg) 86%, transparent)",
+                    color: "var(--text)",
+                    cursor: "pointer",
+                    padding: "8px 10px",
+                    display: "grid",
+                    gridTemplateColumns: "auto 1fr auto",
+                    alignItems: "center",
+                    gap: 10,
+                    textAlign: "left",
+                  }}
+                >
+                  <span
+                    style={{
+                      width: 26,
+                      height: 26,
+                      borderRadius: 7,
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      background: "color-mix(in srgb, var(--accent) 10%, var(--bg))",
+                      color: "var(--accent)",
+                      fontSize: 10,
+                      fontWeight: 800,
+                      flexShrink: 0,
+                    }}
+                  >
+                    {artifact.previewType === "image" ? "IMG" : artifact.previewType === "audio" ? "AUD" : "DOC"}
+                  </span>
+                  <span style={{ minWidth: 0 }}>
+                    <span style={{ display: "block", fontSize: 12, fontWeight: 750, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {artifact.name}
+                    </span>
+                    <span style={{ display: "block", marginTop: 3, fontSize: 11, color: "var(--text-muted)", fontFamily: "var(--font-mono)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {rel}
+                    </span>
+                  </span>
+                  <span style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 3, color: "var(--text-dim)", fontSize: 10, whiteSpace: "nowrap" }}>
+                    <span>{artifactTypeLabel(artifact.previewType)}</span>
+                    <span>{[size, when].filter(Boolean).join(" · ")}</span>
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
 

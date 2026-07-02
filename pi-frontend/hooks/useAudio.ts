@@ -3,22 +3,10 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 
 export function useAudio() {
-  const [enabled, setEnabled] = useState<boolean>(() => {
-    if (typeof window === "undefined") return true;
-    const stored = localStorage.getItem("pi-sound-enabled");
-    return stored === null ? true : stored === "true";
-  });
+  const [enabled] = useState<boolean>(true);
 
   const enabledRef = useRef(enabled);
   useEffect(() => { enabledRef.current = enabled; }, [enabled]);
-
-  const toggle = useCallback(() => {
-    setEnabled((prev) => {
-      const next = !prev;
-      localStorage.setItem("pi-sound-enabled", String(next));
-      return next;
-    });
-  }, []);
 
   const playDone = useCallback(() => {
     if (!enabledRef.current) return;
@@ -46,5 +34,5 @@ export function useAudio() {
     }
   }, []);
 
-  return { soundEnabled: enabled, onSoundToggle: toggle, playDoneSound: playDone, soundEnabledRef: enabledRef };
+  return { soundEnabled: enabled, playDoneSound: playDone, soundEnabledRef: enabledRef };
 }
