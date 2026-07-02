@@ -233,6 +233,7 @@ async function fetchJsonWithTimeout(url: string, init: RequestInit = {}, timeout
 export function useOrchestrate() {
   const [state, setState] = useState<OrchestrateState>(INITIAL);
   const wsRef = useRef<WebSocket | null>(null);
+  const ignoredSessionIdsRef = useRef<Set<string>>(new Set());
 
   // ponytail: rAF-batched delta buffer for task_delta events
   const deltaBufferRef = useRef<Map<string, string>>(new Map());
@@ -250,6 +251,14 @@ export function useOrchestrate() {
         return delta ? { ...t, delta: t.delta + delta } : t;
       }),
     }));
+  }, []);
+
+  const clearPendingDeltas = useCallback(() => {
+    deltaBufferRef.current = new Map();
+    if (rafIdRef.current !== null) {
+      cancelAnimationFrame(rafIdRef.current);
+      rafIdRef.current = null;
+    }
   }, []);
 
   const scheduleFlush = useCallback(() => {
@@ -302,6 +311,11 @@ export function useOrchestrate() {
   }, [flushDeltas]);
 
   function handleEvent(msg: Record<string, unknown>) {
+    const sessionId = typeof msg.sessionId === "string" ? msg.sessionId : undefined;
+    if (sessionId && ignoredSessionIdsRef.current.has(sessionId)) {
+      return;
+    }
+
     switch (msg.type) {
       case "session_start":
         setState({ sessionId: msg.sessionId as string, phase: "guardian", tasks: [], artifacts: [], mainOutput: "", error: null, pendingConfirmation: null, progressUpdates: [], ledgerEvents: [] });
@@ -568,6 +582,10 @@ export function useOrchestrate() {
   }
 
   const run = useCallback(async (input: string, options?: { cwd?: string | null; sessionId?: string | null }) => {
+    if (options?.sessionId) {
+      ignoredSessionIdsRef.current.delete(options.sessionId);
+    }
+    clearPendingDeltas();
     setState({ ...INITIAL, phase: "guardian" });
     try {
       const res = await fetch("/api/orchestrate", {
@@ -604,7 +622,7 @@ export function useOrchestrate() {
     } catch (err) {
       setState((s) => ({ ...s, phase: "error", error: err instanceof Error ? err.message : String(err) }));
     }
-  }, []);
+  }, [clearPendingDeltas]);
 
   const coach = useCallback(async (feedback: string, options: { taskId?: string; skills?: string[] } = {}) => {
     if (!state.sessionId) return;
@@ -673,7 +691,26 @@ export function useOrchestrate() {
     });
   }, [state.sessionId]);
 
-  const reset = useCallback(() => setState(INITIAL), []);
+  const reset = useCallback(() => {
+    clearPendingDeltas();
+    setState(INITIAL);
+  }, [clearPendingDeltas]);
+
+  const abortSession = useCallback(async (reason = "workflow switch off") => {
+    const sessionId = state.sessionId;
+    if (sessionId) {
+      ignoredSessionIdsRef.current.add(sessionId);
+    }
+    clearPendingDeltas();
+    if (sessionId) {
+      await fetch(`/api/orchestrate/${encodeURIComponent(sessionId)}/abort`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reason }),
+      }).catch(() => null);
+    }
+    setState(INITIAL);
+  }, [clearPendingDeltas, state.sessionId]);
 
   const switchModel = useCallback(async (taskId: string, model: string) => {
     await fetch(`/api/subagents/${taskId}/switch-model`, {
@@ -733,5 +770,5 @@ export function useOrchestrate() {
     });
   }, [state.sessionId]);
 
-  return { state, run, reset, switchModel, abortTask, pauseTask, resumeTask, rerunTask, promoteProfile, promoteTaskSkills, confirm, coach, refreshTrain, startTrain, cancelTrain, saveTrain, clearProjectSummaries, refreshProjectMemory };
+  return { state, run, reset, abortSession, switchModel, abortTask, pauseTask, resumeTask, rerunTask, promoteProfile, promoteTaskSkills, confirm, coach, refreshTrain, startTrain, cancelTrain, saveTrain, clearProjectSummaries, refreshProjectMemory };
 }

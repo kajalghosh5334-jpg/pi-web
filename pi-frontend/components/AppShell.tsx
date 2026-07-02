@@ -429,7 +429,7 @@ export function AppShell() {
   const trainRoundDetailsRef = useRef<Record<number, TrainRoundDetailState>>({});
   const persistedMultiAgentOutputRef = useRef<string | null>(null);
   const activeMultiAgentSessionRef = useRef<string | null>(null);
-  const { state: orchestrateState, run: runOrchestrate, switchModel, abortTask, pauseTask, resumeTask, rerunTask, promoteProfile, promoteTaskSkills, confirm: confirmOrchestrate, refreshTrain, startTrain, cancelTrain, saveTrain, clearProjectSummaries, refreshProjectMemory } = useOrchestrate();
+  const { state: orchestrateState, run: runOrchestrate, reset: resetOrchestrate, abortSession: abortOrchestrateSession, switchModel, abortTask, pauseTask, resumeTask, rerunTask, promoteProfile, promoteTaskSkills, confirm: confirmOrchestrate, refreshTrain, startTrain, cancelTrain, saveTrain, clearProjectSummaries, refreshProjectMemory } = useOrchestrate();
   const activeTrainSessionId = orchestrateState.training?.sessionId || orchestrateState.sessionId || selectedSession?.id || null;
 
   useEffect(() => {
@@ -458,15 +458,33 @@ export function AppShell() {
     ? `pi.guardianAutoMultiAgentSuppressed.session:${selectedSession.id}`
     : null;
 
+  const clearWorkflowRuntimeState = useCallback((reason = "workflow switch off") => {
+    persistedMultiAgentOutputRef.current = null;
+    activeMultiAgentSessionRef.current = null;
+    setMultiAgentMessages([]);
+    setFocusedAgentTaskId(null);
+    setRightPanelOpen(false);
+    if (orchestrateState.sessionId) {
+      void abortOrchestrateSession(reason);
+    } else {
+      resetOrchestrate();
+    }
+  }, [abortOrchestrateSession, orchestrateState.sessionId, resetOrchestrate]);
+
   useEffect(() => {
     if (!multiAgentModeKey) {
       setMultiAgentMode(false);
       setGuardianAutoMultiAgentSuppressed(false);
+      clearWorkflowRuntimeState("no active session");
       return;
     }
-    setMultiAgentMode(localStorage.getItem(`pi.multiAgentMode.${multiAgentModeKey}`) === "1");
+    const enabled = localStorage.getItem(`pi.multiAgentMode.${multiAgentModeKey}`) === "1";
+    setMultiAgentMode(enabled);
+    if (!enabled) {
+      clearWorkflowRuntimeState("workflow disabled for session");
+    }
     setGuardianAutoMultiAgentSuppressed(guardianSuppressionKey ? localStorage.getItem(guardianSuppressionKey) === "1" : false);
-  }, [multiAgentModeKey, guardianSuppressionKey]);
+  }, [multiAgentModeKey, guardianSuppressionKey, clearWorkflowRuntimeState]);
 
   const toggleMultiAgentMode = useCallback(() => {
     setMultiAgentMode((prev) => {
@@ -485,15 +503,17 @@ export function AppShell() {
       }
       const hasRunningTasks = orchestrateState.tasks.some((task) => ["queued", "running", "waiting_for_dependency", "waiting_confirmation"].includes(task.status));
       setMultiAgentSwitchNotice(hasRunningTasks
-        ? `Workflow 已${next ? "开启" : "关闭"}，将在下一条消息生效；当前任务组会继续跑完。`
+        ? `Workflow 已${next ? "开启" : "关闭"}，${next ? "下一条消息生效" : "当前任务组已停止并清空"}。`
         : `Workflow 已${next ? "开启" : "关闭"}，下一条消息生效。`);
       if (next) {
         setRightPanelOpen(true);
         setMainView("chat");
+      } else {
+        clearWorkflowRuntimeState("workflow switch off");
       }
       return next;
     });
-  }, [multiAgentModeKey, guardianSuppressionKey, orchestrateState.tasks]);
+  }, [multiAgentModeKey, guardianSuppressionKey, orchestrateState.tasks, clearWorkflowRuntimeState]);
 
   useEffect(() => {
     if (!multiAgentSwitchNotice) return;
@@ -703,6 +723,7 @@ export function AppShell() {
   }, [activeFileTabId, fileTabs, handleGuardianRoutedSend]);
 
   useEffect(() => {
+    if (!multiAgentMode) return;
     const text = getMultiAgentAssistantText();
     if (!text) return;
     if (orchestrateState.phase === "done" && orchestrateState.mainOutput && persistedMultiAgentOutputRef.current !== orchestrateState.mainOutput) {
@@ -723,7 +744,7 @@ export function AppShell() {
         }
       })();
     }
-  }, [getMultiAgentAssistantText, orchestrateState.phase, orchestrateState.mainOutput, appendMessageToSession]);
+  }, [multiAgentMode, getMultiAgentAssistantText, orchestrateState.phase, orchestrateState.mainOutput, appendMessageToSession]);
 
   const [initialSessionId] = useState<string | null>(() => searchParams.get("session"));
   // True once the initial ?session= URL param has been resolved (or confirmed absent)
@@ -1137,6 +1158,10 @@ export function AppShell() {
   };
   const workflowSignalCount = collaborationSummary.running + collaborationSummary.waiting + collaborationSummary.needsConfirmation + collaborationSummary.blocked;
   const hasWorkflowRuntimeSignals = Boolean(selectedSession?.id || orchestrateState.tasks.length || workflowSignalCount > 0 || collaborationSummary.artifactsTotal > 0);
+  const guardedWorkflowSwitchModel = useCallback((taskId: string, model: string) => {
+    if (!multiAgentMode || !orchestrateState.sessionId) return;
+    void switchModel(taskId, model);
+  }, [multiAgentMode, orchestrateState.sessionId, switchModel]);
   const collaborationPanelBody = selectedSession?.id ? (
     <div style={{ display: "grid", gap: 10, gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", marginTop: 10 }}>
       <StageFlowView flowState={flowState} />
@@ -1147,7 +1172,7 @@ export function AppShell() {
           tasks={orchestrateState.tasks}
           artifacts={orchestrateState.artifacts}
           onOpenTask={setFocusedAgentTaskId}
-          onSwitchModel={switchModel}
+          onSwitchModel={guardedWorkflowSwitchModel}
           onAbortTask={abortTask}
           onPauseTask={pauseTask}
           onResumeTask={resumeTask}

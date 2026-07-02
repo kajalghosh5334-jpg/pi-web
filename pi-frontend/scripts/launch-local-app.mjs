@@ -357,11 +357,11 @@ function startServer() {
 }
 
 function openAppWindow() {
-  if (openBrowserAppWindow()) return;
-
   for (const browser of browserCandidates()) {
     if (restoreAppWindow(browser)) return;
   }
+
+  if (openBrowserAppWindow()) return;
 
   openUrlWindow();
 }
