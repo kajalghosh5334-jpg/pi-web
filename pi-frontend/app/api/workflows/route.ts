@@ -1,4 +1,4 @@
-import { readFile } from "fs/promises";
+import { readFile, writeFile } from "fs/promises";
 import { join } from "path";
 
 import type { WorkflowDefinition } from "@/lib/types";
@@ -6,6 +6,7 @@ import type { WorkflowDefinition } from "@/lib/types";
 export const runtime = "nodejs";
 
 const BACKEND_URL = process.env.PI_BACKEND_URL || "http://127.0.0.1:3000";
+const WORKFLOW_CATALOG_PATH = join(process.cwd(), "../pi-backend/workflows.json");
 
 function normalizeWorkflows(value: unknown): WorkflowDefinition[] {
   if (Array.isArray(value)) return value.filter(Boolean) as WorkflowDefinition[];
@@ -18,8 +19,7 @@ function normalizeWorkflows(value: unknown): WorkflowDefinition[] {
 }
 
 async function readLocalWorkflowCatalog(error: string, backendStatus?: number) {
-  const workflowCatalogPath = join(process.cwd(), "../pi-backend/workflows.json");
-  const raw = await readFile(workflowCatalogPath, "utf8");
+  const raw = await readFile(WORKFLOW_CATALOG_PATH, "utf8");
   return {
     workflows: normalizeWorkflows(JSON.parse(raw)),
     degraded: true,
@@ -27,6 +27,54 @@ async function readLocalWorkflowCatalog(error: string, backendStatus?: number) {
     error,
     backendStatus,
   };
+}
+
+function slugId(value: string) {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[\s_]+/g, "-")
+    .replace(/[^a-z0-9\u4e00-\u9fa5-]/g, "")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "") || "workflow";
+}
+
+function uniqueWorkflowId(base: string, workflows: Record<string, unknown>) {
+  let id = base;
+  let index = 2;
+  while (workflows[id]) {
+    id = `${base}-${index}`;
+    index += 1;
+  }
+  return id;
+}
+
+async function createLocalWorkflow(body: Record<string, unknown>) {
+  const raw = await readFile(WORKFLOW_CATALOG_PATH, "utf8");
+  const workflows = JSON.parse(raw) as Record<string, WorkflowDefinition>;
+  const now = Date.now();
+  const name = String(body.name || "未命名 Workflow").trim() || "未命名 Workflow";
+  const id = uniqueWorkflowId(slugId(name), workflows);
+  const workflow: WorkflowDefinition = {
+    id,
+    name,
+    description: String(body.description || ""),
+    status: "active",
+    debugStatus: "unverified",
+    domain: String(body.domain || "uncategorized"),
+    category: String(body.category || body.domain || "未分类"),
+    templateType: String(body.templateType || ""),
+    cwd: String(body.cwd || ""),
+    leadProfileId: String(body.leadProfileId || "strong-task-architect"),
+    reviewPolicy: body.reviewPolicy === "lead_only" ? "lead_only" : "lead_plus_reviewer",
+    createdAt: now,
+    updatedAt: now,
+    tasks: Array.isArray(body.tasks) ? body.tasks as WorkflowDefinition["tasks"] : [],
+    inputContract: body.inputContract && typeof body.inputContract === "object" ? body.inputContract as WorkflowDefinition["inputContract"] : undefined,
+  };
+  workflows[id] = workflow;
+  await writeFile(WORKFLOW_CATALOG_PATH, JSON.stringify(workflows, null, 2) + "\n");
+  return { ok: true, workflow, degraded: true, source: "local-workflows-json" };
 }
 
 export async function GET() {
@@ -66,7 +114,14 @@ export async function POST(req: Request) {
     });
     return Response.json(await res.json().catch(() => ({ ok: res.ok })), { status: res.status });
   } catch {
-    return Response.json({ error: "Backend not available" }, { status: 503 });
+    try {
+      return Response.json(await createLocalWorkflow(body));
+    } catch (localErr) {
+      return Response.json({
+        error: "Backend not available",
+        localError: localErr instanceof Error ? localErr.message : String(localErr),
+      }, { status: 503 });
+    }
   } finally {
     clearTimeout(timeout);
   }

@@ -10,18 +10,21 @@ import { execPath } from "node:process";
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 const projectDir = resolve(scriptDir, "..");
 const port = process.env.PI_WEB_PORT || "30141";
-const url = `http://localhost:${port}`;
+const host = process.env.PI_WEB_HOST || "127.0.0.1";
+const url = `http://${host}:${port}`;
 const logDir = process.env.PI_WEB_LOG_DIR
   ?? (process.platform === "win32"
     ? join(homedir(), "AppData", "Local", "Pi Web", "Logs")
     : join(homedir(), "Library", "Logs", "Pi Web"));
 const pidFile = join(logDir, "pi-web.pid");
 const launchLockDir = join(logDir, "pi-web-launch.lock");
+const browserProfileDir = join(logDir, "browser-profiles");
 const launchLockTtlMs = 2 * 60 * 1000;
 const knownBinDirs = ["/usr/local/bin", "/opt/homebrew/bin", "/usr/bin", "/bin"];
 const buildIdFile = join(projectDir, ".next", "BUILD_ID");
 const browserArg = process.argv.find((arg) => arg.startsWith("--browser="))?.slice("--browser=".length);
 const browserPreference = (browserArg || process.env.PI_WEB_BROWSER || "auto").toLowerCase();
+const shouldOpenWindow = !process.argv.includes("--no-open");
 
 mkdirSync(logDir, { recursive: true });
 
@@ -280,25 +283,49 @@ return "not-found"
   return result.status === 0 && String(result.stdout || "").includes("found");
 }
 
-function openBrowserAppWindow(browser) {
-  if (process.platform === "darwin") {
-    const appPath = browser.appPaths.find((candidate) => existsSync(candidate));
-    if (appPath) {
-      const result = spawnSync("open", ["-n", appPath, "--args", `--app=${url}`], { stdio: "ignore" });
-      if (result.status === 0) {
-        for (let i = 0; i < 6; i += 1) {
-          if (restoreAppWindow(browser)) break;
-          Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 250);
-        }
-        return true;
-      }
-    }
+function openBrowserAppWindow() {
+  for (const browser of browserCandidates()) {
+    const executable = browser.paths.find((candidate) => typeof candidate === "string" && existsSync(candidate));
+    if (!executable) continue;
+
+    const userDataDir = join(browserProfileDir, browser.id);
+    mkdirSync(userDataDir, { recursive: true });
+    console.log(`${new Date().toISOString()} opening ${browser.id} app window: ${url}/`);
+    spawnDetached(executable, [
+      `--user-data-dir=${userDataDir}`,
+      "--no-first-run",
+      "--no-default-browser-check",
+      `--app=${url}/`,
+    ]);
+    return true;
   }
 
-  const executable = browser.paths.find((candidate) => typeof candidate === "string" && existsSync(candidate));
-  if (!executable) return false;
-  spawnDetached(executable, [`--app=${url}`]);
-  return true;
+  return false;
+}
+
+function openUrlWindow() {
+  if (process.platform === "darwin") {
+    if (browserPreference === "chrome" || browserPreference === "quark") {
+      const appName = browserPreference === "quark" ? "Quark" : "Google Chrome";
+      const result = spawnSync("open", ["-a", appName, url], { stdio: "ignore" });
+      if (result.status === 0) return;
+    }
+    spawnSync("open", [url], { stdio: "ignore" });
+    return;
+  }
+
+  if (process.platform === "win32") {
+    const preferredBrowser = browserPreference === "auto" ? null : browserCandidates()[0];
+    const executable = preferredBrowser?.paths.find((candidate) => typeof candidate === "string" && existsSync(candidate));
+    if (executable) {
+      spawnDetached(executable, [url]);
+      return;
+    }
+    spawn("cmd", ["/c", "start", "", url], { detached: true, stdio: "ignore", windowsHide: true }).unref();
+    return;
+  }
+
+  spawnDetached("xdg-open", [url]);
 }
 
 function startServer() {
@@ -330,25 +357,13 @@ function startServer() {
 }
 
 function openAppWindow() {
+  if (openBrowserAppWindow()) return;
+
   for (const browser of browserCandidates()) {
     if (restoreAppWindow(browser)) return;
   }
 
-  for (const browser of browserCandidates()) {
-    if (openBrowserAppWindow(browser)) return;
-  }
-
-  if (process.platform === "win32") {
-    spawn("cmd", ["/c", "start", "", url], { detached: true, stdio: "ignore", windowsHide: true }).unref();
-    return;
-  }
-
-  if (process.platform === "darwin") {
-    spawnDetached("open", [url]);
-    return;
-  }
-
-  spawnDetached("xdg-open", [url]);
+  openUrlWindow();
 }
 
 async function main() {
@@ -360,11 +375,13 @@ async function main() {
         startServer();
       }
       for (let i = 0; i < 120; i += 1) {
-        if (await portIsListening()) break;
+        if (await ready()) break;
         await new Promise((resolveDelay) => setTimeout(resolveDelay, 500));
       }
     }
-    openAppWindow();
+    if (shouldOpenWindow) {
+      openAppWindow();
+    }
   } finally {
     releaseLaunchLock();
   }

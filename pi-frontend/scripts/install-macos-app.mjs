@@ -13,6 +13,9 @@ const appPath = resolve(process.env.PI_WEB_APP_PATH || join(homedir(), "Desktop"
 const icnsPath = resolve(projectDir, "assets", "generated", "PiWeb.icns");
 const executableName = "PiWeb";
 const browserPreference = process.env.PI_WEB_BROWSER || "auto";
+const port = process.env.PI_WEB_PORT || "30141";
+const host = process.env.PI_WEB_HOST || "127.0.0.1";
+const url = `http://${host}:${port}/`;
 
 function run(command, args) {
   const result = spawnSync(command, args, { stdio: "inherit" });
@@ -56,9 +59,12 @@ async function main() {
     `NODE_BIN=${JSON.stringify(process.env.PI_WEB_NODE || execPath)}`,
     `LAUNCHER=${JSON.stringify(launchScript)}`,
     `BROWSER_ARG=${JSON.stringify(`--browser=${browserPreference}`)}`,
+    `APP_URL=${JSON.stringify(url)}`,
     'LOG_DIR="${PI_WEB_LOG_DIR:-$HOME/Library/Logs/Pi Web}"',
     'mkdir -p "$LOG_DIR"',
     'LOG_FILE="$LOG_DIR/pi-web-launcher.log"',
+    'echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) clicked Pi Web launcher" >>"$LOG_FILE"',
+    'echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) target $APP_URL" >>"$LOG_FILE"',
     '"$NODE_BIN" "$LAUNCHER" "$BROWSER_ARG" >>"$LOG_FILE" 2>&1 &',
     "exit 0",
     "",

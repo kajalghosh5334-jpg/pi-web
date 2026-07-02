@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { WorkflowDefinition, WorkflowInputFieldDefinition, WorkflowTaskDefinition } from "@/lib/types";
+import type { WorkflowDefinition, WorkflowInputContract, WorkflowInputFieldDefinition, WorkflowTaskDefinition } from "@/lib/types";
 import { formatWorkflowInput, initialInputValues, inputContractForWorkflow } from "@/lib/workflowInputContracts";
 
 type ProfileDropPayload = {
@@ -40,7 +40,8 @@ const WORKFLOW_DOMAIN_LABELS: Record<string, string> = {
   evaluation: "评测旧项",
 };
 
-const WORKFLOW_DOMAIN_ORDER = ["self-media", "research", "ecommerce", "customer-support", "sales", "generic", "internal", "evaluation"];
+const WORKFLOW_DOMAIN_ORDER = ["self-media", "research", "ecommerce", "customer-support", "sales", "generic"];
+const HIDDEN_WORKFLOW_DOMAINS = new Set(["custom", "internal", "evaluation", "legacy", "uncategorized"]);
 const WORKFLOW_TEMPLATE_LABELS: Record<string, string> = {
   "fetch-summarize": "抓取-摘要",
   "generate-variants": "生成-多版本",
@@ -51,9 +52,17 @@ const WORKFLOW_TEMPLATE_LABELS: Record<string, string> = {
   "manual-check": "手动检查",
   "eval-run": "评测运行",
 };
+const WORKFLOW_TEMPLATE_OPTIONS = [
+  { id: "", label: "Blank workflow" },
+  { id: "fetch-summarize", label: "通用-资料搜集与摘要" },
+  { id: "classify-route", label: "通用-分类路由处理" },
+  { id: "extract-writeback", label: "通用-结构化提取回写" },
+  { id: "generate-variants", label: "通用-批量变体生成" },
+  { id: "monitor-alert", label: "通用-监控告警分级" },
+];
 
 function workflowDomainLabel(domain: string | undefined): string {
-  if (!domain) return "未分类";
+  if (!domain || domain === "custom" || domain === "uncategorized") return "未分类";
   return WORKFLOW_DOMAIN_LABELS[domain] || domain;
 }
 
@@ -72,6 +81,86 @@ function slugDomain(label: string): string {
     .replace(/^-|-$/g, "") || "custom";
 }
 
+type AdaptiveInputLayout = {
+  contract: WorkflowInputContract;
+  primaryFields: WorkflowInputFieldDefinition[];
+  contextFields: WorkflowInputFieldDefinition[];
+  advancedFields: WorkflowInputFieldDefinition[];
+  columns: string;
+};
+
+const SOURCE_FIELD_IDS = new Set(["source_materials", "links"]);
+const TIME_FIELD_IDS = new Set(["time_window"]);
+const FORMAT_FIELD_IDS = new Set(["output_format"]);
+
+function workflowText(workflow: Partial<WorkflowDefinition>, tasks: WorkflowTaskDefinition[]) {
+  return [
+    workflow.name,
+    workflow.description,
+    workflow.templateType,
+    ...tasks.flatMap((task) => [task.name, task.profileId, task.prompt]),
+  ].filter(Boolean).join("\n").toLowerCase();
+}
+
+function hasUpstreamMaterialNode(tasks: WorkflowTaskDefinition[]) {
+  return tasks.some((task) => {
+    const text = [task.name, task.profileId, task.prompt].filter(Boolean).join(" ").toLowerCase();
+    return /weak-research-extractor|content-researcher|gather|fetch|research|资料|素材|来源|搜索|抓取|监控/.test(text);
+  });
+}
+
+function adaptiveInputLayout(contract: WorkflowInputContract, workflow: Partial<WorkflowDefinition>, tasks: WorkflowTaskDefinition[]): AdaptiveInputLayout {
+  const fields = contract.fields || [];
+  const byId = new Map(fields.map((field) => [field.id, field]));
+  const text = workflowText(workflow, tasks);
+  const hasMaterialNode = hasUpstreamMaterialNode(tasks);
+  const isBatch = workflow.templateType === "generate-variants" || /批量|变体|多版本|a\/b|ab|多平台|排期/.test(text);
+  const isSummary = workflow.templateType === "fetch-summarize" || /摘要|提要|简报|复盘|报告|总结/.test(text);
+  const isTimed = workflow.templateType === "monitor-alert" || /时间窗口|过去|近\s*\d+|监控|告警|每日|每周|2025h1|2026/.test(text);
+
+  const primaryIds = new Set<string>(["task_goal"]);
+  const contextIds = new Set<string>();
+
+  if (workflow.templateType === "classify-route") {
+    ["items_to_classify", "label_schema"].forEach((id) => primaryIds.add(id));
+    ["risk_rules", "draft_policy"].forEach((id) => contextIds.add(id));
+  } else if (workflow.templateType === "extract-writeback") {
+    ["raw_materials", "target_schema"].forEach((id) => primaryIds.add(id));
+    ["writeback_rules"].forEach((id) => contextIds.add(id));
+  } else if (workflow.templateType === "generate-variants") {
+    ["source_materials", "variant_requirements"].forEach((id) => primaryIds.add(id));
+    ["brand_or_risk_rules"].forEach((id) => contextIds.add(id));
+    if (isBatch) FORMAT_FIELD_IDS.forEach((id) => contextIds.add(id));
+  } else if (workflow.templateType === "monitor-alert") {
+    ["monitor_targets", "alert_thresholds"].forEach((id) => primaryIds.add(id));
+    if (isTimed) TIME_FIELD_IDS.forEach((id) => contextIds.add(id));
+    if (!hasMaterialNode) SOURCE_FIELD_IDS.forEach((id) => contextIds.add(id));
+  } else {
+    if (!hasMaterialNode) SOURCE_FIELD_IDS.forEach((id) => primaryIds.add(id));
+    if (!hasMaterialNode && isTimed) TIME_FIELD_IDS.forEach((id) => contextIds.add(id));
+    if (!hasMaterialNode && (isBatch || isSummary)) FORMAT_FIELD_IDS.forEach((id) => contextIds.add(id));
+  }
+
+  if (!hasMaterialNode && workflow.templateType === "fetch-summarize") SOURCE_FIELD_IDS.forEach((id) => primaryIds.add(id));
+  if (hasMaterialNode) SOURCE_FIELD_IDS.forEach((id) => contextIds.delete(id));
+  if (!isTimed || (hasMaterialNode && workflow.templateType !== "monitor-alert")) TIME_FIELD_IDS.forEach((id) => contextIds.delete(id));
+  if ((!isBatch && !isSummary) || (hasMaterialNode && workflow.templateType !== "generate-variants")) FORMAT_FIELD_IDS.forEach((id) => contextIds.delete(id));
+
+  const primaryFields = [...primaryIds].map((id) => byId.get(id)).filter(Boolean) as WorkflowInputFieldDefinition[];
+  const contextFields = [...contextIds].filter((id) => !primaryIds.has(id)).map((id) => byId.get(id)).filter(Boolean) as WorkflowInputFieldDefinition[];
+  const usedIds = new Set([...primaryFields, ...contextFields].map((field) => field.id));
+  const advancedFields = fields.filter((field) => !usedIds.has(field.id) && !SOURCE_FIELD_IDS.has(field.id) && !TIME_FIELD_IDS.has(field.id) && !FORMAT_FIELD_IDS.has(field.id));
+  const visibleFields = [...primaryFields, ...contextFields, ...advancedFields];
+
+  return {
+    contract: { ...contract, fields: visibleFields },
+    primaryFields,
+    contextFields,
+    advancedFields,
+    columns: primaryFields.length <= 2 ? "minmax(260px, 1.2fr) minmax(220px, 0.8fr)" : "repeat(auto-fit, minmax(220px, 1fr))",
+  };
+}
+
 export function WorkflowEditor({
   workflow,
   onBack,
@@ -87,8 +176,6 @@ export function WorkflowEditor({
   const [draft, setDraft] = useState<WorkflowDefinition>(workflow);
   const [runInput, setRunInput] = useState("");
   const [runInputValues, setRunInputValues] = useState<Record<string, string>>(() => initialInputValues(inputContractForWorkflow(workflow), workflow));
-  const [categorySelection, setCategorySelection] = useState(workflow.domain || "self-media");
-  const [customCategory, setCustomCategory] = useState("");
   const [busy, setBusy] = useState<"save" | "run" | null>(null);
   const [runNotice, setRunNotice] = useState<RunNotice | null>(null);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(workflow.tasks?.[0]?.id || null);
@@ -97,6 +184,7 @@ export function WorkflowEditor({
   const [profiles, setProfiles] = useState<Array<{ id: string; name?: string }>>([]);
   const [skills, setSkills] = useState<SkillItem[]>([]);
   const [skillsLoadedForCwd, setSkillsLoadedForCwd] = useState<string | null>(null);
+  const [saveDialogOpen, setSaveDialogOpen] = useState(false);
 
   useEffect(() => {
     const normalizedTasks = (workflow.tasks || []).map((task, index) => ({
@@ -113,10 +201,9 @@ export function WorkflowEditor({
     setRunInputValues(initialInputValues(nextContract, workflow));
     setRunInput("");
     setRunNotice(null);
-    setCategorySelection(workflow.domain || "self-media");
-    setCustomCategory("");
     setSelectedTaskId(normalizedTasks[0]?.id || null);
     setInspectorOpen(false);
+    setSaveDialogOpen(false);
   }, [workflow]);
 
   useEffect(() => {
@@ -135,6 +222,8 @@ export function WorkflowEditor({
 
   const tasks = useMemo(() => draft.tasks || [], [draft.tasks]);
   const inputContract = useMemo(() => inputContractForWorkflow(draft), [draft]);
+  const inputLayout = useMemo(() => adaptiveInputLayout(inputContract, draft, tasks), [draft, inputContract, tasks]);
+  const runInputContract = inputLayout.contract;
   const selectedTask = tasks.find((task) => task.id === selectedTaskId) || null;
   const profileNames = useMemo(() => new Map(profiles.map((profile) => [profile.id, profile.name || profile.id])), [profiles]);
   const taskById = useMemo(() => new Map(tasks.map((task) => [task.id || "", task])), [tasks]);
@@ -142,11 +231,11 @@ export function WorkflowEditor({
     if (tasks.length < 2) return false;
     return tasks.some((task) => (task.deps || []).some((dep) => dep && taskById.has(dep)));
   }, [taskById, tasks]);
-  const missingRequiredInput = useMemo(() => (inputContract.fields || []).filter((field) => field.required && !runInputValues[field.id]?.trim()), [inputContract.fields, runInputValues]);
+  const missingRequiredInput = useMemo(() => (runInputContract.fields || []).filter((field) => field.required && !runInputValues[field.id]?.trim()), [runInputContract.fields, runInputValues]);
   const canRun = hasRunnableChain && missingRequiredInput.length === 0;
   const categoryOptions = useMemo(() => {
     const domains = new Set(WORKFLOW_DOMAIN_ORDER);
-    if (draft.domain) domains.add(draft.domain);
+    if (draft.domain && !HIDDEN_WORKFLOW_DOMAINS.has(draft.domain)) domains.add(draft.domain);
     return [...domains].sort((a, b) => {
       const ia = WORKFLOW_DOMAIN_ORDER.indexOf(a);
       const ib = WORKFLOW_DOMAIN_ORDER.indexOf(b);
@@ -199,19 +288,6 @@ export function WorkflowEditor({
     setRunInputValues((prev) => ({ ...prev, [fieldId]: value }));
   }, []);
 
-  const updateCategory = useCallback((next: string, customLabel = customCategory) => {
-    setCategorySelection(next);
-    if (next === "__new__") {
-      const nextLabel = customLabel.trim();
-      updateDraft({
-        domain: nextLabel ? slugDomain(nextLabel) : "custom",
-        category: nextLabel,
-      });
-      return;
-    }
-    updateDraft({ domain: next, category: workflowDomainLabel(next) });
-  }, [customCategory, updateDraft]);
-
   const addProfileNode = useCallback((profile: ProfileDropPayload, x = 190, y = 64) => {
     setDraft((prev) => {
       const existing = prev.tasks || [];
@@ -253,27 +329,46 @@ export function WorkflowEditor({
     });
   }, [selectedTaskId]);
 
-  const save = useCallback(async () => {
+  const persistWorkflow = useCallback(async (nextDraft: WorkflowDefinition) => {
     setBusy("save");
     try {
-      const res = await fetch(`/api/workflows/${encodeURIComponent(draft.id)}`, {
-        method: "PATCH",
+      const isDraft = nextDraft.id.startsWith("draft-workflow-");
+      const res = await fetch(isDraft ? "/api/workflows" : `/api/workflows/${encodeURIComponent(nextDraft.id)}`, {
+        method: isDraft ? "POST" : "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(draft),
+        body: JSON.stringify(nextDraft),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok || !data?.workflow) {
         window.alert(data?.error || "Workflow 保存失败");
         return;
       }
+      setDraft(data.workflow);
+      setSaveDialogOpen(false);
       onChange?.(data.workflow);
     } finally {
       setBusy(null);
     }
-  }, [draft, onChange]);
+  }, [onChange]);
+
+  const save = useCallback(() => {
+    setSaveDialogOpen(true);
+  }, []);
+
+  const saveWithMetadata = useCallback((metadata: Pick<WorkflowDefinition, "name" | "description" | "domain" | "category" | "templateType">) => {
+    const nextDraft: WorkflowDefinition = {
+      ...draft,
+      ...metadata,
+      status: "active",
+      debugStatus: draft.debugStatus || "unverified",
+      leadProfileId: draft.leadProfileId || "strong-task-architect",
+      reviewPolicy: draft.reviewPolicy || "lead_plus_reviewer",
+    };
+    void persistWorkflow(nextDraft);
+  }, [draft, persistWorkflow]);
 
   const run = useCallback(async () => {
-    const input = formatWorkflowInput(inputContract, runInputValues);
+    const input = formatWorkflowInput(runInputContract, runInputValues);
     if (!hasRunnableChain || missingRequiredInput.length > 0) return;
     const startedAt = Date.now();
     setRunNotice({ status: "running", input, startedAt });
@@ -298,9 +393,9 @@ export function WorkflowEditor({
         body: JSON.stringify({
           input,
           inputPayload: {
-            contract: inputContract,
+            contract: runInputContract,
             values: runInputValues,
-            missingFields: (inputContract.fields || []).filter((field) => !runInputValues[field.id]?.trim()).map((field) => field.id),
+            missingFields: (runInputContract.fields || []).filter((field) => !runInputValues[field.id]?.trim()).map((field) => field.id),
           },
           cwd: draft.cwd || "",
         }),
@@ -316,7 +411,7 @@ export function WorkflowEditor({
     } finally {
       setBusy(null);
     }
-  }, [draft, hasRunnableChain, inputContract, missingRequiredInput, onChange, runInputValues]);
+  }, [draft, hasRunnableChain, missingRequiredInput, onChange, runInputContract, runInputValues]);
 
   const edges = useMemo(() => buildEdges(tasks), [tasks]);
 
@@ -441,17 +536,17 @@ export function WorkflowEditor({
         <div style={{ display: "grid", gap: 10 }}>
           <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
             <div>
-              <div style={{ fontSize: 13, fontWeight: 850, color: "var(--text)" }}>{inputContract.title || "Workflow 输入资料包"}</div>
-              {inputContract.description ? (
-                <div style={{ marginTop: 3, fontSize: 11, lineHeight: 1.6, color: "var(--text-muted)" }}>{inputContract.description}</div>
+              <div style={{ fontSize: 13, fontWeight: 850, color: "var(--text)" }}>{runInputContract.title || "Workflow 输入资料包"}</div>
+              {runInputContract.description ? (
+                <div style={{ marginTop: 3, fontSize: 11, lineHeight: 1.6, color: "var(--text-muted)" }}>{runInputContract.description}</div>
               ) : null}
             </div>
             <button type="button" onClick={run} disabled={busy !== null || !canRun} style={{ ...buttonStyle("primary"), minHeight: 38 }}>
               {busy === "run" ? "Running..." : "Run workflow"}
             </button>
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 10 }}>
-            {(inputContract.fields || []).map((field) => (
+          <div style={{ display: "grid", gridTemplateColumns: inputLayout.columns, gap: 10, alignItems: "start" }}>
+            {inputLayout.primaryFields.map((field) => (
               <WorkflowInputField
                 key={field.id}
                 field={field}
@@ -460,6 +555,35 @@ export function WorkflowEditor({
               />
             ))}
           </div>
+          {inputLayout.contextFields.length ? (
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 10 }}>
+              {inputLayout.contextFields.map((field) => (
+                <WorkflowInputField
+                  key={field.id}
+                  field={field}
+                  compact
+                  value={runInputValues[field.id] || ""}
+                  onChange={(value) => updateRunInputValue(field.id, value)}
+                />
+              ))}
+            </div>
+          ) : null}
+          {inputLayout.advancedFields.length ? (
+            <details>
+              <summary style={{ cursor: "pointer", fontSize: 11, fontWeight: 800, color: "var(--text-muted)", padding: "2px 0" }}>高级输入</summary>
+              <div style={{ marginTop: 10, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 10 }}>
+                {inputLayout.advancedFields.map((field) => (
+                  <WorkflowInputField
+                    key={field.id}
+                    field={field}
+                    compact
+                    value={runInputValues[field.id] || ""}
+                    onChange={(value) => updateRunInputValue(field.id, value)}
+                  />
+                ))}
+              </div>
+            </details>
+          ) : null}
           <Field label="补充说明（可选）">
             <textarea
               value={runInput}
@@ -508,38 +632,11 @@ export function WorkflowEditor({
             ) : null}
           </div>
         ) : null}
-        <div style={{ display: "grid", gridTemplateColumns: "minmax(150px, 0.75fr) minmax(220px, 1fr) minmax(130px, 0.55fr) minmax(160px, 0.7fr) auto", gap: 10, alignItems: "end" }}>
-          <Field label="Name">
-            <input value={draft.name || ""} onChange={(event) => updateDraft({ name: event.target.value })} style={{ ...inputStyle, fontWeight: 800 }} />
-          </Field>
-          <Field label="Description">
-            <input value={draft.description || ""} onChange={(event) => updateDraft({ description: event.target.value })} placeholder="Describe what this workflow does" style={inputStyle} />
-          </Field>
-          <Field label="Category">
-            <select value={categorySelection} onChange={(event) => updateCategory(event.target.value)} style={inputStyle}>
-              {categoryOptions.map((domain) => (
-                <option key={domain} value={domain}>{workflowDomainLabel(domain)}</option>
-              ))}
-              <option value="__new__">新建分类</option>
-            </select>
-          </Field>
-          {categorySelection === "__new__" ? (
-            <Field label="New Category">
-              <input
-                value={customCategory}
-                onChange={(event) => {
-                  setCustomCategory(event.target.value);
-                  updateCategory("__new__", event.target.value);
-                }}
-                placeholder="例如：医疗运营"
-                style={inputStyle}
-              />
-            </Field>
-          ) : (
-            <Field label="Template">
-              <input readOnly value={workflowTemplateLabel(draft.templateType)} style={{ ...inputStyle, color: "var(--text-muted)" }} />
-            </Field>
-          )}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+          <div style={{ minWidth: 0, fontSize: 11, color: "var(--text-muted)", lineHeight: 1.6 }}>
+            <strong style={{ color: "var(--text)" }}>{draft.name || "未命名 Workflow"}</strong>
+            <span> · {workflowDomainLabel(draft.domain)} · {workflowTemplateLabel(draft.templateType)}</span>
+          </div>
           <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
             {onBack ? <button type="button" onClick={onBack} style={buttonStyle()}>Back</button> : null}
             <button type="button" onClick={save} disabled={busy !== null} style={buttonStyle("primary")}>
@@ -564,6 +661,15 @@ export function WorkflowEditor({
             <WorkflowInspector draft={draft} profiles={profiles} updateDraft={updateDraft} />
           )}
         </InspectorDrawer>
+      ) : null}
+      {saveDialogOpen ? (
+        <SaveWorkflowDialog
+          draft={draft}
+          categoryOptions={categoryOptions}
+          busy={busy === "save"}
+          onClose={() => setSaveDialogOpen(false)}
+          onSave={saveWithMetadata}
+        />
       ) : null}
     </div>
   );
@@ -840,6 +946,179 @@ function InspectorDrawer({ title, children, onClose }: { title: string; children
   );
 }
 
+function SaveWorkflowDialog({
+  draft,
+  categoryOptions,
+  busy,
+  onClose,
+  onSave,
+}: {
+  draft: WorkflowDefinition;
+  categoryOptions: string[];
+  busy: boolean;
+  onClose: () => void;
+  onSave: (metadata: Pick<WorkflowDefinition, "name" | "description" | "domain" | "category" | "templateType">) => void;
+}) {
+  const [name, setName] = useState(draft.name || "");
+  const [description, setDescription] = useState(draft.description || "");
+  const [domain, setDomain] = useState(draft.domain && !HIDDEN_WORKFLOW_DOMAINS.has(draft.domain) ? draft.domain : "self-media");
+  const [customCategory, setCustomCategory] = useState(draft.category && !WORKFLOW_DOMAIN_LABELS[draft.domain || ""] ? draft.category : "");
+  const [templateType, setTemplateType] = useState(draft.templateType || "");
+  const categoryChoices = useMemo(() => {
+    const choices = new Set(categoryOptions.length ? categoryOptions : WORKFLOW_DOMAIN_ORDER);
+    if (draft.domain && !HIDDEN_WORKFLOW_DOMAINS.has(draft.domain)) choices.add(draft.domain);
+    return [...choices].sort((a, b) => {
+      const ia = WORKFLOW_DOMAIN_ORDER.indexOf(a);
+      const ib = WORKFLOW_DOMAIN_ORDER.indexOf(b);
+      if (ia !== -1 || ib !== -1) return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib);
+      return workflowDomainLabel(a).localeCompare(workflowDomainLabel(b));
+    });
+  }, [categoryOptions, draft.domain]);
+  const nameReady = name.trim().length > 0;
+  const effectiveDomain = domain === "__new__" ? slugDomain(customCategory) : domain;
+  const effectiveCategory = domain === "__new__" ? customCategory.trim() : workflowDomainLabel(domain);
+  const canSave = nameReady && effectiveDomain.length > 0 && (domain !== "__new__" || customCategory.trim().length > 0);
+
+  return (
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 980,
+        display: "grid",
+        placeItems: "center",
+        padding: 18,
+        background: "rgba(15,23,42,0.22)",
+      }}
+      onClick={onClose}
+    >
+      <section
+        className="codex-card"
+        onClick={(event) => event.stopPropagation()}
+        style={{
+          width: "min(620px, 96vw)",
+          maxHeight: "90vh",
+          overflow: "auto",
+          borderRadius: 20,
+          padding: 18,
+          boxShadow: "0 24px 70px rgba(15,23,42,0.26)",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 14, marginBottom: 16 }}>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontSize: 16, fontWeight: 850, color: "var(--text)" }}>保存 Workflow</div>
+            <div style={{ marginTop: 3, fontSize: 11, lineHeight: 1.6, color: "var(--text-muted)" }}>
+              填写保存信息，并选择它之后在列表里的分类和通用类型。
+            </div>
+          </div>
+          <button type="button" onClick={onClose} style={iconButtonStyle}>×</button>
+        </div>
+
+        <div style={{ display: "grid", gap: 14 }}>
+          <Field label="Name *">
+            <input
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+              placeholder="给这个 workflow 起一个清楚的名字"
+              style={{ ...inputStyle, fontWeight: 800 }}
+            />
+          </Field>
+          <Field label="Description">
+            <textarea
+              value={description}
+              onChange={(event) => setDescription(event.target.value)}
+              placeholder="说明这个 workflow 解决什么问题、适合什么输入。"
+              style={{ ...inputStyle, minHeight: 74, resize: "vertical" }}
+            />
+          </Field>
+
+          <Field label="Category">
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(112px, 1fr))", gap: 8 }}>
+              {categoryChoices.map((item) => (
+                <OptionButton
+                  key={item}
+                  active={domain === item}
+                  label={workflowDomainLabel(item)}
+                  onClick={() => setDomain(item)}
+                />
+              ))}
+              <OptionButton active={domain === "__new__"} label="新分类" onClick={() => setDomain("__new__")} />
+            </div>
+          </Field>
+          {domain === "__new__" ? (
+            <Field label="New Category *">
+              <input
+                value={customCategory}
+                onChange={(event) => setCustomCategory(event.target.value)}
+                placeholder="例如：招聘、法务、内部运营"
+                style={inputStyle}
+              />
+            </Field>
+          ) : null}
+
+          <Field label="Workflow Type">
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(168px, 1fr))", gap: 8 }}>
+              {WORKFLOW_TEMPLATE_OPTIONS.map((item) => (
+                <OptionButton
+                  key={item.id || "blank"}
+                  active={templateType === item.id}
+                  label={item.label}
+                  onClick={() => setTemplateType(item.id)}
+                />
+              ))}
+            </div>
+          </Field>
+
+          {!nameReady ? (
+            <div style={{ fontSize: 11, color: "#ef4444" }}>保存前需要填写 workflow 名字。</div>
+          ) : null}
+
+          <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, paddingTop: 2 }}>
+            <button type="button" onClick={onClose} disabled={busy} style={buttonStyle()}>Cancel</button>
+            <button
+              type="button"
+              disabled={busy || !canSave}
+              onClick={() => onSave({
+                name: name.trim(),
+                description: description.trim(),
+                domain: effectiveDomain,
+                category: effectiveCategory || effectiveDomain,
+                templateType,
+              })}
+              style={{ ...buttonStyle("primary"), opacity: busy || !canSave ? 0.55 : 1 }}
+            >
+              {busy ? "Saving..." : "Save workflow"}
+            </button>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function OptionButton({ active, label, onClick }: { active: boolean; label: string; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      style={{
+        minHeight: 38,
+        borderRadius: 10,
+        border: active ? "1px solid color-mix(in srgb, var(--accent) 54%, transparent)" : "1px solid var(--border)",
+        background: active ? "color-mix(in srgb, var(--accent) 10%, var(--bg))" : "var(--bg-secondary)",
+        color: "var(--text)",
+        cursor: "pointer",
+        fontSize: 12,
+        fontWeight: active ? 850 : 700,
+        textAlign: "center",
+        padding: "7px 9px",
+      }}
+    >
+      {label}
+    </button>
+  );
+}
+
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label style={{ display: "grid", gap: 6 }}>
@@ -853,10 +1132,12 @@ function WorkflowInputField({
   field,
   value,
   onChange,
+  compact = false,
 }: {
   field: WorkflowInputFieldDefinition;
   value: string;
   onChange: (value: string) => void;
+  compact?: boolean;
 }) {
   const label = `${field.label}${field.required ? " *" : ""}`;
   const placeholder = field.placeholder || (field.type === "links" ? "每行一个链接" : field.type === "files" ? "每行一个文件路径" : "");
@@ -891,7 +1172,7 @@ function WorkflowInputField({
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
-        style={{ ...inputStyle, minHeight: field.type === "links" || field.type === "files" ? 76 : 92, resize: "vertical" }}
+        style={{ ...inputStyle, minHeight: compact ? 58 : field.type === "links" || field.type === "files" ? 76 : 92, resize: "vertical" }}
       />
       {help}
     </Field>

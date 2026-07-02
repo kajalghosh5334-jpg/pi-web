@@ -1,318 +1,4 @@
 {
-  "restart-check": {
-    "id": "restart-check",
-    "name": "Restart Check",
-    "description": "",
-    "leadProfileId": "lead-agent",
-    "reviewPolicy": "lead_only",
-    "sourceSessionId": "",
-    "cwd": "",
-    "projectId": "",
-    "createdAt": 1782551161490,
-    "updatedAt": 1782551161490,
-    "tasks": [],
-    "status": "legacy",
-    "domain": "internal",
-    "templateType": "manual-check"
-  },
-  "workflow-ui-check": {
-    "id": "workflow-ui-check",
-    "name": "Workflow UI Check",
-    "description": "",
-    "leadProfileId": "lead-agent",
-    "reviewPolicy": "lead_plus_reviewer",
-    "sourceSessionId": "",
-    "cwd": "",
-    "projectId": "",
-    "createdAt": 1782552432124,
-    "updatedAt": 1782552432124,
-    "tasks": [],
-    "status": "legacy",
-    "domain": "internal",
-    "templateType": "manual-check"
-  },
-  "smoke-workflow-e2e": {
-    "id": "smoke-workflow-e2e",
-    "name": "Smoke Workflow E2E",
-    "description": "",
-    "leadProfileId": "lead-agent",
-    "reviewPolicy": "lead_plus_reviewer",
-    "sourceSessionId": "",
-    "cwd": "/Users/yipengfei/Desktop/pi-fork",
-    "projectId": "",
-    "createdAt": 1782760187913,
-    "updatedAt": 1782760188119,
-    "tasks": [
-      {
-        "id": "wf-a",
-        "name": "Profile A",
-        "profileId": "general-executor",
-        "prompt": "先分析需求",
-        "deps": []
-      },
-      {
-        "id": "wf-b",
-        "name": "Profile B",
-        "profileId": "artifact-flow",
-        "prompt": "再合成结果",
-        "deps": [
-          "wf-a"
-        ]
-      }
-    ],
-    "status": "legacy",
-    "domain": "internal",
-    "templateType": "smoke-test"
-  },
-  "smoke-workflow-e2e-2": {
-    "id": "smoke-workflow-e2e-2",
-    "name": "Smoke Workflow E2E 2",
-    "description": "",
-    "leadProfileId": "lead-agent",
-    "reviewPolicy": "lead_plus_reviewer",
-    "sourceSessionId": "",
-    "cwd": "/Users/yipengfei/Desktop/pi-fork",
-    "projectId": "",
-    "createdAt": 1782760329649,
-    "updatedAt": 1782760329765,
-    "tasks": [
-      {
-        "id": "wf-a",
-        "name": "Profile A",
-        "profileId": "general-executor",
-        "prompt": "先分析需求",
-        "deps": []
-      },
-      {
-        "id": "wf-b",
-        "name": "Profile B",
-        "profileId": "artifact-flow",
-        "prompt": "再合成结果",
-        "deps": [
-          "wf-a"
-        ]
-      }
-    ],
-    "status": "legacy",
-    "domain": "internal",
-    "templateType": "smoke-test"
-  },
-  "smoke-workflow-e2e-3": {
-    "id": "smoke-workflow-e2e-3",
-    "name": "Smoke Workflow E2E 3",
-    "description": "",
-    "leadProfileId": "lead-agent",
-    "reviewPolicy": "lead_plus_reviewer",
-    "sourceSessionId": "",
-    "cwd": "/Users/yipengfei/Desktop/pi-fork",
-    "projectId": "",
-    "createdAt": 1782760495176,
-    "updatedAt": 1782760495296,
-    "tasks": [
-      {
-        "id": "wf-a",
-        "name": "Profile A",
-        "profileId": "general-executor",
-        "prompt": "先分析需求",
-        "deps": []
-      },
-      {
-        "id": "wf-b",
-        "name": "Profile B",
-        "profileId": "artifact-flow",
-        "prompt": "再合成结果",
-        "deps": [
-          "wf-a"
-        ]
-      }
-    ],
-    "status": "legacy",
-    "domain": "internal",
-    "templateType": "smoke-test"
-  },
-  "smoke-workflow-1782761344971": {
-    "id": "smoke-workflow-1782761344971",
-    "name": "Smoke Workflow 1782761344971",
-    "description": "用多个 profile 完成一次项目检查",
-    "leadProfileId": "lead-agent",
-    "reviewPolicy": "lead_plus_reviewer",
-    "sourceSessionId": "",
-    "cwd": "/Users/yipengfei/Desktop/pi-fork",
-    "projectId": "",
-    "createdAt": 1782761344976,
-    "updatedAt": 1782761344986,
-    "tasks": [
-      {
-        "id": "wf-front",
-        "name": "前端检查",
-        "profileId": "frontend-specialist",
-        "prompt": "检查前端入口和 UI 状态，输出可交付结论。",
-        "deps": []
-      },
-      {
-        "id": "wf-back",
-        "name": "后端检查",
-        "profileId": "backend-specialist",
-        "prompt": "检查后端编排 API，输出可交付结论。",
-        "deps": []
-      },
-      {
-        "id": "wf-final",
-        "name": "合成结论",
-        "profileId": "artifact-flow",
-        "prompt": "汇总前两步输出，生成最终交付。",
-        "deps": [
-          "wf-front",
-          "wf-back"
-        ]
-      }
-    ],
-    "status": "legacy",
-    "domain": "internal",
-    "templateType": "smoke-test"
-  },
-  "smoke-workflow-1782761400725": {
-    "id": "smoke-workflow-1782761400725",
-    "name": "Smoke Workflow 1782761400725",
-    "description": "用多个 profile 完成一次项目检查",
-    "leadProfileId": "lead-agent",
-    "reviewPolicy": "lead_plus_reviewer",
-    "sourceSessionId": "",
-    "cwd": "/Users/yipengfei/Desktop/pi-fork",
-    "projectId": "",
-    "createdAt": 1782761400729,
-    "updatedAt": 1782761400734,
-    "tasks": [
-      {
-        "id": "wf-front",
-        "name": "前端检查",
-        "profileId": "frontend-monitor",
-        "prompt": "检查前端入口和 UI 状态，输出可交付结论。",
-        "deps": []
-      },
-      {
-        "id": "wf-back",
-        "name": "后端检查",
-        "profileId": "backend-guardian",
-        "prompt": "检查后端编排 API，输出可交付结论。",
-        "deps": []
-      },
-      {
-        "id": "wf-final",
-        "name": "合成结论",
-        "profileId": "artifact-flow",
-        "prompt": "汇总前两步输出，生成最终交付。",
-        "deps": [
-          "wf-front",
-          "wf-back"
-        ]
-      }
-    ],
-    "status": "legacy",
-    "domain": "internal",
-    "templateType": "smoke-test"
-  },
-  "smoke-workflow-1782761431560": {
-    "id": "smoke-workflow-1782761431560",
-    "name": "Smoke Workflow 1782761431560",
-    "description": "用多个 profile 完成一次项目检查",
-    "leadProfileId": "lead-agent",
-    "reviewPolicy": "lead_plus_reviewer",
-    "sourceSessionId": "",
-    "cwd": "/Users/yipengfei/Desktop/pi-fork",
-    "projectId": "",
-    "createdAt": 1782761431565,
-    "updatedAt": 1782761431578,
-    "tasks": [
-      {
-        "id": "wf-front",
-        "name": "前端检查",
-        "profileId": "frontend-monitor",
-        "prompt": "检查前端入口和 UI 状态，输出可交付结论。",
-        "deps": []
-      },
-      {
-        "id": "wf-back",
-        "name": "后端检查",
-        "profileId": "backend-guardian",
-        "prompt": "检查后端编排 API，输出可交付结论。",
-        "deps": []
-      },
-      {
-        "id": "wf-final",
-        "name": "合成结论",
-        "profileId": "artifact-flow",
-        "prompt": "汇总前两步输出，生成最终交付。",
-        "deps": [
-          "wf-front",
-          "wf-back"
-        ]
-      }
-    ],
-    "status": "legacy",
-    "domain": "internal",
-    "templateType": "smoke-test"
-  },
-  "eval-weak-to-strong-2026-06-29t21-09-41-525z": {
-    "id": "eval-weak-to-strong-2026-06-29t21-09-41-525z",
-    "name": "Eval Weak-to-Strong 2026-06-29T21-09-41-525Z",
-    "description": "用多个 Profile 复用弱模型+强模型审查流程完成一次产品方案任务",
-    "leadProfileId": "lead-agent",
-    "reviewPolicy": "lead_only",
-    "sourceSessionId": "",
-    "cwd": "/Users/yipengfei/Desktop/pi-fork/pi-backend",
-    "projectId": "",
-    "createdAt": 1782769862178,
-    "updatedAt": 1782769862178,
-    "tasks": [
-      {
-        "id": "wf-user",
-        "name": "用户与场景 Profile",
-        "profileId": "general-executor",
-        "model": "opencode-go/deepseek-v4-flash",
-        "prompt": "定义目标用户、任务场景和成功/失败边界。",
-        "deps": [],
-        "acceptanceCriteria": [
-          "覆盖目标用户",
-          "覆盖场景",
-          "给下游交接包"
-        ]
-      },
-      {
-        "id": "wf-loop",
-        "name": "闭环机制 Profile",
-        "profileId": "artifact-flow",
-        "model": "opencode-go/deepseek-v4-flash",
-        "prompt": "设计 MultiAgent、Workflow、Train/Coach 三个闭环如何协作。",
-        "deps": [
-          "wf-user"
-        ],
-        "acceptanceCriteria": [
-          "覆盖三套机制",
-          "说明输入输出",
-          "给下游交接包"
-        ]
-      },
-      {
-        "id": "wf-metrics",
-        "name": "指标与评测 Profile",
-        "profileId": "artifact-reviewer",
-        "model": "opencode-go/deepseek-v4-flash",
-        "prompt": "提出量化指标、真实评测方法、失败模式和修复策略。",
-        "deps": [
-          "wf-loop"
-        ],
-        "acceptanceCriteria": [
-          "至少 6 个指标",
-          "真实评测方法",
-          "失败修复"
-        ]
-      }
-    ],
-    "status": "legacy",
-    "domain": "evaluation",
-    "templateType": "eval-run"
-  },
   "self-media-content-pipeline": {
     "id": "self-media-content-pipeline",
     "name": "自媒体内容生产流水线",
@@ -570,7 +256,8 @@
           "placeholder": "例如：表格列出版本、适用场景、风险标注。"
         }
       ]
-    }
+    },
+    "debugStatus": "unverified"
   },
   "support-kb-response-pipeline": {
     "id": "support-kb-response-pipeline",
@@ -678,7 +365,8 @@
           "placeholder": "例如：投诉、隐私、交易、法律风险必须 blocked/manual_review。"
         }
       ]
-    }
+    },
+    "debugStatus": "unverified"
   },
   "industry-research-brief": {
     "id": "industry-research-brief",
@@ -803,11 +491,12 @@
           "placeholder": "例如：表格 + 摘要；包含来源、置信度、待复核点。"
         }
       ]
-    }
+    },
+    "debugStatus": "unverified"
   },
   "template-fetch-summarize": {
     "id": "template-fetch-summarize",
-    "name": "模板：抓取-摘要类",
+    "name": "通用-资料搜集与摘要",
     "description": "适用于热点监控、行业简报、竞品变化、访谈速记：定时拉取数据 -> 结构化提取 -> 分级摘要 -> 强模型审查。",
     "leadProfileId": "strong-task-architect",
     "reviewPolicy": "lead_plus_reviewer",
@@ -866,6 +555,7 @@
     ],
     "status": "template",
     "domain": "generic",
+    "category": "通用模板",
     "templateType": "fetch-summarize",
     "inputContract": {
       "version": 1,
@@ -912,7 +602,7 @@
   },
   "template-generate-variants": {
     "id": "template-generate-variants",
-    "name": "模板：生成-多版本类",
+    "name": "通用-批量变体生成",
     "description": "适用于脚本、标题封面、商品 listing、大促文案：单输入 -> 多风格/多平台变体 -> 风险审查。",
     "leadProfileId": "strong-task-architect",
     "reviewPolicy": "lead_plus_reviewer",
@@ -971,6 +661,7 @@
     ],
     "status": "template",
     "domain": "generic",
+    "category": "通用模板",
     "templateType": "generate-variants",
     "inputContract": {
       "version": 1,
@@ -1017,7 +708,7 @@
   },
   "template-classify-route": {
     "id": "template-classify-route",
-    "name": "模板：分类-路由类",
+    "name": "通用-分类路由处理",
     "description": "适用于评论、售后工单、客服工单、投诉分流：输入分类打标 -> 置信度判断 -> 路由到自动处理/人工审核/风控。",
     "leadProfileId": "strong-task-architect",
     "reviewPolicy": "lead_plus_reviewer",
@@ -1093,6 +784,7 @@
     ],
     "status": "template",
     "domain": "generic",
+    "category": "通用模板",
     "templateType": "classify-route",
     "inputContract": {
       "version": 1,
@@ -1139,7 +831,7 @@
   },
   "template-monitor-alert": {
     "id": "template-monitor-alert",
-    "name": "模板：监控-告警类",
+    "name": "通用-监控告警分级",
     "description": "适用于舆情、库存、定价、情绪升级：持续监听 -> 触发判断 -> 分级响应 -> 强模型/人工升级。",
     "leadProfileId": "strong-task-architect",
     "reviewPolicy": "lead_plus_reviewer",
@@ -1198,6 +890,7 @@
     ],
     "status": "template",
     "domain": "generic",
+    "category": "通用模板",
     "templateType": "monitor-alert",
     "inputContract": {
       "version": 1,
@@ -1246,7 +939,7 @@
   },
   "template-extract-writeback": {
     "id": "template-extract-writeback",
-    "name": "模板：结构化提取回写类",
+    "name": "通用-结构化提取回写",
     "description": "适用于通话纪要、转人工前信息收集、CRM 回填：非结构化输入 -> 字段抽取 -> 校验 -> 写回 payload -> 跟进任务。",
     "leadProfileId": "strong-task-architect",
     "reviewPolicy": "lead_plus_reviewer",
@@ -1321,6 +1014,7 @@
     ],
     "status": "template",
     "domain": "generic",
+    "category": "通用模板",
     "templateType": "extract-writeback",
     "inputContract": {
       "version": 1,
@@ -1575,9 +1269,7 @@
     "status": "active",
     "domain": "sales",
     "templateType": "extract-writeback",
-    "debugStatus": "polished",
-    "debuggedAt": 1782842017491,
-    "debugSource": "docs/workflow-debugging-playbook.md",
+    "debugStatus": "unverified",
     "inputContract": {
       "version": 1,
       "mode": "single-run",
@@ -2113,9 +1805,7 @@
     "status": "active",
     "domain": "research",
     "templateType": "fetch-summarize",
-    "debugStatus": "polished",
-    "debuggedAt": 1782842017491,
-    "debugSource": "docs/workflow-debugging-playbook.md",
+    "debugStatus": "unverified",
     "tasks": [
       {
         "id": "is-fetch",
@@ -2331,7 +2021,8 @@
           "placeholder": "定义 P0/P1/P2/P3 或轻/中/重规则。"
         }
       ]
-    }
+    },
+    "debugStatus": "unverified"
   },
   "industry-interview-summary": {
     "id": "industry-interview-summary",
@@ -2441,7 +2132,8 @@
           "placeholder": "例如：payload JSON + validation_errors + needs_review。"
         }
       ]
-    }
+    },
+    "debugStatus": "unverified"
   },
   "industry-sentiment-risk-alert": {
     "id": "industry-sentiment-risk-alert",
@@ -2548,7 +2240,8 @@
           "placeholder": "定义 P0/P1/P2/P3 或轻/中/重规则。"
         }
       ]
-    }
+    },
+    "debugStatus": "unverified"
   },
   "ecommerce-review-mining": {
     "id": "ecommerce-review-mining",
@@ -2669,7 +2362,8 @@
           "placeholder": "例如：表格 + 摘要；包含来源、置信度、待复核点。"
         }
       ]
-    }
+    },
+    "debugStatus": "unverified"
   },
   "ecommerce-inventory-pricing-alert": {
     "id": "ecommerce-inventory-pricing-alert",
@@ -2776,7 +2470,8 @@
           "placeholder": "定义 P0/P1/P2/P3 或轻/中/重规则。"
         }
       ]
-    }
+    },
+    "debugStatus": "unverified"
   },
   "ecommerce-promo-creative-batch": {
     "id": "ecommerce-promo-creative-batch",
@@ -2881,7 +2576,8 @@
           "placeholder": "例如：表格列出版本、适用场景、风险标注。"
         }
       ]
-    }
+    },
+    "debugStatus": "unverified"
   },
   "support-auto-answer": {
     "id": "support-auto-answer",
@@ -2986,7 +2682,8 @@
           "placeholder": "例如：投诉、隐私、交易、法律风险必须 blocked/manual_review。"
         }
       ]
-    }
+    },
+    "debugStatus": "unverified"
   },
   "support-ticket-priority-routing": {
     "id": "support-ticket-priority-routing",
@@ -3091,7 +2788,8 @@
           "placeholder": "例如：投诉、隐私、交易、法律风险必须 blocked/manual_review。"
         }
       ]
-    }
+    },
+    "debugStatus": "unverified"
   },
   "support-prehandoff-info-collection": {
     "id": "support-prehandoff-info-collection",
@@ -3213,7 +2911,8 @@
           "placeholder": "例如：payload JSON + validation_errors + needs_review。"
         }
       ]
-    }
+    },
+    "debugStatus": "unverified"
   },
   "support-service-quality-review": {
     "id": "support-service-quality-review",
@@ -3318,7 +3017,8 @@
           "placeholder": "例如：表格 + 摘要；包含来源、置信度、待复核点。"
         }
       ]
-    }
+    },
+    "debugStatus": "unverified"
   },
   "sales-lead-scoring": {
     "id": "sales-lead-scoring",
@@ -3423,7 +3123,8 @@
           "placeholder": "例如：投诉、隐私、交易、法律风险必须 blocked/manual_review。"
         }
       ]
-    }
+    },
+    "debugStatus": "unverified"
   },
   "sales-precall-brief": {
     "id": "sales-precall-brief",
@@ -3531,7 +3232,8 @@
           "placeholder": "例如：表格 + 摘要；包含来源、置信度、待复核点。"
         }
       ]
-    }
+    },
+    "debugStatus": "unverified"
   },
   "sales-objection-coach": {
     "id": "sales-objection-coach",
@@ -3654,7 +3356,8 @@
           "placeholder": "例如：投诉、隐私、交易、法律风险必须 blocked/manual_review。"
         }
       ]
-    }
+    },
+    "debugStatus": "unverified"
   },
   "sales-followup-cadence": {
     "id": "sales-followup-cadence",
@@ -3776,24 +3479,8 @@
           "placeholder": "例如：表格列出版本、适用场景、风险标注。"
         }
       ]
-    }
-  },
-  "new-workflow": {
-    "id": "new-workflow",
-    "name": "New Workflow",
-    "description": "",
-    "leadProfileId": "lead-agent",
-    "reviewPolicy": "lead_plus_reviewer",
-    "sourceSessionId": "",
-    "cwd": "/private/tmp/pi-multi-agent/c383ad96-0861-4758-881c-bdd60ab6c406/t2",
-    "projectId": "",
-    "createdAt": 1782789048479,
-    "updatedAt": 1782789048479,
-    "tasks": [],
-    "status": "legacy",
-    "domain": "internal",
-    "category": "内部旧项",
-    "templateType": "manual-check"
+    },
+    "debugStatus": "unverified"
   },
   "trained-job-search-node-chain": {
     "id": "trained-job-search-node-chain",
@@ -4143,8 +3830,7 @@
     "updatedAt": 1782954841595,
     "status": "active",
     "domain": "research",
-    "debugStatus": "needs_debug",
-    "debugSource": "pi-backend/training/real_workflow_benchmarks/2026-07-02-research-monitor-cases.json",
+    "debugStatus": "unverified",
     "templateType": "fetch-summarize",
     "tasks": [
       {
@@ -4270,8 +3956,7 @@
     "updatedAt": 1782954841595,
     "status": "active",
     "domain": "research",
-    "debugStatus": "needs_debug",
-    "debugSource": "pi-backend/training/real_workflow_benchmarks/2026-07-02-research-monitor-cases.json",
+    "debugStatus": "unverified",
     "templateType": "fetch-summarize",
     "tasks": [
       {
@@ -4397,8 +4082,7 @@
     "updatedAt": 1782954841595,
     "status": "active",
     "domain": "research",
-    "debugStatus": "needs_debug",
-    "debugSource": "pi-backend/training/real_workflow_benchmarks/2026-07-02-research-monitor-cases.json",
+    "debugStatus": "unverified",
     "templateType": "monitor-alert",
     "tasks": [
       {

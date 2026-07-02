@@ -40,7 +40,7 @@ const WORKFLOW_DOMAIN_LABELS: Record<string, string> = {
   evaluation: "评测旧项",
 };
 
-const WORKFLOW_DOMAIN_ORDER = ["self-media", "research", "ecommerce", "customer-support", "sales", "generic", "internal", "evaluation"];
+const WORKFLOW_DOMAIN_ORDER = ["self-media", "research", "ecommerce", "customer-support", "sales", "generic"];
 const WORKFLOW_TEMPLATE_LABELS: Record<string, string> = {
   "fetch-summarize": "抓取-摘要",
   "generate-variants": "生成-多版本",
@@ -92,6 +92,7 @@ function workflowDomain(workflow: WorkflowDefinition): string {
 }
 
 function workflowDomainLabel(domain: string): string {
+  if (!domain || domain === "custom" || domain === "uncategorized") return "未分类";
   return WORKFLOW_DOMAIN_LABELS[domain] || domain || "未分类";
 }
 
@@ -110,17 +111,6 @@ function sortWorkflowDomains(domains: string[]) {
     if (ia !== -1 || ib !== -1) return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib);
     return workflowDomainLabel(a).localeCompare(workflowDomainLabel(b));
   });
-}
-
-function slugDomain(label: string): string {
-  const trimmed = label.trim();
-  if (!trimmed) return "custom";
-  return trimmed
-    .toLowerCase()
-    .replace(/[\s_]+/g, "-")
-    .replace(/[^a-z0-9\u4e00-\u9fa5-]/g, "")
-    .replace(/-+/g, "-")
-    .replace(/^-|-$/g, "") || "custom";
 }
 
 interface SessionTreeNode {
@@ -193,7 +183,6 @@ export function SessionSidebar({
   const [workflowCatalogDegraded, setWorkflowCatalogDegraded] = useState(false);
   const [workflowBusyId, setWorkflowBusyId] = useState<string | null>(null);
   const [profileInspector, setProfileInspector] = useState<AgentProfileItem | null>(null);
-  const [workflowCreateOpen, setWorkflowCreateOpen] = useState(false);
   const [fallbackCwd, setFallbackCwd] = useState<string | null>(selectedCwdProp ?? null);
   const restoredRef = useRef(false);
   const refreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -310,48 +299,22 @@ export function SessionSidebar({
     onNewSession?.("", effectiveCwd ?? null);
   }, [onNewSession, effectiveCwd]);
 
-  const createWorkflow = useCallback(async (payload: {
-    name: string;
-    description: string;
-    templateId: string;
-    domain: string;
-    category: string;
-    templateType: string;
-  }) => {
-    const template = workflows.find((workflow) => workflow.id === payload.templateId);
-    const tasks = (template?.tasks || []).map((task) => ({
-      ...task,
-      deps: [...(task.deps || [])],
-      skills: [...(task.skills || [])],
-      acceptanceCriteria: [...(task.acceptanceCriteria || [])],
-      layout: task.layout ? { ...task.layout } : undefined,
-      budget: task.budget ? { ...task.budget } : undefined,
-    }));
-    const res = await fetch("/api/workflows", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        name: payload.name,
-        description: payload.description,
-        cwd: effectiveCwd ?? template?.cwd ?? "",
-        status: "active",
-        domain: payload.domain,
-        category: payload.category,
-        templateType: payload.templateType || template?.templateType || "",
-        leadProfileId: template?.leadProfileId || "strong-task-architect",
-        reviewPolicy: template?.reviewPolicy || "lead_plus_reviewer",
-        tasks,
-      }),
+  const createBlankWorkflowDraft = useCallback(() => {
+    onSelectWorkflow?.({
+      id: `draft-workflow-${Date.now()}`,
+      name: "未命名 Workflow",
+      description: "",
+      status: "active",
+      debugStatus: "unverified",
+      domain: "",
+      category: "",
+      templateType: "",
+      cwd: effectiveCwd || "",
+      leadProfileId: "strong-task-architect",
+      reviewPolicy: "lead_plus_reviewer",
+      tasks: [],
     });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok || !data?.workflow) {
-      window.alert(data?.error || "Workflow creation failed");
-      return;
-    }
-    await loadWorkflows();
-    setWorkflowCreateOpen(false);
-    onSelectWorkflow?.(data.workflow);
-  }, [effectiveCwd, loadWorkflows, onSelectWorkflow, workflows]);
+  }, [effectiveCwd, onSelectWorkflow]);
 
   const deleteWorkflow = useCallback(async (workflow: WorkflowDefinition) => {
     if (!window.confirm(`Delete workflow: ${workflow.name}?`)) return;
@@ -373,11 +336,6 @@ export function SessionSidebar({
   const currentWorkflow = useMemo(
     () => workflows.find((workflow) => workflow.id === selectedWorkflowId) ?? null,
     [workflows, selectedWorkflowId],
-  );
-
-  const workflowTemplates = useMemo(
-    () => workflows.filter((workflow) => workflow.status === "template" || workflow.id.startsWith("template-")),
-    [workflows],
   );
 
   const workflowGroups = useMemo(() => {
@@ -403,15 +361,6 @@ export function SessionSidebar({
   }, [workflows]);
 
   const visibleWorkflowCount = useMemo(() => workflows.filter(workflowIsVisibleInLibrary).length, [workflows]);
-
-  const workflowDomains = useMemo(() => {
-    const domains = new Set<string>();
-    for (const workflow of workflows) {
-      if (workflow.status === "legacy" || workflow.status === "template") continue;
-      domains.add(workflowDomain(workflow));
-    }
-    return sortWorkflowDomains([...domains]);
-  }, [workflows]);
 
   const filteredSessions = useMemo(
     () => effectiveCwd ? sessions.filter((session) => session.cwd === effectiveCwd) : sessions,
@@ -558,17 +507,19 @@ export function SessionSidebar({
           <>
             <CreateListItem
               label="New workflow"
-              sublabel="Choose a template and category"
-              onClick={() => setWorkflowCreateOpen(true)}
+              sublabel="Blank workflow"
+              onClick={createBlankWorkflowDraft}
             />
             {workflowLoadError ? (
-              <div style={{ padding: "8px 6px 10px", display: "grid", gap: 8 }}>
-                <EmptyState
-                  label={workflowCatalogDegraded ? `${workflowLoadError} 当前显示本地 workflow 目录，运行和保存仍需要后端。` : workflowLoadError}
-                  tone={workflowCatalogDegraded ? "muted" : "error"}
-                />
-                <button type="button" onClick={() => void loadWorkflows()} style={{ ...ghostButtonStyle, justifySelf: "start" }}>
-                  Retry
+              <div style={{ padding: "8px 6px 10px", display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8 }}>
+                <div style={{ minWidth: 0, flex: 1 }}>
+                  <EmptyState
+                    label={workflowCatalogDegraded ? `${workflowLoadError} 当前显示本地 workflow 目录，运行和保存仍需要后端。` : workflowLoadError}
+                    tone={workflowCatalogDegraded ? "muted" : "error"}
+                  />
+                </div>
+                <button type="button" aria-label="Retry workflows" title="Retry" onClick={() => void loadWorkflows()} style={iconButtonStyle}>
+                  ↻
                 </button>
               </div>
             ) : null}
@@ -588,14 +539,6 @@ export function SessionSidebar({
           </>
         )}
       </div>
-      {workflowCreateOpen ? (
-        <WorkflowCreateOverlay
-          templates={workflowTemplates}
-          domains={workflowDomains}
-          onClose={() => setWorkflowCreateOpen(false)}
-          onCreate={(payload) => void createWorkflow(payload)}
-        />
-      ) : null}
       {profileInspector ? (
         <InspectorOverlay title={profileInspector.name || profileInspector.id} onClose={() => setProfileInspector(null)}>
           <div style={{ display: "grid", gap: 10, fontSize: 12, color: "var(--text-muted)", lineHeight: 1.7 }}>
@@ -688,90 +631,6 @@ function WorkflowGroup({
   );
 }
 
-function WorkflowCreateOverlay({
-  templates,
-  domains,
-  onClose,
-  onCreate,
-}: {
-  templates: WorkflowDefinition[];
-  domains: string[];
-  onClose: () => void;
-  onCreate: (payload: { name: string; description: string; templateId: string; domain: string; category: string; templateType: string }) => void;
-}) {
-  const [templateId, setTemplateId] = useState(templates[0]?.id || "");
-  const selectedTemplate = templates.find((template) => template.id === templateId);
-  const [name, setName] = useState(selectedTemplate ? `${selectedTemplate.name.replace(/^模板：/, "")} Copy` : "New Workflow");
-  const [description, setDescription] = useState(selectedTemplate?.description || "");
-  const [domain, setDomain] = useState(domains[0] || "self-media");
-  const [customDomain, setCustomDomain] = useState("");
-
-  const effectiveDomain = domain === "__new__" ? slugDomain(customDomain) : domain;
-  const effectiveCategory = domain === "__new__" ? customDomain.trim() : workflowDomainLabel(domain);
-  const canCreate = name.trim().length > 0 && effectiveDomain.length > 0;
-
-  const selectTemplate = (nextTemplateId: string) => {
-    setTemplateId(nextTemplateId);
-    const template = templates.find((item) => item.id === nextTemplateId);
-    if (!template) return;
-    setName(`${template.name.replace(/^模板：/, "")} Copy`);
-    setDescription(template.description || "");
-    if (template.templateType && !domain) setDomain("self-media");
-  };
-
-  return (
-    <InspectorOverlay title="New workflow" onClose={onClose}>
-      <div style={{ display: "grid", gap: 12 }}>
-        <Field label="Template">
-          <select value={templateId} onChange={(event) => selectTemplate(event.target.value)} style={inputStyle}>
-            <option value="">Blank workflow</option>
-            {templates.map((template) => (
-              <option key={template.id} value={template.id}>{template.name} · {workflowTemplateLabel(template.templateType)}</option>
-            ))}
-          </select>
-        </Field>
-        <Field label="Name">
-          <input value={name} onChange={(event) => setName(event.target.value)} style={{ ...inputStyle, fontWeight: 800 }} />
-        </Field>
-        <Field label="Description">
-          <textarea value={description} onChange={(event) => setDescription(event.target.value)} style={{ ...inputStyle, minHeight: 76, resize: "vertical" }} />
-        </Field>
-        <Field label="Category">
-          <select value={domain} onChange={(event) => setDomain(event.target.value)} style={inputStyle}>
-            {domains.map((item) => (
-              <option key={item} value={item}>{workflowDomainLabel(item)}</option>
-            ))}
-            <option value="__new__">New category</option>
-          </select>
-        </Field>
-        {domain === "__new__" ? (
-          <Field label="New Category">
-            <input value={customDomain} onChange={(event) => setCustomDomain(event.target.value)} style={inputStyle} />
-          </Field>
-        ) : null}
-        <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
-          <button type="button" onClick={onClose} style={ghostButtonStyle}>Cancel</button>
-          <button
-            type="button"
-            disabled={!canCreate}
-            onClick={() => onCreate({
-              name: name.trim(),
-              description: description.trim(),
-              templateId,
-              domain: effectiveDomain,
-              category: effectiveCategory || effectiveDomain,
-              templateType: selectedTemplate?.templateType || "",
-            })}
-            style={{ ...ghostButtonStyle, background: canCreate ? "var(--text)" : "var(--bg-secondary)", color: canCreate ? "var(--bg)" : "var(--text-dim)" }}
-          >
-            Create
-          </button>
-        </div>
-      </div>
-    </InspectorOverlay>
-  );
-}
-
 function WorkflowListItem({ workflow, active, busy, onSelect, onDelete }: { workflow: WorkflowDefinition; active: boolean; busy: boolean; onSelect: () => void; onDelete: () => void }) {
   const [hovered, setHovered] = useState(false);
   return (
@@ -801,18 +660,20 @@ function WorkflowListItem({ workflow, active, busy, onSelect, onDelete }: { work
         <div style={{ minWidth: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0, marginBottom: 4 }}>
             <div style={{ fontSize: 12, fontWeight: 800, color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{workflow.name}</div>
-            <span
-              aria-label="今天已调试通过"
-              title="今天已调试通过"
-              style={{
-                flex: "0 0 auto",
-                width: 8,
-                height: 8,
-                borderRadius: 999,
-                background: "var(--status-success)",
-                boxShadow: "0 0 0 3px color-mix(in srgb, var(--status-success) 16%, transparent)",
-              }}
-            />
+            {workflow.debugStatus === "polished" ? (
+              <span
+                aria-label="已验证"
+                title="已验证"
+                style={{
+                  flex: "0 0 auto",
+                  width: 8,
+                  height: 8,
+                  borderRadius: 999,
+                  background: "var(--status-success)",
+                  boxShadow: "0 0 0 3px color-mix(in srgb, var(--status-success) 16%, transparent)",
+                }}
+              />
+            ) : null}
           </div>
           <div style={{ fontSize: 11, color: "var(--text-muted)" }}>
             {workflow.tasks?.length || 0} tasks · {workflow.reviewPolicy || "lead_plus_reviewer"}

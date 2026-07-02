@@ -291,6 +291,40 @@ function saveWorkflows(workflows) {
   writeFileSync(WORKFLOW_STORE, JSON.stringify(workflows, null, 2));
 }
 
+const GENERIC_WORKFLOW_PROFILE_IDS = [
+  "weak-research-extractor",
+  "weak-structured-operator",
+  "classification-router",
+  "structured-writeback-operator",
+  "content-draft-producer",
+  "support-kb-responder",
+  "research-report-analyst",
+  "sales-call-analyst",
+  "content-strategy-director",
+  "strong-task-architect",
+  "strong-quality-reviewer",
+  "content-editor-reviewer",
+  "monitor-alert-operator",
+];
+
+function workflowProfileIds(workflows = loadWorkflows()) {
+  const ids = new Set(GENERIC_WORKFLOW_PROFILE_IDS);
+  for (const workflow of Object.values(workflows || {})) {
+    if (workflow?.leadProfileId) ids.add(workflow.leadProfileId);
+    for (const task of workflow?.tasks || []) {
+      if (task?.profileId) ids.add(task.profileId);
+    }
+  }
+  return ids;
+}
+
+function workflowVisibleProfiles(profiles = loadAgentProfiles(), workflows = loadWorkflows()) {
+  const allowed = workflowProfileIds(workflows);
+  return Object.values(profiles)
+    .filter((profile) => profile?.id && allowed.has(profile.id))
+    .sort((a, b) => String(a.name || a.id).localeCompare(String(b.name || b.id)));
+}
+
 function stripSkillFrontmatter(text) {
   return String(text || "").replace(/^---[\s\S]*?---\s*/m, "").trim();
 }
@@ -5176,7 +5210,7 @@ app.get("/api/skills", (_req, res) => {
 
 // ── Agent profiles (persistent sub-agent experience/skills) ───────────────
 app.get("/api/agent-profiles", (_req, res) => {
-  res.json({ profiles: Object.values(loadAgentProfiles()) });
+  res.json({ profiles: workflowVisibleProfiles() });
 });
 
 app.post("/api/session/:sessionId/promote-profile", (req, res) => {

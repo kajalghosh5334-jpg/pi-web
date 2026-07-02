@@ -1,6 +1,16 @@
 import type { WorkflowDefinition, WorkflowInputContract } from "@/lib/types";
 
 export const DEFAULT_INPUT_CONTRACTS: Record<string, WorkflowInputContract> = {
+  "": {
+    version: 1,
+    mode: "single-run",
+    title: "Workflow 输入",
+    description: "空白 workflow 会根据保存时选择的类型和画布节点自动调整输入资料布局。",
+    missingPolicy: "mark_missing",
+    fields: [
+      { id: "task_goal", label: "任务目标", type: "textarea", required: true, placeholder: "描述这个 workflow 要完成的目标；保存时再选择分类和类型。" },
+    ],
+  },
   "fetch-summarize": {
     version: 1,
     mode: "single-run",
@@ -74,7 +84,7 @@ export const DEFAULT_INPUT_CONTRACTS: Record<string, WorkflowInputContract> = {
 };
 
 export function defaultInputContractForTemplate(templateType: string | undefined): WorkflowInputContract {
-  return DEFAULT_INPUT_CONTRACTS[templateType || ""] || DEFAULT_INPUT_CONTRACTS["fetch-summarize"];
+  return DEFAULT_INPUT_CONTRACTS[templateType || ""] || DEFAULT_INPUT_CONTRACTS[""];
 }
 
 export function inputContractForWorkflow(workflow: Partial<WorkflowDefinition>): WorkflowInputContract {

@@ -20,7 +20,7 @@ Web UI for [pi](https://github.com/earendil-works/pi). Browse sessions, chat wit
 npx @agegr/pi-web@latest
 ```
 
-Opens at [http://localhost:30141](http://localhost:30141).
+Opens at [http://127.0.0.1:30141](http://127.0.0.1:30141).
 
 ## Development
 
