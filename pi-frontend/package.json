@@ -21,7 +21,7 @@
   "scripts": {
     "dev": "next dev -p 30141 --webpack",
     "dev:prewarmed": "node scripts/prewarm-dev.mjs & next dev -p 30141 --webpack",
-    "dev:turbo": "next dev -p 30141 --turbopack",
+    "dev:turbo": "npm run dev",
     "build": "next build --webpack",
     "start": "next start -p 30141",
     "postinstall": "node scripts/postinstall-local-app.mjs",

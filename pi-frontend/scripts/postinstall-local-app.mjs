@@ -35,10 +35,9 @@ if (skipReason) {
 }
 
 console.log("[pi-web] installing desktop launcher...");
-let result = runInstall();
+let result = runInstall({ PI_WEB_SKIP_BUILD: "1" });
 if (result.error || result.status !== 0) {
-  console.warn("[pi-web] optimized launcher install failed; retrying without production build.");
-  result = runInstall({ PI_WEB_SKIP_BUILD: "1" });
+  console.warn("[pi-web] desktop launcher install failed.");
 }
 
 if (result.error || result.status !== 0) {

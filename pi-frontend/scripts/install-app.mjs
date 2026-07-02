@@ -13,11 +13,15 @@ function run(script) {
 }
 
 function buildApp() {
-  if (process.env.PI_WEB_SKIP_BUILD === "1") return;
+  if (process.env.PI_WEB_SKIP_BUILD === "1") return true;
   const npmCommand = process.platform === "win32" ? "npm.cmd" : "npm";
   const result = spawnSync(npmCommand, ["run", "build"], { cwd: projectDir, stdio: "inherit" });
   if (result.error) throw result.error;
-  if (result.status !== 0) process.exit(result.status ?? 1);
+  if (result.status !== 0) {
+    console.warn("[pi-web] production build failed; installing a dev-mode launcher instead.");
+    return false;
+  }
+  return true;
 }
 
 buildApp();
