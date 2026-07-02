@@ -4196,5 +4196,217 @@
         }
       ]
     }
+  },
+  "custom-generic-fetch-summarize": {
+    "id": "custom-generic-fetch-summarize",
+    "name": "Custom generic-fetch-summarize：我要找工作",
+    "description": "根据用户需求自动生成的 通用 fetch-summarize workflow；先由弱模型完成结构化处理，再由强模型处理策略/审查节点。",
+    "status": "active",
+    "debugStatus": "unverified",
+    "domain": "generic",
+    "category": "generic",
+    "templateType": "fetch-summarize",
+    "leadProfileId": "strong-task-architect",
+    "reviewPolicy": "lead_plus_reviewer",
+    "createdAt": 1783011435556,
+    "updatedAt": 1783011435556,
+    "inputContract": {
+      "version": 1,
+      "mode": "single-run",
+      "title": "资料搜集与摘要输入",
+      "description": "一次性提交调研对象、来源材料和输出要求。Fetch 节点只搬运资料，Structure 节点结构化，Judge 节点输出影响判断。",
+      "missingPolicy": "mark_missing",
+      "fields": [
+        {
+          "id": "task_goal",
+          "label": "任务目标",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "例如：整理某行业近 7 天融资、政策和竞品变化，输出结构化简报。"
+        },
+        {
+          "id": "source_materials",
+          "label": "资料/原文/搜索结果",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "粘贴来源文本、工具结果、表格、网页摘录；没有资料时写明希望检索的对象和范围。"
+        },
+        {
+          "id": "links",
+          "label": "来源链接",
+          "type": "links",
+          "placeholder": "每行一个链接，可留空。"
+        },
+        {
+          "id": "time_window",
+          "label": "时间窗口",
+          "type": "text",
+          "placeholder": "例如：过去 7 天 / 2025H1 / 2026-06-30 至 2026-07-02"
+        },
+        {
+          "id": "output_format",
+          "label": "输出格式",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "例如：表格 + 摘要；包含来源、置信度、待复核点。"
+        }
+      ]
+    },
+    "tasks": [
+      {
+        "id": "gather-facts",
+        "name": "资料搜集与事实搬运",
+        "profileId": "weak-research-extractor",
+        "model": "opencode-go/deepseek-v4-flash",
+        "deps": [],
+        "prompt": "从用户提供的资料、链接、文件或工具结果中抽取可定位事实；每条事实必须包含来源、原文锚点、不确定点和复核建议。不得凭记忆补新闻、数字、链接或媒体名。",
+        "definitionOfDone": "输出满足本节点验收标准，且保留缺失项和风险项。",
+        "acceptanceCriteria": [
+          "包含来源",
+          "包含事实列表",
+          "标记不确定点",
+          "无来源输出 source_status=missing/unverified"
+        ]
+      },
+      {
+        "id": "standardize-pack",
+        "name": "资料包标准化",
+        "profileId": "weak-structured-operator",
+        "model": "opencode-go/deepseek-v4-flash",
+        "deps": [
+          "gather-facts"
+        ],
+        "prompt": "把上游事实整理为统一资料包 schema，按主题去重归类；缺失字段保持 unknown，不猜测。",
+        "definitionOfDone": "输出满足本节点验收标准，且保留缺失项和风险项。",
+        "acceptanceCriteria": [
+          "输出统一 schema",
+          "保留来源字段",
+          "缺失字段不猜测"
+        ]
+      },
+      {
+        "id": "judge-summary",
+        "name": "影响判断与摘要",
+        "profileId": "research-report-analyst",
+        "model": "opencode-go/deepseek-v4-pro",
+        "deps": [
+          "standardize-pack"
+        ],
+        "prompt": "基于事实包输出摘要、影响判断、证据锚点、置信度和反证条件。对未验证来源不得下高置信结论。",
+        "definitionOfDone": "输出满足本节点验收标准，且保留缺失项和风险项。",
+        "acceptanceCriteria": [
+          "区分事实/推断/建议",
+          "包含证据锚点",
+          "包含置信度",
+          "包含反证条件"
+        ]
+      }
+    ]
+  },
+  "custom-generic-fetch-summarize-2": {
+    "id": "custom-generic-fetch-summarize-2",
+    "name": "Custom generic-fetch-summarize：一个找工作的",
+    "description": "根据用户需求自动生成的 通用 fetch-summarize workflow；先由弱模型完成结构化处理，再由强模型处理策略/审查节点。",
+    "status": "active",
+    "debugStatus": "unverified",
+    "domain": "generic",
+    "category": "generic",
+    "templateType": "fetch-summarize",
+    "leadProfileId": "strong-task-architect",
+    "reviewPolicy": "lead_plus_reviewer",
+    "createdAt": 1783011502079,
+    "updatedAt": 1783011502079,
+    "inputContract": {
+      "version": 1,
+      "mode": "single-run",
+      "title": "资料搜集与摘要输入",
+      "description": "一次性提交调研对象、来源材料和输出要求。Fetch 节点只搬运资料，Structure 节点结构化，Judge 节点输出影响判断。",
+      "missingPolicy": "mark_missing",
+      "fields": [
+        {
+          "id": "task_goal",
+          "label": "任务目标",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "例如：整理某行业近 7 天融资、政策和竞品变化，输出结构化简报。"
+        },
+        {
+          "id": "source_materials",
+          "label": "资料/原文/搜索结果",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "粘贴来源文本、工具结果、表格、网页摘录；没有资料时写明希望检索的对象和范围。"
+        },
+        {
+          "id": "links",
+          "label": "来源链接",
+          "type": "links",
+          "placeholder": "每行一个链接，可留空。"
+        },
+        {
+          "id": "time_window",
+          "label": "时间窗口",
+          "type": "text",
+          "placeholder": "例如：过去 7 天 / 2025H1 / 2026-06-30 至 2026-07-02"
+        },
+        {
+          "id": "output_format",
+          "label": "输出格式",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "例如：表格 + 摘要；包含来源、置信度、待复核点。"
+        }
+      ]
+    },
+    "tasks": [
+      {
+        "id": "gather-facts",
+        "name": "资料搜集与事实搬运",
+        "profileId": "weak-research-extractor",
+        "model": "opencode-go/deepseek-v4-flash",
+        "deps": [],
+        "prompt": "从用户提供的资料、链接、文件或工具结果中抽取可定位事实；每条事实必须包含来源、原文锚点、不确定点和复核建议。不得凭记忆补新闻、数字、链接或媒体名。",
+        "definitionOfDone": "输出满足本节点验收标准，且保留缺失项和风险项。",
+        "acceptanceCriteria": [
+          "包含来源",
+          "包含事实列表",
+          "标记不确定点",
+          "无来源输出 source_status=missing/unverified"
+        ]
+      },
+      {
+        "id": "standardize-pack",
+        "name": "资料包标准化",
+        "profileId": "weak-structured-operator",
+        "model": "opencode-go/deepseek-v4-flash",
+        "deps": [
+          "gather-facts"
+        ],
+        "prompt": "把上游事实整理为统一资料包 schema，按主题去重归类；缺失字段保持 unknown，不猜测。",
+        "definitionOfDone": "输出满足本节点验收标准，且保留缺失项和风险项。",
+        "acceptanceCriteria": [
+          "输出统一 schema",
+          "保留来源字段",
+          "缺失字段不猜测"
+        ]
+      },
+      {
+        "id": "judge-summary",
+        "name": "影响判断与摘要",
+        "profileId": "research-report-analyst",
+        "model": "opencode-go/deepseek-v4-pro",
+        "deps": [
+          "standardize-pack"
+        ],
+        "prompt": "基于事实包输出摘要、影响判断、证据锚点、置信度和反证条件。对未验证来源不得下高置信结论。",
+        "definitionOfDone": "输出满足本节点验收标准，且保留缺失项和风险项。",
+        "acceptanceCriteria": [
+          "区分事实/推断/建议",
+          "包含证据锚点",
+          "包含置信度",
+          "包含反证条件"
+        ]
+      }
+    ]
   }
 }

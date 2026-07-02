@@ -296,7 +296,7 @@ export function WorkflowEditor({
     if (enteredReplyKeyRef.current === key) return;
     enteredReplyKeyRef.current = key;
     const controller = new AbortController();
-    setGuideReply("我先看一下这个 workflow 当前状态。");
+    setGuideReply("");
     requestWorkflowAiReply("entered", guideState, "", controller.signal)
       .then((reply) => setGuideReply(reply))
       .catch(() => {});
@@ -1020,7 +1020,7 @@ function WorkflowAiGuide({
 }) {
   const [inputFocused, setInputFocused] = useState(false);
   const isBlank = workflowIsBlank(workflow);
-  const currentReply = reply || "我先看一下这个 workflow 当前状态。";
+  const currentReply = reply;
   const placeholder = isBlank
     ? "告诉我你想搭一个什么 workflow，或问我应该怎么搭。"
     : nextField?.placeholder || "问我 workflow 怎么用，或继续补充资料。整个框都可以拖入文件、链接和文本。";

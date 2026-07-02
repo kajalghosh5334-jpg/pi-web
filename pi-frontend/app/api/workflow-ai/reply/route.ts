@@ -44,7 +44,7 @@ async function readWorkflowAiDocs(userText: string) {
   if (topicFile) files.push("index.md", topicFile);
   const docs = await Promise.all(files.map(async (file) => {
     const content = await readFile(join(docsDir, file), "utf8");
-    return `--- ${file} ---\n${content.trim()}`;
+    return `### File: ${file}\n${content.trim()}`;
   }));
   return docs.join("\n\n");
 }
@@ -107,8 +107,8 @@ async function askWorkflowAi(prompt: string) {
       proc.on("close", (code) => {
         clearTimeout(timeout);
         const output = (stdout || stderr).trim();
-        if (code !== 0 && !output) {
-          reject(new Error(`Workflow AI exited with code ${code}`));
+        if (code !== 0) {
+          reject(new Error(output || `Workflow AI exited with code ${code}`));
           return;
         }
         resolve(output);
@@ -126,6 +126,8 @@ export async function POST(req: Request) {
   try {
     const docs = await readWorkflowAiDocs(body.userText || "");
     const prompt = [
+      "Workflow AI instruction bundle:",
+      "",
       docs,
       "",
       "Current event and state:",
