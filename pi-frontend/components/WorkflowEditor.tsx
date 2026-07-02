@@ -1,8 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { WorkflowDefinition, WorkflowInputContract, WorkflowInputFieldDefinition, WorkflowTaskDefinition } from "@/lib/types";
 import { formatWorkflowInput, initialInputValues, inputContractForWorkflow } from "@/lib/workflowInputContracts";
+import { FileViewer } from "./FileViewer";
 
 type ProfileDropPayload = {
   id: string;
@@ -15,6 +16,22 @@ type SkillItem = {
   description?: string;
 };
 
+type WorkflowProfileItem = {
+  id: string;
+  name?: string;
+  defaultModel?: string;
+  skills?: string[];
+  availableSkills?: string[];
+  projectConfig?: {
+    modelTier?: string;
+    roleInWorkflow?: string;
+    roleInWeakStrongWorkflow?: string;
+    pattern?: string;
+    profileKind?: string;
+    generatedStatus?: string;
+  };
+};
+
 type NodePoint = {
   x: number;
   y: number;
@@ -25,40 +42,48 @@ type RunNotice =
   | { status: "success"; input: string; sessionId: string; cwd: string; startedAt: number }
   | { status: "error"; input: string; message: string; startedAt: number };
 
+type WorkflowArtifact = {
+  path: string;
+  name: string;
+  previewType: "document" | "image" | "audio";
+  size: number;
+  modified: string;
+};
+
 const NODE_WIDTH = 190;
 const NODE_HEIGHT = 84;
 const START_NODE = { x: 34, y: 56, width: 110, height: 56 };
 
 const WORKFLOW_DOMAIN_LABELS: Record<string, string> = {
+  generic: "通用 Workflow",
   "self-media": "自媒体",
   research: "行业调研",
   ecommerce: "电商",
   "customer-support": "客服",
   sales: "电话销售",
-  generic: "通用模板",
   internal: "内部旧项",
   evaluation: "评测旧项",
 };
 
-const WORKFLOW_DOMAIN_ORDER = ["self-media", "research", "ecommerce", "customer-support", "sales", "generic"];
+const WORKFLOW_DOMAIN_ORDER = ["generic", "self-media", "research", "ecommerce", "customer-support", "sales"];
 const HIDDEN_WORKFLOW_DOMAINS = new Set(["custom", "internal", "evaluation", "legacy", "uncategorized"]);
 const WORKFLOW_TEMPLATE_LABELS: Record<string, string> = {
-  "fetch-summarize": "抓取-摘要",
-  "generate-variants": "生成-多版本",
-  "classify-route": "分类-路由",
-  "monitor-alert": "监控-告警",
-  "extract-writeback": "结构化回写",
+  "fetch-summarize": "先找资料，再做摘要",
+  "generate-variants": "一份素材，生成多版",
+  "classify-route": "分类后分给对应处理",
+  "monitor-alert": "持续观察并判断风险",
+  "extract-writeback": "抽字段并写回系统",
   "smoke-test": "烟测旧项",
   "manual-check": "手动检查",
   "eval-run": "评测运行",
 };
 const WORKFLOW_TEMPLATE_OPTIONS = [
-  { id: "", label: "Blank workflow" },
-  { id: "fetch-summarize", label: "通用-资料搜集与摘要" },
-  { id: "classify-route", label: "通用-分类路由处理" },
-  { id: "extract-writeback", label: "通用-结构化提取回写" },
-  { id: "generate-variants", label: "通用-批量变体生成" },
-  { id: "monitor-alert", label: "通用-监控告警分级" },
+  { id: "", label: "空白 Workflow" },
+  { id: "fetch-summarize", label: "找资料并总结" },
+  { id: "classify-route", label: "分类并分派" },
+  { id: "extract-writeback", label: "抽字段并回写" },
+  { id: "generate-variants", label: "生成多个版本" },
+  { id: "monitor-alert", label: "监控并告警" },
 ];
 
 function workflowDomainLabel(domain: string | undefined): string {
@@ -88,6 +113,9 @@ type AdaptiveInputLayout = {
   advancedFields: WorkflowInputFieldDefinition[];
   columns: string;
 };
+
+type RunPanelTab = "guide" | "materials";
+type WorkflowAiEvent = "entered" | "message" | "purpose-received" | "material-received";
 
 const SOURCE_FIELD_IDS = new Set(["source_materials", "links"]);
 const TIME_FIELD_IDS = new Set(["time_window"]);
@@ -181,10 +209,19 @@ export function WorkflowEditor({
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(workflow.tasks?.[0]?.id || null);
   const [dragActive, setDragActive] = useState(false);
   const [inspectorOpen, setInspectorOpen] = useState(false);
-  const [profiles, setProfiles] = useState<Array<{ id: string; name?: string }>>([]);
+  const [profiles, setProfiles] = useState<WorkflowProfileItem[]>([]);
   const [skills, setSkills] = useState<SkillItem[]>([]);
   const [skillsLoadedForCwd, setSkillsLoadedForCwd] = useState<string | null>(null);
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
+  const [runPanelTab, setRunPanelTab] = useState<RunPanelTab>("guide");
+  const [guideAnswer, setGuideAnswer] = useState("");
+  const [guideReply, setGuideReply] = useState("");
+  const [workflowRunSessionId, setWorkflowRunSessionId] = useState<string | null>(null);
+  const [workflowArtifacts, setWorkflowArtifacts] = useState<WorkflowArtifact[]>([]);
+  const [activeArtifactPath, setActiveArtifactPath] = useState<string | null>(null);
+  const [artifactsLoading, setArtifactsLoading] = useState(false);
+  const [artifactsError, setArtifactsError] = useState<string | null>(null);
+  const enteredReplyKeyRef = useRef<string | null>(null);
 
   useEffect(() => {
     const normalizedTasks = (workflow.tasks || []).map((task, index) => ({
@@ -204,6 +241,13 @@ export function WorkflowEditor({
     setSelectedTaskId(normalizedTasks[0]?.id || null);
     setInspectorOpen(false);
     setSaveDialogOpen(false);
+    setRunPanelTab("guide");
+    setGuideAnswer("");
+    setGuideReply("");
+    setWorkflowRunSessionId(null);
+    setWorkflowArtifacts([]);
+    setActiveArtifactPath(null);
+    setArtifactsError(null);
   }, [workflow]);
 
   useEffect(() => {
@@ -233,6 +277,9 @@ export function WorkflowEditor({
   }, [taskById, tasks]);
   const missingRequiredInput = useMemo(() => (runInputContract.fields || []).filter((field) => field.required && !runInputValues[field.id]?.trim()), [runInputContract.fields, runInputValues]);
   const canRun = hasRunnableChain && missingRequiredInput.length === 0;
+  const nextGuideField = missingRequiredInput[0] || (runInputContract.fields || []).find((field) => !runInputValues[field.id]?.trim()) || null;
+  const activeArtifact = useMemo(() => workflowArtifacts.find((artifact) => artifact.path === activeArtifactPath) || workflowArtifacts[0] || null, [activeArtifactPath, workflowArtifacts]);
+  const guideState = useMemo(() => workflowAiState(draft, nextGuideField, missingRequiredInput, hasRunnableChain), [draft, hasRunnableChain, missingRequiredInput, nextGuideField]);
   const categoryOptions = useMemo(() => {
     const domains = new Set(WORKFLOW_DOMAIN_ORDER);
     if (draft.domain && !HIDDEN_WORKFLOW_DOMAINS.has(draft.domain)) domains.add(draft.domain);
@@ -245,7 +292,19 @@ export function WorkflowEditor({
   }, [draft.domain]);
 
   useEffect(() => {
-    if (!inspectorOpen || !selectedTask) return;
+    const key = `${draft.id}:${workflowIsBlank(draft) ? "blank" : "existing"}`;
+    if (enteredReplyKeyRef.current === key) return;
+    enteredReplyKeyRef.current = key;
+    const controller = new AbortController();
+    setGuideReply("我先看一下这个 workflow 当前状态。");
+    requestWorkflowAiReply("entered", guideState, "", controller.signal)
+      .then((reply) => setGuideReply(reply))
+      .catch(() => {});
+    return () => controller.abort();
+  }, [draft, guideState]);
+
+  useEffect(() => {
+    if (!inspectorOpen) return;
     const cwdKey = draft.cwd || "";
     if (skillsLoadedForCwd === cwdKey) return;
     const controller = new AbortController();
@@ -271,7 +330,7 @@ export function WorkflowEditor({
       clearTimeout(timeout);
       controller.abort();
     };
-  }, [draft.cwd, inspectorOpen, selectedTask, skillsLoadedForCwd]);
+  }, [draft.cwd, inspectorOpen, skillsLoadedForCwd]);
 
   const updateDraft = useCallback((patch: Partial<WorkflowDefinition>) => {
     setDraft((prev) => ({ ...prev, ...patch }));
@@ -287,6 +346,97 @@ export function WorkflowEditor({
   const updateRunInputValue = useCallback((fieldId: string, value: string) => {
     setRunInputValues((prev) => ({ ...prev, [fieldId]: value }));
   }, []);
+
+  const updateWorkflowPurposeInput = useCallback((value: string) => {
+    setDraft((prev) => ({ ...prev, description: value.trim() || undefined }));
+    setRunInputValues((prev) => ({ ...prev, task_goal: value }));
+  }, []);
+
+  const appendRunInputValue = useCallback((fieldId: string, value: string) => {
+    const text = value.trim();
+    if (!text) return;
+    setRunInputValues((prev) => {
+      const current = (prev[fieldId] || "").trim();
+      return { ...prev, [fieldId]: current ? `${current}\n${text}` : text };
+    });
+  }, []);
+
+  const loadWorkflowArtifacts = useCallback(async (sessionId = workflowRunSessionId) => {
+    if (!sessionId) return;
+    setArtifactsLoading(true);
+    setArtifactsError(null);
+    try {
+      const res = await fetch(`/api/sessions/${encodeURIComponent(sessionId)}/artifacts`);
+      const data = await res.json().catch(() => ({})) as { artifacts?: WorkflowArtifact[]; error?: string };
+      if (!res.ok) throw new Error(data.error || `产物读取失败 (${res.status})`);
+      const artifacts = Array.isArray(data.artifacts) ? data.artifacts : [];
+      setWorkflowArtifacts(artifacts);
+      setActiveArtifactPath((current) => current && artifacts.some((artifact) => artifact.path === current) ? current : artifacts[0]?.path || null);
+    } catch (error) {
+      setArtifactsError(error instanceof Error ? error.message : String(error));
+    } finally {
+      setArtifactsLoading(false);
+    }
+  }, [workflowRunSessionId]);
+
+  const submitGuideAnswer = useCallback(async () => {
+    const text = guideAnswer.trim();
+    if (!text) return;
+    setGuideAnswer("");
+    const isBlankWorkflow = workflowIsBlank(draft);
+    if (isBlankWorkflow && looksLikePurposeStatement(text)) {
+      updateWorkflowPurposeInput(text);
+      const remaining = missingRequiredInput.filter((field) => field.id !== "task_goal");
+      setGuideReply(await requestWorkflowAiReply("purpose-received", { ...guideState, purpose: text, missingRequiredInput: compactWorkflowFields(remaining) }, text));
+      return;
+    }
+    if (looksLikeWorkflowQuestion(text)) {
+      setGuideReply(await requestWorkflowAiReply("message", guideState, text));
+      return;
+    }
+    if (!nextGuideField) {
+      updateWorkflowPurposeInput(text);
+      setRunInput(text);
+      setGuideReply(await requestWorkflowAiReply("purpose-received", { ...guideState, purpose: text }, text));
+      return;
+    }
+    if (nextGuideField.id === "task_goal") {
+      updateWorkflowPurposeInput(text);
+      const remaining = missingRequiredInput.filter((field) => field.id !== nextGuideField.id);
+      setGuideReply(await requestWorkflowAiReply("purpose-received", { ...guideState, purpose: text, missingRequiredInput: compactWorkflowFields(remaining) }, text));
+      return;
+    }
+    appendRunInputValue(nextGuideField.id, text);
+    const remaining = missingRequiredInput.filter((field) => field.id !== nextGuideField.id);
+    setGuideReply(await requestWorkflowAiReply("material-received", {
+      ...guideState,
+      missingRequiredInput: compactWorkflowFields(remaining),
+      materialReceived: { fieldLabel: nextGuideField.label, valuePreview: previewText(text) },
+    }, text));
+  }, [appendRunInputValue, draft, guideAnswer, guideState, missingRequiredInput, nextGuideField, updateWorkflowPurposeInput]);
+
+  const handleInputBoxDrop = useCallback((event: React.DragEvent<HTMLElement | HTMLDivElement>) => {
+    event.preventDefault();
+    const targetField = nextGuideField || (runInputContract.fields || [])[0];
+    if (!targetField) return;
+    const paths = Array.from(event.dataTransfer.files || []).map((file) => file.name).filter(Boolean);
+    const text = event.dataTransfer.getData("text/plain");
+    const payload = [...paths, text].filter(Boolean).join("\n");
+    if (targetField.id === "task_goal") {
+      updateWorkflowPurposeInput(payload);
+      const remaining = missingRequiredInput.filter((field) => field.id !== targetField.id);
+      void requestWorkflowAiReply("purpose-received", { ...guideState, purpose: payload, missingRequiredInput: compactWorkflowFields(remaining) }, payload)
+        .then((reply) => setGuideReply(reply));
+      return;
+    }
+    appendRunInputValue(targetField.id, payload);
+    const remaining = missingRequiredInput.filter((field) => field.id !== targetField.id);
+    void requestWorkflowAiReply("material-received", {
+      ...guideState,
+      missingRequiredInput: compactWorkflowFields(remaining),
+      materialReceived: { fieldLabel: targetField.label, valuePreview: previewText(payload || "拖入资料") },
+    }, payload).then((reply) => setGuideReply(reply));
+  }, [appendRunInputValue, guideState, missingRequiredInput, nextGuideField, runInputContract.fields, updateWorkflowPurposeInput]);
 
   const addProfileNode = useCallback((profile: ProfileDropPayload, x = 190, y = 64) => {
     setDraft((prev) => {
@@ -408,10 +558,14 @@ export function WorkflowEditor({
         return;
       }
       setRunNotice({ status: "success", input, sessionId: data.sessionId, cwd: draft.cwd || "", startedAt });
+      setWorkflowRunSessionId(data.sessionId);
+      setGuideReply("Workflow 已经开始运行。我会在这里等产物出现；产物生成后，这个输入框内部右侧会展开文件预览。");
+      setTimeout(() => void loadWorkflowArtifacts(data.sessionId), 1400);
+      setTimeout(() => void loadWorkflowArtifacts(data.sessionId), 5200);
     } finally {
       setBusy(null);
     }
-  }, [draft, hasRunnableChain, missingRequiredInput, onChange, runInputContract, runInputValues]);
+  }, [draft, hasRunnableChain, loadWorkflowArtifacts, missingRequiredInput, onChange, runInputContract, runInputValues]);
 
   const edges = useMemo(() => buildEdges(tasks), [tasks]);
 
@@ -519,76 +673,148 @@ export function WorkflowEditor({
             </button>
           );
         })}
+        <button
+          type="button"
+          onClick={save}
+          disabled={busy !== null}
+          style={{
+            ...buttonStyle("primary"),
+            position: "absolute",
+            right: 16,
+            bottom: 14,
+            zIndex: 5,
+            boxShadow: "var(--shell-shadow-sm)",
+          }}
+        >
+          {busy === "save" ? "Saving..." : "Save"}
+        </button>
       </section>
 
-      <section className="codex-card" style={{ borderRadius: 18, padding: "12px", display: "grid", gap: 12 }}>
-        <div style={{ display: "grid", gap: 10 }}>
-          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
-            <div>
-              <div style={{ fontSize: 13, fontWeight: 850, color: "var(--text)" }}>{runInputContract.title || "Workflow 输入资料包"}</div>
-              {runInputContract.description ? (
-                <div style={{ marginTop: 3, fontSize: 11, lineHeight: 1.6, color: "var(--text-muted)" }}>{runInputContract.description}</div>
-              ) : null}
+      <section
+        className="codex-card"
+        onDragOver={(event) => {
+          event.preventDefault();
+          event.dataTransfer.dropEffect = "copy";
+        }}
+        onDrop={handleInputBoxDrop}
+        style={{
+          borderRadius: 18,
+          padding: "12px",
+          display: "grid",
+          gap: 8,
+          gridTemplateColumns: workflowArtifacts.length ? "minmax(360px, 0.9fr) minmax(320px, 0.7fr)" : "1fr",
+          alignItems: "stretch",
+        }}
+      >
+        <div style={{ display: "grid", gap: 10, minWidth: 0 }}>
+          <div style={{ position: "relative", display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, flexWrap: "wrap", minHeight: 34 }}>
+            <div style={{ minWidth: 260 }}>
+              <div className="codex-segmented" style={{ width: 220 }}>
+                {([
+                  { id: "guide", label: "AI 引导" },
+                  { id: "materials", label: "资料填写" },
+                ] as const).map((item) => (
+                  <button
+                    key={item.id}
+                    data-active={runPanelTab === item.id}
+                    type="button"
+                    onClick={() => setRunPanelTab(item.id)}
+                    style={{ flex: 1, minHeight: 32, borderRadius: 999, cursor: "pointer", fontSize: 11, fontWeight: runPanelTab === item.id ? 850 : 650 }}
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </div>
             </div>
-            <button type="button" onClick={run} disabled={busy !== null || !canRun} style={{ ...buttonStyle("primary"), minHeight: 38 }}>
-              {busy === "run" ? "Running..." : "Run workflow"}
-            </button>
-          </div>
-          <div style={{ display: "grid", gridTemplateColumns: inputLayout.columns, gap: 10, alignItems: "start" }}>
-            {inputLayout.primaryFields.map((field) => (
-              <WorkflowInputField
-                key={field.id}
-                field={field}
-                value={runInputValues[field.id] || ""}
-                onChange={(value) => updateRunInputValue(field.id, value)}
-              />
-            ))}
-          </div>
-          {inputLayout.contextFields.length ? (
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 10 }}>
-              {inputLayout.contextFields.map((field) => (
-                <WorkflowInputField
-                  key={field.id}
-                  field={field}
-                  compact
-                  value={runInputValues[field.id] || ""}
-                  onChange={(value) => updateRunInputValue(field.id, value)}
-                />
-              ))}
+            <div style={{ position: "absolute", left: "50%", top: "50%", transform: "translate(-50%, -50%)", width: "min(180px, 26vw)", pointerEvents: "auto" }}>
+              <WorkflowProgressBar contract={runInputContract} values={runInputValues} onFocusField={(fieldId) => {
+                setRunPanelTab("materials");
+                setTimeout(() => document.getElementById(`workflow-input-${fieldId}`)?.focus(), 0);
+              }} />
             </div>
-          ) : null}
-          {inputLayout.advancedFields.length ? (
-            <details>
-              <summary style={{ cursor: "pointer", fontSize: 11, fontWeight: 800, color: "var(--text-muted)", padding: "2px 0" }}>高级输入</summary>
-              <div style={{ marginTop: 10, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 10 }}>
-                {inputLayout.advancedFields.map((field) => (
+          </div>
+          {runPanelTab === "guide" ? (
+            <WorkflowAiGuide
+              workflow={draft}
+              nextField={nextGuideField}
+              answer={guideAnswer}
+              reply={guideReply}
+              onAnswerChange={setGuideAnswer}
+              onSubmitAnswer={submitGuideAnswer}
+            />
+          ) : (
+            <>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 850, color: "var(--text)" }}>{runInputContract.title || "Workflow 输入资料包"}</div>
+                {runInputContract.description ? (
+                  <div style={{ marginTop: 3, fontSize: 11, lineHeight: 1.6, color: "var(--text-muted)" }}>{runInputContract.description}</div>
+                ) : null}
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: inputLayout.columns, gap: 10, alignItems: "start" }}>
+                {inputLayout.primaryFields.map((field) => (
                   <WorkflowInputField
                     key={field.id}
+                    id={`workflow-input-${field.id}`}
                     field={field}
-                    compact
                     value={runInputValues[field.id] || ""}
-                    onChange={(value) => updateRunInputValue(field.id, value)}
+                    onChange={(value) => field.id === "task_goal" ? updateWorkflowPurposeInput(value) : updateRunInputValue(field.id, value)}
+                    onAppend={(value) => {
+                      if (field.id !== "task_goal") {
+                        appendRunInputValue(field.id, value);
+                        return;
+                      }
+                      const nextValue = [runInputValues[field.id], value.trim()].filter(Boolean).join("\n");
+                      updateWorkflowPurposeInput(nextValue);
+                    }}
                   />
                 ))}
               </div>
-            </details>
-          ) : null}
-          <Field label="补充说明（可选）">
-            <textarea
-              value={runInput}
-              onChange={(event) => {
-                setRunInput(event.target.value);
-                updateRunInputValue("additional_notes", event.target.value);
-              }}
-              placeholder="临时补充约束、输出偏好、不要遗漏的背景。"
-              style={{ ...inputStyle, minHeight: 54, resize: "vertical" }}
-            />
-          </Field>
-          {missingRequiredInput.length ? (
-            <div style={{ fontSize: 11, color: "#ef4444", lineHeight: 1.6 }}>
-              还缺少必填资料：{missingRequiredInput.map((field) => field.label).join("、")}
-            </div>
-          ) : null}
+              {inputLayout.contextFields.length ? (
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 10 }}>
+                  {inputLayout.contextFields.map((field) => (
+                    <WorkflowInputField
+                      key={field.id}
+                      id={`workflow-input-${field.id}`}
+                      field={field}
+                      compact
+                      value={runInputValues[field.id] || ""}
+                      onChange={(value) => updateRunInputValue(field.id, value)}
+                      onAppend={(value) => appendRunInputValue(field.id, value)}
+                    />
+                  ))}
+                </div>
+              ) : null}
+              {inputLayout.advancedFields.length ? (
+                <details>
+                  <summary style={{ cursor: "pointer", fontSize: 11, fontWeight: 800, color: "var(--text-muted)", padding: "2px 0" }}>高级输入</summary>
+                  <div style={{ marginTop: 10, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 10 }}>
+                    {inputLayout.advancedFields.map((field) => (
+                      <WorkflowInputField
+                        key={field.id}
+                        id={`workflow-input-${field.id}`}
+                        field={field}
+                        compact
+                        value={runInputValues[field.id] || ""}
+                        onChange={(value) => updateRunInputValue(field.id, value)}
+                        onAppend={(value) => appendRunInputValue(field.id, value)}
+                      />
+                    ))}
+                  </div>
+                </details>
+              ) : null}
+              <Field label="补充说明（可选）">
+                <textarea
+                  value={runInput}
+                  onChange={(event) => {
+                    setRunInput(event.target.value);
+                    updateRunInputValue("additional_notes", event.target.value);
+                  }}
+                  placeholder="临时补充约束、输出偏好、不要遗漏的背景。"
+                  style={{ ...inputStyle, minHeight: 54, resize: "vertical" }}
+                />
+              </Field>
+            </>
+          )}
         </div>
         {runNotice ? (
           <div
@@ -611,7 +837,7 @@ export function WorkflowEditor({
               <div style={{ color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                 {runNotice.input}
               </div>
-              {runNotice.status === "error" ? <div style={{ color: "#ef4444" }}>{runNotice.message}</div> : null}
+              {runNotice.status === "error" ? <div style={{ color: "var(--text-muted)" }}>{runNotice.message}</div> : null}
               {runNotice.status === "success" ? <div style={{ color: "var(--text-muted)", fontFamily: "var(--font-mono)" }}>{runNotice.sessionId}</div> : null}
             </div>
             {runNotice.status === "success" ? (
@@ -634,11 +860,27 @@ export function WorkflowEditor({
                 </svg>
               </button>
             ) : null}
-            <button type="button" onClick={save} disabled={busy !== null} style={buttonStyle("primary")}>
-              {busy === "save" ? "Saving..." : "Save"}
+            <button
+              type="button"
+              onClick={run}
+              disabled={busy !== null || !canRun}
+              style={{ ...buttonStyle("primary"), minHeight: 34, opacity: busy !== null || !canRun ? 0.55 : 1 }}
+            >
+              {busy === "run" ? "Running..." : "Run workflow"}
             </button>
           </div>
         </div>
+        {workflowArtifacts.length ? (
+          <WorkflowArtifactPane
+            artifacts={workflowArtifacts}
+            activeArtifact={activeArtifact}
+            cwd={runNotice?.status === "success" ? runNotice.cwd : draft.cwd}
+            loading={artifactsLoading}
+            error={artifactsError}
+            onSelect={(artifact) => setActiveArtifactPath(artifact.path)}
+            onRefresh={() => void loadWorkflowArtifacts()}
+          />
+        ) : null}
       </section>
 
       {inspectorOpen ? (
@@ -670,6 +912,229 @@ export function WorkflowEditor({
   );
 }
 
+function workflowIsBlank(workflow: WorkflowDefinition): boolean {
+  return workflow.id.startsWith("draft-workflow-") || !workflow.tasks?.length;
+}
+
+function looksLikeWorkflowQuestion(text: string): boolean {
+  return /[?？]|怎么|如何|为什么|什么是|workflow|工作流|节点|profile|skill|fixed|configurable|训练|train|模型|路由|协作|通信|依赖|使用|技巧|资料|材料|运行|产物|预览/.test(text);
+}
+
+function looksLikePurposeStatement(text: string): boolean {
+  if (/[?？]|怎么|如何|为什么|什么是/.test(text)) return false;
+  return /我想|我要|需要|帮我|做一个|搭一个|创建|生成|分析|整理|写|输出|交付|workflow|工作流/.test(text);
+}
+
+function compactWorkflowFields(fields: WorkflowInputFieldDefinition[]) {
+  return fields.map((field) => ({ id: field.id, label: field.label, required: field.required }));
+}
+
+function previewText(value: string) {
+  const firstLine = value.split("\n").find(Boolean) || value;
+  return firstLine.length > 80 ? `${firstLine.slice(0, 80)}...` : firstLine;
+}
+
+function workflowAiState(
+  workflow: WorkflowDefinition,
+  nextField: WorkflowInputFieldDefinition | null,
+  missingRequiredInput: WorkflowInputFieldDefinition[],
+  hasRunnableChain: boolean,
+) {
+  return {
+    workflow: {
+      id: workflow.id,
+      name: workflow.name,
+      description: workflow.description,
+      domain: workflow.domain,
+      templateType: workflow.templateType,
+    },
+    isBlank: workflowIsBlank(workflow),
+    hasRunnableChain,
+    nextField: nextField ? { id: nextField.id, label: nextField.label, required: nextField.required } : null,
+    missingRequiredInput: compactWorkflowFields(missingRequiredInput),
+  };
+}
+
+async function requestWorkflowAiReply(event: WorkflowAiEvent, state: ReturnType<typeof workflowAiState>, userText = "", signal?: AbortSignal): Promise<string> {
+  const res = await fetch("/api/workflow-ai/reply", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ event, userText, state }),
+    signal,
+  });
+  const data = await res.json().catch(() => ({})) as { reply?: string };
+  return data.reply || "";
+}
+
+function WorkflowProgressBar({
+  contract,
+  values,
+  onFocusField,
+}: {
+  contract: WorkflowInputContract;
+  values: Record<string, string>;
+  onFocusField: (fieldId: string) => void;
+}) {
+  const fields = contract.fields?.length ? contract.fields : [];
+  const fieldCount = fields.length || 1;
+  const completedFieldCount = fields.filter((field) => values[field.id]?.trim()).length;
+  return (
+    <div style={{ width: "100%", alignSelf: "center", display: "grid", gridTemplateColumns: `repeat(${fieldCount}, minmax(10px, 1fr))`, gap: 4 }}>
+      {(fields.length ? fields : [null]).map((field, index) => {
+        const done = field ? Boolean(values[field.id]?.trim()) : false;
+        return (
+          <button
+            key={field?.id || "empty-progress"}
+            type="button"
+            onClick={() => field ? onFocusField(field.id) : undefined}
+            title={field?.label || "暂无资料项"}
+            style={{
+              height: 5,
+              border: "none",
+              borderRadius: 2,
+              background: done ? "color-mix(in srgb, var(--text-muted) 56%, transparent)" : "color-mix(in srgb, var(--text-dim) 18%, transparent)",
+              cursor: field ? "pointer" : "default",
+              opacity: index < completedFieldCount || done ? 0.9 : 0.55,
+            }}
+          />
+        );
+      })}
+    </div>
+  );
+}
+
+function WorkflowAiGuide({
+  workflow,
+  nextField,
+  answer,
+  reply,
+  onAnswerChange,
+  onSubmitAnswer,
+}: {
+  workflow: WorkflowDefinition;
+  nextField: WorkflowInputFieldDefinition | null;
+  answer: string;
+  reply: string;
+  onAnswerChange: (value: string) => void;
+  onSubmitAnswer: () => void;
+}) {
+  const [inputFocused, setInputFocused] = useState(false);
+  const isBlank = workflowIsBlank(workflow);
+  const currentReply = reply || "我先看一下这个 workflow 当前状态。";
+  const placeholder = isBlank
+    ? "告诉我你想搭一个什么 workflow，或问我应该怎么搭。"
+    : nextField?.placeholder || "问我 workflow 怎么用，或继续补充资料。整个框都可以拖入文件、链接和文本。";
+  return (
+    <div style={{ display: "grid", gap: 10 }}>
+      <div style={{ display: "grid", justifyItems: "center", textAlign: "center", gap: 4 }}>
+        <div style={{ fontSize: 13, fontWeight: 850, color: "var(--text-muted)" }}>AI Workflow 向导</div>
+        <div style={{ maxWidth: 820, color: "var(--text)", fontSize: 16, lineHeight: 1.6, fontWeight: 650 }}>
+          {currentReply}
+        </div>
+      </div>
+      <div style={{ display: "grid", minHeight: 100, alignItems: "end", paddingTop: 4 }}>
+        <textarea
+          value={answer}
+          onFocus={() => setInputFocused(true)}
+          onBlur={() => setInputFocused(false)}
+          onChange={(event) => onAnswerChange(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key !== "Enter" || event.shiftKey || event.nativeEvent.isComposing) return;
+            event.preventDefault();
+            onSubmitAnswer();
+          }}
+          placeholder={inputFocused ? "" : placeholder}
+          style={{
+            width: "100%",
+            minHeight: 70,
+            border: "none",
+            outline: "none",
+            resize: "vertical",
+            background: "transparent",
+            color: "var(--text)",
+            caretColor: "var(--accent)",
+            padding: "12px 18px 8px",
+            lineHeight: 1.45,
+            fontSize: 16,
+            fontWeight: 650,
+            fontFamily: "inherit",
+            textAlign: "center",
+            textShadow: inputFocused ? "0 0 18px color-mix(in srgb, var(--accent) 18%, transparent)" : undefined,
+          }}
+        />
+      </div>
+    </div>
+  );
+}
+
+function WorkflowArtifactPane({
+  artifacts,
+  activeArtifact,
+  cwd,
+  loading,
+  error,
+  onSelect,
+  onRefresh,
+}: {
+  artifacts: WorkflowArtifact[];
+  activeArtifact: WorkflowArtifact | null;
+  cwd?: string;
+  loading: boolean;
+  error: string | null;
+  onSelect: (artifact: WorkflowArtifact) => void;
+  onRefresh: () => void;
+}) {
+  return (
+    <aside style={{ minHeight: 260, maxHeight: 460, minWidth: 0, border: "1px solid var(--border)", borderRadius: 14, overflow: "hidden", display: "grid", gridTemplateRows: "auto minmax(0, 1fr)", background: "var(--bg)" }}>
+      <div style={{ padding: "9px 10px", borderBottom: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+        <div style={{ minWidth: 0 }}>
+          <div style={{ fontSize: 12, fontWeight: 850, color: "var(--text)" }}>Workflow 产物</div>
+          <div style={{ marginTop: 2, fontSize: 10, color: "var(--text-muted)" }}>{artifacts.length} 个可预览文件</div>
+        </div>
+        <button type="button" onClick={onRefresh} style={{ ...buttonStyle(), minHeight: 28, padding: "4px 8px", fontSize: 11 }}>
+          {loading ? "刷新中" : "刷新"}
+        </button>
+      </div>
+      <div style={{ minHeight: 0, display: "grid", gridTemplateRows: "auto minmax(0, 1fr)" }}>
+        <div style={{ padding: 8, display: "flex", gap: 6, overflowX: "auto", borderBottom: "1px solid var(--border)" }}>
+          {artifacts.map((artifact) => (
+            <button
+              key={artifact.path}
+              type="button"
+              onClick={() => onSelect(artifact)}
+              style={{
+                flex: "0 0 auto",
+                maxWidth: 150,
+                minHeight: 28,
+                borderRadius: 999,
+                border: activeArtifact?.path === artifact.path ? "1px solid color-mix(in srgb, var(--accent) 54%, transparent)" : "1px solid var(--border)",
+                background: activeArtifact?.path === artifact.path ? "color-mix(in srgb, var(--accent) 10%, var(--bg))" : "var(--bg-secondary)",
+                color: "var(--text)",
+                cursor: "pointer",
+                padding: "4px 8px",
+                fontSize: 11,
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {artifact.name}
+            </button>
+          ))}
+        </div>
+        <div style={{ minHeight: 0 }}>
+          {error ? (
+            <div style={{ padding: 12, color: "var(--text-muted)", fontSize: 12 }}>{error}</div>
+          ) : activeArtifact ? (
+            <FileViewer filePath={activeArtifact.path} cwd={cwd} />
+          ) : (
+            <div style={{ padding: 12, color: "var(--text-muted)", fontSize: 12 }}>还没有选择文件。</div>
+          )}
+        </div>
+      </div>
+    </aside>
+  );
+}
 function buildEdges(tasks: WorkflowTaskDefinition[]) {
   const taskById = new Map(tasks.map((task, index) => [task.id || `task-${index + 1}`, task]));
   const edges: Array<{ from: "start" | string; to: string }> = [];
@@ -1124,14 +1589,18 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 }
 
 function WorkflowInputField({
+  id,
   field,
   value,
   onChange,
+  onAppend,
   compact = false,
 }: {
+  id?: string;
   field: WorkflowInputFieldDefinition;
   value: string;
   onChange: (value: string) => void;
+  onAppend?: (value: string) => void;
   compact?: boolean;
 }) {
   const label = `${field.label}${field.required ? " *" : ""}`;
@@ -1141,7 +1610,7 @@ function WorkflowInputField({
   if (field.type === "select") {
     return (
       <Field label={label}>
-        <select value={value} onChange={(event) => onChange(event.target.value)} style={inputStyle}>
+        <select id={id} value={value} onChange={(event) => onChange(event.target.value)} style={inputStyle}>
           <option value="">请选择</option>
           {(field.options || []).map((option) => (
             <option key={option} value={option}>{option}</option>
@@ -1155,7 +1624,20 @@ function WorkflowInputField({
   if (field.type === "text" || field.type === "datetime") {
     return (
       <Field label={label}>
-        <input value={value} onChange={(event) => onChange(event.target.value)} placeholder={placeholder} style={inputStyle} />
+        <input
+          id={id}
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          onDragOver={(event) => event.preventDefault()}
+          onDrop={(event) => {
+            if (!onAppend) return;
+            event.preventDefault();
+            event.stopPropagation();
+            onAppend(event.dataTransfer.getData("text/plain"));
+          }}
+          placeholder={placeholder}
+          style={inputStyle}
+        />
         {help}
       </Field>
     );
@@ -1164,8 +1646,17 @@ function WorkflowInputField({
   return (
     <Field label={label}>
       <textarea
+        id={id}
         value={value}
         onChange={(event) => onChange(event.target.value)}
+        onDragOver={(event) => event.preventDefault()}
+        onDrop={(event) => {
+          if (!onAppend) return;
+          event.preventDefault();
+          event.stopPropagation();
+          const fileNames = Array.from(event.dataTransfer.files || []).map((file) => file.name).filter(Boolean);
+          onAppend([...fileNames, event.dataTransfer.getData("text/plain")].filter(Boolean).join("\n"));
+        }}
         placeholder={placeholder}
         style={{ ...inputStyle, minHeight: compact ? 58 : field.type === "links" || field.type === "files" ? 76 : 92, resize: "vertical" }}
       />

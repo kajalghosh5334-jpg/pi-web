@@ -1,4 +1,4 @@
-import { mkdtemp, rm } from "fs/promises";
+import { mkdtemp, readFile, rm, writeFile } from "fs/promises";
 import { tmpdir } from "os";
 import { join } from "path";
 import { spawn } from "child_process";
@@ -47,8 +47,10 @@ interface FlashWorkflowDecision {
 const FLASH_MODEL = "opencode-go/deepseek-v4-flash";
 const STRONG_EXISTING_THRESHOLD = 62;
 const TEMPLATE_MATCH_THRESHOLD = 42;
-const FLASH_TIMEOUT_MS = 45000;
+const FLASH_TIMEOUT_MS = 12000;
+const BACKEND_SAVE_TIMEOUT_MS = 3500;
 const WORKFLOW_BACKEND = "http://127.0.0.1:3000";
+const WORKFLOW_CATALOG_PATH = join(process.cwd(), "../pi-backend/workflows.json");
 const FORBIDDEN_TERMS = ["训练样本", "标准样本", "真实训练", "训练验证", "样本对齐"];
 
 const DOMAIN_KEYWORDS: Record<string, string[]> = {
@@ -684,24 +686,68 @@ function sanitizeWorkflowDraft(
 }
 
 async function saveGeneratedWorkflow(workflow: Partial<WorkflowDefinition>) {
-  const res = await fetch(`${WORKFLOW_BACKEND}/api/workflows`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(workflow),
-  });
-  if (!res.ok) throw new Error(`保存生成 Workflow 失败：HTTP ${res.status}`);
-  const data = await res.json().catch(() => ({})) as { workflow?: WorkflowDefinition };
-  if (!data.workflow) throw new Error("保存生成 Workflow 失败：响应缺少 workflow");
-  if (!data.workflow.inputContract?.fields?.length && workflow.inputContract?.fields?.length) {
-    const patchRes = await fetch(`${WORKFLOW_BACKEND}/api/workflows/${encodeURIComponent(data.workflow.id)}`, {
-      method: "PATCH",
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), BACKEND_SAVE_TIMEOUT_MS);
+    const res = await fetch(`${WORKFLOW_BACKEND}/api/workflows`, {
+      method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ inputContract: workflow.inputContract }),
+      body: JSON.stringify(workflow),
+      signal: controller.signal,
     });
-    const patchData = await patchRes.json().catch(() => ({})) as { workflow?: WorkflowDefinition };
-    if (patchRes.ok && patchData.workflow) return patchData.workflow;
+    clearTimeout(timeout);
+    if (!res.ok) throw new Error(`保存生成 Workflow 失败：HTTP ${res.status}`);
+    const data = await res.json().catch(() => ({})) as { workflow?: WorkflowDefinition };
+    if (!data.workflow) throw new Error("保存生成 Workflow 失败：响应缺少 workflow");
+    if (!data.workflow.inputContract?.fields?.length && workflow.inputContract?.fields?.length) {
+      const patchController = new AbortController();
+      const patchTimeout = setTimeout(() => patchController.abort(), BACKEND_SAVE_TIMEOUT_MS);
+      const patchRes = await fetch(`${WORKFLOW_BACKEND}/api/workflows/${encodeURIComponent(data.workflow.id)}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ inputContract: workflow.inputContract }),
+        signal: patchController.signal,
+      });
+      clearTimeout(patchTimeout);
+      const patchData = await patchRes.json().catch(() => ({})) as { workflow?: WorkflowDefinition };
+      if (patchRes.ok && patchData.workflow) return patchData.workflow;
+    }
+    return data.workflow;
+  } catch {
+    return saveGeneratedWorkflowLocal(workflow);
   }
-  return data.workflow;
+}
+
+async function saveGeneratedWorkflowLocal(workflow: Partial<WorkflowDefinition>) {
+  const raw = await readFile(WORKFLOW_CATALOG_PATH, "utf8");
+  const workflows = JSON.parse(raw) as Record<string, WorkflowDefinition>;
+  const now = Date.now();
+  const base = slug(String(workflow.name || "generated-workflow"), "workflow");
+  let id = base;
+  let counter = 2;
+  while (workflows[id]) {
+    id = `${base}-${counter}`;
+    counter += 1;
+  }
+  const saved: WorkflowDefinition = {
+    id,
+    name: String(workflow.name || "未命名 Workflow"),
+    description: workflow.description,
+    status: workflow.status || "active",
+    debugStatus: workflow.debugStatus || "unverified",
+    domain: workflow.domain || "generic",
+    category: workflow.category || workflow.domain || "generic",
+    templateType: workflow.templateType || "fetch-summarize",
+    leadProfileId: workflow.leadProfileId || "strong-task-architect",
+    reviewPolicy: workflow.reviewPolicy === "lead_only" ? "lead_only" : "lead_plus_reviewer",
+    createdAt: now,
+    updatedAt: now,
+    inputContract: workflow.inputContract,
+    tasks: workflow.tasks || [],
+  };
+  workflows[id] = saved;
+  await writeFile(WORKFLOW_CATALOG_PATH, JSON.stringify(workflows, null, 2) + "\n");
+  return saved;
 }
 
 export async function POST(req: Request) {

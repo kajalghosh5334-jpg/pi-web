@@ -115,13 +115,14 @@ function workflowDomainName(domain?: string) {
     "customer-support": "客服",
     research: "行业调研",
     sales: "电话销售",
-    generic: "通用模板",
+    generic: "通用 Workflow",
   };
   return labels[domain || ""] || domain || "未分类";
 }
 
 function WorkflowFlashGuide({ onSelectWorkflow }: { onSelectWorkflow: (workflow: WorkflowDefinition) => void }) {
   const [task, setTask] = useState("");
+  const [taskFocused, setTaskFocused] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<WorkflowRecommendationResult | null>(null);
@@ -137,18 +138,22 @@ function WorkflowFlashGuide({ onSelectWorkflow }: { onSelectWorkflow: (workflow:
     if (!canAsk) return;
     setBusy(true);
     setError(null);
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 14000);
     try {
       const res = await fetch("/api/workflow-recommend", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        signal: controller.signal,
         body: JSON.stringify({ task }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
       setResult(data as WorkflowRecommendationResult);
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setError(err instanceof Error && err.name === "AbortError" ? "推荐超时了。可以换一个更具体的任务描述，或稍后重试。" : err instanceof Error ? err.message : String(err));
     } finally {
+      clearTimeout(timeout);
       setBusy(false);
     }
   };
@@ -183,23 +188,29 @@ function WorkflowFlashGuide({ onSelectWorkflow }: { onSelectWorkflow: (workflow:
       <div style={{ display: "grid", gap: 10 }}>
         <textarea
           value={task}
+          onFocus={() => setTaskFocused(true)}
+          onBlur={() => setTaskFocused(false)}
           onChange={(event) => setTask(event.target.value)}
           onKeyDown={(event) => {
             if ((event.metaKey || event.ctrlKey) && event.key === "Enter") void askFlash();
           }}
-          placeholder="输入你想让 workflow 完成的任务，例如：把近 7 天 AI Agent 行业新闻整理成每日监控简报，并标记融资、政策和竞品变化。"
+          placeholder={taskFocused ? "" : "输入你想让 workflow 完成的任务，例如：把近 7 天 AI Agent 行业新闻整理成每日监控简报，并标记融资、政策和竞品变化。"}
           style={{
             width: "100%",
-            minHeight: 92,
-            borderRadius: 16,
-            border: "1px solid var(--shell-edge)",
-            background: "var(--bg)",
+            minHeight: 86,
+            border: "none",
+            background: "transparent",
             color: "var(--text)",
-            padding: "13px 14px",
+            padding: "16px 18px 8px",
             resize: "vertical",
             outline: "none",
-            lineHeight: 1.65,
-            fontSize: 13,
+            lineHeight: 1.45,
+            fontSize: 16,
+            fontWeight: 650,
+            fontFamily: "inherit",
+            textAlign: "center",
+            caretColor: "var(--accent)",
+            textShadow: taskFocused ? "0 0 18px color-mix(in srgb, var(--accent) 18%, transparent)" : undefined,
           }}
         />
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
@@ -230,7 +241,7 @@ function WorkflowFlashGuide({ onSelectWorkflow }: { onSelectWorkflow: (workflow:
               cursor: canAsk ? "pointer" : "not-allowed",
             }}
           >
-            {busy ? "推荐中..." : "让 Flash 推荐"}
+            {busy ? "正在匹配..." : "让 Flash 推荐"}
           </button>
         </div>
         {error ? <div style={{ fontSize: 12, color: "#f87171" }}>{error}</div> : null}

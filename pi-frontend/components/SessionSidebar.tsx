@@ -42,27 +42,58 @@ interface Props {
 }
 
 const WORKFLOW_DOMAIN_LABELS: Record<string, string> = {
+  generic: "通用 Workflow",
   "self-media": "自媒体",
   research: "行业调研",
   ecommerce: "电商",
   "customer-support": "客服",
   sales: "电话销售",
-  generic: "通用模板",
   internal: "内部旧项",
   evaluation: "评测旧项",
 };
 
-const WORKFLOW_DOMAIN_ORDER = ["self-media", "research", "ecommerce", "customer-support", "sales", "generic"];
-const WORKFLOW_TEMPLATE_LABELS: Record<string, string> = {
-  "fetch-summarize": "抓取-摘要",
-  "generate-variants": "生成-多版本",
-  "classify-route": "分类-路由",
-  "monitor-alert": "监控-告警",
-  "extract-writeback": "结构化回写",
-  "smoke-test": "烟测旧项",
-  "manual-check": "手动检查",
-  "eval-run": "评测运行",
+const WORKFLOW_DOMAIN_ORDER = ["generic", "self-media", "research", "ecommerce", "customer-support", "sales"];
+const PROFILE_DISPLAY_NAMES: Record<string, string> = {
+  "weak-research-extractor": "找资料并摘事实",
+  "weak-structured-operator": "整理成表或 JSON",
+  "weak-test-enumerator": "列测试点和边界",
+  "classification-router": "分类并分派",
+  "structured-writeback-operator": "抽字段并回写",
+  "strong-task-architect": "拆任务和搭流程",
+  "strong-quality-reviewer": "检查质量和风险",
+  "content-strategy-director": "想选题和策略",
+  "content-researcher": "找内容素材",
+  "content-draft-producer": "写初稿和改写",
+  "content-editor-reviewer": "审稿和把关",
+  "research-report-analyst": "分析并写报告",
+  "support-kb-responder": "查知识库并回复",
+  "sales-call-analyst": "分析销售通话",
+  "sales-followup-draft-producer": "写销售跟进",
+  "ecommerce-listing-optimizer": "优化商品页",
+  "monitor-alert-operator": "判断是否告警",
 };
+
+const PROFILE_GROUP_ORDER = ["generic", "self-media", "research", "customer-support", "sales", "ecommerce", "trained", "other"];
+const PROFILE_GROUP_LABELS: Record<string, string> = {
+  generic: "通用 Workflow 节点",
+  "self-media": "自媒体节点",
+  research: "调研节点",
+  "customer-support": "客服节点",
+  sales: "销售节点",
+  ecommerce: "电商节点",
+  trained: "专用训练节点",
+  other: "其他节点",
+};
+const GENERIC_PROFILE_IDS = new Set([
+  "weak-research-extractor",
+  "weak-structured-operator",
+  "weak-test-enumerator",
+  "classification-router",
+  "structured-writeback-operator",
+  "strong-task-architect",
+  "strong-quality-reviewer",
+  "monitor-alert-operator",
+]);
 
 function formatRelativeTime(dateStr: string): string {
   const date = new Date(dateStr);
@@ -108,8 +139,28 @@ function workflowDomainLabel(domain: string): string {
   return WORKFLOW_DOMAIN_LABELS[domain] || domain || "未分类";
 }
 
-function workflowTemplateLabel(templateType: string | undefined): string {
-  return templateType ? WORKFLOW_TEMPLATE_LABELS[templateType] || templateType : "Workflow";
+function profileDisplayName(profile: AgentProfileItem): string {
+  return PROFILE_DISPLAY_NAMES[profile.id] || profile.name || profile.id;
+}
+
+function profileGroup(profile: AgentProfileItem): string {
+  if (GENERIC_PROFILE_IDS.has(profile.id)) return "generic";
+  if (profile.id.startsWith("trained-case-")) return "trained";
+  const text = `${profile.id} ${profile.name || ""}`.toLowerCase();
+  if (/content|media|自媒体|选题|审稿|素材/.test(text)) return "self-media";
+  if (/research|report|调研|报告/.test(text)) return "research";
+  if (/support|客服|知识库/.test(text)) return "customer-support";
+  if (/sales|销售|通话/.test(text)) return "sales";
+  if (/ecommerce|listing|电商|商品/.test(text)) return "ecommerce";
+  return "other";
+}
+
+function sortProfileGroups(groups: string[]) {
+  return groups.sort((a, b) => {
+    const ia = PROFILE_GROUP_ORDER.indexOf(a);
+    const ib = PROFILE_GROUP_ORDER.indexOf(b);
+    return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib) || (PROFILE_GROUP_LABELS[a] || a).localeCompare(PROFILE_GROUP_LABELS[b] || b);
+  });
 }
 
 function workflowIsVisibleInLibrary(workflow: WorkflowDefinition): boolean {
@@ -435,6 +486,21 @@ export function SessionSidebar({
     }));
   }, [workflows]);
 
+  const profileGroups = useMemo(() => {
+    const groups = new Map<string, AgentProfileItem[]>();
+    for (const profile of profiles) {
+      const group = profileGroup(profile);
+      const list = groups.get(group) || [];
+      list.push(profile);
+      groups.set(group, list);
+    }
+    return sortProfileGroups([...groups.keys()]).map((group) => ({
+      group,
+      label: PROFILE_GROUP_LABELS[group] || group,
+      profiles: (groups.get(group) || []).sort((a, b) => profileDisplayName(a).localeCompare(profileDisplayName(b))),
+    }));
+  }, [profiles]);
+
   const visibleWorkflowCount = useMemo(() => workflows.filter(workflowIsVisibleInLibrary).length, [workflows]);
 
   const filteredSessions = useMemo(
@@ -530,56 +596,20 @@ export function SessionSidebar({
               </div>
             ) : null}
             {!loadingProfiles && !profileError && profiles.length === 0 ? <EmptyState label="No profiles available yet." /> : null}
-            {profiles.map((profile) => (
-              <div
-                key={profile.id}
-                role="button"
-                tabIndex={0}
-                className="codex-card"
-                draggable
-                onClick={() => setProfileInspector(profile)}
-                onKeyDown={(event) => {
-                  if (event.key !== "Enter" && event.key !== " ") return;
-                  event.preventDefault();
-                  setProfileInspector(profile);
-                }}
-                onDragStart={(event) => {
-                  const payload = JSON.stringify({
-                    id: profile.id,
-                    name: profile.name || profile.id,
-                    skills: profile.skills || [],
-                  });
-                  event.dataTransfer.setData("application/pi-profile", payload);
-                  event.dataTransfer.setData("text/plain", profile.name || profile.id);
-                  event.dataTransfer.effectAllowed = "copy";
-                }}
-                style={{ borderRadius: 18, padding: "14px 14px 12px", marginBottom: 8, cursor: "grab" }}
-              >
-                <div style={{ minWidth: 0 }}>
-                  <div style={{ fontSize: 12, fontWeight: 800, color: "var(--text)", marginBottom: 3 }}>{profile.name || profile.id}</div>
-                  <div style={{ fontSize: 11, color: "var(--text-dim)", fontFamily: "var(--font-mono)" }}>{profile.id}</div>
-                </div>
-                <div style={{ marginTop: 10, fontSize: 11, color: "var(--text-muted)", lineHeight: 1.6 }}>
-                  {profile.defaultModel || "No default model"}
-                </div>
-                <div style={{ marginTop: 10, display: "flex", gap: 6, flexWrap: "wrap" }}>
-                  {(profile.skills || []).slice(0, 3).map((skill) => (
-                    <span key={`${profile.id}-${skill}`} className="codex-pill" style={{ fontSize: 10 }}>
-                      {skill}
-                    </span>
-                  ))}
-                  {(profile.skills || []).length > 3 ? (
-                    <span className="codex-pill" style={{ fontSize: 10 }}>+{(profile.skills || []).length - 3}</span>
-                  ) : null}
-                </div>
-              </div>
+            {profileGroups.map((group) => (
+              <ProfileGroup
+                key={group.group}
+                label={group.label}
+                profiles={group.profiles}
+                onInspect={setProfileInspector}
+              />
             ))}
           </>
         ) : (
           <>
             <CreateListItem
               label="New workflow"
-              sublabel="Blank workflow"
+              sublabel="AI guide opens first"
               onClick={createBlankWorkflowDraft}
             />
             {workflowLoadError ? (
@@ -665,6 +695,77 @@ function CreateListItem({ label, sublabel, disabled, onClick }: { label: string;
         <span style={{ display: "block", marginTop: 2, fontSize: 11, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{sublabel}</span>
       </span>
     </button>
+  );
+}
+
+function ProfileGroup({
+  label,
+  profiles,
+  onInspect,
+}: {
+  label: string;
+  profiles: AgentProfileItem[];
+  onInspect: (profile: AgentProfileItem) => void;
+}) {
+  return (
+    <details open style={{ marginBottom: 8 }}>
+      <summary style={{ cursor: "pointer", padding: "8px 6px", color: "var(--text-muted)", fontSize: 11, fontWeight: 850, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+        <span>{label}</span>
+        <span className="codex-pill" style={{ fontSize: 10, minHeight: 20, padding: "0 7px" }}>{profiles.length}</span>
+      </summary>
+      <div>
+        {profiles.map((profile) => (
+          <ProfileListItem key={profile.id} profile={profile} onInspect={() => onInspect(profile)} />
+        ))}
+      </div>
+    </details>
+  );
+}
+
+function ProfileListItem({ profile, onInspect }: { profile: AgentProfileItem; onInspect: () => void }) {
+  const displayName = profileDisplayName(profile);
+  return (
+    <div
+      role="button"
+      tabIndex={0}
+      className="codex-card"
+      draggable
+      onClick={onInspect}
+      onKeyDown={(event) => {
+        if (event.key !== "Enter" && event.key !== " ") return;
+        event.preventDefault();
+        onInspect();
+      }}
+      onDragStart={(event) => {
+        const payload = JSON.stringify({
+          id: profile.id,
+          name: displayName,
+          skills: profile.skills || [],
+        });
+        event.dataTransfer.setData("application/pi-profile", payload);
+        event.dataTransfer.setData("text/plain", displayName);
+        event.dataTransfer.effectAllowed = "copy";
+      }}
+      style={{ borderRadius: 16, padding: "13px 14px 11px", marginBottom: 8, cursor: "grab" }}
+    >
+      <div style={{ minWidth: 0 }}>
+        <div style={{ fontSize: 12, fontWeight: 820, color: "var(--text)", marginBottom: 3 }}>{displayName}</div>
+        <div style={{ fontSize: 11, color: "var(--text-dim)", fontFamily: "var(--font-mono)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{profile.id}</div>
+      </div>
+      <div style={{ marginTop: 9, fontSize: 11, color: "var(--text-muted)", lineHeight: 1.6 }}>
+        {profile.name && profile.name !== displayName ? profile.name : profile.defaultModel || "No default model"}
+      </div>
+      <div style={{ marginTop: 10, display: "flex", gap: 6, flexWrap: "wrap" }}>
+        {(profile.skills || []).slice(0, 3).map((skill) => (
+          <span key={`${profile.id}-${skill}`} className="codex-pill" style={{ fontSize: 10 }}>
+            {skill}
+          </span>
+        ))}
+        {(profile.skills || []).length > 3 ? (
+          <span className="codex-pill" style={{ fontSize: 10 }}>+{(profile.skills || []).length - 3}</span>
+        ) : null}
+      </div>
+    </div>
   );
 }
 
