@@ -63,6 +63,13 @@ async function readLocalProfiles(error: string) {
 }
 
 export async function GET() {
+  if (process.env.PI_WORKFLOW_LOCAL_FIRST !== "0") {
+    try {
+      return Response.json(await readLocalProfiles("local-first"));
+    } catch {
+      // Fall through to backend when local profiles are unavailable.
+    }
+  }
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 8000);
   try {

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import fs from "fs";
+import { homedir } from "os";
 import path from "path";
 import { SessionManager } from "@earendil-works/pi-coding-agent";
 import { allowFileRoot, normalizeSlashes } from "@/lib/file-access";
@@ -9,7 +10,7 @@ interface ArtifactItem {
   path: string;
   name: string;
   kind: "file";
-  source: "tool" | "workflow";
+  source: "tool" | "workflow" | "message";
   label?: string;
   toolName?: string;
   previewType: "document" | "image" | "audio";
@@ -33,6 +34,20 @@ const PATH_KEYS = new Set([
 const IMAGE_EXTS = new Set(["png", "jpg", "jpeg", "gif", "webp", "svg", "bmp", "ico", "avif"]);
 const AUDIO_EXTS = new Set(["mp3", "wav", "ogg", "oga", "opus", "m4a", "aac", "flac", "weba", "webm"]);
 const DOCUMENT_EXTS = new Set(["md", "mdx", "html", "htm", "pdf", "docx", "txt", "rtf"]);
+const TEXT_EXTS = new Set([
+  "ts", "tsx", "js", "jsx", "mjs", "cjs", "py", "rb", "go", "rs", "java", "kt", "swift",
+  "c", "cpp", "h", "hpp", "cs", "css", "scss", "less", "json", "yaml", "yml", "toml",
+  "xml", "sh", "bash", "zsh", "fish", "sql", "graphql", "gql", "tf", "hcl", "env",
+  "gitignore", "csv", "tsv", "log",
+]);
+const PREVIEW_FILE_EXT_PATTERN = [...IMAGE_EXTS, ...AUDIO_EXTS, ...DOCUMENT_EXTS, ...TEXT_EXTS]
+  .sort((a, b) => b.length - a.length)
+  .join("|");
+const GENERATED_FILE_LINE_RE = /(?:文件已生成|已生成文件|已生成|生成了?文件|输出文件|输出|保存(?:到|至|为)|已保存(?:到|至|为)?|file generated|generated file|output file|saved to|saved as)\s*[:：]?\s*(.+)$/i;
+const PATH_IN_TEXT_RE = new RegExp(
+  `(?:file:\\/\\/)?(?:~(?=\\/)|\\/|[a-zA-Z]:[\\\\/]|\\.{1,2}\\/)[^\\r\\n"'\\\`<>，。；：]*?\\.(?:${PREVIEW_FILE_EXT_PATTERN})(?=$|[\\s"'\\\`)>\\]，。；：,.;:])`,
+  "gi",
+);
 const IGNORED_DIRS = new Set(["node_modules", ".git", ".next", "dist", "build", "coverage", ".cache", ".pi-sessions"]);
 const MAX_DIRECTORY_ARTIFACTS = 120;
 
@@ -54,7 +69,8 @@ function resolveCandidatePath(value: unknown, cwd: string): string | null {
   if (!cleaned || cleaned.length > 600 || cleaned.includes("\n")) return null;
   if (/^[a-z][a-z0-9+.-]*:\/\//i.test(cleaned)) return null;
 
-  const normalized = normalizeSlashes(cleaned);
+  const expanded = cleaned.replace(/^~(?=\/|$)/, homedir());
+  const normalized = normalizeSlashes(expanded);
   if (normalized.startsWith("/") || /^[a-zA-Z]:[\\/]/.test(cleaned) || normalized.startsWith("//")) {
     return normalized;
   }
@@ -66,7 +82,7 @@ function getPreviewType(filePath: string): ArtifactItem["previewType"] | null {
   const ext = path.basename(filePath).toLowerCase().split(".").pop() || "";
   if (IMAGE_EXTS.has(ext)) return "image";
   if (AUDIO_EXTS.has(ext)) return "audio";
-  if (DOCUMENT_EXTS.has(ext)) return "document";
+  if (DOCUMENT_EXTS.has(ext) || TEXT_EXTS.has(ext)) return "document";
   return null;
 }
 
@@ -191,6 +207,39 @@ function collectToolArtifacts(entries: unknown[], cwd: string, items: Map<string
   }
 }
 
+function getTextContentFromMessage(message: Record<string, unknown>): string {
+  const content = message.content;
+  if (typeof content === "string") return content;
+  if (!Array.isArray(content)) return "";
+  return content
+    .map((block) => {
+      if (!isRecord(block) || block.type !== "text") return "";
+      return typeof block.text === "string" ? block.text : "";
+    })
+    .filter(Boolean)
+    .join("\n");
+}
+
+function collectGeneratedFileMentions(entries: unknown[], cwd: string, items: Map<string, ArtifactItem>) {
+  for (const entry of entries) {
+    if (!isRecord(entry) || entry.type !== "message") continue;
+    const message = entry.message;
+    if (!isRecord(message) || (message.role !== "assistant" && message.role !== "custom")) continue;
+    const text = getTextContentFromMessage(message);
+    if (!text) continue;
+
+    for (const line of text.split(/\r?\n/)) {
+      const match = line.match(GENERATED_FILE_LINE_RE);
+      if (!match?.[1]) continue;
+      for (const candidateMatch of match[1].matchAll(PATH_IN_TEXT_RE)) {
+        addExistingArtifact(items, resolveCandidatePath(candidateMatch[0], cwd), "message", {
+          label: "Mentioned in message",
+        });
+      }
+    }
+  }
+}
+
 function collectWorkflowArtifacts(sessionId: string, cwd: string, items: Map<string, ArtifactItem>) {
   const artifactsDir = path.join(WORKFLOW_WORKSPACE, sessionId, "artifacts");
   const registryPath = path.join(artifactsDir, "registry.json");
@@ -228,6 +277,7 @@ export async function GET(
     const items = new Map<string, ArtifactItem>();
     const branch = sm.getBranch() as unknown[];
     collectToolArtifacts(branch, cwd, items);
+    collectGeneratedFileMentions(branch, cwd, items);
     for (const entry of branch) {
       if (isRecord(entry) && (entry.type === "custom" || entry.type === "custom_message")) {
         collectPathsFromValue(entry, cwd, items, "workflow");

@@ -52,6 +52,11 @@ interface WorkflowRecommendationResult {
     reasons: string[];
   }>;
   generatedWorkflow?: WorkflowDefinition;
+  tunedTemplate?: {
+    templateType?: string;
+    baseTemplateId?: string;
+    patchSummary?: string[];
+  };
   profilePlan?: Array<{
     id: string;
     name: string;
@@ -75,7 +80,7 @@ interface ConversationArtifact {
   path: string;
   name: string;
   kind: "file";
-  source: "tool" | "workflow";
+  source: "tool" | "workflow" | "message";
   label?: string;
   toolName?: string;
   previewType: "document" | "image" | "audio";
@@ -124,6 +129,7 @@ function WorkflowFlashGuide({ onSelectWorkflow }: { onSelectWorkflow: (workflow:
   const [task, setTask] = useState("");
   const [taskFocused, setTaskFocused] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [flashStage, setFlashStage] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<WorkflowRecommendationResult | null>(null);
   const topRecommendation = result?.recommendations?.[0];
@@ -137,23 +143,31 @@ function WorkflowFlashGuide({ onSelectWorkflow }: { onSelectWorkflow: (workflow:
   const askFlash = async () => {
     if (!canAsk) return;
     setBusy(true);
+    setFlashStage("正在检索已有 Workflow...");
     setError(null);
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 14000);
+    setResult(null);
+    const stageTimers = [
+      setTimeout(() => setFlashStage("正在判断是否需要定制节点..."), 900),
+      setTimeout(() => setFlashStage("正在组合 Profile 和节点通信方式..."), 2400),
+      setTimeout(() => setFlashStage("正在调用 Flash 架构师生成节点链路..."), 3600),
+      setTimeout(() => setFlashStage("正在检查节点通信和输入契约..."), 5200),
+      setTimeout(() => setFlashStage("正在保存可打开的 Workflow..."), 9000),
+      setTimeout(() => setFlashStage("还在处理，页面不用重新点击。"), 12000),
+    ];
     try {
       const res = await fetch("/api/workflow-recommend", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        signal: controller.signal,
         body: JSON.stringify({ task }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
       setResult(data as WorkflowRecommendationResult);
+      setFlashStage("推荐完成");
     } catch (err) {
-      setError(err instanceof Error && err.name === "AbortError" ? "推荐超时了。可以换一个更具体的任务描述，或稍后重试。" : err instanceof Error ? err.message : String(err));
+      setError(err instanceof Error ? err.message : String(err));
     } finally {
-      clearTimeout(timeout);
+      stageTimers.forEach(clearTimeout);
       setBusy(false);
     }
   };
@@ -241,9 +255,12 @@ function WorkflowFlashGuide({ onSelectWorkflow }: { onSelectWorkflow: (workflow:
               cursor: canAsk ? "pointer" : "not-allowed",
             }}
           >
-            {busy ? "正在匹配..." : "让 Flash 推荐"}
+            {busy ? "处理中..." : "让 Flash 推荐"}
           </button>
         </div>
+        {busy && flashStage ? (
+          <div style={{ fontSize: 12, color: "var(--text-muted)", textAlign: "right" }}>{flashStage}</div>
+        ) : null}
         {error ? <div style={{ fontSize: 12, color: "#f87171" }}>{error}</div> : null}
       </div>
 
@@ -271,6 +288,7 @@ function WorkflowFlashGuide({ onSelectWorkflow }: { onSelectWorkflow: (workflow:
               <div style={{ marginTop: 10, fontSize: 12, color: "var(--text-muted)", lineHeight: 1.7 }}>
                 {result.searchSummary}
                 {result.generationReason ? ` ${result.generationReason}` : ""}
+                {result.tunedTemplate?.patchSummary?.length ? ` ${result.tunedTemplate.patchSummary.join("；")}` : ""}
               </div>
             ) : null}
 
@@ -991,6 +1009,10 @@ export function AppShell() {
   useEffect(() => {
     if (activeTopPanel === "artifacts") void loadConversationArtifacts();
   }, [activeTopPanel, loadConversationArtifacts]);
+
+  useEffect(() => {
+    if (selectedSession?.id) void loadConversationArtifacts();
+  }, [refreshKey, selectedSession?.id, loadConversationArtifacts]);
 
   const handleOpenArtifact = useCallback((artifact: ConversationArtifact) => {
     handleOpenFile(artifact.path, artifact.name);

@@ -78,6 +78,13 @@ async function createLocalWorkflow(body: Record<string, unknown>) {
 }
 
 export async function GET() {
+  if (process.env.PI_WORKFLOW_LOCAL_FIRST !== "0") {
+    try {
+      return Response.json(await readLocalWorkflowCatalog("local-first"));
+    } catch {
+      // Fall through to backend when local catalog is unavailable.
+    }
+  }
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 8000);
   try {

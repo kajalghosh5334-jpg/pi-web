@@ -3,7 +3,7 @@ import { readdirSync, readFileSync, statSync, unlinkSync, writeFileSync } from "
 import { join } from "path";
 import { SessionManager } from "@earendil-works/pi-coding-agent";
 import {
-  resolveSessionPath,
+  resolveSessionPathWithHint,
   invalidateSessionPathCache,
   buildSessionContext,
   buildRecentSessionContext,
@@ -117,12 +117,12 @@ export async function GET(
 ) {
   const { id } = await params;
   try {
-    const filePath = await resolveSessionPath(id);
+    const url = new URL(req.url);
+    const filePath = await resolveSessionPathWithHint(id, url.searchParams.get("path"));
     if (!filePath) {
       return NextResponse.json({ error: "Session not found" }, { status: 404 });
     }
 
-    const url = new URL(req.url);
     if (url.searchParams.has("light")) {
       const recent = await buildRecentSessionContext(filePath);
       return NextResponse.json({

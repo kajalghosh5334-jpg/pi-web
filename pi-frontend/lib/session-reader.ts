@@ -4,6 +4,7 @@ import type { SessionEntry as PiSessionEntry } from "@earendil-works/pi-coding-a
 import { normalizeToolCalls } from "./normalize";
 import { createReadStream } from "node:fs";
 import { stat } from "node:fs/promises";
+import { cacheSessionPath as cacheSessionPathForHint, resolveSessionPath as resolveSessionPathFallback } from "./session-list";
 export {
   cacheSessionPath,
   getAgentDir,
@@ -14,8 +15,8 @@ export {
   resolveSessionPath,
 } from "./session-list";
 
-const RECENT_CONTEXT_MAX_BYTES = 512 * 1024;
-const RECENT_CONTEXT_MAX_MESSAGES = 10;
+const RECENT_CONTEXT_MAX_BYTES = 192 * 1024;
+const RECENT_CONTEXT_MAX_MESSAGES = 6;
 
 function parseJsonLine(line: string): Record<string, unknown> | null {
   if (!line.trim()) return null;
@@ -251,4 +252,42 @@ export async function buildRecentSessionContext(filePath: string, maxMessages = 
 export function getLeafId(entries: SessionEntry[]): string | null {
   if (entries.length === 0) return null;
   return entries[entries.length - 1].id;
+}
+
+export async function resolveSessionPathWithHint(sessionId: string, hintedPath: string | null | undefined): Promise<string | null> {
+  if (hintedPath) {
+    const valid = await validateSessionPathHint(sessionId, hintedPath);
+    if (valid) {
+      cacheSessionPathForHint(sessionId, valid);
+      return valid;
+    }
+  }
+  return resolveSessionPathFallback(sessionId);
+}
+
+async function validateSessionPathHint(sessionId: string, hintedPath: string): Promise<string | null> {
+  if (!hintedPath || hintedPath.includes("\0") || !hintedPath.endsWith(".jsonl")) return null;
+  const fileStats = await stat(hintedPath).catch(() => null);
+  if (!fileStats?.isFile()) return null;
+  const firstLine = await readFirstLine(hintedPath).catch(() => "");
+  const parsed = parseJsonLine(firstLine);
+  if (parsed?.type !== "session" || parsed.id !== sessionId) return null;
+  return hintedPath;
+}
+
+function readFirstLine(filePath: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const stream = createReadStream(filePath, { encoding: "utf8", start: 0, end: 8191 });
+    let text = "";
+    stream.on("data", (chunk) => {
+      text += String(chunk);
+      const index = text.indexOf("\n");
+      if (index >= 0) {
+        stream.destroy();
+        resolve(text.slice(0, index));
+      }
+    });
+    stream.on("error", reject);
+    stream.on("close", () => resolve(text.split("\n", 1)[0] || ""));
+  });
 }

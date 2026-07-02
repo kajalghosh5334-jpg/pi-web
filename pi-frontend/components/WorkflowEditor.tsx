@@ -297,10 +297,15 @@ export function WorkflowEditor({
     enteredReplyKeyRef.current = key;
     const controller = new AbortController();
     setGuideReply("");
-    requestWorkflowAiReply("entered", guideState, "", controller.signal)
-      .then((reply) => setGuideReply(reply))
-      .catch(() => {});
-    return () => controller.abort();
+    const timeout = setTimeout(() => {
+      requestWorkflowAiReply("entered", guideState, "", controller.signal)
+        .then((reply) => setGuideReply(reply))
+        .catch(() => {});
+    }, 0);
+    return () => {
+      clearTimeout(timeout);
+      controller.abort();
+    };
   }, [draft, guideState]);
 
   useEffect(() => {

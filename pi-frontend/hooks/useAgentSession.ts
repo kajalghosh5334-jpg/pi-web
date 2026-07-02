@@ -102,6 +102,7 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
 
   const isNew = session === null && newSessionCwd !== null;
   const activeSessionId = session?.id ?? null;
+  const sessionPathRef = useRef<string | null>(session?.path ?? null);
 
   const [data, setData] = useState<SessionData | null>(null);
   const [loading, setLoading] = useState(!isNew);
@@ -182,6 +183,7 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
       if (includeState) params.set("includeState", "1");
       if (mode === "light") params.set("light", "1");
       if (mode === "tree") params.set("treeOnly", "1");
+      if (sessionPathRef.current) params.set("path", sessionPathRef.current);
       const query = params.toString();
       const url = `/api/sessions/${encodeURIComponent(sid)}${query ? `?${query}` : ""}`;
       const res = await fetch(url);
@@ -242,9 +244,11 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
 
   const loadContext = useCallback(async (sid: string, leafId: string | null) => {
     try {
-      const url = leafId
-        ? `/api/sessions/${encodeURIComponent(sid)}/context?leafId=${encodeURIComponent(leafId)}`
-        : `/api/sessions/${encodeURIComponent(sid)}/context`;
+      const params = new URLSearchParams();
+      if (leafId) params.set("leafId", leafId);
+      if (sessionPathRef.current) params.set("path", sessionPathRef.current);
+      const query = params.toString();
+      const url = `/api/sessions/${encodeURIComponent(sid)}/context${query ? `?${query}` : ""}`;
       const res = await fetch(url);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const d = await res.json() as { context: { messages: AgentMessage[]; entryIds: string[] } };
@@ -741,6 +745,7 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
     completionScrollAllowedRef.current = true;
 
     if (activeSessionId) {
+      sessionPathRef.current = session?.path ?? null;
       pendingStreamingMessageRef.current = null;
       if (streamingMessageFlushTimerRef.current) {
         clearTimeout(streamingMessageFlushTimerRef.current);
@@ -790,6 +795,7 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
       fullSessionLoadTokenRef.current = -1;
       branchTreeLoadedForRef.current = null;
       sessionIdRef.current = null;
+      sessionPathRef.current = null;
       setData(null);
       setActiveLeafId(null);
       setMessages([]);
@@ -808,7 +814,7 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
       eventSourceRef.current?.close();
       eventSourceRef.current = null;
     };
-  }, [activeSessionId, newSessionCwd, loadSession, loadTools, connectEvents]);
+  }, [activeSessionId, newSessionCwd, loadSession, loadTools, connectEvents, session?.path]);
 
   const handleLoadFullHistory = useCallback(async () => {
     loadFullHistoryIfAtTop();
@@ -873,10 +879,11 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
     const modelCwd = newSessionCwd ?? session?.cwd ?? "";
     const modelsUrl = modelCwd ? `/api/models?cwd=${encodeURIComponent(modelCwd)}` : "/api/models";
     const controller = new AbortController();
-    fetch(modelsUrl, { signal: controller.signal }).then((r) => {
+    const timeout = setTimeout(() => {
+      fetch(modelsUrl, { signal: controller.signal }).then((r) => {
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
       return r.json();
-    }).then((d: ModelsResponse) => {
+      }).then((d: ModelsResponse) => {
       setModelNames(d.models);
       setModelThinkingLevels(d.thinkingLevels ?? {});
       setModelThinkingLevelMaps(d.thinkingLevelMaps ?? {});
@@ -891,10 +898,14 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
         setNewSessionDefaultModel(displayModel ? { provider: displayModel.provider, modelId: displayModel.id } : null);
       };
       applyDefaultModel(nextModelList);
-    }).catch((e) => {
+      }).catch((e) => {
       if (e instanceof DOMException && e.name === "AbortError") return;
-    });
-    return () => controller.abort();
+      });
+    }, isNew ? 0 : 500);
+    return () => {
+      clearTimeout(timeout);
+      controller.abort();
+    };
   }, [isNew, modelsRefreshKey, newSessionCwd, session?.cwd]);
 
   // Compact error auto-dismiss

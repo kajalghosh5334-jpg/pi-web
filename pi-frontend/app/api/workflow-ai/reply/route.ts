@@ -31,6 +31,8 @@ function topicForText(text: string) {
   const normalized = text.toLowerCase();
   if (/skill|技能|fixed|configurable|配置/.test(normalized)) return "skills.md";
   if (/train|训练|强模型|弱模型|示范|学习|特异|专项/.test(normalized)) return "training.md";
+  if (/推荐|生成|微调|有效路径|candidate|chain|combo|组合|穷举|定制/.test(normalized)) return "tuning-recipes.md";
+  if (/通用节点|功能节点|节点体系|模板|template|fetch|gather|standardize|classify|extract|generate|review|monitor|搭建/.test(normalized)) return "common-nodes.md";
   if (/模型|model|路由|routing|能力|强弱/.test(normalized)) return "model-routing.md";
   if (/协作|通信|依赖|handoff|交接|第一个|第二个|顺序/.test(normalized)) return "collaboration.md";
   if (/profile|节点|通用|特异|专用|用途|分类/.test(normalized)) return "profiles-and-nodes.md";
